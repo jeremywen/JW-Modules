@@ -2,6 +2,8 @@
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
+by [@jeremywen](https://twitter.com/jeremywen)
+
 ## Building
 
 Compile Rack from source, following the instructions at https://github.com/VCVRack/Rack.
