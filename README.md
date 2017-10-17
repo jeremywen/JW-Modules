@@ -16,5 +16,9 @@ Then run:
 
 SimpleClock
 
-![SimpleClock](./res/SimpleClock.png)
+![SimpleClock](SimpleClock.png)
+
+Use this to send clock and reset to multiple modules
+
+![SimpleClock-Usage](SimpleClock-Usage.png)
 
