@@ -1,16 +1,14 @@
 #include "JWModules.hpp"
 #include "dsp/digital.hpp"
 
-
 struct SimpleClock : Module {
 	enum ParamIds {
 		CLOCK_PARAM,
 		RUN_PARAM,
-		GATE_PARAM,
+		PROB_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
-		CLOCK_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -20,6 +18,7 @@ struct SimpleClock : Module {
 	};
 
 	bool running = true;
+	bool rndReset = false;
 	SchmittTrigger runningTrigger;
 	float runningLight = 0.0;
 	
@@ -32,19 +31,14 @@ struct SimpleClock : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
-
-		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
-
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
-		// running
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
-
 	}
 
 	void initialize() {
@@ -66,8 +60,7 @@ void SimpleClock::step() {
 
 	bool nextStep = false;
 	if (running) {
-		// Internal clock
-		float clockTime = powf(2.0, params[CLOCK_PARAM].value + inputs[CLOCK_INPUT].value);
+		float clockTime = powf(2.0, params[CLOCK_PARAM].value);
 		phase += clockTime / gSampleRate;
 		if (phase >= 1.0) {
 			phase -= 1.0;
@@ -76,6 +69,10 @@ void SimpleClock::step() {
 	}
 
 	if (nextStep) {
+		float probScaled = rescalef(params[PROB_PARAM].value, -2, 6, 0, 1);
+		if(randomf() < probScaled){
+			resetPulse.trigger(0.01);
+		}
 		gatePulse.trigger(1e-3);
 	}
 
@@ -104,10 +101,10 @@ SimpleClockWidget::SimpleClockWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
 	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(16, 50), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 88), module, SimpleClock::GATES_OUTPUT));
+	addParam(createParam<LEDButton>(Vec(21, 150), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(26, 155), &module->runningLight));
 
-	addParam(createParam<LEDButton>(Vec(21, 130), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(26, 135), &module->runningLight));
-
-	addOutput(createOutput<PJ301MPort>(Vec(18, 218), module, SimpleClock::RESET_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(18, 318), module, SimpleClock::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 223), module, SimpleClock::RESET_OUTPUT));
+	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(16, 305), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
 }
