@@ -20,23 +20,12 @@ struct SimpleClock : Module {
 	};
 
 	bool running = true;
-	SchmittTrigger clockTrigger; // for external clock
-	// For buttons
 	SchmittTrigger runningTrigger;
-	SchmittTrigger gateTriggers[8];
-	float phase = 0.0;
-	int index = 0;
-
-	enum GateMode {
-		TRIGGER,
-		RETRIGGER,
-		CONTINUOUS,
-	};
-	GateMode gateMode = TRIGGER;
-	PulseGenerator gatePulse;
-
-	// Lights
 	float runningLight = 0.0;
+	
+	float phase = 0.0;
+	PulseGenerator gatePulse;
+	PulseGenerator resetPulse;
 
 	SimpleClock() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
@@ -67,15 +56,15 @@ struct SimpleClock : Module {
 
 
 void SimpleClock::step() {
-	const float lightLambda = 0.075;
-	// Run
 	if (runningTrigger.process(params[RUN_PARAM].value)) {
 		running = !running;
+		if(running){
+			resetPulse.trigger(0.01);
+		}
 	}
 	runningLight = running ? 1.0 : 0.0;
 
 	bool nextStep = false;
-
 	if (running) {
 		// Internal clock
 		float clockTime = powf(2.0, params[CLOCK_PARAM].value + inputs[CLOCK_INPUT].value);
@@ -87,27 +76,13 @@ void SimpleClock::step() {
 	}
 
 	if (nextStep) {
-		// Advance step
-		int numSteps = 8;
-		index += 1;
-		if (index >= numSteps) {
-			index = 0;
-		}
 		gatePulse.trigger(1e-3);
 	}
 
-	bool pulse = gatePulse.process(1.0 / gSampleRate);
-
-	// Rows
-	bool gatesOn = running;
-	if (gateMode == TRIGGER)
-		gatesOn = gatesOn && pulse;
-	else if (gateMode == RETRIGGER)
-		gatesOn = gatesOn && !pulse;
-
-	// Outputs
-	outputs[RESET_OUTPUT].value = index == 0 ? 10.0 : 0.0;
-	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
+	bool gpulse = gatePulse.process(1.0 / gSampleRate);
+	bool rpulse = resetPulse.process(1.0 / gSampleRate);
+	outputs[RESET_OUTPUT].value = running && rpulse ? 10.0 : 0.0;
+	outputs[GATES_OUTPUT].value = running && gpulse ? 10.0 : 0.0;
 }
 
 
