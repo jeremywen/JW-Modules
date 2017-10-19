@@ -14,6 +14,11 @@ Then run:
 
 	make
 
+To make plugin zip:
+
+	make dist
+	zip -r JW-Modules.zip dist/JW-Modules
+
 ## Modules
 
 SimpleClock
