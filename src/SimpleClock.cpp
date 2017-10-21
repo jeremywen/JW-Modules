@@ -102,9 +102,9 @@ SimpleClockWidget::SimpleClockWidget() {
 
 	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(17, 40), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
 	addOutput(createOutput<PJ301MPort>(Vec(18, 78), module, SimpleClock::GATES_OUTPUT));
-	addParam(createParam<LEDButton>(Vec(21, 130), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(26, 130+5), &module->runningLight));
+	addParam(createParam<LEDButton>(Vec(21, 140), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(26, 140+5), &module->runningLight));
 
-	addOutput(createOutput<PJ301MPort>(Vec(18, 223), module, SimpleClock::RESET_OUTPUT));
-	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(16, 305), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 198), module, SimpleClock::RESET_OUTPUT));
+	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(16, 280), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
 }
