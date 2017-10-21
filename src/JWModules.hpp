@@ -13,3 +13,15 @@ extern Plugin *plugin;
 struct SimpleClockWidget : ModuleWidget {
 	SimpleClockWidget();
 };
+
+struct GridSeqWidget : ModuleWidget {
+	GridSeqWidget();
+	Menu *createContextMenu();
+};
+
+struct SmallWhiteKnob : RoundKnob {
+	SmallWhiteKnob() {
+		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
+	}
+};
+

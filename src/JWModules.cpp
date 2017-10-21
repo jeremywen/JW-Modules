@@ -9,4 +9,5 @@ void init(rack::Plugin *p) {
 	plugin->name = "JW-Modules";
 	plugin->homepageUrl = "https://github.com/jeremywen/JW-Modules";
 	createModel<SimpleClockWidget>(plugin, "SimpleClock", "SimpleClock");
+	createModel<GridSeqWidget>(plugin, "GridSeq", "GridSeq");
 }
