@@ -25,14 +25,14 @@ GridSeq
 
 ![GridSeq](GridSeq.png)
 
-Video: https://www.youtube.com/watch?v=Bnxzqi5jwcU
+[Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
 
 SimpleClock
 
 ![SimpleClock](SimpleClock.png)
 
-Video: https://www.youtube.com/watch?v=DCustAy7xVc
+[Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
 
 
