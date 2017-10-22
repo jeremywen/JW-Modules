@@ -21,11 +21,18 @@ To make plugin zip:
 
 ## Modules
 
+GridSeq
+
+![GridSeq](GridSeq.png)
+
+Video: https://www.youtube.com/watch?v=Bnxzqi5jwcU
+
+
 SimpleClock
 
 ![SimpleClock](SimpleClock.png)
 
-Use this to send clock and reset to multiple modules
+Video: https://www.youtube.com/watch?v=DCustAy7xVc
 
-![SimpleClock-Usage](SimpleClock-Usage.png)
+
 
