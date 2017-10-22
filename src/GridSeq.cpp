@@ -96,13 +96,13 @@ struct GridSeq : Module {
 	}
 
 	void initialize() {
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
 	}
 
 	void randomize() {
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 16; i++) {
 			gateState[i] = (randomf() > 0.5);
 		}
 	}
