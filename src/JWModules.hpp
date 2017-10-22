@@ -25,3 +25,9 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 };
 
+struct MyBlueValueLight : ColorValueLight {
+	MyBlueValueLight() {
+		baseColor = nvgRGB(25, 150, 252);
+	}
+};
+
