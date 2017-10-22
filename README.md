@@ -30,7 +30,7 @@ GridSeq
 
 SimpleClock
 
-![SimpleClock](SimpleClock-blue.png)
+![SimpleClock](SimpleClock-img3.png)
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
