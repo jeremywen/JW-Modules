@@ -28,7 +28,6 @@ struct GridSeq : Module {
 	SchmittTrigger downTrigger;
 	SchmittTrigger upTrigger;
 
-	SchmittTrigger clockTrigger; // for external clock
 	SchmittTrigger runningTrigger;
 	SchmittTrigger resetTrigger;
 	SchmittTrigger gateTriggers[16];
@@ -119,13 +118,14 @@ void GridSeq::step() {
 
 	bool nextStep = false;
 
-	// // Reset
-	// if (resetTrigger.process(params[RESET_PARAM].value + inputs[RESET_INPUT].value)) {
-	// 	phase = 0.0;
-	// 	index = 8;
-	// 	nextStep = true;
-	// 	resetLight = 1.0;
-	// }
+	// Reset
+	if (resetTrigger.process(params[RESET_PARAM].value + inputs[RESET_INPUT].value)) {
+		phase = 0.0;
+		posX = 0;
+		posY = 0;
+		nextStep = true;
+		resetLight = 1.0;
+	}
 
 	if(running){
 		if (rightTrigger.process(inputs[RIGHT_INPUT].value)) {
@@ -147,7 +147,7 @@ void GridSeq::step() {
 	}
 	
 	if (nextStep) {
-		index = posX + (posY * 4); //this is the only place index should be updated
+		index = posX + (posY * 4);
 		stepLights[index] = 1.0;
 		gatePulse.trigger(1e-3);
 	}
@@ -200,18 +200,20 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	// addInput(createInput<PJ301MPort>(Vec(83, 90), module, GridSeq::RESET_INPUT));
+	addParam(createParam<LEDButton>(Vec(23, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(23+5, 90+5), &module->runningLight));
+
+	addInput(createInput<PJ301MPort>(Vec(20, 160), module, GridSeq::RESET_INPUT));
+	addParam(createParam<LEDButton>(Vec(23, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(23+5, 130+5), &module->resetLight));
+
+	addOutput(createOutput<PJ301MPort>(Vec(20, 238), module, GridSeq::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(20, 299), module, GridSeq::CELL_OUTPUT));
 
 	addInput(createInput<PJ301MPort>(Vec(83, 90), module, GridSeq::RIGHT_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(138, 90), module, GridSeq::LEFT_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(193, 90), module, GridSeq::DOWN_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(248, 90), module, GridSeq::UP_INPUT));
-
-	addOutput(createOutput<PJ301MPort>(Vec(21, 202), module, GridSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(21, 274), module, GridSeq::CELL_OUTPUT));
-
-	addParam(createParam<LEDButton>(Vec(23, 112), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(23+5, 112+5), &module->runningLight));
 
 	int boxSize = 55;
 	for (int x = 0; x < 4; x++) {
