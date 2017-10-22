@@ -23,14 +23,14 @@ To make plugin zip:
 
 GridSeq
 
-![GridSeq](GridSeq.png)
+![GridSeq](./doc/GridSeq-img2.png)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
 
 SimpleClock
 
-![SimpleClock](SimpleClock-img5.png)
+![SimpleClock](./doc/SimpleClock-img5.png)
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
