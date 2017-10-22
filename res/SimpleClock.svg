@@ -7,7 +7,6 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="60"
@@ -27,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="3.959798"
-     inkscape:cx="30.497143"
-     inkscape:cy="84.193876"
+     inkscape:cx="-0.18624034"
+     inkscape:cy="245.81828"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -39,8 +38,8 @@
      units="px"
      inkscape:window-width="1505"
      inkscape:window-height="1105"
-     inkscape:window-x="439"
-     inkscape:window-y="225"
+     inkscape:window-x="614"
+     inkscape:window-y="140"
      inkscape:window-maximized="0"
      inkscape:snap-global="false">
     <inkscape:grid
@@ -211,31 +210,19 @@
        inkscape:connector-curvature="0"
        id="path4195"
        d="m 36.492814,232.24373 h 1.177189 v 0.1757 h -0.482658 v 1.36735 h -0.209806 v -1.36735 h -0.484725 z" />
-    <image
-       y="181.4713"
-       x="30.512247"
-       id="image5249"
-       xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAAA3NCSVQICAjb4U/gAAAAbUlEQVRY
-he3OsQmAMBRAwa+EpAlkAfd2TiGNwcI6YPOqWLyb4LbjfGqOX+kjUs1x3asjs1ZiX334ZouwRdgi
-bBG2CFuELcIWYYuwRdgibBG2CFuELcIWYYuwRdgibBG2CFuELSL1Ea2sXsz6iBeX9wobQ9rTxQAA
-AABJRU5ErkJggg==
-"
-       style="stroke-width:1.73690736;image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="7.6165056"
-       width="7.6165056" />
-    <image
-       width="7.6165056"
-       height="7.6165056"
-       preserveAspectRatio="none"
-       style="stroke-width:1.73690736;image-rendering:optimizeSpeed"
-       xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAAA3NCSVQICAjb4U/gAAAAbUlEQVRY
-he3OsQmAMBRAwa+EpAlkAfd2TiGNwcI6YPOqWLyb4LbjfGqOX+kjUs1x3asjs1ZiX334ZouwRdgi
-bBG2CFuELcIWYYuwRdgibBG2CFuELcIWYYuwRdgibBG2CFuELSL1Ea2sXsz6iBeX9wobQ9rTxQAA
-AABJRU5ErkJggg==
-"
-       id="image5254"
-       x="30.512247"
-       y="213.2213" />
+    <rect
+       style="fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+       id="rect5293"
+       width="7.6165605"
+       height="7.61656"
+       x="30.776831"
+       y="181.47124" />
+    <rect
+       y="213.22124"
+       x="30.776831"
+       height="7.61656"
+       width="7.6165605"
+       id="rect5297"
+       style="fill:#1996fc;fill-opacity:1;stroke-width:0.26458332" />
   </g>
 </svg>
