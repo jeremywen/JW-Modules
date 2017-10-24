@@ -21,7 +21,7 @@ struct SimpleClock : Module {
 	bool rndReset = false;
 	SchmittTrigger runningTrigger;
 	float runningLight = 0.0;
-	
+	int beat = 0;
 	float phase = 0.0;
 	PulseGenerator gatePulse;
 	PulseGenerator resetPulse;
@@ -49,6 +49,17 @@ struct SimpleClock : Module {
 };
 
 
+/* 
+SWING - Roger Linn https://www.attackmagazine.com/features/interview/roger-linn-swing-groove-magic-mpc-timing/
+"I merely delay the second 16th note within each 8th note. In other words, I delay all the even-numbered 16th notes 
+within the beat (2, 4, 6, 8, etc.) In my products I describe the swing amount in terms of the ratio of time duration
+between the first and second 16th notes within each 8th note. For example, 50% is no swing, meaning that both 16th 
+notes within each 8th note are given equal timing. And 66% means perfect triplet swing, meaning that the first
+16th note of each pair gets 2/3 of the time, and the second 16th note gets 1/3, so the second 16th note falls on 
+a perfect 8th note triplet. The fun comes in the in-between settings. For example, a 90 BPM swing groove will
+feel looser at 62% than at a perfect swing setting of 66%. And for straight 16th-note beats (no swing), a swing 
+setting of 54% will loosen up the feel without it sounding like swing. Between 50% and around 70% are lots of
+wonderful little settings that, for a particular beat and tempo, can change a rigid beat into something that makes people move."" */
 void SimpleClock::step() {
 	if (runningTrigger.process(params[RUN_PARAM].value)) {
 		running = !running;
@@ -62,18 +73,26 @@ void SimpleClock::step() {
 	if (running) {
 		float clockTime = powf(2.0, params[CLOCK_PARAM].value);
 		phase += clockTime / gSampleRate;
+		// printf("clockTime:%f phase:%f\n", clockTime, phase);
 		if (phase >= 1.0) {
 			phase -= 1.0;
 			nextStep = true;
 		}
 	}
-
 	if (nextStep) {
 		float probScaled = rescalef(params[PROB_PARAM].value, -2, 6, 0, 1);
 		if(randomf() < probScaled){
 			resetPulse.trigger(0.01);
 		}
 		gatePulse.trigger(1e-3);
+
+		beat = (beat + 1) % 16;//in music the first beat is one so increment before
+		// if(beat%2 == 0){
+		// 	printf("even beat %i, %f\n", beat, phase);
+		// } else {
+		// 	printf("odd beat %i, %f\n", beat, phase);
+
+		// }
 	}
 
 	bool gpulse = gatePulse.process(1.0 / gSampleRate);
