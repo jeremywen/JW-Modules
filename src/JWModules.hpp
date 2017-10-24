@@ -15,8 +15,15 @@ struct SimpleClockWidget : ModuleWidget {
 };
 
 struct GridSeqWidget : ModuleWidget {
+	std::vector<ParamWidget*> seqKnobs;
 	GridSeqWidget();
+	~GridSeqWidget();
+	void randomScale();
 	Menu *createContextMenu();
+};
+
+struct RMSWidget : ModuleWidget {
+	RMSWidget();
 };
 
 struct SmallWhiteKnob : RoundKnob {

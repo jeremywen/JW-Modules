@@ -6,6 +6,7 @@ struct GridSeq : Module {
 		RUN_PARAM,
 		CLOCK_PARAM,
 		RESET_PARAM,
+		RND_SCALE_INPUT,
 		CELL_PARAM,
 		GATE_PARAM = CELL_PARAM + 16,
 		NUM_PARAMS = GATE_PARAM + 16,
@@ -30,6 +31,7 @@ struct GridSeq : Module {
 
 	SchmittTrigger runningTrigger;
 	SchmittTrigger resetTrigger;
+	SchmittTrigger rndScaleTrigger;
 	SchmittTrigger gateTriggers[16];
 
 	int index = 0;
@@ -45,6 +47,7 @@ struct GridSeq : Module {
 
 	// Lights
 	float resetLight = 0.0;
+	float rndScaleLight = 0.0;
 	float runningLight = 0.0;
 	float stepLights[16] = {};
 	float gateLights[16] = {};
@@ -183,6 +186,24 @@ void GridSeq::step() {
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
+struct RNDScaleButton : LEDButton {
+	void onMouseUpOpaque(int b){
+		GridSeqWidget *gridSeqWidget = this->getAncestorOfType<GridSeqWidget>();
+//is it always dist below ref ???????		
+
+		// NOTES:  Middle C3 == Midi note 60 == zero volts
+		// Each octave is a volt integer, hence volt per octave.
+		// Enum ScaleReference http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
+		int minorScale[8] = {0, 2, 3, 5, 7, 8, 10};
+		// int majorScale[8] = {0, 2, 4, 5, 7, 9, 11};
+
+		for (int i = 0; i < 16; i++) {
+			float voltAdder = minorScale[int(8 * randomf())] / 12.0;
+			gridSeqWidget->seqKnobs[i]->setValue(voltAdder);
+		}		
+	}
+};
+
 GridSeqWidget::GridSeqWidget() {
 	GridSeq *module = new GridSeq();
 	setModule(module);
@@ -205,7 +226,11 @@ GridSeqWidget::GridSeqWidget() {
 
 	addInput(createInput<PJ301MPort>(Vec(20, 160), module, GridSeq::RESET_INPUT));
 	addParam(createParam<LEDButton>(Vec(23, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<GreenValueLight>>(Vec(23+5, 130+5), &module->resetLight));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(23+5, 130+5), &module->resetLight));
+
+//TEMP TEST BUTTON
+	addParam(createParam<RNDScaleButton>(Vec(43, 130), module, GridSeq::RND_SCALE_INPUT, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(43+5, 130+5), &module->rndScaleLight));
 
 	addOutput(createOutput<PJ301MPort>(Vec(20, 238), module, GridSeq::GATES_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(20, 299), module, GridSeq::CELL_OUTPUT));
@@ -216,16 +241,22 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(248, 90), module, GridSeq::UP_INPUT));
 
 	int boxSize = 55;
-	for (int x = 0; x < 4; x++) {
-		for (int y = 0; y < 4; y++) {
+	for (int y = 0; y < 4; y++) {
+		for (int x = 0; x < 4; x++) {
 			int knobX = x * boxSize + 76;
 			int knobY = y * boxSize + 149;
 			int idx = (x+(y*4));
-			addParam(createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_PARAM + idx, 0.0, 6.0, 0.0));
+			ParamWidget *paramWidget = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_PARAM + idx, 0.0, 6.0, 0.0);
+			addParam(paramWidget);
+			seqKnobs.push_back(paramWidget);
 			addParam(createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::GATE_PARAM + idx, 0.0, 1.0, 0.0));
 			addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(knobX+27, knobY-10), &module->gateLights[idx]));			
 		}
 	}
+}
+
+GridSeqWidget::~GridSeqWidget(){
+	seqKnobs.clear();
 }
 
 struct GridSeqGateModeItem : MenuItem {
