@@ -418,7 +418,7 @@ GridSeqWidget::GridSeqWidget() {
 			int knobY = y * boxSize + 110;
 			int idx = (x+(y*4));
 			//TODO someday put note labels in each cell
-			ParamWidget *paramWidget = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_PARAM + idx, 0.0, 6.0, 0.0);
+			ParamWidget *paramWidget = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_PARAM + idx, 0.0, 6.0, 3.0);
 			addParam(paramWidget);
 			seqKnobs.push_back(paramWidget);
 			addParam(createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::GATE_PARAM + idx, 0.0, 1.0, 0.0));

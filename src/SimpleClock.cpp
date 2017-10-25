@@ -49,6 +49,8 @@ struct SimpleClock : Module {
 };
 
 
+//TODO ADD SWING KNOB
+
 /* 
 SWING - Roger Linn https://www.attackmagazine.com/features/interview/roger-linn-swing-groove-magic-mpc-timing/
 "I merely delay the second 16th note within each 8th note. In other words, I delay all the even-numbered 16th notes 
