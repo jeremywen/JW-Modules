@@ -203,6 +203,7 @@ void GridSeq::step() {
 
 	// Outputs
 	float cellVal = params[CELL_PARAM + index].value;
+//TODO QUANTIZE TO SCALE!!!!!!!!!!!
 	outputs[CELL_OUTPUT].value = cellVal;
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
@@ -242,24 +243,21 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(80, 330), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES, 0.0));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(80, 330), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
 	rack::Label* const noteLabel = new rack::Label;
-	noteLabel->box.pos = Vec(80, 350);
+	noteLabel->box.pos = Vec(105, 335);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(120, 330), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES, 0.0));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(160, 330), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
 	rack::Label* const scaleLabel = new rack::Label;
-	scaleLabel->box.pos = Vec(120, 350);
+	scaleLabel->box.pos = Vec(185, 335);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
-
-	addParam(createParam<RNDScaleButton>(Vec(43, 130), module, GridSeq::RND_SCALE_INPUT, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(43+5, 130+5), &module->rndScaleLight));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
@@ -268,6 +266,7 @@ GridSeqWidget::GridSeqWidget() {
 			int knobX = x * boxSize + 76;
 			int knobY = y * boxSize + 110;
 			int idx = (x+(y*4));
+			//TODO someday put note labels in each cell
 			ParamWidget *paramWidget = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_PARAM + idx, 0.0, 6.0, 0.0);
 			addParam(paramWidget);
 			seqKnobs.push_back(paramWidget);
@@ -279,16 +278,12 @@ GridSeqWidget::GridSeqWidget() {
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(20, 238), module, GridSeq::GATES_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(20, 299), module, GridSeq::CELL_OUTPUT));
-
 }
 
 void GridSeqWidget::randomize() {
 	ModuleWidget::randomize();
 
-	// NOTES:  C0 == Midi note 0 == zero volts
-	// Each octave is a volt integer, hence volt per octave.
-	// Enum ScaleReference http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
-
+//TODO USE CURRENT NOTE & SCALE
 	static const int notesInScale = LENGTHOF(scale_MINOR);
 	float rootNoteVolt = NOTE_C;
 
