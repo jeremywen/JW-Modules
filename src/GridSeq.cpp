@@ -8,7 +8,7 @@ struct GridSeq : Module {
 		RESET_PARAM,
 		CELL_PARAM,
 		GATE_PARAM = CELL_PARAM + 16,
-		RND_SCALE_INPUT = GATE_PARAM + 16,
+		RND_NOTES_INPUT = GATE_PARAM + 16,
 		ROOT_NOTE_PARAM,
 		SCALE_PARAM,
 		NUM_PARAMS
@@ -54,7 +54,7 @@ struct GridSeq : Module {
 
 	// Lights
 	float resetLight = 0.0;
-	float rndScaleLight = 0.0;
+	float rndNotesLight = 0.0;
 	float runningLight = 0.0;
 	float stepLights[16] = {};
 	float gateLights[16] = {};
@@ -113,7 +113,7 @@ struct GridSeq : Module {
 
 	void randomize() {
 		for (int i = 0; i < 16; i++) {
-			gateState[i] = (randomf() > 0.5);
+			gateState[i] = (randomf() > 0.25);
 		}
 	}
 };
@@ -208,6 +208,91 @@ void GridSeq::step() {
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
+struct NoteKnob : SmallWhiteKnob {
+	std::string formatCurrentValue() override {
+		switch(int(value)){
+			case GridSeqWidget::NOTE_C:       return "C";
+			case GridSeqWidget::NOTE_C_SHARP: return "C#";
+			case GridSeqWidget::NOTE_D:       return "D";
+			case GridSeqWidget::NOTE_D_SHARP: return "D#";
+			case GridSeqWidget::NOTE_E:       return "E";
+			case GridSeqWidget::NOTE_F:       return "F";
+			case GridSeqWidget::NOTE_F_SHARP: return "F#";
+			case GridSeqWidget::NOTE_G:       return "G";
+			case GridSeqWidget::NOTE_G_SHARP: return "G#";
+			case GridSeqWidget::NOTE_A:       return "A";
+			case GridSeqWidget::NOTE_A_SHARP: return "A#";
+			case GridSeqWidget::NOTE_B:       return "B";
+			default: return "";
+		}
+	}
+};
+
+struct ScaleKnob : NoteKnob {
+	std::string formatCurrentValue() override {
+		switch(int(value)){
+			case GridSeqWidget::AEOLIAN:        return "Aeolian";
+			case GridSeqWidget::BLUES:          return "Blues";
+			case GridSeqWidget::CHROMATIC:      return "Chromatic";
+			case GridSeqWidget::DIATONIC_MINOR: return "Diatonic Minor";
+			case GridSeqWidget::DORIAN:         return "Dorian";
+			case GridSeqWidget::HARMONIC_MINOR: return "Harmonic Minor";
+			case GridSeqWidget::INDIAN:         return "Indian";
+			case GridSeqWidget::LOCRIAN:        return "Locrian";
+			case GridSeqWidget::LYDIAN:         return "Lydian";
+			case GridSeqWidget::MAJOR:          return "Major";
+			case GridSeqWidget::MELODIC_MINOR:  return "Melodic Minor";
+			case GridSeqWidget::MINOR:          return "Minor";
+			case GridSeqWidget::MIXOLYDIAN:     return "Mixolydian";
+			case GridSeqWidget::NATURAL_MINOR:  return "Natural Minor";
+			case GridSeqWidget::PENTATONIC:     return "Pentatonic";
+			case GridSeqWidget::PHRYGIAN:       return "Phrygian";
+			case GridSeqWidget::TURKISH:        return "Turkish";
+			default: return "";
+		}
+	}
+};
+
+struct RandomizeNotesOnlyButton : LEDButton {
+	void onMouseUpOpaque(int b){
+		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+
+		int rootNote = dynamic_cast<NoteKnob*>(gsw->noteKnob)->value;
+		int curScaleVal = dynamic_cast<ScaleKnob*>(gsw->scaleKnob)->value;
+		int *curScaleArr;
+		int notesInScale = 0;
+		switch(curScaleVal){
+			case GridSeqWidget::AEOLIAN:        curScaleArr = gsw->SCALE_AEOLIAN;       notesInScale=LENGTHOF(gsw->SCALE_AEOLIAN); break;
+			case GridSeqWidget::BLUES:          curScaleArr = gsw->SCALE_BLUES;         notesInScale=LENGTHOF(gsw->SCALE_BLUES); break;
+			case GridSeqWidget::CHROMATIC:      curScaleArr = gsw->SCALE_CHROMATIC;     notesInScale=LENGTHOF(gsw->SCALE_CHROMATIC); break;
+			case GridSeqWidget::DIATONIC_MINOR: curScaleArr = gsw->SCALE_DIATONIC_MINOR;notesInScale=LENGTHOF(gsw->SCALE_DIATONIC_MINOR); break;
+			case GridSeqWidget::DORIAN:         curScaleArr = gsw->SCALE_DORIAN;        notesInScale=LENGTHOF(gsw->SCALE_DORIAN); break;
+			case GridSeqWidget::HARMONIC_MINOR: curScaleArr = gsw->SCALE_HARMONIC_MINOR;notesInScale=LENGTHOF(gsw->SCALE_HARMONIC_MINOR); break;
+			case GridSeqWidget::INDIAN:         curScaleArr = gsw->SCALE_INDIAN;        notesInScale=LENGTHOF(gsw->SCALE_INDIAN); break;
+			case GridSeqWidget::LOCRIAN:        curScaleArr = gsw->SCALE_LOCRIAN;       notesInScale=LENGTHOF(gsw->SCALE_LOCRIAN); break;
+			case GridSeqWidget::LYDIAN:         curScaleArr = gsw->SCALE_LYDIAN;        notesInScale=LENGTHOF(gsw->SCALE_LYDIAN); break;
+			case GridSeqWidget::MAJOR:          curScaleArr = gsw->SCALE_MAJOR;         notesInScale=LENGTHOF(gsw->SCALE_MAJOR); break;
+			case GridSeqWidget::MELODIC_MINOR:  curScaleArr = gsw->SCALE_MELODIC_MINOR; notesInScale=LENGTHOF(gsw->SCALE_MELODIC_MINOR); break;
+			case GridSeqWidget::MINOR:          curScaleArr = gsw->SCALE_MINOR;         notesInScale=LENGTHOF(gsw->SCALE_MINOR); break;
+			case GridSeqWidget::MIXOLYDIAN:     curScaleArr = gsw->SCALE_MIXOLYDIAN;    notesInScale=LENGTHOF(gsw->SCALE_MIXOLYDIAN); break;
+			case GridSeqWidget::NATURAL_MINOR:  curScaleArr = gsw->SCALE_NATURAL_MINOR; notesInScale=LENGTHOF(gsw->SCALE_NATURAL_MINOR); break;
+			case GridSeqWidget::PENTATONIC:     curScaleArr = gsw->SCALE_PENTATONIC;    notesInScale=LENGTHOF(gsw->SCALE_PENTATONIC); break;
+			case GridSeqWidget::PHRYGIAN:       curScaleArr = gsw->SCALE_PHRYGIAN;      notesInScale=LENGTHOF(gsw->SCALE_PHRYGIAN); break;
+			case GridSeqWidget::TURKISH:        curScaleArr = gsw->SCALE_TURKISH;       notesInScale=LENGTHOF(gsw->SCALE_TURKISH); break;
+		}
+
+		for (int i = 0; i < 16; i++) {
+			float voltsOut = 0;
+			int rndOctaveInVolts = int(5 * randomf());
+			voltsOut += rndOctaveInVolts;
+			voltsOut += rootNote / 12.0;
+			voltsOut += curScaleArr[int(notesInScale * randomf())] / 12.0;
+			gsw->seqKnobs[i]->setValue(voltsOut);
+		}		
+
+	}
+};
+
 GridSeqWidget::GridSeqWidget() {
 	GridSeq *module = new GridSeq();
 	setModule(module);
@@ -243,21 +328,24 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(80, 330), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
+	noteKnob = createParam<NoteKnob>(Vec(70, 335), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C);
 	rack::Label* const noteLabel = new rack::Label;
-	noteLabel->box.pos = Vec(105, 335);
+	noteLabel->box.pos = Vec(70+25, 335+5);
 	noteLabel->text = "note here";
-	noteKnob->connectLabel(noteLabel);
+	dynamic_cast<NoteKnob*>(noteKnob)->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(160, 330), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
+	scaleKnob = createParam<ScaleKnob>(Vec(130, 335), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR);
 	rack::Label* const scaleLabel = new rack::Label;
-	scaleLabel->box.pos = Vec(185, 335);
+	scaleLabel->box.pos = Vec(130+25, 335+5);
 	scaleLabel->text = "scale here";
-	scaleKnob->connectLabel(scaleLabel);
+	dynamic_cast<ScaleKnob*>(scaleKnob)->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
+
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(245, 335), module, GridSeq::RND_NOTES_INPUT, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(245+5, 335+5), &module->rndNotesLight));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
@@ -278,24 +366,6 @@ GridSeqWidget::GridSeqWidget() {
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(20, 238), module, GridSeq::GATES_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(20, 299), module, GridSeq::CELL_OUTPUT));
-}
-
-void GridSeqWidget::randomize() {
-	ModuleWidget::randomize();
-
-//TODO USE CURRENT NOTE & SCALE
-	static const int notesInScale = LENGTHOF(scale_MINOR);
-	float rootNoteVolt = NOTE_C;
-
-	for (int i = 0; i < 16; i++) {
-		float voltsOut = 0;
-		int rndOctaveInVolts = int(5 * randomf());
-		voltsOut+=rndOctaveInVolts;
-		voltsOut+=rootNoteVolt / 12.0;
-		voltsOut+=scale_MINOR[int(notesInScale * randomf())] / 12.0;
-		this->seqKnobs[i]->setValue(voltsOut);
-	}		
-
 }
 
 GridSeqWidget::~GridSeqWidget(){
