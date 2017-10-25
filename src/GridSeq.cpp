@@ -28,6 +28,25 @@ struct GridSeq : Module {
 		NUM_OUTPUTS
 	};
 
+	//copied from http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
+	int SCALE_AEOLIAN        [7] = {0, 2, 3, 5, 7, 8, 10};
+	int SCALE_BLUES          [9] = {0, 2, 3, 4, 5, 7, 9, 10, 11};
+	int SCALE_CHROMATIC      [12]= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+	int SCALE_DIATONIC_MINOR [7] = {0, 2, 3, 5, 7, 8, 10};
+	int SCALE_DORIAN         [7] = {0, 2, 3, 5, 7, 9, 10};
+	int SCALE_HARMONIC_MINOR [7] = {0, 2, 3, 5, 7, 8, 11};
+	int SCALE_INDIAN         [7] = {0, 1, 1, 4, 5, 8, 10};
+	int SCALE_LOCRIAN        [7] = {0, 1, 3, 5, 6, 8, 10};
+	int SCALE_LYDIAN         [7] = {0, 2, 4, 6, 7, 9, 10};
+	int SCALE_MAJOR          [7] = {0, 2, 4, 5, 7, 9, 11};
+	int SCALE_MELODIC_MINOR  [9] = {0, 2, 3, 5, 7, 8, 9, 10, 11};
+	int SCALE_MINOR          [7] = {0, 2, 3, 5, 7, 8, 10};
+	int SCALE_MIXOLYDIAN     [7] = {0, 2, 4, 5, 7, 9, 10};
+	int SCALE_NATURAL_MINOR  [7] = {0, 2, 3, 5, 7, 8, 10};
+	int SCALE_PENTATONIC     [5] = {0, 2, 4, 7, 9};
+	int SCALE_PHRYGIAN       [7] = {0, 1, 3, 5, 7, 8, 10};
+	int SCALE_TURKISH        [7] = {0, 1, 3, 5, 7, 10, 11};
+
 	SchmittTrigger rightTrigger;
 	SchmittTrigger leftTrigger;
 	SchmittTrigger downTrigger;
@@ -116,6 +135,48 @@ struct GridSeq : Module {
 			gateState[i] = (randomf() > 0.25);
 		}
 	}
+
+	float closestVoltageInScale(float voltsIn){
+		/////////////////////////////////////
+		//TODO CLEAN THIS UGLY CODE UP
+		/////////////////////////////////////
+		int rootNote = params[ROOT_NOTE_PARAM].value;
+		int curScaleVal = params[SCALE_PARAM].value;
+		int *curScaleArr;
+		int notesInScale = 0;
+		switch(curScaleVal){
+			case GridSeqWidget::AEOLIAN:        curScaleArr = SCALE_AEOLIAN;       notesInScale=LENGTHOF(SCALE_AEOLIAN); break;
+			case GridSeqWidget::BLUES:          curScaleArr = SCALE_BLUES;         notesInScale=LENGTHOF(SCALE_BLUES); break;
+			case GridSeqWidget::CHROMATIC:      curScaleArr = SCALE_CHROMATIC;     notesInScale=LENGTHOF(SCALE_CHROMATIC); break;
+			case GridSeqWidget::DIATONIC_MINOR: curScaleArr = SCALE_DIATONIC_MINOR;notesInScale=LENGTHOF(SCALE_DIATONIC_MINOR); break;
+			case GridSeqWidget::DORIAN:         curScaleArr = SCALE_DORIAN;        notesInScale=LENGTHOF(SCALE_DORIAN); break;
+			case GridSeqWidget::HARMONIC_MINOR: curScaleArr = SCALE_HARMONIC_MINOR;notesInScale=LENGTHOF(SCALE_HARMONIC_MINOR); break;
+			case GridSeqWidget::INDIAN:         curScaleArr = SCALE_INDIAN;        notesInScale=LENGTHOF(SCALE_INDIAN); break;
+			case GridSeqWidget::LOCRIAN:        curScaleArr = SCALE_LOCRIAN;       notesInScale=LENGTHOF(SCALE_LOCRIAN); break;
+			case GridSeqWidget::LYDIAN:         curScaleArr = SCALE_LYDIAN;        notesInScale=LENGTHOF(SCALE_LYDIAN); break;
+			case GridSeqWidget::MAJOR:          curScaleArr = SCALE_MAJOR;         notesInScale=LENGTHOF(SCALE_MAJOR); break;
+			case GridSeqWidget::MELODIC_MINOR:  curScaleArr = SCALE_MELODIC_MINOR; notesInScale=LENGTHOF(SCALE_MELODIC_MINOR); break;
+			case GridSeqWidget::MINOR:          curScaleArr = SCALE_MINOR;         notesInScale=LENGTHOF(SCALE_MINOR); break;
+			case GridSeqWidget::MIXOLYDIAN:     curScaleArr = SCALE_MIXOLYDIAN;    notesInScale=LENGTHOF(SCALE_MIXOLYDIAN); break;
+			case GridSeqWidget::NATURAL_MINOR:  curScaleArr = SCALE_NATURAL_MINOR; notesInScale=LENGTHOF(SCALE_NATURAL_MINOR); break;
+			case GridSeqWidget::PENTATONIC:     curScaleArr = SCALE_PENTATONIC;    notesInScale=LENGTHOF(SCALE_PENTATONIC); break;
+			case GridSeqWidget::PHRYGIAN:       curScaleArr = SCALE_PHRYGIAN;      notesInScale=LENGTHOF(SCALE_PHRYGIAN); break;
+			case GridSeqWidget::TURKISH:        curScaleArr = SCALE_TURKISH;       notesInScale=LENGTHOF(SCALE_TURKISH); break;
+		}
+
+		float closestVal = 10.0;
+		float closestDist = 10.0;
+		int octaveInVolts = int(voltsIn);
+		for (int i = 0; i < notesInScale; i++) {
+			float scaleNoteInVolts = octaveInVolts + ((rootNote + curScaleArr[i]) / 12.0);
+			float distAway = fabs(voltsIn - scaleNoteInVolts);
+			if(distAway < closestDist){
+				closestVal = scaleNoteInVolts;
+				closestDist = distAway;
+			}
+		}
+		return closestVal;
+	}
 };
 
 void GridSeq::step() {
@@ -203,8 +264,7 @@ void GridSeq::step() {
 
 	// Outputs
 	float cellVal = params[CELL_PARAM + index].value;
-//TODO QUANTIZE TO SCALE!!!!!!!!!!!
-	outputs[CELL_OUTPUT].value = cellVal;
+	outputs[CELL_OUTPUT].value = closestVoltageInScale(cellVal);
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
@@ -256,29 +316,33 @@ struct ScaleKnob : NoteKnob {
 struct RandomizeNotesOnlyButton : LEDButton {
 	void onMouseUpOpaque(int b){
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+		GridSeq *gs = dynamic_cast<GridSeq*>(module);
 
-		int rootNote = dynamic_cast<NoteKnob*>(gsw->noteKnob)->value;
-		int curScaleVal = dynamic_cast<ScaleKnob*>(gsw->scaleKnob)->value;
+		int rootNote = gsw->module->params[GridSeq::ROOT_NOTE_PARAM].value;
+		int curScaleVal = gsw->module->params[GridSeq::SCALE_PARAM].value;
 		int *curScaleArr;
 		int notesInScale = 0;
+		/////////////////////////////////////
+		//TODO CLEAN THIS UGLY CODE UP
+		/////////////////////////////////////
 		switch(curScaleVal){
-			case GridSeqWidget::AEOLIAN:        curScaleArr = gsw->SCALE_AEOLIAN;       notesInScale=LENGTHOF(gsw->SCALE_AEOLIAN); break;
-			case GridSeqWidget::BLUES:          curScaleArr = gsw->SCALE_BLUES;         notesInScale=LENGTHOF(gsw->SCALE_BLUES); break;
-			case GridSeqWidget::CHROMATIC:      curScaleArr = gsw->SCALE_CHROMATIC;     notesInScale=LENGTHOF(gsw->SCALE_CHROMATIC); break;
-			case GridSeqWidget::DIATONIC_MINOR: curScaleArr = gsw->SCALE_DIATONIC_MINOR;notesInScale=LENGTHOF(gsw->SCALE_DIATONIC_MINOR); break;
-			case GridSeqWidget::DORIAN:         curScaleArr = gsw->SCALE_DORIAN;        notesInScale=LENGTHOF(gsw->SCALE_DORIAN); break;
-			case GridSeqWidget::HARMONIC_MINOR: curScaleArr = gsw->SCALE_HARMONIC_MINOR;notesInScale=LENGTHOF(gsw->SCALE_HARMONIC_MINOR); break;
-			case GridSeqWidget::INDIAN:         curScaleArr = gsw->SCALE_INDIAN;        notesInScale=LENGTHOF(gsw->SCALE_INDIAN); break;
-			case GridSeqWidget::LOCRIAN:        curScaleArr = gsw->SCALE_LOCRIAN;       notesInScale=LENGTHOF(gsw->SCALE_LOCRIAN); break;
-			case GridSeqWidget::LYDIAN:         curScaleArr = gsw->SCALE_LYDIAN;        notesInScale=LENGTHOF(gsw->SCALE_LYDIAN); break;
-			case GridSeqWidget::MAJOR:          curScaleArr = gsw->SCALE_MAJOR;         notesInScale=LENGTHOF(gsw->SCALE_MAJOR); break;
-			case GridSeqWidget::MELODIC_MINOR:  curScaleArr = gsw->SCALE_MELODIC_MINOR; notesInScale=LENGTHOF(gsw->SCALE_MELODIC_MINOR); break;
-			case GridSeqWidget::MINOR:          curScaleArr = gsw->SCALE_MINOR;         notesInScale=LENGTHOF(gsw->SCALE_MINOR); break;
-			case GridSeqWidget::MIXOLYDIAN:     curScaleArr = gsw->SCALE_MIXOLYDIAN;    notesInScale=LENGTHOF(gsw->SCALE_MIXOLYDIAN); break;
-			case GridSeqWidget::NATURAL_MINOR:  curScaleArr = gsw->SCALE_NATURAL_MINOR; notesInScale=LENGTHOF(gsw->SCALE_NATURAL_MINOR); break;
-			case GridSeqWidget::PENTATONIC:     curScaleArr = gsw->SCALE_PENTATONIC;    notesInScale=LENGTHOF(gsw->SCALE_PENTATONIC); break;
-			case GridSeqWidget::PHRYGIAN:       curScaleArr = gsw->SCALE_PHRYGIAN;      notesInScale=LENGTHOF(gsw->SCALE_PHRYGIAN); break;
-			case GridSeqWidget::TURKISH:        curScaleArr = gsw->SCALE_TURKISH;       notesInScale=LENGTHOF(gsw->SCALE_TURKISH); break;
+			case GridSeqWidget::AEOLIAN:        curScaleArr = gs->SCALE_AEOLIAN;       notesInScale=LENGTHOF(gs->SCALE_AEOLIAN); break;
+			case GridSeqWidget::BLUES:          curScaleArr = gs->SCALE_BLUES;         notesInScale=LENGTHOF(gs->SCALE_BLUES); break;
+			case GridSeqWidget::CHROMATIC:      curScaleArr = gs->SCALE_CHROMATIC;     notesInScale=LENGTHOF(gs->SCALE_CHROMATIC); break;
+			case GridSeqWidget::DIATONIC_MINOR: curScaleArr = gs->SCALE_DIATONIC_MINOR;notesInScale=LENGTHOF(gs->SCALE_DIATONIC_MINOR); break;
+			case GridSeqWidget::DORIAN:         curScaleArr = gs->SCALE_DORIAN;        notesInScale=LENGTHOF(gs->SCALE_DORIAN); break;
+			case GridSeqWidget::HARMONIC_MINOR: curScaleArr = gs->SCALE_HARMONIC_MINOR;notesInScale=LENGTHOF(gs->SCALE_HARMONIC_MINOR); break;
+			case GridSeqWidget::INDIAN:         curScaleArr = gs->SCALE_INDIAN;        notesInScale=LENGTHOF(gs->SCALE_INDIAN); break;
+			case GridSeqWidget::LOCRIAN:        curScaleArr = gs->SCALE_LOCRIAN;       notesInScale=LENGTHOF(gs->SCALE_LOCRIAN); break;
+			case GridSeqWidget::LYDIAN:         curScaleArr = gs->SCALE_LYDIAN;        notesInScale=LENGTHOF(gs->SCALE_LYDIAN); break;
+			case GridSeqWidget::MAJOR:          curScaleArr = gs->SCALE_MAJOR;         notesInScale=LENGTHOF(gs->SCALE_MAJOR); break;
+			case GridSeqWidget::MELODIC_MINOR:  curScaleArr = gs->SCALE_MELODIC_MINOR; notesInScale=LENGTHOF(gs->SCALE_MELODIC_MINOR); break;
+			case GridSeqWidget::MINOR:          curScaleArr = gs->SCALE_MINOR;         notesInScale=LENGTHOF(gs->SCALE_MINOR); break;
+			case GridSeqWidget::MIXOLYDIAN:     curScaleArr = gs->SCALE_MIXOLYDIAN;    notesInScale=LENGTHOF(gs->SCALE_MIXOLYDIAN); break;
+			case GridSeqWidget::NATURAL_MINOR:  curScaleArr = gs->SCALE_NATURAL_MINOR; notesInScale=LENGTHOF(gs->SCALE_NATURAL_MINOR); break;
+			case GridSeqWidget::PENTATONIC:     curScaleArr = gs->SCALE_PENTATONIC;    notesInScale=LENGTHOF(gs->SCALE_PENTATONIC); break;
+			case GridSeqWidget::PHRYGIAN:       curScaleArr = gs->SCALE_PHRYGIAN;      notesInScale=LENGTHOF(gs->SCALE_PHRYGIAN); break;
+			case GridSeqWidget::TURKISH:        curScaleArr = gs->SCALE_TURKISH;       notesInScale=LENGTHOF(gs->SCALE_TURKISH); break;
 		}
 
 		for (int i = 0; i < 16; i++) {
@@ -289,7 +353,6 @@ struct RandomizeNotesOnlyButton : LEDButton {
 			voltsOut += curScaleArr[int(notesInScale * randomf())] / 12.0;
 			gsw->seqKnobs[i]->setValue(voltsOut);
 		}		
-
 	}
 };
 
@@ -328,19 +391,19 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	noteKnob = createParam<NoteKnob>(Vec(70, 335), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C);
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, 335), module, GridSeq::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
 	rack::Label* const noteLabel = new rack::Label;
 	noteLabel->box.pos = Vec(70+25, 335+5);
 	noteLabel->text = "note here";
-	dynamic_cast<NoteKnob*>(noteKnob)->connectLabel(noteLabel);
+	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	scaleKnob = createParam<ScaleKnob>(Vec(130, 335), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR);
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(130, 335), module, GridSeq::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
 	rack::Label* const scaleLabel = new rack::Label;
 	scaleLabel->box.pos = Vec(130+25, 335+5);
 	scaleLabel->text = "scale here";
-	dynamic_cast<ScaleKnob*>(scaleKnob)->connectLabel(scaleLabel);
+	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 
