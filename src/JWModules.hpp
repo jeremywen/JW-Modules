@@ -13,10 +13,14 @@ struct RMSWidget : ModuleWidget {
 
 struct GridSeqWidget : ModuleWidget {
 	std::vector<ParamWidget*> seqKnobs;
+	std::vector<ParamWidget*> gateButtons;
 	GridSeqWidget();
-	~GridSeqWidget(){ seqKnobs.clear(); }
+	~GridSeqWidget(){ 
+		seqKnobs.clear(); 
+		gateButtons.clear(); 
+	}
 	Menu *createContextMenu();
-	// void draw(NVGcontext *vg);
+	void draw(NVGcontext *vg);
 
 	enum Notes {
 		NOTE_C, 
