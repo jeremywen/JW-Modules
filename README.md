@@ -10,7 +10,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ### GridSeq
 
-![GridSeq](./doc/GridSeq-img3.png)
+![GridSeq](./doc/GridSeq-img5.png)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
@@ -51,10 +51,17 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
+#### Knobs 
 
   *  **Clock knob:** determines speed of clock
 
-  *  **Clock output:** Clock sends out a trigger at a certain interval based on the knob position
+  *  **Random Reset knob:** If down all the way, this does nothing.  If turned up, the chances of sending out a reset trigger on a clock step is increased.
+
+#### Outputs
+
+  *  **Clock output:** Clock sends out a trigger at a certain interval based on the clock knob position.
+
+  *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
 
 ### RMS
 
