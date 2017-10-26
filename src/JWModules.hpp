@@ -20,7 +20,6 @@ struct GridSeqWidget : ModuleWidget {
 		gateButtons.clear(); 
 	}
 	Menu *createContextMenu();
-	void draw(NVGcontext *vg);
 
 	enum Notes {
 		NOTE_C, 

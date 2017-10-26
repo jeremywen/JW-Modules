@@ -66,6 +66,7 @@ void SimpleClock::step() {
 	if (runningTrigger.process(params[RUN_PARAM].value)) {
 		running = !running;
 		if(running){
+			phase = 0.0;
 			resetPulse.trigger(0.01);
 		}
 	}
