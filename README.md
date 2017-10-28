@@ -63,9 +63,17 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
   *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
 
+### FullScope
+
+Scope in lissajous mode which takes up the full width and height of the module.
+
+![FullScope](./doc/FullScope-img1.png)
+
 ### RMS
 
 Created to show RMS in a larger font than the Fundamental Scope 
+
+![RMS](./doc/RMS-img1.png)
 
 ## Building
 
