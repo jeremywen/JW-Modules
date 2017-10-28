@@ -435,6 +435,7 @@ GridSeqWidget::GridSeqWidget() {
 			seqKnobs.push_back(cellNoteKnob);
 
 			ParamWidget *cellGateButton = createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0);
+			cellGateButton->setValue(1);
 			addParam(cellGateButton);
 			gateButtons.push_back(cellGateButton);
 

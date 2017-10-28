@@ -11,6 +11,10 @@ struct RMSWidget : ModuleWidget {
 	RMSWidget();
 };
 
+struct FullScopeWidget : ModuleWidget {
+	FullScopeWidget();
+};
+
 struct GridSeqWidget : ModuleWidget {
 	std::vector<ParamWidget*> seqKnobs;
 	std::vector<ParamWidget*> gateButtons;
@@ -82,6 +86,21 @@ struct SmallWhiteKnob : RoundKnob {
 
 	virtual std::string formatCurrentValue() {
 		return std::to_string(static_cast<unsigned int>(value));
+	}
+};
+
+struct TinyBlackKnob : RoundKnob {
+	TinyBlackKnob() {
+		setSVG(SVG::load(assetGlobal("res/ComponentLibrary/RoundBlack.svg")));
+		box.size = Vec(15, 15);
+	}
+};
+
+struct TinyPJ301MPort : SVGPort {
+	TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M.svg"));
+		background->wrap();
+		box.size = background->box.size;
 	}
 };
 

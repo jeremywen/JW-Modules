@@ -11,4 +11,5 @@ void init(rack::Plugin *p) {
 	createModel<SimpleClockWidget>(plugin, "SimpleClock", "SimpleClock");
 	createModel<GridSeqWidget>(plugin, "GridSeq", "GridSeq");
 	createModel<RMSWidget>(plugin, "RMS", "RMS");
+	createModel<FullScopeWidget>(plugin, "FullScope", "FullScope");
 }
