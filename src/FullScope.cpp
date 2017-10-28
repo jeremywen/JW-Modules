@@ -21,6 +21,8 @@ struct FullScope : Module {
 		X_INPUT,
 		Y_INPUT,
 		TRIG_INPUT,
+		COLOR_INPUT,
+		TIME_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -65,7 +67,6 @@ struct FullScope : Module {
 	}
 };
 
-
 void FullScope::step() {
 	// Modes
 	// if (sumTrigger.process(params[LISSAJOUS_PARAM].value)) {
@@ -81,7 +82,7 @@ void FullScope::step() {
 	lights[3] = external ? 1.0 : 0.0;
 
 	// Compute time
-	float deltaTime = powf(2.0, params[TIME_PARAM].value);
+	float deltaTime = powf(2.0, params[TIME_PARAM].value + inputs[TIME_INPUT].value);
 	int frameCount = (int)ceilf(deltaTime * gSampleRate);
 
 	// Add frame to buffer
@@ -126,7 +127,6 @@ void FullScope::step() {
 	}
 }
 
-
 struct FullScopeDisplay : TransparentWidget {
 	FullScope *module;
 	int frame = 0;
@@ -151,7 +151,6 @@ struct FullScopeDisplay : TransparentWidget {
 	Stats statsX, statsY;
 
 	FullScopeDisplay() {
-		font = Font::load(assetPlugin(plugin, "res/DejaVuSansMono.ttf"));
 	}
 
 	void drawWaveform(NVGcontext *vg, float *valuesX, float *valuesY) {
@@ -189,57 +188,6 @@ struct FullScopeDisplay : TransparentWidget {
 		nvgRestore(vg);
 	}
 
-	void drawTrig(NVGcontext *vg, float value) {
-		Rect b = Rect(Vec(0, 15), box.size.minus(Vec(0, 15*2)));
-		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
-
-		value = value / 2.0 + 0.5;
-		Vec p = Vec(box.size.x, b.pos.y + b.size.y * (1.0 - value));
-
-		// Draw line
-		nvgStrokeColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0x10));
-		{
-			nvgBeginPath(vg);
-			nvgMoveTo(vg, p.x - 13, p.y);
-			nvgLineTo(vg, 0, p.y);
-			nvgClosePath(vg);
-		}
-		nvgStroke(vg);
-
-		// Draw indicator
-		nvgFillColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0x60));
-		{
-			nvgBeginPath(vg);
-			nvgMoveTo(vg, p.x - 2, p.y - 4);
-			nvgLineTo(vg, p.x - 9, p.y - 4);
-			nvgLineTo(vg, p.x - 13, p.y);
-			nvgLineTo(vg, p.x - 9, p.y + 4);
-			nvgLineTo(vg, p.x - 2, p.y + 4);
-			nvgClosePath(vg);
-		}
-		nvgFill(vg);
-
-		nvgFontSize(vg, 8);
-		nvgFontFaceId(vg, font->handle);
-		nvgFillColor(vg, nvgRGBA(0x1e, 0x28, 0x2b, 0xff));
-		nvgText(vg, p.x - 8, p.y + 3, "T", NULL);
-		nvgResetScissor(vg);
-	}
-
-	void drawStats(NVGcontext *vg, Vec pos, const char *title, Stats *stats) {
-		nvgFontSize(vg, 10);
-		nvgFontFaceId(vg, font->handle);
-		nvgTextLetterSpacing(vg, -2);
-
-		nvgFillColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0xff));
-		nvgText(vg, pos.x + 5, pos.y + 10, title, NULL);
-
-		nvgFillColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0x80));
-		char text[128];
-		snprintf(text, sizeof(text), "rms %5.2f  pp %5.2f  max % 6.2f  min % 6.2f", stats->vrms, stats->vpp, stats->vmax, stats->vmin);
-		nvgText(vg, pos.x + 17, pos.y + 10, text, NULL);
-	}
-
 	void draw(NVGcontext *vg) {
 		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].value));
 		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].value));
@@ -261,8 +209,12 @@ struct FullScopeDisplay : TransparentWidget {
 		if (module->lissajous) {
 			// X x Y
 			if (module->inputs[FullScope::X_INPUT].active || module->inputs[FullScope::Y_INPUT].active) {
-				nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
-				// nvgStrokeColor(vg, nvgRGBA(0x9f, 0xe4, 0x36, 0xc0));
+				if(module->inputs[FullScope::COLOR_INPUT].active){
+					float hue = rescalef(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
+					nvgStrokeColor(vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+				} else {
+					nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
+				}
 				drawWaveform(vg, valuesX, valuesY);
 			}
 		}
@@ -278,61 +230,110 @@ struct FullScopeDisplay : TransparentWidget {
 				nvgStrokeColor(vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
 				drawWaveform(vg, valuesX, NULL);
 			}
-
-			// float valueTrig = (module->params[FullScope::TRIG_PARAM].value + offsetX) * gainX / 10.0;
-			// drawTrig(vg, valueTrig);
 		}
 
-		// Calculate and draw stats
+		// Calculate stats
 		if (++frame >= 4) {
 			frame = 0;
 			statsX.calculate(module->bufferX);
 			statsY.calculate(module->bufferY);
 		}
-		// drawStats(vg, Vec(0, 0), "X", &statsX);
-		// drawStats(vg, Vec(0, box.size.y - 15), "Y", &statsY);
 	}
 };
 
+struct ModuleResizeHandle : Widget {
+	bool right = false;
+	float originalWidth;
+	float totalX;
+	ModuleResizeHandle() {
+		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
+	}
+	Widget *onMouseDown(Vec pos, int button) {
+		if (button == 0)
+			return this;
+		return NULL;
+	}
+	void onDragStart() {
+		assert(parent);
+		originalWidth = parent->box.size.x;
+		totalX = 0.0;
+	}
+	void onDragMove(Vec mouseRel) {
+		FullScopeWidget *m = dynamic_cast<FullScopeWidget*>(parent);
+		assert(m);
+		totalX += mouseRel.x;
+		float targetWidth = originalWidth;
+		if (right)
+			targetWidth += totalX;
+		else
+			targetWidth -= totalX;
+		targetWidth = RACK_GRID_WIDTH * roundf(targetWidth / RACK_GRID_WIDTH);
+		targetWidth = fmaxf(targetWidth, RACK_GRID_WIDTH * 13);
+		Rect newBox = m->box;
+		newBox.size.x = targetWidth;
+		if (!right) {
+			newBox.pos.x = m->box.pos.x + m->box.size.x - newBox.size.x;
+		}
+		gRackWidget->requestModuleBox(m, newBox);
+	}
+};
 
 FullScopeWidget::FullScopeWidget() {
 	FullScope *module = new FullScope();
 	setModule(module);
-	box.size = Vec(15*16, 380);
+	box.size = Vec(RACK_GRID_WIDTH*16, RACK_GRID_HEIGHT);
 
 	{
-		SVGPanel *panel = new SVGPanel();
+		panel = new Panel();
+		panel->backgroundColor = nvgRGB(30, 40, 43);
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/FullScope.svg")));
 		addChild(panel);
 	}
 
-	// addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	// addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-	// addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	// addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+	ModuleResizeHandle *leftHandle = new ModuleResizeHandle();
+	ModuleResizeHandle *rightHandle = new ModuleResizeHandle();
+	rightHandle->right = true;
+	this->rightHandle = rightHandle;
+	addChild(leftHandle);
+	addChild(rightHandle);
 
 	{
 		FullScopeDisplay *display = new FullScopeDisplay();
 		display->module = module;
 		display->box.pos = Vec(0, 0);
-		display->box.size = Vec(box.size.x, 380);
+		display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
 		addChild(display);
+		this->display = display;
 	}
 
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 360), module, FullScope::X_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, FullScope::Y_INPUT));
-	addParam(createParam<TinyBlackKnob>(Vec(140, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(160, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(180, 360), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(200, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(220, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
-	// addParam(createParam<CKD6>(Vec(106, 262), module, FullScope::LISSAJOUS_PARAM, 0.0, 1.0, 0.0));
-	// addParam(createParam<Davies1900hSmallBlackKnob>(Vec(153, 209), module, FullScope::TRIG_PARAM, -10.0, 10.0, 0.0));
-	// addParam(createParam<CKD6>(Vec(152, 262), module, FullScope::EXTERNAL_PARAM, 0.0, 1.0, 0.0));
-	// addInput(createInput<PJ301MPort>(Vec(154, 319), module, FullScope::TRIG_INPUT));
-	// addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(104, 251), &module->lights[0]));
-	// addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(104, 296), &module->lights[1]));
-	// addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(150, 251), &module->lights[2]));
-	// addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(150, 296), &module->lights[3]));
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 360), module, FullScope::COLOR_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(65, 360), module, FullScope::TIME_INPUT));
+
+	addParam(createParam<TinyBlackKnob>(Vec(85, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(105, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(125, 360), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(createParam<TinyBlackKnob>(Vec(145, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(createParam<TinyBlackKnob>(Vec(165, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+}
+
+void FullScopeWidget::step() {
+	panel->box.size = box.size;
+	display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
+	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
+	ModuleWidget::step();
+}
+
+json_t *FullScopeWidget::toJson() {
+	json_t *rootJ = ModuleWidget::toJson();
+	json_object_set_new(rootJ, "width", json_real(box.size.x));
+	return rootJ;
+}
+
+void FullScopeWidget::fromJson(json_t *rootJ) {
+	ModuleWidget::fromJson(rootJ);
+	json_t *widthJ = json_object_get(rootJ, "width");
+	if (widthJ)
+		box.size.x = json_number_value(widthJ);
 }

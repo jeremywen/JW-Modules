@@ -12,7 +12,13 @@ struct RMSWidget : ModuleWidget {
 };
 
 struct FullScopeWidget : ModuleWidget {
+	Panel *panel;
+	Widget *rightHandle;
+	TransparentWidget *display;
 	FullScopeWidget();
+	void step();
+	json_t *toJson();
+	void fromJson(json_t *rootJ);
 };
 
 struct GridSeqWidget : ModuleWidget {
