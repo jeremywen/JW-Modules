@@ -429,13 +429,14 @@ GridSeqWidget::GridSeqWidget() {
 			int knobX = x * boxSize + 76;
 			int knobY = y * boxSize + 110;
 			int idx = (x+(y*4));
+			module->gateState[idx] = true; //start with all gates on
+
 			//maybe someday put note labels in each cell
 			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx, 0.0, 6.0, 3.0);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);
 
 			ParamWidget *cellGateButton = createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0);
-			cellGateButton->setValue(1);
 			addParam(cellGateButton);
 			gateButtons.push_back(cellGateButton);
 
