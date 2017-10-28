@@ -6,9 +6,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 [Donate Here](https://www.paypal.me/jeremywen)
 
-## Modules
-
-### GridSeq
+## GridSeq
 
 ![GridSeq](./doc/GridSeq-img5.png)
 
@@ -45,7 +43,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **RND NOTES Input** on trigger, randomize pitch only for each cell (NOTE: knobs don't update on 'random notes' cv in. If you want knobs to update after cv into 'random notes', right click the random notes button.)
 
 
-### SimpleClock
+## SimpleClock
 
 ![SimpleClock](./doc/SimpleClock-img5.png)
 
@@ -63,13 +61,13 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
   *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
 
-### FullScope
+## FullScope
 
 Scope in lissajous mode which takes up the full width and height of the module.
 
 ![FullScope](./doc/FullScope-img1.png)
 
-### RMS
+## RMS
 
 Created to show RMS in a larger font than the Fundamental Scope 
 
