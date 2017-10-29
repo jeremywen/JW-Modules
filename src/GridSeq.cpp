@@ -12,6 +12,12 @@ struct GridSeq : Module {
 		ROOT_NOTE_PARAM,
 		SCALE_PARAM,
 		RND_GATES_PARAM,
+		RIGHT_MOVE_BTN_PARAM,
+		LEFT_MOVE_BTN_PARAM,
+		DOWN_MOVE_BTN_PARAM,
+		UP_MOVE_BTN_PARAM,
+		RND_MOVE_BTN_PARAM,
+		REP_MOVE_BTN_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -28,6 +34,7 @@ struct GridSeq : Module {
 	enum OutputIds {
 		GATES_OUTPUT,
 		CELL_OUTPUT,
+		CELL_2_OUTPUT,
 		NUM_OUTPUTS
 	};
 
@@ -267,10 +274,10 @@ void GridSeq::step() {
 			rndGatesLight = 1.0;
 		}
 
-		if (repeatTrigger.process(inputs[REPEAT_INPUT].value)) {
+		if (repeatTrigger.process(inputs[REPEAT_INPUT].value + params[REP_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 		} 
-		if (rndPosTrigger.process(inputs[RND_DIR_INPUT].value)) {
+		if (rndPosTrigger.process(inputs[RND_DIR_INPUT].value + params[RND_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			switch(int(4 * randomf())){
 				case 0:handleMoveRight();break;
@@ -279,19 +286,19 @@ void GridSeq::step() {
 				case 3:handleMoveUp();break;
 			}
 		} 
-		if (rightTrigger.process(inputs[RIGHT_INPUT].value)) {
+		if (rightTrigger.process(inputs[RIGHT_INPUT].value + params[RIGHT_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			handleMoveRight();
 		} 
-		if (leftTrigger.process(inputs[LEFT_INPUT].value)) {
+		if (leftTrigger.process(inputs[LEFT_INPUT].value + params[LEFT_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			handleMoveLeft();
 		} 
-		if (downTrigger.process(inputs[DOWN_INPUT].value)) {
+		if (downTrigger.process(inputs[DOWN_INPUT].value + params[DOWN_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			handleMoveDown();
 		} 
-		if (upTrigger.process(inputs[UP_INPUT].value)) {
+		if (upTrigger.process(inputs[UP_INPUT].value + params[UP_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			handleMoveUp();
 		}
@@ -331,10 +338,10 @@ void GridSeq::step() {
 		gatesOn = gatesOn && !pulse;
 
 	// Outputs
-	float cellVal = params[CELL_NOTE_PARAM + index].value;
 	if(gatesOn)	{
 		//don't want to change pitch if the step isn't turned on
-		outputs[CELL_OUTPUT].value = closestVoltageInScale(cellVal);
+		outputs[CELL_OUTPUT].value = closestVoltageInScale(params[CELL_NOTE_PARAM + index].value);
+		// outputs[CELL_2_OUTPUT].value = closestVoltageInScale(params[(CELL_NOTE_PARAM + index + 2) % 16].value);
 	}
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
@@ -389,6 +396,13 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(20, 160), module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
+	addParam(createParam<RightMoveButton>(Vec(70, 30), module, GridSeq::RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<LeftMoveButton>(Vec(103, 30), module, GridSeq::LEFT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<DownMoveButton>(Vec(137, 30), module, GridSeq::DOWN_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<UpMoveButton>(Vec(172, 30), module, GridSeq::UP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RndMoveButton>(Vec(215, 30), module, GridSeq::RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RepMoveButton>(Vec(255, 30), module, GridSeq::REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+
 	addInput(createInput<PJ301MPort>(Vec(70, 55), module, GridSeq::RIGHT_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(103, 55), module, GridSeq::LEFT_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(137, 55), module, GridSeq::DOWN_INPUT));
@@ -447,6 +461,7 @@ GridSeqWidget::GridSeqWidget() {
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(22, 238), module, GridSeq::GATES_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(22, 300), module, GridSeq::CELL_OUTPUT));
+	// addOutput(createOutput<TinyPJ301MPort>(Vec(40, 320), module, GridSeq::CELL_2_OUTPUT));
 }
 
 struct GridSeqGateModeItem : MenuItem {

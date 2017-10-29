@@ -162,5 +162,53 @@ struct ScaleKnob : SmallWhiteKnob {
 	}
 };
 
+struct RightMoveButton : SVGSwitch, MomentarySwitch {
+	RightMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/RightButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
+struct LeftMoveButton : SVGSwitch, MomentarySwitch {
+	LeftMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
+struct DownMoveButton : SVGSwitch, MomentarySwitch {
+	DownMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/DownButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
+struct UpMoveButton : SVGSwitch, MomentarySwitch {
+	UpMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/UpButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
+struct RndMoveButton : SVGSwitch, MomentarySwitch {
+	RndMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/RndButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
+struct RepMoveButton : SVGSwitch, MomentarySwitch {
+	RepMoveButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/RepButton.svg")));
+		sw->wrap();
+		box.size = sw->box.size;
+	}
+};
+
 
 
