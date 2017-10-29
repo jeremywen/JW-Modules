@@ -65,11 +65,19 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 Scope in lissajous mode which takes up the full width and height of the module.
 
-  * Input X and Input Y at the bottom left corner.
-  * Knobs in bottom right are for offset x,y, scale x,y, and time
+![FullScope](./doc/FullScope-img1.gif)
 
-
-![FullScope](./doc/FullScope-img1.png)
+  * Inputs in bottom left corner
+    * X input (same as Fundamental Scope)
+    * Y input (same as Fundamental Scope)
+    * Color input
+    * Time input
+  * Knobs in bottom right corner (same knobs exist in Fundamental Scope)
+    * X Position
+    * Y Position
+    * X Scale
+    * Y Scale
+    * Time
 
 ## RMS
 
