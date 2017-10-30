@@ -12,4 +12,5 @@ void init(rack::Plugin *p) {
 	createModel<GridSeqWidget>(plugin, "GridSeq", "GridSeq");
 	createModel<RMSWidget>(plugin, "RMS", "RMS");
 	createModel<FullScopeWidget>(plugin, "FullScope", "FullScope");
+	createModel<XYPadWidget>(plugin, "XYPad", "XYPad");
 }

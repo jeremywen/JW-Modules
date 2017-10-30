@@ -11,6 +11,10 @@ struct RMSWidget : ModuleWidget {
 	RMSWidget();
 };
 
+struct XYPadWidget : ModuleWidget {
+	XYPadWidget();
+};
+
 struct FullScopeWidget : ModuleWidget {
 	Panel *panel;
 	Widget *rightHandle;
@@ -207,6 +211,43 @@ struct RepMoveButton : SVGSwitch, MomentarySwitch {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RepButton.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
+	}
+};
+
+struct ModuleResizeHandle : Widget {
+	bool right = false;
+	float originalWidth;
+	float totalX;
+	ModuleResizeHandle() {
+		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
+	}
+	Widget *onMouseDown(Vec pos, int button) {
+		if (button == 0)
+			return this;
+		return NULL;
+	}
+	void onDragStart() {
+		assert(parent);
+		originalWidth = parent->box.size.x;
+		totalX = 0.0;
+	}
+	void onDragMove(Vec mouseRel) {
+		ModuleWidget *m = dynamic_cast<ModuleWidget*>(parent);
+		assert(m);
+		totalX += mouseRel.x;
+		float targetWidth = originalWidth;
+		if (right)
+			targetWidth += totalX;
+		else
+			targetWidth -= totalX;
+		targetWidth = RACK_GRID_WIDTH * roundf(targetWidth / RACK_GRID_WIDTH);
+		targetWidth = fmaxf(targetWidth, RACK_GRID_WIDTH * 12);
+		Rect newBox = m->box;
+		newBox.size.x = targetWidth;
+		if (!right) {
+			newBox.pos.x = m->box.pos.x + m->box.size.x - newBox.size.x;
+		}
+		gRackWidget->requestModuleBox(m, newBox);
 	}
 };
 
