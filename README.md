@@ -63,7 +63,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ## FullScope
 
-Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the Fundamental:Scope code.  I just modied that code slightly.
+Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modied that code slightly.
 
 ![FullScope](./doc/FullScope-img1.gif)
 
