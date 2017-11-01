@@ -43,6 +43,20 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **RND NOTES Input** on trigger, randomize pitch only for each cell (NOTE: knobs don't update on 'random notes' cv in. If you want knobs to update after cv into 'random notes', right click the random notes button.)
 
 
+## XY Pad
+
+![XYPad](./doc/XYPad-img1.png)
+
+  *  **X OFST:** +/- 5v added to X Output
+  *  **Y OFST:** +/- 5v added to Y Output
+  *  **X:** +/- 5v based on x position
+  *  **Y:** +/- 5v based on y position
+  *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
+  *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
+  *  **G:** 10v out if mouse pressed
+
+[Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
+
 ## SimpleClock
 
 ![SimpleClock](./doc/SimpleClock-img5.png)
