@@ -53,7 +53,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **Y:** +/- 5v based on y position
   *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
   *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
-  *  **G:** 10v out if mouse pressed
+  *  **G:** 10v gate out while mouse pressed
 
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
 
