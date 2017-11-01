@@ -9,9 +9,11 @@ struct XYPad : Module {
 		GATE_PARAM,
 		OFFSET_X_VOLTS_PARAM,
 		OFFSET_Y_VOLTS_PARAM,
+		LOOP_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
+		PLAYBACK_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -27,7 +29,14 @@ struct XYPad : Module {
 	float displayWidth = 0, displayHeight = 0;
 	float totalBallSize = 12;
 	float minVolt = -5, maxVolt = 5;
-	
+	float repeatLight = 0.0;
+	bool loopModeOn = false;
+	bool playing = false;
+	SchmittTrigger loopBtnTrigger;
+	SchmittTrigger playbackTrigger;
+	std::vector<Vec> points;
+	int curPointIdx = 0;
+
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 	void initialize(){
@@ -53,6 +62,18 @@ struct XYPad : Module {
 		params[XYPad::Y_POS_PARAM].value = displayHeight / 2.0;		
 	}
 
+	bool insideBox(float x, float y){
+		return x <= maxX && x >= 0 && y <= maxY && y >=0;
+	}
+
+	void updatePos(float x, float y){
+		if(!playing){
+			points.push_back(Vec(x, y));
+		}
+		params[XYPad::X_POS_PARAM].value = clampf(x, minX, maxX);
+		params[XYPad::Y_POS_PARAM].value = clampf(y, minY, maxY);
+	}
+
 	void updateMinMax(){
 		minX = totalBallSize;
 		minY = totalBallSize;
@@ -60,9 +81,52 @@ struct XYPad : Module {
 		maxY = displayHeight - totalBallSize;
 
 	}
+
+	void playback(){
+		if(playing && points.size() > 0){ 
+			params[XYPad::X_POS_PARAM].value = points[curPointIdx].x;
+			params[XYPad::Y_POS_PARAM].value = points[curPointIdx].y;
+			if(curPointIdx < points.size()){
+				curPointIdx++;
+				params[XYPad::GATE_PARAM].value = true;
+			} else {
+				params[XYPad::GATE_PARAM].value = false;
+				curPointIdx = 0;
+			}
+		}
+	}
+
+	void startPlayback(){
+		printf("start\n");
+		curPointIdx = 0;
+		playing = true;
+	}
+
+	void stopPlayback(bool clearPoints){
+		printf("stop\n");
+		curPointIdx = 0;
+		playing = false;
+		params[XYPad::GATE_PARAM].value = false;
+		if(clearPoints){ points.clear(); }
+	}
+
 };
 
 void XYPad::step() {
+	if (loopBtnTrigger.process(params[LOOP_PARAM].value)) {
+		loopModeOn = !loopModeOn;
+		if(!loopModeOn){ //stop on loop off
+			stopPlayback(false);
+		}
+	}
+	repeatLight = loopModeOn ? 1.0 : 0.0;
+
+	// if (inputs[PLAYBACK_INPUT].active) {
+	// 	if (playbackTrigger.process(inputs[PLAYBACK_INPUT].value)) {
+	// 	} else {
+	// 	}
+	// }
+
 	outputs[X_OUTPUT].value = rescalef(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value;
 	outputs[Y_OUTPUT].value = rescalef(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value;//y is inverted because gui coords
 	
@@ -75,48 +139,52 @@ void XYPad::step() {
 struct XYPadDisplay : Widget {
 	XYPad *module;
 	bool mouseDown = false;
-	XYPadDisplay() {
+	bool playAfterEnabled = true;//TODO
 
-	}
+	XYPadDisplay() {}
 
 	void setMouseDown(bool down){
 		mouseDown = down;
-		module->params[XYPad::GATE_PARAM].value = down;
-	}
-
-	Widget *onMouseDown(Vec pos, int button){
-		setMouseDown(true);
-		return this;
-	}
-
-	Widget *onMouseUp(Vec pos, int button){
-		setMouseDown(false);
-		return this;
-	}
-
-	Widget *onMouseMove(Vec pos, Vec mouseRel){
-		if(mouseDown){
-			module->params[XYPad::X_POS_PARAM].value = clampf(pos.x, module->minX, module->maxX);
-			module->params[XYPad::Y_POS_PARAM].value = clampf(pos.y, module->minY, module->maxY);
+		module->params[XYPad::GATE_PARAM].value = mouseDown;
+		if(module->loopModeOn){
+			if(down && module->playing){
+				//stop playing and clear points on new recording
+				module->stopPlayback(true);
+			} else if(!down && !module->playing) {
+				// done dragging mouse
+				module->startPlayback();
+			}
 		}
-		return this;
 	}
+
+	Widget *onMouseDown(Vec pos, int button){setMouseDown(true); return this; }
+	Widget *onMouseUp(Vec pos, int button){setMouseDown(false); return this; }
+	void onDragEnd(){ setMouseDown(false); }
 	void onMouseEnter() {}
 	void onMouseLeave() {}
 	void onDragStart() {}
-	void onDragEnd() {
-		setMouseDown(false);
+
+	Widget *onMouseMove(Vec pos, Vec mouseRel){
+		if(mouseDown && module->insideBox(pos.x, pos.y)){ //onDragMove handles outside
+			// printf("onMouseMove\n");
+			module->updatePos(pos.x, pos.y);
+		}
+		return this;
 	}
 	void onDragMove(Vec mouseRel) {
 		if(mouseDown){
 			float newX = module->params[XYPad::X_POS_PARAM].value + mouseRel.x;
 			float newY = module->params[XYPad::Y_POS_PARAM].value + mouseRel.y;
-			module->params[XYPad::X_POS_PARAM].value = clampf(newX, module->minX, module->maxX);
-			module->params[XYPad::Y_POS_PARAM].value = clampf(newY, module->minY, module->maxY);
+			if(!module->insideBox(newX, newY)){ //onMouseMove handles inside
+				// printf("onDragMove %f %f\n", newX, newY);
+				module->updatePos(newX, newY);
+			}
 		}
 	}
 
 	void draw(NVGcontext *vg) {
+		module->playback();
+
 		float ballX = module->params[XYPad::X_POS_PARAM].value;
 		float ballY = module->params[XYPad::Y_POS_PARAM].value;
 		float invBallX = module->displayWidth-ballX;
@@ -211,13 +279,18 @@ XYPadWidget::XYPadWidget() {
 	addChild(titleLabel);
 
 	////////////////////////////////////////////////////////////
+	rack::Label* const loopLabel = new rack::Label;
+	loopLabel->box.pos = Vec(93-20, 340);
+	loopLabel->text = "Loop";
+	addChild(loopLabel);
+
 	rack::Label* const xOffsetLabel = new rack::Label;
-	xOffsetLabel->box.pos = Vec(120-20, 340);
+	xOffsetLabel->box.pos = Vec(145-20, 340);
 	xOffsetLabel->text = "X OFST";
 	addChild(xOffsetLabel);
 
 	rack::Label* const yOffsetLabel = new rack::Label;
-	yOffsetLabel->box.pos = Vec(180-20, 340);
+	yOffsetLabel->box.pos = Vec(200-20, 340);
 	yOffsetLabel->text = "Y OFST";
 	addChild(yOffsetLabel);
 
@@ -246,8 +319,13 @@ XYPadWidget::XYPadWidget() {
 	gLabel->text = "G";
 	addChild(gLabel);
 
-	addParam(createParam<TinyBlackKnob>(Vec(120, 360), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(180, 360), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 0.0));
+	// addInput(createInput<TinyPJ301MPort>(Vec(70, 363), module, XYPad::PLAYBACK_INPUT));
+
+	addParam(createParam<LEDButton>(Vec(85, 358), module, XYPad::LOOP_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(85+5, 358+5), &module->repeatLight));
+
+	addParam(createParam<TinyBlackKnob>(Vec(145, 360), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(200, 360), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 0.0));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(240, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(260, 360), module, XYPad::Y_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(290, 360), module, XYPad::X_INV_OUTPUT));
