@@ -15,6 +15,10 @@ struct XYPadWidget : ModuleWidget {
 	XYPadWidget();
 };
 
+struct BouncyBallWidget : ModuleWidget {
+	BouncyBallWidget();
+};
+
 struct FullScopeWidget : ModuleWidget {
 	Panel *panel;
 	Widget *rightHandle;
