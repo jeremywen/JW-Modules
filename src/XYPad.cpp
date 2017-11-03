@@ -100,8 +100,8 @@ struct XYPad : Module {
 		if(playing && points.size() > 0){ 
 			params[XYPad::X_POS_PARAM].value = points[curPointIdx].x;
 			params[XYPad::Y_POS_PARAM].value = points[curPointIdx].y;
+			curPointIdx++;
 			if(curPointIdx < points.size()){
-				curPointIdx++;
 				params[XYPad::GATE_PARAM].value = true;
 			} else {
 				params[XYPad::GATE_PARAM].value = false;
