@@ -55,17 +55,42 @@ struct XYPad : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
-		// TODO store points
+		json_object_set_new(rootJ, "autoPlayOn", json_boolean(autoPlayOn));
 		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
 		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
+
+		json_t *pointsArr = json_array();
+		for(Vec pt : points){
+			json_t *posArr = json_array();
+			json_array_append(posArr, json_real(pt.x));
+			json_array_append(posArr, json_real(pt.y));
+			json_array_append(pointsArr, posArr);
+		}
+		json_object_set_new(rootJ, "points", pointsArr);
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
-		// TODO load points
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
 		json_t *yPosJ = json_object_get(rootJ, "yPos");
 		setCurrentPos(json_real_value(xPosJ), json_real_value(yPosJ));
+
+		json_t *array = json_object_get(rootJ, "points");
+		if(array){
+			size_t index;
+			json_t *value;
+			json_array_foreach(array, index, value) {
+				float x = json_real_value(json_array_get(value, 0));
+				float y = json_real_value(json_array_get(value, 1));
+				addPoint(x, y);
+			}
+		}
+
+		json_t *autoPlayOnJ = json_object_get(rootJ, "autoPlayOn");
+		if (autoPlayOnJ){
+			autoPlayOn = json_is_true(autoPlayOnJ);
+			setState(STATE_AUTO_PLAYING);
+		}
 	}
 
 	void defaultPos() {
@@ -93,6 +118,10 @@ struct XYPad : Module {
 	void setCurrentPos(float x, float y){
 		params[X_POS_PARAM].value = clampf(x, minX, maxX);
 		params[Y_POS_PARAM].value = clampf(y, minY, maxY);
+	}
+
+	void addPoint(float x, float y){
+		points.push_back(Vec(x, y));
 	}
 
 	void updateMinMax(){
@@ -188,7 +217,7 @@ void XYPad::step() {
 		if(isPlaying()){//continue playback
 			playback();
 		} else if(state == STATE_RECORDING){ //recording
-			points.push_back(Vec(params[X_POS_PARAM].value, params[Y_POS_PARAM].value));
+			addPoint(params[X_POS_PARAM].value, params[Y_POS_PARAM].value);
 		}
 	}
 
