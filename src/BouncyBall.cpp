@@ -35,16 +35,10 @@ struct BouncyBall : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
-		// json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
-		// json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
-		// json_t *xPosJ = json_object_get(rootJ, "xPos");
-		// json_t *yPosJ = json_object_get(rootJ, "yPos");
-		// if (xPosJ){ params[X_POS_PARAM].value = json_real_value(xPosJ); }
-		// if (yPosJ){ params[Y_POS_PARAM].value = json_real_value(yPosJ); }
 	}
 
 	void defaultPos() {
@@ -108,7 +102,7 @@ struct BouncyBallDisplay : Widget {
 	      		velocity.x *= slowRate;
 	      		ballPos.y = box.size.y-totalBallSize;
 	      		if(velocity.x < -0.02 || velocity.x > 0.02){
-  		printf("%f, %f\n", velocity.x, velocity.y);
+			  		printf("%f, %f\n", velocity.x, velocity.y);
 					module->gatePulse.trigger(1e-3);
 	      		}
 	      		// slowRate *= 0.5;

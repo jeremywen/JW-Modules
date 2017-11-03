@@ -9,7 +9,8 @@ struct XYPad : Module {
 		GATE_PARAM,
 		OFFSET_X_VOLTS_PARAM,
 		OFFSET_Y_VOLTS_PARAM,
-		SCALE_PARAM,
+		SCALE_X_PARAM,
+		SCALE_Y_PARAM,
 		AUTO_PLAY_PARAM,
 		NUM_PARAMS
 	};
@@ -159,13 +160,13 @@ void XYPad::step() {
 
 	float xOut = rescalef(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt);
 	float yOut = rescalef(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt); //y is inverted because gui coords
-	outputs[X_OUTPUT].value = (xOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_PARAM].value;
-	outputs[Y_OUTPUT].value = (yOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_PARAM].value;
+	outputs[X_OUTPUT].value = (xOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
+	outputs[Y_OUTPUT].value = (yOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
 	
 	float xInvOut = rescalef(params[X_POS_PARAM].value, minX, maxX, maxVolt, minVolt);
 	float yInvOut = rescalef(params[Y_POS_PARAM].value, minY, maxY, minVolt, maxVolt); //y is inverted because gui coords
-	outputs[X_INV_OUTPUT].value = (xInvOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_PARAM].value;
-	outputs[Y_INV_OUTPUT].value = (yInvOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_PARAM].value;
+	outputs[X_INV_OUTPUT].value = (xInvOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
+	outputs[Y_INV_OUTPUT].value = (yInvOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
 	
 	outputs[GATE_OUTPUT].value = rescalef(params[GATE_PARAM].value, 0.0, 1.0, 0.0, 10.0);
 }
@@ -279,10 +280,15 @@ XYPadWidget::XYPadWidget() {
 	titleLabel->text = "XY Pad";
 	addChild(titleLabel);
 
-	rack::Label* const scaleLabel = new rack::Label;
-	scaleLabel->box.pos = Vec(203-20, 2);
-	scaleLabel->text = "Scale";
-	addChild(scaleLabel);
+	rack::Label* const xScaleLabel = new rack::Label;
+	xScaleLabel->box.pos = Vec(150-20, 2);
+	xScaleLabel->text = "X Scale";
+	addChild(xScaleLabel);
+
+	rack::Label* const yScaleLabel = new rack::Label;
+	yScaleLabel->box.pos = Vec(203-20, 2);
+	yScaleLabel->text = "Y Scale";
+	addChild(yScaleLabel);
 
 	rack::Label* const xOffsetLabel = new rack::Label;
 	xOffsetLabel->box.pos = Vec(250-20, 2);
@@ -294,38 +300,39 @@ XYPadWidget::XYPadWidget() {
 	yOffsetLabel->text = "Y OFST";
 	addChild(yOffsetLabel);
 
-	addParam(createParam<TinyBlackKnob>(Vec(200, 20), module, XYPad::SCALE_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(150, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<TinyBlackKnob>(Vec(250, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
 	addParam(createParam<TinyBlackKnob>(Vec(300, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 	rack::Label* const trigLabel = new rack::Label;
-	trigLabel->box.pos = Vec(2, 340);
+	trigLabel->box.pos = Vec(22, 340);
 	trigLabel->text = "Gate";
 	addChild(trigLabel);
 
 	rack::Label* const autoLabel = new rack::Label;
-	autoLabel->box.pos = Vec(58-20, 340);
+	autoLabel->box.pos = Vec(78-20, 340);
 	autoLabel->text = "Auto";
 	addChild(autoLabel);
 
 	rack::Label* const xLabel = new rack::Label;
-	xLabel->box.pos = Vec(240-4, 340);
+	xLabel->box.pos = Vec(210-4, 340);
 	xLabel->text = "X";
 	addChild(xLabel);
 
 	rack::Label* const yLabel = new rack::Label;
-	yLabel->box.pos = Vec(260-4, 340);
+	yLabel->box.pos = Vec(235-4, 340);
 	yLabel->text = "Y";
 	addChild(yLabel);
 
 	rack::Label* const xInvLabel = new rack::Label;
-	xInvLabel->box.pos = Vec(290-7, 340);
+	xInvLabel->box.pos = Vec(275-7, 340);
 	xInvLabel->text = "-X";
 	addChild(xInvLabel);
 
 	rack::Label* const yInvLabel = new rack::Label;
-	yInvLabel->box.pos = Vec(310-7, 340);
+	yInvLabel->box.pos = Vec(300-7, 340);
 	yInvLabel->text = "-Y";
 	addChild(yInvLabel);
 
@@ -334,15 +341,15 @@ XYPadWidget::XYPadWidget() {
 	gLabel->text = "G";
 	addChild(gLabel);
 
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 360), module, XYPad::PLAY_GATE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(35, 360), module, XYPad::PLAY_GATE_INPUT));
 
-	addParam(createParam<LEDButton>(Vec(50, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(50+5, 358+5), &module->repeatLight));
+	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(70+5, 358+5), &module->repeatLight));
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(240, 360), module, XYPad::X_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(260, 360), module, XYPad::Y_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(290, 360), module, XYPad::X_INV_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(310, 360), module, XYPad::Y_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(210, 360), module, XYPad::X_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(235, 360), module, XYPad::Y_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(275, 360), module, XYPad::X_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(300, 360), module, XYPad::Y_INV_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(340, 360), module, XYPad::GATE_OUTPUT));
 }
 
