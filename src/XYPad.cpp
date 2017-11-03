@@ -49,12 +49,14 @@ struct XYPad : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
+// TODO store points
 		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
 		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
+// TODO load points
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
 		json_t *yPosJ = json_object_get(rootJ, "yPos");
 		if (xPosJ){ params[X_POS_PARAM].value = json_real_value(xPosJ); }
@@ -94,7 +96,9 @@ struct XYPad : Module {
 		maxY = displayHeight - totalBallSize;
 
 	}
+
 //TODO FIX when gate wire is removed it can get stuck playing even though auto is off
+//TODO make an enum of what triggered playback, and if gate and no more wire, then stop
 	void playback(){
 		if(playing && points.size() > 0){ 
 			params[XYPad::X_POS_PARAM].value = points[curPointIdx].x;
@@ -226,6 +230,12 @@ struct XYPadDisplay : Widget {
 		if(module->params[XYPad::GATE_PARAM].value)nvgFill(vg);
 		nvgStroke(vg);
 		
+		//POINTS///////////////////////////////////
+//TODO draw recorded points
+		nvgMoveTo
+		nvgLineTo
+
+
 		//MAIN///////////////////////////////////
 
 		//horizontal line
