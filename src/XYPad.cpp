@@ -140,7 +140,7 @@ void XYPad::step() {
 		autoPlayOn = false; //disable autoplay if wire connected to play gate
 
 		if (inputs[PLAY_GATE_INPUT].value >= 1.0) {
-			if(!playing){startPlayback();}
+			if(!playing && !mouseDown){startPlayback();}
 		} else {
 			if(playing){stopPlayback(false);}
 		}
