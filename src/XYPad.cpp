@@ -27,6 +27,13 @@ struct XYPad : Module {
 		NUM_OUTPUTS
 	};
 	
+	enum State {
+		STATE_IDLE,
+		STATE_RECORDING,
+		STATE_AUTO_PLAYING,
+		STATE_GATE_PLAYING
+	};
+	
 	float minX = 0, minY = 0, maxX = 0, maxY = 0;
 	float displayWidth = 0, displayHeight = 0;
 	float totalBallSize = 12;
@@ -34,8 +41,7 @@ struct XYPad : Module {
 	float repeatLight = 0.0;
 	float phase = 0.0;
 	bool autoPlayOn = false;
-	bool playing = false;
-	bool mouseDown = false;
+	int state = STATE_IDLE;
 	SchmittTrigger autoBtnTrigger;
 	SchmittTrigger playbackTrigger;
 	std::vector<Vec> points;
@@ -49,18 +55,17 @@ struct XYPad : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
-// TODO store points
+		// TODO store points
 		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
 		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
-// TODO load points
+		// TODO load points
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
 		json_t *yPosJ = json_object_get(rootJ, "yPos");
-		if (xPosJ){ params[X_POS_PARAM].value = json_real_value(xPosJ); }
-		if (yPosJ){ params[Y_POS_PARAM].value = json_real_value(yPosJ); }
+		setCurrentPos(json_real_value(xPosJ), json_real_value(yPosJ));
 	}
 
 	void defaultPos() {
@@ -68,25 +73,26 @@ struct XYPad : Module {
 		params[XYPad::Y_POS_PARAM].value = displayHeight / 2.0;		
 	}
 
-	bool insideBox(float x, float y){
-		return x <= maxX && x >= 0 && y <= maxY && y >=0;
+	bool isPlaying() {
+		return state == STATE_GATE_PLAYING || state == STATE_AUTO_PLAYING;
 	}
 
-	void setMouseDown(bool down){
-		mouseDown = down;
-		params[XYPad::GATE_PARAM].value = mouseDown;
-		if(mouseDown){
-			if(playing){stopPlayback(true);}
-			points.clear();
-			params[XYPad::GATE_PARAM].value = true; //start gate if playing and you press the mouse button down
-		} else if(autoPlayOn && !inputs[XYPad::PLAY_GATE_INPUT].active){ //no auto play if wire connected to play in
-			startPlayback();
+	void setMouseDown(const Vec &pos, bool down){
+		if(down){
+			setCurrentPos(pos.x, pos.y);
+			setState(STATE_RECORDING);
+		} else {
+			if(autoPlayOn && !inputs[PLAY_GATE_INPUT].active){ //no auto play if wire connected to play in
+				setState(STATE_AUTO_PLAYING);
+			} else {
+				setState(STATE_IDLE);
+			}
 		}
 	}
 
-	void updatePos(float x, float y){
-		params[XYPad::X_POS_PARAM].value = clampf(x, minX, maxX);
-		params[XYPad::Y_POS_PARAM].value = clampf(y, minY, maxY);
+	void setCurrentPos(float x, float y){
+		params[X_POS_PARAM].value = clampf(x, minX, maxX);
+		params[Y_POS_PARAM].value = clampf(y, minY, maxY);
 	}
 
 	void updateMinMax(){
@@ -97,44 +103,59 @@ struct XYPad : Module {
 
 	}
 
-//TODO FIX when gate wire is removed it can get stuck playing even though auto is off
-//TODO make an enum of what triggered playback, and if gate and no more wire, then stop
 	void playback(){
-		if(playing && points.size() > 0){ 
-			params[XYPad::X_POS_PARAM].value = points[curPointIdx].x;
-			params[XYPad::Y_POS_PARAM].value = points[curPointIdx].y;
+		if(isPlaying() && points.size() > 0){ 
+			params[X_POS_PARAM].value = points[curPointIdx].x;
+			params[Y_POS_PARAM].value = points[curPointIdx].y;
 			curPointIdx++;
 			if(curPointIdx < points.size()){
-				params[XYPad::GATE_PARAM].value = true;
+				params[GATE_PARAM].value = true; //keep gate on
 			} else {
-				params[XYPad::GATE_PARAM].value = false;
-				curPointIdx = 0;
+				params[GATE_PARAM].value = false;
+				curPointIdx = 0; //loop back around next time
 			}
 		}
 	}
 
-	void startPlayback(){
-		curPointIdx = 0;
-		playing = true;
-	}
-
-	void stopPlayback(bool clearPoints){
-		curPointIdx = 0;
-		playing = false;
-		params[XYPad::GATE_PARAM].value = false;
-		if(clearPoints){ points.clear(); }
+	void setState(int newState){
+		switch(newState){		
+			case STATE_IDLE:
+				printf("STATE_IDLE\n");//TODO REMOVE
+				curPointIdx = 0;
+				params[GATE_PARAM].value = false;		
+				break;
+			case STATE_RECORDING:
+				printf("STATE_RECORDING\n");//TODO REMOVE
+				points.clear();
+				curPointIdx = 0;
+				params[GATE_PARAM].value = true;
+				break;
+			case STATE_AUTO_PLAYING:
+				printf("STATE_AUTO_PLAYING\n");//TODO REMOVE
+				params[GATE_PARAM].value = true;
+				break;
+			case STATE_GATE_PLAYING:
+				printf("STATE_GATE_PLAYING\n");//TODO REMOVE
+				params[GATE_PARAM].value = true;
+				break;
+		}
+		state = newState;
 	}
 
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void XYPad::step() {
 	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].value)) {
 		autoPlayOn = !autoPlayOn;
 		if(autoPlayOn){ 
-			if(!playing){startPlayback();}
+			if(!isPlaying()){
+				setState(STATE_AUTO_PLAYING);
+			}
 		} else {
 			//stop when auto turned off
-			stopPlayback(false);
+			setState(STATE_IDLE);
 		}
 	}
 	repeatLight = autoPlayOn ? 1.0 : 0.0;
@@ -144,10 +165,16 @@ void XYPad::step() {
 		autoPlayOn = false; //disable autoplay if wire connected to play gate
 
 		if (inputs[PLAY_GATE_INPUT].value >= 1.0) {
-			if(!playing && !mouseDown){startPlayback();}
+			if(!isPlaying() && state != STATE_RECORDING){
+				setState(STATE_GATE_PLAYING);
+			}
 		} else {
-			if(playing){stopPlayback(false);}
+			if(isPlaying()){
+				setState(STATE_IDLE);
+			}
 		}
+	} else if(state == STATE_GATE_PLAYING){//wire removed while playing
+		setState(STATE_IDLE);
 	}
 
 	bool nextStep = false;	
@@ -158,10 +185,10 @@ void XYPad::step() {
 		nextStep = true;
 	}
 	if (nextStep) {
-		if(playing){//continue playback
+		if(isPlaying()){//continue playback
 			playback();
-		} else if(mouseDown){ //recording
-			points.push_back(Vec(params[XYPad::X_POS_PARAM].value, params[XYPad::Y_POS_PARAM].value));
+		} else if(state == STATE_RECORDING){ //recording
+			points.push_back(Vec(params[X_POS_PARAM].value, params[Y_POS_PARAM].value));
 		}
 	}
 
@@ -178,17 +205,19 @@ void XYPad::step() {
 	outputs[GATE_OUTPUT].value = rescalef(params[GATE_PARAM].value, 0.0, 1.0, 0.0, 10.0);
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 struct XYPadDisplay : Widget {
 	XYPad *module;
 	XYPadDisplay() {}
 
-	Widget *onMouseDown(Vec pos, int button){ module->setMouseDown(true); return this; }
-	Widget *onMouseUp(Vec pos, int button){ module->setMouseDown(false); return this; }
-	void onDragEnd(){ module->setMouseDown(false); }
+	Widget *onMouseDown(Vec pos, int button){ module->setMouseDown(pos, true); return this; }
+	Widget *onMouseUp(Vec pos, int button){ module->setMouseDown(pos, false); return this; }
+	void onDragEnd(){ module->setMouseDown(Vec(0,0), false); }
 	void onDragMove(Vec mouseRel) {
-		if(module->mouseDown){
+		if(module->state == XYPad::STATE_RECORDING){
 			Vec mousePos = gMousePos.minus(parent->getAbsolutePos()).minus(mouseRel).minus(box.pos);
-			module->updatePos(mousePos.x, mousePos.y);
+			module->setCurrentPos(mousePos.x, mousePos.y);
 		}
 	}
 
@@ -205,25 +234,26 @@ struct XYPadDisplay : Widget {
 		nvgFill(vg);
 			
 		//INVERTED///////////////////////////////////
-		NVGcolor invertedCol = nvgRGB(20, 50, 53);
+		NVGcolor invertedColor = nvgRGB(20, 50, 53);
+		NVGcolor ballColor = nvgRGB(25, 150, 252);
 
 		//horizontal line
-		nvgStrokeColor(vg, invertedCol);
+		nvgStrokeColor(vg, invertedColor);
 		nvgBeginPath(vg);
 		nvgMoveTo(vg, 0, invBallY);
 		nvgLineTo(vg, box.size.x, invBallY);
 		nvgStroke(vg);
 		
 		//vertical line
-		nvgStrokeColor(vg, invertedCol);
+		nvgStrokeColor(vg, invertedColor);
 		nvgBeginPath(vg);
 		nvgMoveTo(vg, invBallX, 0);
 		nvgLineTo(vg, invBallX, box.size.y);
 		nvgStroke(vg);
 		
 		//inv ball
-		nvgFillColor(vg, invertedCol);
-		nvgStrokeColor(vg, invertedCol);
+		nvgFillColor(vg, invertedColor);
+		nvgStrokeColor(vg, invertedColor);
 		nvgStrokeWidth(vg, 2);
 		nvgBeginPath(vg);
 		nvgCircle(vg, module->displayWidth-ballX, module->displayHeight-ballY, 10);
@@ -231,9 +261,20 @@ struct XYPadDisplay : Widget {
 		nvgStroke(vg);
 		
 		//POINTS///////////////////////////////////
-//TODO draw recorded points
-		nvgMoveTo
-		nvgLineTo
+		if(module->points.size() > 0){
+			nvgStrokeColor(vg, ballColor);
+			nvgStrokeWidth(vg, 2);
+			nvgBeginPath(vg);
+			int lastI = module->points.size() - 1;
+			for (int i = lastI; i>=0 && i<module->points.size(); i--) {
+				if(i == lastI){ 
+					nvgMoveTo(vg, module->points[i].x, module->points[i].y); 
+				} else {
+					nvgLineTo(vg, module->points[i].x, module->points[i].y); 
+				}
+			}
+			nvgStroke(vg);
+		}
 
 
 		//MAIN///////////////////////////////////
@@ -253,8 +294,8 @@ struct XYPadDisplay : Widget {
 		nvgStroke(vg);
 		
 		//ball
-		nvgFillColor(vg, nvgRGB(25, 150, 252));
-		nvgStrokeColor(vg, nvgRGB(25, 150, 252));
+		nvgFillColor(vg, ballColor);
+		nvgStrokeColor(vg, ballColor);
 		nvgStrokeWidth(vg, 2);
 		nvgBeginPath(vg);
 		nvgCircle(vg, ballX, ballY, 10);
@@ -262,6 +303,8 @@ struct XYPadDisplay : Widget {
 		nvgStroke(vg);
 	}
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 XYPadWidget::XYPadWidget() {
 	XYPad *module = new XYPad();
