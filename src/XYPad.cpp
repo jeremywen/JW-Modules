@@ -75,6 +75,7 @@ struct XYPad : Module {
 		if(mouseDown){
 			if(playing){stopPlayback(true);}
 			points.clear();
+			params[XYPad::GATE_PARAM].value = true; //start gate if playing and you press the mouse button down
 		} else if(autoPlayOn && !inputs[XYPad::PLAY_GATE_INPUT].active){ //no auto play if wire connected to play in
 			startPlayback();
 		}
