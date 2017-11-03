@@ -12,6 +12,7 @@ struct XYPad : Module {
 		SCALE_X_PARAM,
 		SCALE_Y_PARAM,
 		AUTO_PLAY_PARAM,
+		PLAY_SPEED_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -136,7 +137,7 @@ struct XYPad : Module {
 		if(isPlaying() && points.size() > 0){ 
 			params[X_POS_PARAM].value = points[curPointIdx].x;
 			params[Y_POS_PARAM].value = points[curPointIdx].y;
-			curPointIdx++;
+			curPointIdx+=int(params[PLAY_SPEED_PARAM].value);//TODO speeds<1, need LERP
 			if(curPointIdx < points.size()){
 				params[GATE_PARAM].value = true; //keep gate on
 			} else {
@@ -401,6 +402,11 @@ XYPadWidget::XYPadWidget() {
 	autoLabel->text = "Auto";
 	addChild(autoLabel);
 
+	rack::Label* const speedLabel = new rack::Label;
+	speedLabel->box.pos = Vec(130-20, 340);
+	speedLabel->text = "Speed";
+	addChild(speedLabel);
+
 	rack::Label* const xLabel = new rack::Label;
 	xLabel->box.pos = Vec(210-4, 340);
 	xLabel->text = "X";
@@ -430,6 +436,8 @@ XYPadWidget::XYPadWidget() {
 
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(70+5, 358+5), &module->repeatLight));
+
+	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 1.0, 10.0, 1));//TODO speeds<1, need LERP
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(210, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(235, 360), module, XYPad::Y_OUTPUT));
