@@ -94,7 +94,8 @@ struct XYPad : Module {
 		maxY = displayHeight - totalBallSize;
 
 	}
-
+//TODO FIX when looping around it can get placed at 0,0 - see last video
+//TODO FIX when gate wire is removed it can get stuck playing even though auto is off
 	void playback(){
 		if(playing && points.size() > 0){ 
 			params[XYPad::X_POS_PARAM].value = points[curPointIdx].x;
