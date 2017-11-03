@@ -126,7 +126,10 @@ struct XYPad : Module {
 void XYPad::step() {
 	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].value)) {
 		autoPlayOn = !autoPlayOn;
-		if(!autoPlayOn){ //stop when auto turned off
+		if(autoPlayOn){ 
+			if(!playing){startPlayback();}
+		} else {
+			//stop when auto turned off
 			stopPlayback(false);
 		}
 	}
@@ -281,29 +284,29 @@ XYPadWidget::XYPadWidget() {
 	addChild(titleLabel);
 
 	rack::Label* const xScaleLabel = new rack::Label;
-	xScaleLabel->box.pos = Vec(150-20, 2);
+	xScaleLabel->box.pos = Vec(130-20, 2);
 	xScaleLabel->text = "X Scale";
 	addChild(xScaleLabel);
 
 	rack::Label* const yScaleLabel = new rack::Label;
-	yScaleLabel->box.pos = Vec(203-20, 2);
+	yScaleLabel->box.pos = Vec(190-20, 2);
 	yScaleLabel->text = "Y Scale";
 	addChild(yScaleLabel);
 
 	rack::Label* const xOffsetLabel = new rack::Label;
 	xOffsetLabel->box.pos = Vec(250-20, 2);
-	xOffsetLabel->text = "X OFST";
+	xOffsetLabel->text = "X Offset";
 	addChild(xOffsetLabel);
 
 	rack::Label* const yOffsetLabel = new rack::Label;
-	yOffsetLabel->box.pos = Vec(300-20, 2);
-	yOffsetLabel->text = "Y OFST";
+	yOffsetLabel->box.pos = Vec(310-20, 2);
+	yOffsetLabel->text = "Y Offset";
 	addChild(yOffsetLabel);
 
-	addParam(createParam<TinyBlackKnob>(Vec(150, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<TinyBlackKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(130, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(190, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<TinyBlackKnob>(Vec(250, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<TinyBlackKnob>(Vec(300, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<TinyBlackKnob>(Vec(310, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 	rack::Label* const trigLabel = new rack::Label;
