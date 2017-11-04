@@ -2,7 +2,7 @@
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
-![All](./doc/ALL-img1.png)
+![All](./doc/ALL-img1.gif)
 
 by [@jeremywen](https://twitter.com/jeremywen)
 
