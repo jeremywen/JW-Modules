@@ -150,22 +150,18 @@ struct XYPad : Module {
 	void setState(int newState){
 		switch(newState){		
 			case STATE_IDLE:
-				printf("STATE_IDLE\n");//TODO REMOVE
 				curPointIdx = 0;
 				params[GATE_PARAM].value = false;		
 				break;
 			case STATE_RECORDING:
-				printf("STATE_RECORDING\n");//TODO REMOVE
 				points.clear();
 				curPointIdx = 0;
 				params[GATE_PARAM].value = true;
 				break;
 			case STATE_AUTO_PLAYING:
-				printf("STATE_AUTO_PLAYING\n");//TODO REMOVE
 				params[GATE_PARAM].value = true;
 				break;
 			case STATE_GATE_PLAYING:
-				printf("STATE_GATE_PLAYING\n");//TODO REMOVE
 				params[GATE_PARAM].value = true;
 				break;
 		}

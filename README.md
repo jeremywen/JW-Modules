@@ -6,7 +6,9 @@ Modules for VCV Rack from https://vcvrack.com/
 
 by [@jeremywen](https://twitter.com/jeremywen)
 
-[Donate Here](https://www.paypal.me/jeremywen)
+[Donate through Paypal](https://www.paypal.me/jeremywen)
+
+[Donate through Patreon](https://www.patreon.com/jeremywen)
 
 ## GridSeq
 
