@@ -12,7 +12,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## GridSeq
 
-![GridSeq](./doc/GridSeq-img5.gif)
+![GridSeq](./doc/GridSeq-img6.gif)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
