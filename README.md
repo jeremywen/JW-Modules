@@ -71,6 +71,8 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
   *  **Gate Out:** 10v gate out while mouse pressed
 
+  **The recorded path is saved and opened.**
+
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
 
 ## SimpleClock
