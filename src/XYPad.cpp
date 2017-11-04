@@ -393,8 +393,8 @@ XYPadWidget::XYPadWidget() {
 
 	////////////////////////////////////////////////////////////
 	rack::Label* const trigLabel = new rack::Label;
-	trigLabel->box.pos = Vec(22, 340);
-	trigLabel->text = "Gate";
+	trigLabel->box.pos = Vec(5, 340);
+	trigLabel->text = "Gate In";
 	addChild(trigLabel);
 
 	rack::Label* const autoLabel = new rack::Label;
@@ -408,41 +408,41 @@ XYPadWidget::XYPadWidget() {
 	addChild(speedLabel);
 
 	rack::Label* const xLabel = new rack::Label;
-	xLabel->box.pos = Vec(210-4, 340);
+	xLabel->box.pos = Vec(190-4, 340);
 	xLabel->text = "X";
 	addChild(xLabel);
 
 	rack::Label* const yLabel = new rack::Label;
-	yLabel->box.pos = Vec(235-4, 340);
+	yLabel->box.pos = Vec(215-4, 340);
 	yLabel->text = "Y";
 	addChild(yLabel);
 
 	rack::Label* const xInvLabel = new rack::Label;
-	xInvLabel->box.pos = Vec(275-7, 340);
+	xInvLabel->box.pos = Vec(255-7, 340);
 	xInvLabel->text = "-X";
 	addChild(xInvLabel);
 
 	rack::Label* const yInvLabel = new rack::Label;
-	yInvLabel->box.pos = Vec(300-7, 340);
+	yInvLabel->box.pos = Vec(280-7, 340);
 	yInvLabel->text = "-Y";
 	addChild(yInvLabel);
 
 	rack::Label* const gLabel = new rack::Label;
-	gLabel->box.pos = Vec(340-5, 340);
-	gLabel->text = "G";
+	gLabel->box.pos = Vec(300-5, 340);
+	gLabel->text = "Gate Out";
 	addChild(gLabel);
 
-	addInput(createInput<TinyPJ301MPort>(Vec(35, 360), module, XYPad::PLAY_GATE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
 
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(70+5, 358+5), &module->repeatLight));
 
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 1.0, 10.0, 1));//TODO speeds<1, need LERP
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(210, 360), module, XYPad::X_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(235, 360), module, XYPad::Y_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(275, 360), module, XYPad::X_INV_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(300, 360), module, XYPad::Y_INV_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(340, 360), module, XYPad::GATE_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(190, 360), module, XYPad::X_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(215, 360), module, XYPad::Y_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(255, 360), module, XYPad::X_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(280, 360), module, XYPad::Y_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(320, 360), module, XYPad::GATE_OUTPUT));
 }
 

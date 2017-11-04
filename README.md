@@ -20,12 +20,14 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Top Direction Inputs 
 
-  *  **Right Arrow:** on trigger move right one cell and send out value if gate is on for that cell
-  *  **Left Arrow:** on trigger move left one cell and send out value if gate is on for that cell
-  *  **Down Arrow:** on trigger move down one cell and send out value if gate is on for that cell
-  *  **Up Arrow:** on trigger move up one cell and send out value if gate is on for that cell
+  *  **Right Input:** on trigger move right one cell and send out value if gate is on for that cell
+  *  **Left Input:** on trigger move left one cell and send out value if gate is on for that cell
+  *  **Down Input:** on trigger move down one cell and send out value if gate is on for that cell
+  *  **Up Input:** on trigger move up one cell and send out value if gate is on for that cell
   *  **RND:** on trigger move one cell in a random direction and send out value if gate is on for that cell
   *  **REPEAT:**  stay on current cell and send out value if gate is on for that cell
+
+  NOTE: You can click the arrows or words above the inputs to trigger them.
 
 #### Left
 
@@ -37,8 +39,8 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Bottom
 
-  *  **ROOT:** root note if scaling pitch sent to "OUT"
-  *  **SCALE:** current musical scale or none if turned up all the way to the last value
+  *  **ROOT Knob:** root note if scaling pitch sent to "OUT"
+  *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
   *  **RND GATES Button** randomize gate only for each cell
   *  **RND GATES Input** on trigger randomize gate only for each cell
   *  **RND NOTES Button** randomize pitch only for each cell
@@ -49,13 +51,23 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ![XYPad](./doc/XYPad-img1.png)
 
-  *  **X OFST:** +/- 5v added to X Output
-  *  **Y OFST:** +/- 5v added to Y Output
-  *  **X:** +/- 5v based on x position
-  *  **Y:** +/- 5v based on y position
+#### Top
+  
+  *  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
+  *  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
+  *  **X Offset Knob:** +/- 5v added to X Output
+  *  **Y Offset Knob:** +/- 5v added to Y Output
+
+#### Bottom
+  
+  *  **Gate In:** plays recorded path until new gate or gate is low
+  *  **Auto:** loops playback of the recorded path immediatly after releasing the mouse button, or starts playback when turned on, or stops playback when turned off
+  *  **Speed:** plays recorded path from 1x up to 10x faster
+  *  **X Output:** +/- 5v based on x position
+  *  **Y Output:** +/- 5v based on y position
   *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
   *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
-  *  **G:** 10v gate out while mouse pressed
+  *  **Gate Out:** 10v gate out while mouse pressed
 
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
 
