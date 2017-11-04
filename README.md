@@ -60,8 +60,10 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Bottom
   
-  *  **Gate In:** plays recorded path until new gate or gate is low
-  *  **Auto:** loops playback of the recorded path immediatly after releasing the mouse button, or starts playback when turned on, or stops playback when turned off
+  *  **Gate In:** plays recorded path while gate is high, retriggers on new gate
+  *  **Auto:** loops playback of the recorded path right after releasing the mouse button
+    * Or if you just performed a motion while Auto was off, turning it on will play it back
+    * Or if Auto is on and you want to stop playback, turn Auto off
   *  **Speed:** plays recorded path from 1x up to 10x faster
   *  **X Output:** +/- 5v based on x position
   *  **Y Output:** +/- 5v based on y position
