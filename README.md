@@ -49,7 +49,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ## XY Pad
 
-![XYPad](./doc/XYPad-img1.png)
+![XYPad](./doc/xy-pad-img1.gif)
 
 #### Top
   
