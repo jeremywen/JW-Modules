@@ -9,7 +9,6 @@ struct RMS : Module {
 	enum ParamIds {
 		TIME_PARAM,
 		TRIG_PARAM,
-		EXTERNAL_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -30,8 +29,6 @@ struct RMS : Module {
 	SchmittTrigger sumTrigger;
 	SchmittTrigger extTrigger;
 	bool lissajous = false;
-	bool external = false;
-	float lights[4] = {};
 	SchmittTrigger resetTrigger;
 
 	RMS() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
@@ -40,7 +37,6 @@ struct RMS : Module {
 	json_t *toJson() {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
-		json_object_set_new(rootJ, "external", json_integer((int) external));
 		return rootJ;
 	}
 
@@ -49,32 +45,18 @@ struct RMS : Module {
 		if (sumJ)
 			lissajous = json_integer_value(sumJ);
 
-		json_t *extJ = json_object_get(rootJ, "external");
-		if (extJ)
-			external = json_integer_value(extJ);
 	}
 
-	void initialize() {
+	void reset() {
 		lissajous = false;
-		external = false;
 	}
 };
 
 
 void RMS::step() {
-	// Modes
-	lights[0] = 0;
-	lights[1] = 0;
-
-	if (extTrigger.process(params[EXTERNAL_PARAM].value)) {
-		external = !external;
-	}
-	lights[2] = external ? 0.0 : 1.0;
-	lights[3] = external ? 1.0 : 0.0;
-
 	// Compute time
 	float deltaTime = powf(2.0, params[TIME_PARAM].value);
-	int frameCount = (int)ceilf(deltaTime * gSampleRate);
+	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
 
 	// Add frame to buffer
 	if (bufferIndex < BUFFER_SIZE) {
@@ -89,7 +71,7 @@ void RMS::step() {
 	// Are we waiting on the next trigger?
 	if (bufferIndex >= BUFFER_SIZE) {
 		// Trigger immediately if external but nothing plugged in, or in Lissajous mode
-		if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
+		if (lissajous) {
 			bufferIndex = 0;
 			frameIndex = 0;
 			return;
@@ -103,16 +85,16 @@ void RMS::step() {
 
 		// Must go below 0.1V to trigger
 		resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
+		float gate = inputs[X_INPUT].value;
 
 		// Reset if triggered
 		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= gSampleRate * holdTime)) {
+		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 
 		// Reset if we've waited too long
-		if (frameIndex >= gSampleRate * holdTime) {
+		if (frameIndex >= engineGetSampleRate() * holdTime) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 	}
@@ -210,13 +192,9 @@ RMSWidget::RMSWidget() {
 		addChild(display);
 	}
 
-	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(10, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
-	addParam(createParam<Davies1900hSmallBlackKnob>(Vec(53, 209), module, RMS::TRIG_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<CKD6>(Vec(52, 262), module, RMS::EXTERNAL_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(10, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(53, 209), module, RMS::TRIG_PARAM, -10.0, 10.0, 0.0));
 
 	addInput(createInput<PJ301MPort>(Vec(10, 319), module, RMS::X_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(54, 319), module, RMS::TRIG_INPUT));
-
-	addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(50, 251), &module->lights[2]));
-	addChild(createValueLight<TinyLight<GreenValueLight>>(Vec(50, 296), &module->lights[3]));
 }

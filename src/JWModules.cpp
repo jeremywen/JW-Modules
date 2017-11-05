@@ -5,13 +5,16 @@ Plugin *plugin;
 
 void init(rack::Plugin *p) {
 	plugin = p;
-	plugin->slug = "JW-Modules";
-	plugin->name = "JW-Modules";
-	plugin->homepageUrl = "https://github.com/jeremywen/JW-Modules";
-	createModel<SimpleClockWidget>(plugin, "SimpleClock", "SimpleClock");
-	createModel<GridSeqWidget>(plugin, "GridSeq", "GridSeq");
-	createModel<RMSWidget>(plugin, "RMS", "RMS");
-	createModel<FullScopeWidget>(plugin, "FullScope", "FullScope");
-	createModel<XYPadWidget>(plugin, "XYPad", "XYPad");
-	// createModel<BouncyBallWidget>(plugin, "BouncyBall", "BouncyBall");
+	p->slug = "JW-Modules";
+#ifdef VERSION
+	p->version = TOSTRING(VERSION);
+#endif
+	// plugin->name = "JW-Modules";
+	// plugin->homepageUrl = "https://github.com/jeremywen/JW-Modules";
+	p->addModel(createModel<SimpleClockWidget>("JW-Modules", "JW-Modules", "SimpleClock", "SimpleClock"));
+	p->addModel(createModel<GridSeqWidget>("JW-Modules", "JW-Modules", "GridSeq", "GridSeq"));
+	p->addModel(createModel<RMSWidget>("JW-Modules", "JW-Modules", "RMS", "RMS"));
+	p->addModel(createModel<FullScopeWidget>("JW-Modules", "JW-Modules", "FullScope", "FullScope"));
+	p->addModel(createModel<XYPadWidget>("JW-Modules", "JW-Modules", "XYPad", "XYPad"));
+	// p->addModel(createModel<BouncyBallWidget>("JW-Modules", "JW-Modules", "BouncyBall", "BouncyBall"));
 }

@@ -29,7 +29,7 @@ struct BouncyBall : Module {
 
 	BouncyBall() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
-	void initialize(){
+	void reset(){
 		defaultPos();
 	}
 
@@ -59,7 +59,7 @@ void BouncyBall::step() {
 	outputs[X_OUTPUT].value = rescalef(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value;
 	outputs[Y_OUTPUT].value = rescalef(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value;//y is inverted because gui coords
 	
-	bool pulse = gatePulse.process(1.0 / gSampleRate);
+	bool pulse = gatePulse.process(1.0 / engineGetSampleRate());
 	outputs[GATE_OUTPUT].value = pulse ? 10.0 : 0.0;
 }
 
@@ -73,11 +73,10 @@ struct BouncyBallDisplay : Widget {
 
 	BouncyBallDisplay(){ init(); }
 
-	Widget *onMouseDown(Vec pos, int button){
+	void onMouseDown(EventMouseDown &e) override {
 		init();
-		module->params[BouncyBall::X_POS_PARAM].value = pos.x;
-		module->params[BouncyBall::Y_POS_PARAM].value = pos.y;
-		return this; 
+		module->params[BouncyBall::X_POS_PARAM].value = e.pos.x;
+		module->params[BouncyBall::Y_POS_PARAM].value = e.pos.y;
 	}
 
 	void init(){
@@ -86,7 +85,7 @@ struct BouncyBallDisplay : Widget {
 		slowRate = 0.75;
 	}
 
-	void draw(NVGcontext *vg) {
+	void draw(NVGcontext *vg) override {
 		ballPos.x = module->params[BouncyBall::X_POS_PARAM].value;
       	ballPos.y = module->params[BouncyBall::Y_POS_PARAM].value;
       	ballPos = ballPos.plus(velocity);

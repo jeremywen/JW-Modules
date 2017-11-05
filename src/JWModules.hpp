@@ -91,8 +91,8 @@ struct SmallWhiteKnob : RoundKnob {
 		}
 	}
 
-	void onChange() override {
-		RoundKnob::onChange();
+	void onChange(EventChange &e) override {
+		RoundKnob::onChange(e);
 		if (linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
@@ -118,9 +118,9 @@ struct TinyPJ301MPort : SVGPort {
 	}
 };
 
-struct MyBlueValueLight : ColorValueLight {
+struct MyBlueValueLight : ColorLightWidget {
 	MyBlueValueLight() {
-		baseColor = nvgRGB(25, 150, 252);
+		addColor(nvgRGB(25, 150, 252));
 	}
 };
 
@@ -225,20 +225,17 @@ struct ModuleResizeHandle : Widget {
 	ModuleResizeHandle() {
 		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
 	}
-	Widget *onMouseDown(Vec pos, int button) {
-		if (button == 0)
-			return this;
-		return NULL;
+	void onMouseDown(EventMouseDown &e) override {
 	}
-	void onDragStart() {
+	void onDragStart(EventDragStart &e) override {
 		assert(parent);
 		originalWidth = parent->box.size.x;
 		totalX = 0.0;
 	}
-	void onDragMove(Vec mouseRel) {
+	void onDragMove(EventDragMove &e) override {
 		ModuleWidget *m = dynamic_cast<ModuleWidget*>(parent);
 		assert(m);
-		totalX += mouseRel.x;
+		totalX += e.mouseRel.x;
 		float targetWidth = originalWidth;
 		if (right)
 			targetWidth += totalX;

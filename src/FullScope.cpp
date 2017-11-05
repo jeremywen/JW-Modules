@@ -61,7 +61,7 @@ struct FullScope : Module {
 			external = json_integer_value(extJ);
 	}
 
-	void initialize() {
+	void reset() {
 		lissajous = true;
 		external = false;
 	}
@@ -83,7 +83,7 @@ void FullScope::step() {
 
 	// Compute time
 	float deltaTime = powf(2.0, params[TIME_PARAM].value + inputs[TIME_INPUT].value);
-	int frameCount = (int)ceilf(deltaTime * gSampleRate);
+	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
 
 	// Add frame to buffer
 	if (bufferIndex < BUFFER_SIZE) {
@@ -116,12 +116,12 @@ void FullScope::step() {
 
 		// Reset if triggered
 		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= gSampleRate * holdTime)) {
+		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 
 		// Reset if we've waited too long
-		if (frameIndex >= gSampleRate * holdTime) {
+		if (frameIndex >= engineGetSampleRate() * holdTime) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 	}

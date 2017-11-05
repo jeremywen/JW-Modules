@@ -35,22 +35,26 @@ struct XYPad : Module {
 		STATE_GATE_PLAYING
 	};
 	
+	enum LightIds {
+		AUTO_LIGHT,
+		NUM_LIGHTS
+	};
+
 	float minX = 0, minY = 0, maxX = 0, maxY = 0;
 	float displayWidth = 0, displayHeight = 0;
 	float totalBallSize = 12;
 	float minVolt = -5, maxVolt = 5;
-	float repeatLight = 0.0;
 	float phase = 0.0;
 	bool autoPlayOn = false;
 	int state = STATE_IDLE;
 	SchmittTrigger autoBtnTrigger;
 	SchmittTrigger playbackTrigger;
 	std::vector<Vec> points;
-	int curPointIdx = 0;
+	unsigned long curPointIdx = 0;
 
-	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step();
-	void initialize(){
+	void reset(){
 		defaultPos();
 	}
 
@@ -184,7 +188,7 @@ void XYPad::step() {
 			setState(STATE_IDLE);
 		}
 	}
-	repeatLight = autoPlayOn ? 1.0 : 0.0;
+	lights[AUTO_LIGHT].value = autoPlayOn ? 1.0 : 0.0;
 
 	if (inputs[PLAY_GATE_INPUT].active) {
 		params[AUTO_PLAY_PARAM].value = 0; //disable autoplay if wire connected to play gate
@@ -205,7 +209,7 @@ void XYPad::step() {
 
 	bool nextStep = false;	
 	float clockTime = 60;
-	phase += clockTime / gSampleRate;
+	phase += clockTime / engineGetSampleRate();
 	if (phase >= 1.0) {
 		phase -= 1.0;
 		nextStep = true;
@@ -237,17 +241,39 @@ struct XYPadDisplay : Widget {
 	XYPad *module;
 	XYPadDisplay() {}
 
-	Widget *onMouseDown(Vec pos, int button){ module->setMouseDown(pos, true); return this; }
-	Widget *onMouseUp(Vec pos, int button){ module->setMouseDown(pos, false); return this; }
-	void onDragEnd(){ module->setMouseDown(Vec(0,0), false); }
-	void onDragMove(Vec mouseRel) {
-		if(module->state == XYPad::STATE_RECORDING){
-			Vec mousePos = gMousePos.minus(parent->getAbsolutePos()).minus(mouseRel).minus(box.pos);
-			module->setCurrentPos(mousePos.x, mousePos.y);
-		}
+	void onMouseDown(EventMouseDown &e) override { 
+		module->setMouseDown(e.pos, true);
+		e.consumed = true;
+	}
+	
+	void onMouseMove(EventMouseMove &e) override {
+		gDraggedWidget = this; //this needs to be set so it calls onDragMove in gui.cpp
 	}
 
-	void draw(NVGcontext *vg) {
+	void onMouseUp(EventMouseUp &e) override { 
+		module->setMouseDown(e.pos, false);
+		e.consumed = true;
+	}
+
+	void onDragStart(EventDragStart &e) override {
+		e.consumed = true;
+	}
+
+	void onDragEnd(EventDragEnd &e) override { 
+		module->setMouseDown(Vec(0,0), false); 
+		gDraggedWidget = NULL;
+		e.consumed = true;
+	}
+
+	void onDragMove(EventDragMove &e) override {
+		if(module->state == XYPad::STATE_RECORDING){
+			Vec mousePos = gMousePos.minus(getAbsoluteOffset(e.mouseRel))/*.minus(box.pos)*/;
+			module->setCurrentPos(mousePos.x, mousePos.y);
+		}
+		e.consumed = true;
+	}
+
+	void draw(NVGcontext *vg) override {
 		float ballX = module->params[XYPad::X_POS_PARAM].value;
 		float ballY = module->params[XYPad::Y_POS_PARAM].value;
 		float invBallX = module->displayWidth-ballX;
@@ -291,8 +317,8 @@ struct XYPadDisplay : Widget {
 			nvgStrokeColor(vg, ballColor);
 			nvgStrokeWidth(vg, 2);
 			nvgBeginPath(vg);
-			int lastI = module->points.size() - 1;
-			for (int i = lastI; i>=0 && i<module->points.size(); i--) {
+			long lastI = module->points.size() - 1;
+			for (long i = lastI; i>=0 && i<long(module->points.size()); i--) {
 				if(i == lastI){ 
 					nvgMoveTo(vg, module->points[i].x, module->points[i].y); 
 				} else {
@@ -431,7 +457,7 @@ XYPadWidget::XYPadWidget() {
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
 
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(70+5, 358+5), &module->repeatLight));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+5.5, 358+5.5), module, XYPad::AUTO_LIGHT));
 
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 1.0, 10.0, 1));//TODO speeds<1, need LERP
 

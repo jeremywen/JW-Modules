@@ -37,6 +37,15 @@ struct GridSeq : Module {
 		CELL_2_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		RUNNING_LIGHT,
+		RESET_LIGHT,
+		RND_NOTES_LIGHT,
+		RND_GATES_LIGHT,
+		GATES_LIGHT,
+		STEPS_LIGHT = GATES_LIGHT+ 16,
+		NUM_LIGHTS = STEPS_LIGHT + 16
+	};
 
 	//copied from http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
 	int SCALE_AEOLIAN        [7] = {0, 2, 3, 5, 7, 8, 10};
@@ -82,15 +91,7 @@ struct GridSeq : Module {
 	GateMode gateMode = TRIGGER;
 	PulseGenerator gatePulse;
 
-	// Lights
-	float resetLight = 0.0;
-	float rndNotesLight = 0.0;
-	float rndGatesLight = 0.0;
-	float runningLight = 0.0;
-	float stepLights[16] = {};
-	float gateLights[16] = {};
-
-	GridSeq() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	GridSeq() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
 	void step();
 
@@ -137,7 +138,7 @@ struct GridSeq : Module {
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 	}
 
-	void initialize() {
+	void reset() {
 		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
@@ -251,8 +252,8 @@ void GridSeq::step() {
 	if (runningTrigger.process(params[RUN_PARAM].value)) {
 		running = !running;
 	}
-	runningLight = running ? 1.0 : 0.0;
-
+	lights[RUNNING_LIGHT].value = running ? 1.0 : 0.0;
+	
 	bool nextStep = false;
 	if (resetTrigger.process(params[RESET_PARAM].value + inputs[RESET_INPUT].value)) {
 		phase = 0.0;
@@ -260,18 +261,18 @@ void GridSeq::step() {
 		posY = 0;
 		index = 0;
 		nextStep = true;
-		resetLight = 1.0;
+		lights[RESET_LIGHT].value =  1.0;
 	}
 
 	if(running){
 		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].value)) {
 			randomizeNotesOnly();
-			rndNotesLight = 1.0;
+			lights[RND_NOTES_LIGHT].value = 1.0;
 		}
 
 		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].value)) {
 			randomizeGateStates();
-			rndGatesLight = 1.0;
+			lights[RND_GATES_LIGHT].value = 1.0;
 		}
 
 		if (repeatTrigger.process(inputs[REPEAT_INPUT].value + params[REP_MOVE_BTN_PARAM].value)) {
@@ -306,14 +307,14 @@ void GridSeq::step() {
 	
 	if (nextStep) {
 		index = posX + (posY * 4);
-		stepLights[index] = 1.0;
+		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-3);
 	}
 
-	rndNotesLight -= rndNotesLight / lightLambda / gSampleRate;
-	rndGatesLight -= rndGatesLight / lightLambda / gSampleRate;
-	resetLight -= resetLight / lightLambda / gSampleRate;
-	bool pulse = gatePulse.process(1.0 / gSampleRate);
+	lights[RND_NOTES_LIGHT].value -= lights[RND_NOTES_LIGHT].value / lightLambda / engineGetSampleRate();
+	lights[RND_GATES_LIGHT].value -= lights[RND_GATES_LIGHT].value / lightLambda / engineGetSampleRate();
+	lights[RESET_LIGHT].value -= lights[RESET_LIGHT].value / lightLambda / engineGetSampleRate();
+	bool pulse = gatePulse.process(1.0 / engineGetSampleRate());
 
 	// Gate buttons
 	for (int i = 0; i < 16; i++) {
@@ -326,8 +327,8 @@ void GridSeq::step() {
 		else if (gateMode == RETRIGGER)
 			gateOn = gateOn && !pulse;
 
-		if(stepLights[i] > 0){ stepLights[i] -= stepLights[i] / lightLambda / gSampleRate; }
-		gateLights[i] = gateState[i] ? 1.0 - stepLights[i] : stepLights[i];
+		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / engineGetSampleRate(); }
+		lights[GATES_LIGHT + i].value = gateState[i] ? 1.0 - lights[STEPS_LIGHT + i].value : lights[STEPS_LIGHT + i].value;
 	}
 
 	// Cells
@@ -389,10 +390,10 @@ GridSeqWidget::GridSeqWidget() {
 
 	///// RUN AND RESET /////
 	addParam(createParam<LEDButton>(Vec(23, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(23+5, 90+5), &module->runningLight));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+5.5, 90+5.5), module, GridSeq::RUNNING_LIGHT));
 
 	addParam(createParam<LEDButton>(Vec(23, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(23+5, 130+5), &module->resetLight));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+5.5, 130+5.5), module, GridSeq::RESET_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(20, 160), module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
@@ -429,11 +430,11 @@ GridSeqWidget::GridSeqWidget() {
 	addParam(scaleKnob);
 
 	addParam(createParam<RandomizeNotesOnlyButton>(Vec(235, 330), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(235+5, 330+5), &module->rndNotesLight));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(235+5.5, 330+5.5), module, GridSeq::RND_NOTES_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(258, 330-4), module, GridSeq::RND_NOTES_INPUT));
 
 	addParam(createParam<RandomizeGatesOnlyButton>(Vec(178, 330), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
-	addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(178+5, 330+5), &module->rndGatesLight));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(178+5.5, 330+5.5), module, GridSeq::RND_GATES_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(200, 330-4), module, GridSeq::RND_GATES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
@@ -454,7 +455,7 @@ GridSeqWidget::GridSeqWidget() {
 			addParam(cellGateButton);
 			gateButtons.push_back(cellGateButton);
 
-			addChild(createValueLight<SmallLight<MyBlueValueLight>>(Vec(knobX+27, knobY-10), &module->gateLights[idx]));			
+			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(knobX+27.5, knobY-9.5), module, GridSeq::GATES_LIGHT + idx));
 		}
 	}
 
@@ -467,10 +468,10 @@ GridSeqWidget::GridSeqWidget() {
 struct GridSeqGateModeItem : MenuItem {
 	GridSeq *gridSeq;
 	GridSeq::GateMode gateMode;
-	void onAction() {
+	void onAction(EventAction &e) override {
 		gridSeq->gateMode = gateMode;
 	}
-	void step() {
+	void step() override {
 		rightText = (gridSeq->gateMode == gateMode) ? "✔" : "";
 	}
 };
