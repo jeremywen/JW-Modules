@@ -19,26 +19,8 @@ struct BouncyBallWidget : ModuleWidget {
 	BouncyBallWidget();
 };
 
-struct FullScopeWidget : ModuleWidget {
-	Panel *panel;
-	Widget *rightHandle;
-	TransparentWidget *display;
-	FullScopeWidget();
-	void step();
-	json_t *toJson();
-	void fromJson(json_t *rootJ);
-};
-
-struct GridSeqWidget : ModuleWidget {
-	std::vector<ParamWidget*> seqKnobs;
-	std::vector<ParamWidget*> gateButtons;
-	GridSeqWidget();
-	~GridSeqWidget(){ 
-		seqKnobs.clear(); 
-		gateButtons.clear(); 
-	}
-	Menu *createContextMenu();
-
+struct QuantizerWidget : ModuleWidget {
+	QuantizerWidget();
 	enum Notes {
 		NOTE_C, 
 		NOTE_C_SHARP,
@@ -78,13 +60,43 @@ struct GridSeqWidget : ModuleWidget {
 	};
 };
 
+struct FullScopeWidget : ModuleWidget {
+	Panel *panel;
+	Widget *rightHandle;
+	TransparentWidget *display;
+	FullScopeWidget();
+	void step();
+	json_t *toJson();
+	void fromJson(json_t *rootJ);
+};
+
+struct GridSeqWidget : ModuleWidget {
+	std::vector<ParamWidget*> seqKnobs;
+	std::vector<ParamWidget*> gateButtons;
+	GridSeqWidget();
+	~GridSeqWidget(){ 
+		seqKnobs.clear(); 
+		gateButtons.clear(); 
+	}
+	Menu *createContextMenu();
+};
+
+struct CenteredLabel : Label {
+	void draw(NVGcontext *vg) override {
+		nvgTextAlign(vg, NVG_ALIGN_CENTER);
+		nvgFillColor(vg, nvgRGB(25, 150, 252));
+		nvgFontSize(vg, 12);
+		nvgText(vg, box.pos.x, box.pos.y, text.c_str(), NULL);
+	}
+};
+
 struct SmallWhiteKnob : RoundKnob {
 	SmallWhiteKnob() {
 		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
 	}
-	rack::Label* linkedLabel = nullptr;
+	CenteredLabel* linkedLabel = nullptr;
 	
-	void connectLabel(rack::Label* label) {
+	void connectLabel(CenteredLabel* label) {
 		linkedLabel = label;
 		if (linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
@@ -127,18 +139,18 @@ struct MyBlueValueLight : ColorLightWidget {
 struct NoteKnob : SmallWhiteKnob {
 	std::string formatCurrentValue() override {
 		switch(int(value)){
-			case GridSeqWidget::NOTE_C:       return "C";
-			case GridSeqWidget::NOTE_C_SHARP: return "C#";
-			case GridSeqWidget::NOTE_D:       return "D";
-			case GridSeqWidget::NOTE_D_SHARP: return "D#";
-			case GridSeqWidget::NOTE_E:       return "E";
-			case GridSeqWidget::NOTE_F:       return "F";
-			case GridSeqWidget::NOTE_F_SHARP: return "F#";
-			case GridSeqWidget::NOTE_G:       return "G";
-			case GridSeqWidget::NOTE_G_SHARP: return "G#";
-			case GridSeqWidget::NOTE_A:       return "A";
-			case GridSeqWidget::NOTE_A_SHARP: return "A#";
-			case GridSeqWidget::NOTE_B:       return "B";
+			case QuantizerWidget::NOTE_C:       return "C";
+			case QuantizerWidget::NOTE_C_SHARP: return "C#";
+			case QuantizerWidget::NOTE_D:       return "D";
+			case QuantizerWidget::NOTE_D_SHARP: return "D#";
+			case QuantizerWidget::NOTE_E:       return "E";
+			case QuantizerWidget::NOTE_F:       return "F";
+			case QuantizerWidget::NOTE_F_SHARP: return "F#";
+			case QuantizerWidget::NOTE_G:       return "G";
+			case QuantizerWidget::NOTE_G_SHARP: return "G#";
+			case QuantizerWidget::NOTE_A:       return "A";
+			case QuantizerWidget::NOTE_A_SHARP: return "A#";
+			case QuantizerWidget::NOTE_B:       return "B";
 			default: return "";
 		}
 	}
@@ -147,24 +159,24 @@ struct NoteKnob : SmallWhiteKnob {
 struct ScaleKnob : SmallWhiteKnob {
 	std::string formatCurrentValue() override {
 		switch(int(value)){
-			case GridSeqWidget::AEOLIAN:        return "Aeolian";
-			case GridSeqWidget::BLUES:          return "Blues";
-			case GridSeqWidget::CHROMATIC:      return "Chromatic";
-			case GridSeqWidget::DIATONIC_MINOR: return "Diatonic Minor";
-			case GridSeqWidget::DORIAN:         return "Dorian";
-			case GridSeqWidget::HARMONIC_MINOR: return "Harmonic Minor";
-			case GridSeqWidget::INDIAN:         return "Indian";
-			case GridSeqWidget::LOCRIAN:        return "Locrian";
-			case GridSeqWidget::LYDIAN:         return "Lydian";
-			case GridSeqWidget::MAJOR:          return "Major";
-			case GridSeqWidget::MELODIC_MINOR:  return "Melodic Minor";
-			case GridSeqWidget::MINOR:          return "Minor";
-			case GridSeqWidget::MIXOLYDIAN:     return "Mixolydian";
-			case GridSeqWidget::NATURAL_MINOR:  return "Natural Minor";
-			case GridSeqWidget::PENTATONIC:     return "Pentatonic";
-			case GridSeqWidget::PHRYGIAN:       return "Phrygian";
-			case GridSeqWidget::TURKISH:        return "Turkish";
-			case GridSeqWidget::NONE:           return "None";
+			case QuantizerWidget::AEOLIAN:        return "Aeolian";
+			case QuantizerWidget::BLUES:          return "Blues";
+			case QuantizerWidget::CHROMATIC:      return "Chromat";
+			case QuantizerWidget::DIATONIC_MINOR: return "Diat Min";
+			case QuantizerWidget::DORIAN:         return "Dorian";
+			case QuantizerWidget::HARMONIC_MINOR: return "Harm Min";
+			case QuantizerWidget::INDIAN:         return "Indian";
+			case QuantizerWidget::LOCRIAN:        return "Locrian";
+			case QuantizerWidget::LYDIAN:         return "Lydian";
+			case QuantizerWidget::MAJOR:          return "Major";
+			case QuantizerWidget::MELODIC_MINOR:  return "Mel Min";
+			case QuantizerWidget::MINOR:          return "Minor";
+			case QuantizerWidget::MIXOLYDIAN:     return "Mixolyd";
+			case QuantizerWidget::NATURAL_MINOR:  return "Nat Min";
+			case QuantizerWidget::PENTATONIC:     return "Penta";
+			case QuantizerWidget::PHRYGIAN:       return "Phrygian";
+			case QuantizerWidget::TURKISH:        return "Turkish";
+			case QuantizerWidget::NONE:           return "None";
 			default: return "";
 		}
 	}

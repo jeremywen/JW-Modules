@@ -54,8 +54,33 @@ struct XYPad : Module {
 
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step();
+	
 	void reset(){
-		defaultPos();
+	    setState(STATE_IDLE);
+	    points.clear();
+	    defaultPos();
+	}
+
+	void randomize(){
+//TODO move this to the right click menu and add more interesting designs
+	    // bool stateBefore = state;
+	    // setState(STATE_IDLE);
+
+	    // points.clear();
+	    // float lastX = displayWidth / 2.0;
+	    // float lastY = displayHeight / 2.0;
+	    // float radius = 10;
+	    // float rate = 0.2;
+	    // for(int i=0;i<200;i++){
+	    //     addPoint(
+	    //         lastX + sin(i/10.0) * radius, 
+	    //         lastY + cos(i/10.0) * radius
+	    //     );
+	    //     radius+=rate;
+	    //     rate+=0.005;
+	    // }
+
+	    // setState(stateBefore);
 	}
 
 	json_t *toJson() {
