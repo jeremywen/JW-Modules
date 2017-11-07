@@ -267,12 +267,15 @@ struct XYPadDisplay : Widget {
 	XYPadDisplay() {}
 
 	void onMouseDown(EventMouseDown &e) override { 
+		if (e.button == 0) {
+			e.consumed = true;
+			e.target = this;
+		}
 		module->setMouseDown(e.pos, true);
-		// e.consumed = true;
 	}
 	
 	void onMouseMove(EventMouseMove &e) override {
-		gDraggedWidget = this; //this needs to be set so it calls onDragMove in gui.cpp
+		// gDraggedWidget = this; //this needs to be set so it calls onDragMove in gui.cpp
 	}
 
 	void onMouseUp(EventMouseUp &e) override { 
@@ -292,7 +295,7 @@ struct XYPadDisplay : Widget {
 
 	void onDragMove(EventDragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
-			Vec mousePos = gMousePos.minus(getAbsoluteOffset(e.mouseRel)) /*.mult(gPixelRatio)*/  /*.minus(box.pos)*/;
+			Vec mousePos = gMousePos.minus(parent->getAbsoluteOffset(e.mouseRel)).minus(box.pos).div(gRackScene->zoomWidget->zoom);
 			module->setCurrentPos(mousePos.x, mousePos.y);
 		}
 		// e.consumed = true;
