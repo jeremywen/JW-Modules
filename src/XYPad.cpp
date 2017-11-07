@@ -265,40 +265,44 @@ void XYPad::step() {
 struct XYPadDisplay : Widget {
 	XYPad *module;
 	XYPadDisplay() {}
+	float initX = 0;
+	float initY = 0;
+	float dragX = 0;
+	float dragY = 0;
 
 	void onMouseDown(EventMouseDown &e) override { 
 		if (e.button == 0) {
 			e.consumed = true;
 			e.target = this;
 		}
+		initX = e.pos.x;
+		initY = e.pos.y;
 		module->setMouseDown(e.pos, true);
 	}
 	
 	void onMouseMove(EventMouseMove &e) override {
-		// gDraggedWidget = this; //this needs to be set so it calls onDragMove in gui.cpp
 	}
 
 	void onMouseUp(EventMouseUp &e) override { 
 		module->setMouseDown(e.pos, false);
-		// e.consumed = true;
 	}
 
 	void onDragStart(EventDragStart &e) override {
-		// e.consumed = true;
+		dragX = gRackWidget->lastMousePos.x;
+		dragY = gRackWidget->lastMousePos.y;
 	}
 
 	void onDragEnd(EventDragEnd &e) override { 
 		module->setMouseDown(Vec(0,0), false); 
 		gDraggedWidget = NULL;
-		// e.consumed = true;
 	}
 
 	void onDragMove(EventDragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
-			Vec mousePos = gMousePos.minus(parent->getAbsoluteOffset(e.mouseRel)).minus(box.pos).div(gRackScene->zoomWidget->zoom);
-			module->setCurrentPos(mousePos.x, mousePos.y);
+			float newDragX = gRackWidget->lastMousePos.x;
+			float newDragY = gRackWidget->lastMousePos.y;
+			module->setCurrentPos(initX+(newDragX-dragX), initY+(newDragY-dragY));
 		}
-		// e.consumed = true;
 	}
 
 	void draw(NVGcontext *vg) override {
