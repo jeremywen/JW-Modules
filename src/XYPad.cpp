@@ -54,7 +54,7 @@ struct XYPad : Module {
 
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step();
-	
+
 	void reset(){
 	    setState(STATE_IDLE);
 	    points.clear();
@@ -268,7 +268,7 @@ struct XYPadDisplay : Widget {
 
 	void onMouseDown(EventMouseDown &e) override { 
 		module->setMouseDown(e.pos, true);
-		e.consumed = true;
+		// e.consumed = true;
 	}
 	
 	void onMouseMove(EventMouseMove &e) override {
@@ -277,25 +277,25 @@ struct XYPadDisplay : Widget {
 
 	void onMouseUp(EventMouseUp &e) override { 
 		module->setMouseDown(e.pos, false);
-		e.consumed = true;
+		// e.consumed = true;
 	}
 
 	void onDragStart(EventDragStart &e) override {
-		e.consumed = true;
+		// e.consumed = true;
 	}
 
 	void onDragEnd(EventDragEnd &e) override { 
 		module->setMouseDown(Vec(0,0), false); 
 		gDraggedWidget = NULL;
-		e.consumed = true;
+		// e.consumed = true;
 	}
 
 	void onDragMove(EventDragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
-			Vec mousePos = gMousePos.minus(getAbsoluteOffset(e.mouseRel))/*.minus(box.pos)*/;
+			Vec mousePos = gMousePos.minus(getAbsoluteOffset(e.mouseRel)) /*.mult(gPixelRatio)*/  /*.minus(box.pos)*/;
 			module->setCurrentPos(mousePos.x, mousePos.y);
 		}
-		e.consumed = true;
+		// e.consumed = true;
 	}
 
 	void draw(NVGcontext *vg) override {

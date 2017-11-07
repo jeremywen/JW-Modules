@@ -148,9 +148,24 @@ QuantizerWidget::QuantizerWidget() {
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 
-	// addInput(createInput<PJ301MPort>(Vec(5, 150), module, Quantizer::NOTE_INPUT));
-	// addInput(createInput<PJ301MPort>(Vec(5, 200), module, Quantizer::SCALE_INPUT));
+	// addInput(createInput<TinyPJ301MPort>(Vec(5, 150), module, Quantizer::NOTE_INPUT));
+	// addInput(createInput<TinyPJ301MPort>(Vec(5, 200), module, Quantizer::SCALE_INPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(5, 300), module, Quantizer::VOLT_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(30, 300), module, Quantizer::VOLT_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 300), module, Quantizer::VOLT_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 300), module, Quantizer::VOLT_OUTPUT));
+
+	CenteredLabel* const voctLabel = new CenteredLabel;
+	voctLabel->box.pos = Vec(15, 145);
+	voctLabel->text = "V/OCT";
+	addChild(voctLabel);
+
+	CenteredLabel* const inLabel = new CenteredLabel;
+	inLabel->box.pos = Vec(8, 165);
+	inLabel->text = "In";
+	addChild(inLabel);
+
+	CenteredLabel* const outLabel = new CenteredLabel;
+	outLabel->box.pos = Vec(22, 165);
+	outLabel->text = "Out";
+	addChild(outLabel);
 }
