@@ -8,8 +8,8 @@ struct Quantizer : Module {
 		NUM_PARAMS
 	};
 	enum InputIds {
-		// NOTE_INPUT,
-		// SCALE_INPUT,
+		NOTE_INPUT,
+		SCALE_INPUT,
 		VOLT_INPUT,
 		NUM_INPUTS
 	};
@@ -61,8 +61,8 @@ struct Quantizer : Module {
 	}
 
 	float closestVoltageInScale(float voltsIn){
-		int rootNote = params[ROOT_NOTE_PARAM].value;
-		int curScaleVal = params[SCALE_PARAM].value;
+		int rootNote = params[ROOT_NOTE_PARAM].value + inputs[NOTE_INPUT].value;
+		int curScaleVal = params[SCALE_PARAM].value + inputs[SCALE_INPUT].value;
 		int *curScaleArr;
 		int notesInScale = 0;
 		switch(curScaleVal){
@@ -132,24 +132,24 @@ QuantizerWidget::QuantizerWidget() {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(19, 100), module, Quantizer::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(19, 80), module, Quantizer::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(15, 70);
+	noteLabel->box.pos = Vec(15, 35);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 110), module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(19, 200), module, Quantizer::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(19, 190), module, Quantizer::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(15, 120);
+	scaleLabel->box.pos = Vec(15, 90);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 220), module, Quantizer::SCALE_INPUT));
 
-	// addInput(createInput<TinyPJ301MPort>(Vec(5, 150), module, Quantizer::NOTE_INPUT));
-	// addInput(createInput<TinyPJ301MPort>(Vec(5, 200), module, Quantizer::SCALE_INPUT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(10, 300), module, Quantizer::VOLT_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 300), module, Quantizer::VOLT_OUTPUT));

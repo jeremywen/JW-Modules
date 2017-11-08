@@ -81,7 +81,11 @@ struct GridSeqWidget : ModuleWidget {
 	Menu *createContextMenu();
 };
 
-struct CenteredLabel : Label {
+struct CenteredLabel : Widget {
+	std::string text;
+	CenteredLabel() {
+		box.size.y = BND_WIDGET_HEIGHT;
+	}
 	void draw(NVGcontext *vg) override {
 		nvgTextAlign(vg, NVG_ALIGN_CENTER);
 		nvgFillColor(vg, nvgRGB(25, 150, 252));
