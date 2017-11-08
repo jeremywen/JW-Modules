@@ -57,7 +57,6 @@ struct XYPad : Module {
 	bool autoPlayOn = false;
 	int state = STATE_IDLE;
 	SchmittTrigger autoBtnTrigger;
-	SchmittTrigger playbackTrigger;
 	std::vector<Vec> points;
 	unsigned long curPointIdx = 0;
 
@@ -197,6 +196,7 @@ struct XYPad : Module {
 				params[GATE_PARAM].value = true; //keep gate on
 			} else {
 				params[GATE_PARAM].value = false;
+				//TODO check for one shot mode
 				curPointIdx = 0; //loop back around next time
 			}
 		}
@@ -524,6 +524,8 @@ XYPadWidget::XYPadWidget() {
 
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+5.5, 358+5.5), module, XYPad::AUTO_LIGHT));
+
+	//TODO add one shot mode button 
 
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
