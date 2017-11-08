@@ -61,8 +61,8 @@ struct Quantizer : Module {
 	}
 
 	float closestVoltageInScale(float voltsIn){
-		int rootNote = params[ROOT_NOTE_PARAM].value + inputs[NOTE_INPUT].value;
-		int curScaleVal = params[SCALE_PARAM].value + inputs[SCALE_INPUT].value;
+		int rootNote = params[ROOT_NOTE_PARAM].value + rescalef(inputs[NOTE_INPUT].value, 0, 10, 0, QuantizerWidget::NUM_NOTES);
+		int curScaleVal = params[SCALE_PARAM].value + rescalef(inputs[SCALE_INPUT].value, 0, 10, 0, QuantizerWidget::NUM_SCALES);
 		int *curScaleArr;
 		int notesInScale = 0;
 		switch(curScaleVal){

@@ -13,6 +13,7 @@ struct RMSWidget : ModuleWidget {
 
 struct XYPadWidget : ModuleWidget {
 	XYPadWidget();
+	Menu *createContextMenu();
 };
 
 struct BouncyBallWidget : ModuleWidget {

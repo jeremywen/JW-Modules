@@ -13,10 +13,12 @@ struct XYPad : Module {
 		SCALE_Y_PARAM,
 		AUTO_PLAY_PARAM,
 		PLAY_SPEED_PARAM,
+		SPEED_MULT_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		PLAY_GATE_INPUT,
+		PLAY_SPEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -40,11 +42,18 @@ struct XYPad : Module {
 		NUM_LIGHTS
 	};
 
+	enum Shapes {
+		SINE,
+		SPIRAL,
+		NUM_SHAPES
+	};
+
 	float minX = 0, minY = 0, maxX = 0, maxY = 0;
 	float displayWidth = 0, displayHeight = 0;
 	float totalBallSize = 12;
 	float minVolt = -5, maxVolt = 5;
-	float phase = 0.0;
+	float recordPhase = 0.0;
+	float playbackPhase = 0.0;
 	bool autoPlayOn = false;
 	int state = STATE_IDLE;
 	SchmittTrigger autoBtnTrigger;
@@ -62,25 +71,42 @@ struct XYPad : Module {
 	}
 
 	void randomize(){
-//TODO move this to the right click menu and add more interesting designs
-	    // bool stateBefore = state;
-	    // setState(STATE_IDLE);
+		makeShape(int(randomf() * NUM_SHAPES));
+	}
 
-	    // points.clear();
-	    // float lastX = displayWidth / 2.0;
-	    // float lastY = displayHeight / 2.0;
-	    // float radius = 10;
-	    // float rate = 0.2;
-	    // for(int i=0;i<200;i++){
-	    //     addPoint(
-	    //         lastX + sin(i/10.0) * radius, 
-	    //         lastY + cos(i/10.0) * radius
-	    //     );
-	    //     radius+=rate;
-	    //     rate+=0.005;
-	    // }
-
-	    // setState(stateBefore);
+	void makeShape(int shape){
+	    points.clear();
+	    switch(shape){
+			case SINE: {
+				    float midHeight = displayHeight / 2.0;
+				    float amp = midHeight * 0.5;
+				    float rate = 0.05;
+				    for(int i=0;i<displayWidth;i++){
+				        addPoint(
+				            i, 
+				            sin(i*rate) * amp + (displayHeight / 2.0)
+				        );
+				        rate+=0.0001;
+				        amp+=0.1;
+			    	}
+			    }
+				break;
+			case SPIRAL: {
+				    float currX = displayWidth / 2.0;
+				    float currY = displayHeight / 2.0;
+				    float radius = 10;
+				    float rate = 0.2;
+				    for(int i=0;i<200;i++){
+				        addPoint(
+				            currX + sin(i/10.0) * radius, 
+				            currY + cos(i/10.0) * radius
+				        );
+				        radius+=rate;
+				        rate+=0.005;
+				    }
+				}
+			    break;
+	    }
 	}
 
 	json_t *toJson() {
@@ -128,7 +154,7 @@ struct XYPad : Module {
 		params[XYPad::Y_POS_PARAM].value = displayHeight / 2.0;		
 	}
 
-	bool isPlaying() {
+	bool isStatePlaying() {
 		return state == STATE_GATE_PLAYING || state == STATE_AUTO_PLAYING;
 	}
 
@@ -163,10 +189,10 @@ struct XYPad : Module {
 	}
 
 	void playback(){
-		if(isPlaying() && points.size() > 0){ 
+		if(isStatePlaying() && points.size() > 0){ 
 			params[X_POS_PARAM].value = points[curPointIdx].x;
 			params[Y_POS_PARAM].value = points[curPointIdx].y;
-			curPointIdx+=int(params[PLAY_SPEED_PARAM].value);//TODO speeds<1, need LERP
+			curPointIdx += 1;
 			if(curPointIdx < points.size()){
 				params[GATE_PARAM].value = true; //keep gate on
 			} else {
@@ -205,7 +231,7 @@ void XYPad::step() {
 	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].value)) {
 		autoPlayOn = !autoPlayOn;
 		if(autoPlayOn){ 
-			if(!isPlaying()){
+			if(!isStatePlaying()){
 				setState(STATE_AUTO_PLAYING);
 			}
 		} else {
@@ -220,11 +246,11 @@ void XYPad::step() {
 		autoPlayOn = false; //disable autoplay if wire connected to play gate
 
 		if (inputs[PLAY_GATE_INPUT].value >= 1.0) {
-			if(!isPlaying() && state != STATE_RECORDING){
+			if(!isStatePlaying() && state != STATE_RECORDING){
 				setState(STATE_GATE_PLAYING);
 			}
 		} else {
-			if(isPlaying()){
+			if(isStatePlaying()){
 				setState(STATE_IDLE);
 			}
 		}
@@ -232,18 +258,21 @@ void XYPad::step() {
 		setState(STATE_IDLE);
 	}
 
-	bool nextStep = false;	
-	float clockTime = 60;
-	phase += clockTime / engineGetSampleRate();
-	if (phase >= 1.0) {
-		phase -= 1.0;
-		nextStep = true;
-	}
-	if (nextStep) {
-		if(isPlaying()){//continue playback
-			playback();
-		} else if(state == STATE_RECORDING){ //recording
+	if(state == STATE_RECORDING){
+		float recordClockTime = 50;
+		recordPhase += recordClockTime / engineGetSampleRate();
+		if (recordPhase >= 1.0) {
+			recordPhase -= 1.0;
 			addPoint(params[X_POS_PARAM].value, params[Y_POS_PARAM].value);
+		}
+
+	} else if(isStatePlaying()){
+		float playSpeedTotal = clampf(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 10);
+		float playbackClockTime = rescalef(playSpeedTotal, 0, 10, 1, 100 * params[SPEED_MULT_PARAM].value);
+		playbackPhase += playbackClockTime / engineGetSampleRate();
+		if (playbackPhase >= 1.0) {
+			playbackPhase -= 1.0;
+			playback();
 		}
 	}
 
@@ -457,17 +486,22 @@ XYPadWidget::XYPadWidget() {
 	addChild(autoLabel);
 
 	rack::Label* const speedLabel = new rack::Label;
-	speedLabel->box.pos = Vec(130-20, 340);
+	speedLabel->box.pos = Vec(122-20, 340);
 	speedLabel->text = "Speed";
 	addChild(speedLabel);
 
+	rack::Label* const speedMultLabel = new rack::Label;
+	speedMultLabel->box.pos = Vec(145, 340);
+	speedMultLabel->text = "Mult";
+	addChild(speedMultLabel);
+
 	rack::Label* const xLabel = new rack::Label;
-	xLabel->box.pos = Vec(190-4, 340);
+	xLabel->box.pos = Vec(195-4, 340);
 	xLabel->text = "X";
 	addChild(xLabel);
 
 	rack::Label* const yLabel = new rack::Label;
-	yLabel->box.pos = Vec(215-4, 340);
+	yLabel->box.pos = Vec(220-4, 340);
 	yLabel->text = "Y";
 	addChild(yLabel);
 
@@ -491,12 +525,45 @@ XYPadWidget::XYPadWidget() {
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+5.5, 358+5.5), module, XYPad::AUTO_LIGHT));
 
-	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 1.0, 10.0, 1));//TODO speeds<1, need LERP
+	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
+	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
+	addParam(createParam<TinyBlackKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 50.0, 1.0));
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(190, 360), module, XYPad::X_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(215, 360), module, XYPad::Y_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(255, 360), module, XYPad::X_INV_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(280, 360), module, XYPad::Y_INV_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(320, 360), module, XYPad::GATE_OUTPUT));
 }
 
+struct XYPadMenuItem : MenuItem {
+	XYPad *xyPad;
+	int shape = -1;
+	void onAction(EventAction &e) override {
+		xyPad->makeShape(shape);
+	}
+};
+
+Menu *XYPadWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->pushChild(spacerLabel);
+
+	XYPad *xyPad = dynamic_cast<XYPad*>(module);
+	assert(xyPad);
+
+	XYPadMenuItem *sineItem = new XYPadMenuItem();
+	sineItem->text = "Sine";
+	sineItem->xyPad = xyPad;
+	sineItem->shape = XYPad::SINE;
+	menu->pushChild(sineItem);
+
+	XYPadMenuItem *spiralItem = new XYPadMenuItem();
+	spiralItem->text = "Spiral";
+	spiralItem->xyPad = xyPad;
+	spiralItem->shape = XYPad::SPIRAL;
+	menu->pushChild(spiralItem);
+
+	return menu;
+}
