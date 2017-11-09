@@ -102,11 +102,11 @@ SimpleClockWidget::SimpleClockWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(17, 40), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(20, 40), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
 	addOutput(createOutput<PJ301MPort>(Vec(18, 78), module, SimpleClock::GATES_OUTPUT));
 	addParam(createParam<LEDButton>(Vec(21, 140), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(21+5.5, 140+5.5), module, SimpleClock::RUNNING_LIGHT));
 
 	addOutput(createOutput<PJ301MPort>(Vec(18, 198), module, SimpleClock::RESET_OUTPUT));
-	addParam(createParam<SmallWhiteKnob>(Vec(16, 280), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
+	addParam(createParam<SmallWhiteKnob>(Vec(20, 280), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
 }

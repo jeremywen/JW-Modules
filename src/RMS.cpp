@@ -192,9 +192,6 @@ RMSWidget::RMSWidget() {
 		addChild(display);
 	}
 
-	addParam(createParam<SmallWhiteKnob>(Vec(10, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(53, 209), module, RMS::TRIG_PARAM, -10.0, 10.0, 0.0));
-
-	addInput(createInput<PJ301MPort>(Vec(10, 319), module, RMS::X_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(54, 319), module, RMS::TRIG_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(35, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
+	addInput(createInput<PJ301MPort>(Vec(33, 319), module, RMS::X_INPUT));
 }

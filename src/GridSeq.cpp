@@ -34,7 +34,6 @@ struct GridSeq : Module {
 	enum OutputIds {
 		GATES_OUTPUT,
 		CELL_OUTPUT,
-		CELL_2_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -342,19 +341,18 @@ void GridSeq::step() {
 	if(gatesOn)	{
 		//don't want to change pitch if the step isn't turned on
 		outputs[CELL_OUTPUT].value = closestVoltageInScale(params[CELL_NOTE_PARAM + index].value);
-		// outputs[CELL_2_OUTPUT].value = closestVoltageInScale(params[(CELL_NOTE_PARAM + index + 2) % 16].value);
 	}
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
 struct RandomizeNotesOnlyButton : LEDButton {
-	void onMouseDownOpaque(int b){
+	void onMouseDown(EventMouseDown &e) override {
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 		for (int i = 0; i < 16; i++) {
-			if(b == 0){
+			if(e.button == 0){
 				gsw->seqKnobs[i]->setValue(gs->getOneRandomNoteInScale());
-			} else if(b == 1){
+			} else if(e.button == 1){
 				//right click this to update the knobs (if randomized by cv in)
 				gsw->seqKnobs[i]->setValue(module->params[GridSeq::CELL_NOTE_PARAM + i].value);
 			}
@@ -363,7 +361,7 @@ struct RandomizeNotesOnlyButton : LEDButton {
 };
 
 struct RandomizeGatesOnlyButton : LEDButton {
-	void onMouseDownOpaque(int b){
+	void onMouseDown(EventMouseDown &e) override {
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		for (int i = 0; i < 16; i++) {
 			gsw->gateButtons[i]->setValue(randomf() > 0.5);
@@ -389,12 +387,12 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
 	///// RUN AND RESET /////
-	addParam(createParam<LEDButton>(Vec(23, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+5.5, 90+5.5), module, GridSeq::RUNNING_LIGHT));
+	addParam(createParam<LEDButton>(Vec(25, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(25+5.5, 90+5.5), module, GridSeq::RUNNING_LIGHT));
 
-	addParam(createParam<LEDButton>(Vec(23, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+5.5, 130+5.5), module, GridSeq::RESET_LIGHT));
-	addInput(createInput<PJ301MPort>(Vec(20, 160), module, GridSeq::RESET_INPUT));
+	addParam(createParam<LEDButton>(Vec(25, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(25+5.5, 130+5.5), module, GridSeq::RESET_LIGHT));
+	addInput(createInput<PJ301MPort>(Vec(22, 160), module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
 	addParam(createParam<RightMoveButton>(Vec(70, 30), module, GridSeq::RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
@@ -413,17 +411,17 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(69, 325), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizerWidget::NUM_NOTES-1, QuantizerWidget::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(71, 325), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizerWidget::NUM_NOTES-1, QuantizerWidget::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(69, 325+25);
+	noteLabel->box.pos = Vec(41, 180);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(126, 325), module, GridSeq::SCALE_PARAM, 0.0, QuantizerWidget::NUM_SCALES-1, QuantizerWidget::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(130, 325), module, GridSeq::SCALE_PARAM, 0.0, QuantizerWidget::NUM_SCALES-1, QuantizerWidget::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(126-10, 325+25);
+	scaleLabel->box.pos = Vec(71, 180);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
@@ -462,7 +460,6 @@ GridSeqWidget::GridSeqWidget() {
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(22, 238), module, GridSeq::GATES_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(22, 300), module, GridSeq::CELL_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(40, 320), module, GridSeq::CELL_2_OUTPUT));
 }
 
 struct GridSeqGateModeItem : MenuItem {

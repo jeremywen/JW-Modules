@@ -144,17 +144,14 @@ struct XYPad : Module {
 		json_t *autoPlayOnJ = json_object_get(rootJ, "autoPlayOn");
 		if (autoPlayOnJ){
 			autoPlayOn = json_is_true(autoPlayOnJ);
-			setState(STATE_AUTO_PLAYING);
 		}
+		params[AUTO_PLAY_PARAM].value = autoPlayOn ? 1 : 0;
+		if(autoPlayOn){setState(STATE_AUTO_PLAYING);}
 	}
 
 	void defaultPos() {
 		params[XYPad::X_POS_PARAM].value = displayWidth / 2.0;
 		params[XYPad::Y_POS_PARAM].value = displayHeight / 2.0;		
-	}
-
-	bool isStatePlaying() {
-		return state == STATE_GATE_PLAYING || state == STATE_AUTO_PLAYING;
 	}
 
 	void setMouseDown(const Vec &pos, bool down){
@@ -185,6 +182,10 @@ struct XYPad : Module {
 		maxX = displayWidth - totalBallSize;
 		maxY = displayHeight - totalBallSize;
 
+	}
+
+	bool isStatePlaying() {
+		return state == STATE_GATE_PLAYING || state == STATE_AUTO_PLAYING;
 	}
 
 	void playback(){
@@ -286,7 +287,7 @@ void XYPad::step() {
 	outputs[X_INV_OUTPUT].value = (xInvOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
 	outputs[Y_INV_OUTPUT].value = (yInvOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
 	
-	outputs[GATE_OUTPUT].value = rescalef(params[GATE_PARAM].value, 0.0, 1.0, 0.0, 10.0);
+	outputs[GATE_OUTPUT].value = params[GATE_PARAM].value * 10;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -444,8 +445,8 @@ XYPadWidget::XYPadWidget() {
 	}
 
 	////////////////////////////////////////////////////////////
-	rack::Label* const titleLabel = new rack::Label;
-	titleLabel->box.pos = Vec(2, 2);
+	CenteredLabel* const titleLabel = new CenteredLabel;
+	titleLabel->box.pos = Vec(12, 12);
 	titleLabel->text = "XY Pad";
 	addChild(titleLabel);
 
