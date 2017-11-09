@@ -43,6 +43,7 @@ struct XYPad : Module {
 	};
 
 	enum Shapes {
+		RND_RAMP,
 		RND_LINE,
 		RND_SINE,
 		RND_SINE_MOD,
@@ -80,13 +81,29 @@ struct XYPad : Module {
 	    setState(STATE_IDLE);
 	    points.clear();
 	    switch(shape){
+			case RND_RAMP: {
+				    float startHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
+				    float rate = randomf()*2.0 - 1.0;
+				    float rateRate = randomf() * 0.01 * (randomf()>0.5?-1:1);
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	float x = i + minX;
+				    	float y = startHeight + powf(x, rate);
+				    	rate+=rateRate;
+
+				    	printf("y:%f rate:%f\n", y, rate);
+						inside = isInView(x, y);
+				        addPoint(x, y);
+			    	}
+			    }
+				break;
 			case RND_LINE: {
-				    float midHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
+				    float startHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
 				    float rate = randomf() - 0.5;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
 				    	float x = i + minX;
-				    	float y = midHeight + rate * x;
+				    	float y = startHeight + rate * x;
 						inside = isInView(x, y);
 				        addPoint(x, y);
 			    	}
@@ -592,6 +609,14 @@ Menu *XYPadWidget::createContextMenu() {
 
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
+
+	{
+		XYPadMenuItem *item = new XYPadMenuItem();
+		item->text = "Random Ramp";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_RAMP;
+		menu->pushChild(item);
+	}
 
 	{
 		XYPadMenuItem *item = new XYPadMenuItem();
