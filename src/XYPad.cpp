@@ -43,8 +43,10 @@ struct XYPad : Module {
 	};
 
 	enum Shapes {
-		SINE,
-		SPIRAL,
+		RND_LINE,
+		RND_SINE,
+		RND_SINE_MOD,
+		RND_SPIRAL,
 		NUM_SHAPES
 	};
 
@@ -74,38 +76,71 @@ struct XYPad : Module {
 	}
 
 	void makeShape(int shape){
+		int stateBefore = state;
+	    setState(STATE_IDLE);
 	    points.clear();
 	    switch(shape){
-			case SINE: {
-				    float midHeight = displayHeight / 2.0;
-				    float amp = midHeight * 0.5;
-				    float rate = 0.05;
-				    for(int i=0;i<displayWidth;i++){
-				        addPoint(
-				            i, 
-				            sin(i*rate) * amp + (displayHeight / 2.0)
-				        );
-				        rate+=0.0001;
-				        amp+=0.1;
+			case RND_LINE: {
+				    float midHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
+				    float rate = randomf() - 0.5;
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	float x = i + minX;
+				    	float y = midHeight + rate * x;
+						inside = isInView(x, y);
+				        addPoint(x, y);
 			    	}
 			    }
 				break;
-			case SPIRAL: {
-				    float currX = displayWidth / 2.0;
-				    float currY = displayHeight / 2.0;
+			case RND_SINE: {
+				    float midHeight = displayHeight / 2.0;
+				    float amp = midHeight * 0.90;
+				    float rate = randomf() * 0.1;
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	float x = i + minX;
+				    	float y = sin(i*rate) * amp + (displayHeight / 2.0);
+						inside = isInView(x, y);
+				        addPoint(x, y);
+			    	}
+			    }
+				break;
+			case RND_SINE_MOD: {
+				    float midHeight = displayHeight / 2.0;
+				    float amp = midHeight * 0.50;
+				    float rate = randomf() * 0.1;
+				    float rateAdder = randomf() * 0.001;
+				    float ampAdder = randomf() * 0.5;
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	float x = i + minX;
+				    	float y = sin(i*rate) * amp + (displayHeight / 2.0);
+						inside = isInView(x, y);
+				        addPoint(x, y);
+				        rate+=rateAdder;
+				        amp+=ampAdder;
+			    	}
+			    }
+				break;
+			case RND_SPIRAL: {
+				    float curX = displayWidth / 2.0;
+				    float curY = displayHeight / 2.0;
 				    float radius = 10;
-				    float rate = 0.2;
-				    for(int i=0;i<200;i++){
-				        addPoint(
-				            currX + sin(i/10.0) * radius, 
-				            currY + cos(i/10.0) * radius
-				        );
+				    float rate = randomf() * 0.5;
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	float x = curX + sin(i/10.0) * radius;
+				    	float y = curY + cos(i/10.0) * radius;
+						inside = isInView(x, y);
+				        addPoint(x, y);
 				        radius+=rate;
 				        rate+=0.005;
 				    }
 				}
 			    break;
 	    }
+		setCurrentPos(points[0].x, points[0].y);
+		setState(stateBefore);
 	}
 
 	json_t *toJson() {
@@ -170,6 +205,10 @@ struct XYPad : Module {
 	void setCurrentPos(float x, float y){
 		params[X_POS_PARAM].value = clampf(x, minX, maxX);
 		params[Y_POS_PARAM].value = clampf(y, minY, maxY);
+	}
+
+	bool isInView(float x, float y){
+		return x >= minX && x <= maxX && y >= minY && y <= maxY;
 	}
 
 	void addPoint(float x, float y){
@@ -526,8 +565,6 @@ XYPadWidget::XYPadWidget() {
 	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+5.5, 358+5.5), module, XYPad::AUTO_LIGHT));
 
-	//TODO add one shot mode button 
-
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
 	addParam(createParam<TinyBlackKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 50.0, 1.0));
@@ -556,17 +593,37 @@ Menu *XYPadWidget::createContextMenu() {
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
 
-	XYPadMenuItem *sineItem = new XYPadMenuItem();
-	sineItem->text = "Sine";
-	sineItem->xyPad = xyPad;
-	sineItem->shape = XYPad::SINE;
-	menu->pushChild(sineItem);
+	{
+		XYPadMenuItem *item = new XYPadMenuItem();
+		item->text = "Random Line";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_LINE;
+		menu->pushChild(item);
+	}
 
-	XYPadMenuItem *spiralItem = new XYPadMenuItem();
-	spiralItem->text = "Spiral";
-	spiralItem->xyPad = xyPad;
-	spiralItem->shape = XYPad::SPIRAL;
-	menu->pushChild(spiralItem);
+	{
+		XYPadMenuItem *item = new XYPadMenuItem();
+		item->text = "Random Sine";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_SINE;
+		menu->pushChild(item);
+	}
+
+	{
+		XYPadMenuItem *item = new XYPadMenuItem();
+		item->text = "Random Sine Mod";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_SINE_MOD;
+		menu->pushChild(item);
+	}
+
+	{
+		XYPadMenuItem *item = new XYPadMenuItem();
+		item->text = "Random Spiral";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_SPIRAL;
+		menu->pushChild(item);	
+	}
 
 	return menu;
 }

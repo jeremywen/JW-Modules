@@ -22,7 +22,7 @@ struct FullScope : Module {
 		Y_INPUT,
 		TRIG_INPUT,
 		COLOR_INPUT,
-		TIME_INPUT,
+		ROTATION_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -82,7 +82,7 @@ void FullScope::step() {
 	lights[3] = external ? 1.0 : 0.0;
 
 	// Compute time
-	float deltaTime = powf(2.0, params[TIME_PARAM].value + inputs[TIME_INPUT].value);
+	float deltaTime = powf(2.0, params[TIME_PARAM].value);
 	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
 
 	// Add frame to buffer
@@ -161,8 +161,9 @@ struct FullScopeDisplay : TransparentWidget {
 		Rect b = Rect(Vec(0, 0), box.size);
 		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
 		
-		// nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
-		// nvgRotate(vg, rot+=0.01);
+		nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
+		float rotRate = rescalef(module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
+		nvgRotate(vg, rot+=rotRate);
 
 		nvgBeginPath(vg);
 		// Draw maximum display left to right
@@ -278,7 +279,7 @@ FullScopeWidget::FullScopeWidget() {
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::X_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::Y_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::COLOR_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::TIME_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::ROTATION_INPUT));
 
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
