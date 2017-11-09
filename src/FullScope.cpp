@@ -130,6 +130,7 @@ void FullScope::step() {
 struct FullScopeDisplay : TransparentWidget {
 	FullScope *module;
 	int frame = 0;
+	float rot = 0;
 	std::shared_ptr<Font> font;
 
 	struct Stats {
@@ -159,6 +160,10 @@ struct FullScopeDisplay : TransparentWidget {
 		nvgSave(vg);
 		Rect b = Rect(Vec(0, 0), box.size);
 		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
+		
+		// nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
+		// nvgRotate(vg, rot+=0.01);
+
 		nvgBeginPath(vg);
 		// Draw maximum display left to right
 		for (int i = 0; i < BUFFER_SIZE; i++) {
