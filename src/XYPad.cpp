@@ -391,8 +391,8 @@ void XYPad::step() {
 		}
 
 	} else if(isStatePlaying()){
-		float playSpeedTotal = clampf(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 10);
-		float playbackClockTime = rescalef(playSpeedTotal, 0, 10, 1, 100 * params[SPEED_MULT_PARAM].value);
+		float playSpeedTotal = clampf(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 20);
+		float playbackClockTime = rescalef(playSpeedTotal, 0, 20, 1, 500 * params[SPEED_MULT_PARAM].value);
 		playbackPhase += playbackClockTime / engineGetSampleRate();
 		if (playbackPhase >= 1.0) {
 			playbackPhase -= 1.0;
