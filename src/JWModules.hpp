@@ -236,11 +236,13 @@ struct RepMoveButton : SVGSwitch, MomentarySwitch {
 };
 
 struct ModuleResizeHandle : Widget {
+	float minWidth;
 	bool right = false;
 	float dragX;
 	Rect originalBox;
-	ModuleResizeHandle() {
+	ModuleResizeHandle(float _minWidth) {
 		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
+		minWidth = _minWidth;
 	}
 	void onMouseDown(EventMouseDown &e) override {
 		if (e.button == 0) {
@@ -260,7 +262,6 @@ struct ModuleResizeHandle : Widget {
 		float deltaX = newDragX - dragX;
 
 		Rect newBox = originalBox;
-		const float minWidth = 13 * RACK_GRID_WIDTH;
 		if (right) {
 			newBox.size.x += deltaX;
 			newBox.size.x = fmaxf(newBox.size.x, minWidth);

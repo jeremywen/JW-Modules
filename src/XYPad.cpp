@@ -280,9 +280,16 @@ struct XYPad : Module {
 	}
 
 	void playback(){
-		if(isStatePlaying() && points.size() > 0){ 
+		if(isStatePlaying() && points.size() > 0){
 			params[X_POS_PARAM].value = points[curPointIdx].x;
 			params[Y_POS_PARAM].value = points[curPointIdx].y;
+
+			if(curPlayMode == FWD_LOOP || curPlayMode == FWD_ONE_SHOT){
+				playingFwd = true;
+			} else if(curPlayMode == BWD_LOOP || curPlayMode == BWD_ONE_SHOT){
+				playingFwd = false;
+			}
+
 			curPointIdx += playingFwd ? 1 : -1;
 			if(curPointIdx >= 0 && curPointIdx < long(points.size())){
 				params[GATE_PARAM].value = true; //keep gate on
@@ -294,11 +301,11 @@ struct XYPad : Module {
 				} else if(curPlayMode == BWD_LOOP){
 					curPointIdx = points.size() - 1;
 				} else if(curPlayMode == FWD_ONE_SHOT || curPlayMode == BWD_ONE_SHOT){
-					setState(STATE_IDLE);
-					return; //done playing
+					setState(STATE_IDLE);//done playing
+					curPointIdx = playingFwd ? points.size() - 1 : 0;
 				} else if(curPlayMode == FWD_BWD_LOOP || curPlayMode == BWD_FWD_LOOP){
 					playingFwd = !playingFwd; //go the other way now
-TODO FIX THIS so it isnt jumpy
+					curPointIdx = playingFwd ? 0 : points.size() - 1;
 				}
 			}
 		}
@@ -324,10 +331,8 @@ TODO FIX THIS so it isnt jumpy
 		}
 		if(isStatePlaying()){
 			if(curPlayMode == FWD_LOOP || curPlayMode == FWD_ONE_SHOT){
-				playingFwd = true;
 				curPointIdx = 0;
 			} else if(curPlayMode == BWD_LOOP || curPlayMode == BWD_ONE_SHOT){
-				playingFwd = false;
 				curPointIdx = points.size() - 1;
 			}
 		}
@@ -652,6 +657,7 @@ struct PlayModeItem : MenuItem {
 	int mode;
 	void onAction(EventAction &e) override {
 		xyPad->curPlayMode = mode;
+		xyPad->setState(XYPad::STATE_AUTO_PLAYING);
 	}
 	void step() override {
 		rightText = (xyPad->curPlayMode == mode) ? "✔" : "";

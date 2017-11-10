@@ -252,7 +252,7 @@ struct FullScopeDisplay : TransparentWidget {
 FullScopeWidget::FullScopeWidget() {
 	FullScope *module = new FullScope();
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*13, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*15, RACK_GRID_HEIGHT);
 
 	{
 		panel = new Panel();
@@ -261,8 +261,8 @@ FullScopeWidget::FullScopeWidget() {
 		addChild(panel);
 	}
 
-	ModuleResizeHandle *leftHandle = new ModuleResizeHandle();
-	ModuleResizeHandle *rightHandle = new ModuleResizeHandle();
+	ModuleResizeHandle *leftHandle = new ModuleResizeHandle(box.size.x);
+	ModuleResizeHandle *rightHandle = new ModuleResizeHandle(box.size.x);
 	rightHandle->right = true;
 	this->rightHandle = rightHandle;
 	addChild(leftHandle);
