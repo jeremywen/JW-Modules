@@ -14,6 +14,7 @@ struct XYPad : Module {
 		AUTO_PLAY_PARAM,
 		PLAY_SPEED_PARAM,
 		SPEED_MULT_PARAM,
+		RND_SHAPES_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -86,6 +87,10 @@ struct XYPad : Module {
 	}
 
 	void randomize(){
+		randomizeShape();
+	}
+
+	void randomizeShape(){
 		makeShape(int(randomf() * NUM_SHAPES));
 	}
 
@@ -137,7 +142,7 @@ struct XYPad : Module {
 				    float amp = midHeight * 0.50;
 				    float rate = randomf() * 0.1;
 				    float rateAdder = randomf() * 0.001;
-				    float ampAdder = randomf() * 0.5;
+				    float ampAdder = randomf() * 0.25;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
 				    	float x = minX + i;
@@ -170,7 +175,7 @@ struct XYPad : Module {
 				    float y = maxY * 0.5;
 				    enum stateEnum { ST_RIGHT, ST_LEFT, ST_UP, ST_DOWN };
 				    int squSt = ST_RIGHT;
-				    int stepsBeforeStateChange = 10 + randomf()*30;
+				    int stepsBeforeStateChange = 5 * int(randomf()*5+1);
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
 				    	if(squSt == ST_RIGHT && x < maxX){
@@ -539,6 +544,14 @@ struct XYPadDisplay : Widget {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct RandomizeShapeOnlyButton : LEDButton {
+	void onMouseDown(EventMouseDown &e) override {
+		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
+		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
+		xyPad->randomizeShape();
+	}
+};
+
 XYPadWidget::XYPadWidget() {
 	XYPad *module = new XYPad();
 	setModule(module);
@@ -568,6 +581,11 @@ XYPadWidget::XYPadWidget() {
 	titleLabel->text = "XY Pad";
 	addChild(titleLabel);
 
+	rack::Label* const rndLabel = new rack::Label;
+	rndLabel->box.pos = Vec(80-20, 2);
+	rndLabel->text = "Rnd";
+	addChild(rndLabel);
+
 	rack::Label* const xScaleLabel = new rack::Label;
 	xScaleLabel->box.pos = Vec(130-20, 2);
 	xScaleLabel->text = "X Scale";
@@ -587,6 +605,8 @@ XYPadWidget::XYPadWidget() {
 	yOffsetLabel->box.pos = Vec(310-20, 2);
 	yOffsetLabel->text = "Y Offset";
 	addChild(yOffsetLabel);
+
+	addParam(createParam<RandomizeShapeOnlyButton>(Vec(70, 18), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<TinyBlackKnob>(Vec(130, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<TinyBlackKnob>(Vec(190, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
