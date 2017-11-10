@@ -197,6 +197,7 @@ struct XYPad : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "curPlayMode", json_integer(curPlayMode));
 		json_object_set_new(rootJ, "autoPlayOn", json_boolean(autoPlayOn));
 		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
 		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
@@ -213,6 +214,8 @@ struct XYPad : Module {
 	}
 
 	void fromJson(json_t *rootJ) {
+		curPlayMode = json_integer_value(json_object_get(rootJ, "curPlayMode"));
+
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
 		json_t *yPosJ = json_object_get(rootJ, "yPos");
 		setCurrentPos(json_real_value(xPosJ), json_real_value(yPosJ));
