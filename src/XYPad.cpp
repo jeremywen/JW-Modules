@@ -48,7 +48,18 @@ struct XYPad : Module {
 		RND_SINE,
 		RND_SINE_MOD,
 		RND_SPIRAL,
+		RND_STEPS,
 		NUM_SHAPES
+	};
+
+	enum PlayModes {
+		FWD_LOOP,
+		BWD_LOOP,
+		FWD_ONE_SHOT,
+		BWD_ONE_SHOT,
+		FWD_BWD_LOOP,
+		BWD_FWD_LOOP,
+		NUM_PLAY_MODES
 	};
 
 	float minX = 0, minY = 0, maxX = 0, maxY = 0;
@@ -58,10 +69,12 @@ struct XYPad : Module {
 	float recordPhase = 0.0;
 	float playbackPhase = 0.0;
 	bool autoPlayOn = false;
+	bool playingFwd = true;
 	int state = STATE_IDLE;
+	int curPlayMode = FWD_LOOP;
 	SchmittTrigger autoBtnTrigger;
 	std::vector<Vec> points;
-	unsigned long curPointIdx = 0;
+	long curPointIdx = 0;
 
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step();
@@ -82,66 +95,63 @@ struct XYPad : Module {
 	    points.clear();
 	    switch(shape){
 			case RND_RAMP: {
-				    float startHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
-				    float rate = randomf()*2.0 - 1.0;
-				    float rateRate = randomf() * 0.01 * (randomf()>0.5?-1:1);
+				    float lastY = maxY;
+				    float rate = randomf();
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
-				    	float x = i + minX;
-				    	float y = startHeight + powf(x, rate);
-				    	rate+=rateRate;
-
-				    	printf("y:%f rate:%f\n", y, rate);
+				    	float x = minX + i;
+				    	lastY -= powf(2, powf(x*0.005, 2)) * rate;
+				    	float y = lastY;
 						inside = isInView(x, y);
-				        addPoint(x, y);
+				        if(inside)addPoint(x, y);
 			    	}
 			    }
 				break;
 			case RND_LINE: {
-				    float startHeight = (randomf() * displayHeight * 0.5) + (displayHeight * 0.25);
+				    float startHeight = (randomf() * maxY * 0.5) + (maxY * 0.25);
 				    float rate = randomf() - 0.5;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
-				    	float x = i + minX;
+				    	float x = minX + i;
 				    	float y = startHeight + rate * x;
 						inside = isInView(x, y);
-				        addPoint(x, y);
+				        if(inside)addPoint(x, y);
 			    	}
 			    }
 				break;
 			case RND_SINE: {
-				    float midHeight = displayHeight / 2.0;
+				    float midHeight = maxY / 2.0;
 				    float amp = midHeight * 0.90;
 				    float rate = randomf() * 0.1;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
-				    	float x = i + minX;
-				    	float y = sin(i*rate) * amp + (displayHeight / 2.0);
+				    	float x = minX + i;
+				    	float y = sin(i*rate) * amp + (maxY / 2.0);
 						inside = isInView(x, y);
-				        addPoint(x, y);
+				        if(inside)addPoint(x, y);
 			    	}
 			    }
 				break;
 			case RND_SINE_MOD: {
-				    float midHeight = displayHeight / 2.0;
+				    float midHeight = maxY / 2.0;
 				    float amp = midHeight * 0.50;
 				    float rate = randomf() * 0.1;
 				    float rateAdder = randomf() * 0.001;
 				    float ampAdder = randomf() * 0.5;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i++){
-				    	float x = i + minX;
-				    	float y = sin(i*rate) * amp + (displayHeight / 2.0);
+				    	float x = minX + i;
+				    	float y = sin(i*rate) * amp + (maxY / 2.0);
 						inside = isInView(x, y);
-				        addPoint(x, y);
+				        if(inside)addPoint(x, y);
 				        rate+=rateAdder;
 				        amp+=ampAdder;
 			    	}
 			    }
 				break;
 			case RND_SPIRAL: {
-				    float curX = displayWidth / 2.0;
-				    float curY = displayHeight / 2.0;
+				    float curX = maxX / 2.0;
+				    float curY = maxY / 2.0;
 				    float radius = 10;
 				    float rate = randomf() * 0.5;
 				    bool inside = true;
@@ -149,12 +159,37 @@ struct XYPad : Module {
 				    	float x = curX + sin(i/10.0) * radius;
 				    	float y = curY + cos(i/10.0) * radius;
 						inside = isInView(x, y);
-				        addPoint(x, y);
+				        if(inside)addPoint(x, y);
 				        radius+=rate;
 				        rate+=0.005;
 				    }
 				}
 			    break;
+			case RND_STEPS: {
+				    float x = maxX * 0.5;
+				    float y = maxY * 0.5;
+				    enum stateEnum { ST_RIGHT, ST_LEFT, ST_UP, ST_DOWN };
+				    int squSt = ST_RIGHT;
+				    int stepsBeforeStateChange = 10 + randomf()*30;
+				    bool inside = true;
+				    for(int i=0; i<5000 && inside; i++){
+				    	if(squSt == ST_RIGHT && x < maxX){
+				    		x++;
+				    	} else if(squSt == ST_LEFT && x > minX){
+				    		x--;
+				    	} else if(squSt == ST_UP && y > minY){
+				    		y--;
+				    	} else if(squSt == ST_DOWN && y < maxY){
+				    		y++;
+				    	}
+				    	if(i % stepsBeforeStateChange == 0){
+				    		squSt = int(randomf() * 4);
+				    	}
+						inside = isInView(x, y);
+				        if(inside)addPoint(x, y);
+			    	}
+			    }
+				break;
 	    }
 		setCurrentPos(points[0].x, points[0].y);
 		setState(stateBefore);
@@ -248,13 +283,23 @@ struct XYPad : Module {
 		if(isStatePlaying() && points.size() > 0){ 
 			params[X_POS_PARAM].value = points[curPointIdx].x;
 			params[Y_POS_PARAM].value = points[curPointIdx].y;
-			curPointIdx += 1;
-			if(curPointIdx < points.size()){
+			curPointIdx += playingFwd ? 1 : -1;
+			if(curPointIdx >= 0 && curPointIdx < long(points.size())){
 				params[GATE_PARAM].value = true; //keep gate on
 			} else {
 				params[GATE_PARAM].value = false;
-				//TODO check for one shot mode
-				curPointIdx = 0; //loop back around next time
+
+				if(curPlayMode == FWD_LOOP){
+					curPointIdx = 0;
+				} else if(curPlayMode == BWD_LOOP){
+					curPointIdx = points.size() - 1;
+				} else if(curPlayMode == FWD_ONE_SHOT || curPlayMode == BWD_ONE_SHOT){
+					setState(STATE_IDLE);
+					return; //done playing
+				} else if(curPlayMode == FWD_BWD_LOOP || curPlayMode == BWD_FWD_LOOP){
+					playingFwd = !playingFwd; //go the other way now
+TODO FIX THIS so it isnt jumpy
+				}
 			}
 		}
 	}
@@ -276,6 +321,15 @@ struct XYPad : Module {
 			case STATE_GATE_PLAYING:
 				params[GATE_PARAM].value = true;
 				break;
+		}
+		if(isStatePlaying()){
+			if(curPlayMode == FWD_LOOP || curPlayMode == FWD_ONE_SHOT){
+				playingFwd = true;
+				curPointIdx = 0;
+			} else if(curPlayMode == BWD_LOOP || curPlayMode == BWD_ONE_SHOT){
+				playingFwd = false;
+				curPointIdx = points.size() - 1;
+			}
 		}
 		state = newState;
 	}
@@ -360,17 +414,18 @@ struct XYPadDisplay : Widget {
 		if (e.button == 0) {
 			e.consumed = true;
 			e.target = this;
+
+			initX = e.pos.x;
+			initY = e.pos.y;
+			module->setMouseDown(e.pos, true);
 		}
-		initX = e.pos.x;
-		initY = e.pos.y;
-		module->setMouseDown(e.pos, true);
 	}
 	
 	void onMouseMove(EventMouseMove &e) override {
 	}
 
 	void onMouseUp(EventMouseUp &e) override { 
-		module->setMouseDown(e.pos, false);
+		if(e.button==0)module->setMouseDown(e.pos, false);
 	}
 
 	void onDragStart(EventDragStart &e) override {
@@ -486,7 +541,6 @@ XYPadWidget::XYPadWidget() {
 		panel->box.size = box.size;
 		addChild(panel);
 	}
-
 	{
 		XYPadDisplay *display = new XYPadDisplay();
 		display->module = module;
@@ -584,7 +638,7 @@ XYPadWidget::XYPadWidget() {
 
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
-	addParam(createParam<TinyBlackKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 50.0, 1.0));
+	addParam(createParam<TinyBlackKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));
@@ -593,7 +647,18 @@ XYPadWidget::XYPadWidget() {
 	addOutput(createOutput<TinyPJ301MPort>(Vec(320, 360), module, XYPad::GATE_OUTPUT));
 }
 
-struct XYPadMenuItem : MenuItem {
+struct PlayModeItem : MenuItem {
+	XYPad *xyPad;
+	int mode;
+	void onAction(EventAction &e) override {
+		xyPad->curPlayMode = mode;
+	}
+	void step() override {
+		rightText = (xyPad->curPlayMode == mode) ? "✔" : "";
+	}
+};
+
+struct ShapeMenuItem : MenuItem {
 	XYPad *xyPad;
 	int shape = -1;
 	void onAction(EventAction &e) override {
@@ -604,49 +669,99 @@ struct XYPadMenuItem : MenuItem {
 Menu *XYPadWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
+{	
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->pushChild(spacerLabel);
-
+}
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
 
 	{
-		XYPadMenuItem *item = new XYPadMenuItem();
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Forward Loop";
+		item->xyPad = xyPad;
+		item->mode = XYPad::FWD_LOOP;
+		menu->pushChild(item);
+	}
+	{
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Backward Loop";
+		item->xyPad = xyPad;
+		item->mode = XYPad::BWD_LOOP;
+		menu->pushChild(item);
+	}
+	{
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Forward One-Shot";
+		item->xyPad = xyPad;
+		item->mode = XYPad::FWD_ONE_SHOT;
+		menu->pushChild(item);
+	}
+	{
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Backward One-Shot";
+		item->xyPad = xyPad;
+		item->mode = XYPad::BWD_ONE_SHOT;
+		menu->pushChild(item);
+	}
+	{
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Forward-Backward Loop";
+		item->xyPad = xyPad;
+		item->mode = XYPad::FWD_BWD_LOOP;
+		menu->pushChild(item);
+	}
+	{
+		PlayModeItem *item = new PlayModeItem();
+		item->text = "Backward-Forward Loop";
+		item->xyPad = xyPad;
+		item->mode = XYPad::BWD_FWD_LOOP;
+		menu->pushChild(item);
+	}
+	{	
+		MenuLabel *spacerLabel = new MenuLabel();
+		menu->pushChild(spacerLabel);
+	}
+	{
+		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Ramp";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_RAMP;
 		menu->pushChild(item);
 	}
-
 	{
-		XYPadMenuItem *item = new XYPadMenuItem();
+		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Line";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_LINE;
 		menu->pushChild(item);
 	}
-
 	{
-		XYPadMenuItem *item = new XYPadMenuItem();
+		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Sine";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SINE;
 		menu->pushChild(item);
 	}
-
 	{
-		XYPadMenuItem *item = new XYPadMenuItem();
+		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Sine Mod";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SINE_MOD;
 		menu->pushChild(item);
 	}
-
 	{
-		XYPadMenuItem *item = new XYPadMenuItem();
+		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Spiral";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SPIRAL;
+		menu->pushChild(item);	
+	}
+	{
+		ShapeMenuItem *item = new ShapeMenuItem();
+		item->text = "Random Steps";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_STEPS;
 		menu->pushChild(item);	
 	}
 

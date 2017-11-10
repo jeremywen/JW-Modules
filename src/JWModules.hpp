@@ -260,7 +260,7 @@ struct ModuleResizeHandle : Widget {
 		float deltaX = newDragX - dragX;
 
 		Rect newBox = originalBox;
-		const float minWidth = 12 * RACK_GRID_WIDTH;
+		const float minWidth = 13 * RACK_GRID_WIDTH;
 		if (right) {
 			newBox.size.x += deltaX;
 			newBox.size.x = fmaxf(newBox.size.x, minWidth);

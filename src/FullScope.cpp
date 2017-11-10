@@ -15,6 +15,7 @@ struct FullScope : Module {
 		LISSAJOUS_PARAM,
 		TRIG_PARAM,
 		EXTERNAL_PARAM,
+		ROTATION_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -22,6 +23,7 @@ struct FullScope : Module {
 		Y_INPUT,
 		TRIG_INPUT,
 		COLOR_INPUT,
+		TIME_INPUT,
 		ROTATION_INPUT,
 		NUM_INPUTS
 	};
@@ -82,7 +84,7 @@ void FullScope::step() {
 	lights[3] = external ? 1.0 : 0.0;
 
 	// Compute time
-	float deltaTime = powf(2.0, params[TIME_PARAM].value);
+	float deltaTime = powf(2.0, params[TIME_PARAM].value + inputs[TIME_INPUT].value);
 	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
 
 	// Add frame to buffer
@@ -162,7 +164,7 @@ struct FullScopeDisplay : TransparentWidget {
 		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
 		
 		nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
-		float rotRate = rescalef(module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
+		float rotRate = rescalef(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
 		nvgRotate(vg, rot+=rotRate);
 
 		nvgBeginPath(vg);
@@ -250,7 +252,7 @@ struct FullScopeDisplay : TransparentWidget {
 FullScopeWidget::FullScopeWidget() {
 	FullScope *module = new FullScope();
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*12, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*13, RACK_GRID_HEIGHT);
 
 	{
 		panel = new Panel();
@@ -280,11 +282,13 @@ FullScopeWidget::FullScopeWidget() {
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::Y_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::COLOR_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::ROTATION_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::TIME_INPUT));
 
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
 }
 
