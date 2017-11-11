@@ -50,7 +50,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Right Click Context Menu
 
-  ![Menu](./doc/GridSeq-Menu-img1.png)
+  ![Menu](./doc/GridSeq-Menu-img2.png)
 
   * **Trigger:** same as SEQ3
   * **Retrigger:** same as SEQ3
@@ -92,7 +92,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Right Click Context Menu
 
-![Menu](./doc/XYPad-Menu-img1.png)
+![Menu](./doc/XYPad-Menu-img2.png)
 
 ## SimpleClock
 
