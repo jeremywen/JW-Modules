@@ -98,8 +98,8 @@ struct GridSeq : Module {
 	json_t *toJson() {
 		json_t *rootJ = json_object();
 
-		// running
 		json_object_set_new(rootJ, "running", json_boolean(running));
+		json_object_set_new(rootJ, "ignoreGateOnPitchOut", json_boolean(ignoreGateOnPitchOut));
 
 		// gates
 		json_t *gatesJ = json_array();
@@ -117,10 +117,13 @@ struct GridSeq : Module {
 	}
 
 	void fromJson(json_t *rootJ) {
-		// running
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
+
+		json_t *ignoreGateOnPitchOutJ = json_object_get(rootJ, "ignoreGateOnPitchOut");
+		if (ignoreGateOnPitchOutJ)
+			ignoreGateOnPitchOut = json_is_true(ignoreGateOnPitchOutJ);
 
 		// gates
 		json_t *gatesJ = json_object_get(rootJ, "gates");
