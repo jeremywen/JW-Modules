@@ -85,6 +85,7 @@ struct GridSeq : Module {
 	float phase = 0.0;
 	bool gateState[16] = {};
 	bool running = true;
+	bool ignoreGateOnPitchOut = false;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -338,7 +339,7 @@ void GridSeq::step() {
 		gatesOn = gatesOn && !pulse;
 
 	// Outputs
-	if(gatesOn)	{
+	if(gatesOn || ignoreGateOnPitchOut)	{
 		//don't want to change pitch if the step isn't turned on
 		outputs[CELL_OUTPUT].value = closestVoltageInScale(params[CELL_NOTE_PARAM + index].value);
 	}
@@ -462,6 +463,16 @@ GridSeqWidget::GridSeqWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(22, 300), module, GridSeq::CELL_OUTPUT));
 }
 
+struct GridSeqPitchMenuItem : MenuItem {
+	GridSeq *gridSeq;
+	void onAction(EventAction &e) override {
+		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
+	}
+	void step() override {
+		rightText = (gridSeq->ignoreGateOnPitchOut) ? "✔" : "";
+	}
+};
+
 struct GridSeqGateModeItem : MenuItem {
 	GridSeq *gridSeq;
 	GridSeq::GateMode gateMode;
@@ -503,6 +514,14 @@ Menu *GridSeqWidget::createContextMenu() {
 	continuousItem->gridSeq = gridSeq;
 	continuousItem->gateMode = GridSeq::CONTINUOUS;
 	menu->pushChild(continuousItem);
+
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->pushChild(spacerLabel2);
+
+	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
+	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
+	pitchMenuItem->gridSeq = gridSeq;
+	menu->pushChild(pitchMenuItem);
 
 	return menu;
 }
