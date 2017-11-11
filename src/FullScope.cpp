@@ -252,7 +252,7 @@ struct FullScopeDisplay : TransparentWidget {
 FullScopeWidget::FullScopeWidget() {
 	FullScope *module = new FullScope();
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*15, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 
 	{
 		panel = new Panel();
@@ -290,6 +290,9 @@ FullScopeWidget::FullScopeWidget() {
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
 	addParam(createParam<TinyBlackKnob>(Vec(compX+=adder, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+
+	addChild(createScrew<Screw_J>(Vec(compX+25, 362)));
+	addChild(createScrew<Screw_W>(Vec(compX+40, 362)));
 }
 
 void FullScopeWidget::step() {

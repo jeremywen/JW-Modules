@@ -382,10 +382,10 @@ GridSeqWidget::GridSeqWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(15, 0)));
+	addChild(createScrew<Screw_J>(Vec(15, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
 	///// RUN AND RESET /////
 	addParam(createParam<LEDButton>(Vec(25, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));

@@ -15,6 +15,7 @@ struct XYPad : Module {
 		PLAY_SPEED_PARAM,
 		SPEED_MULT_PARAM,
 		RND_SHAPES_PARAM,
+		RND_VARIATION_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -73,6 +74,7 @@ struct XYPad : Module {
 	bool playingFwd = true;
 	int state = STATE_IDLE;
 	int curPlayMode = FWD_LOOP;
+	int lastRandomShape = RND_STEPS;
 	SchmittTrigger autoBtnTrigger;
 	std::vector<Vec> points;
 	long curPointIdx = 0;
@@ -95,6 +97,7 @@ struct XYPad : Module {
 	}
 
 	void makeShape(int shape){
+		lastRandomShape = shape;
 		int stateBefore = state;
 	    setState(STATE_IDLE);
 	    points.clear();
@@ -544,11 +547,19 @@ struct XYPadDisplay : Widget {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct RandomizeShapeOnlyButton : LEDButton {
+struct RandomShapeButton : LEDButtonSmall {
 	void onMouseDown(EventMouseDown &e) override {
 		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
 		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
 		xyPad->randomizeShape();
+	}
+};
+
+struct RandomVariationButton : LEDButtonSmall {
+	void onMouseDown(EventMouseDown &e) override {
+		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
+		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
+		xyPad->makeShape(xyPad->lastRandomShape);
 	}
 };
 
@@ -576,13 +587,15 @@ XYPadWidget::XYPadWidget() {
 	}
 
 	////////////////////////////////////////////////////////////
-	CenteredLabel* const titleLabel = new CenteredLabel;
-	titleLabel->box.pos = Vec(12, 12);
+	CenteredLabel* const titleLabel = new CenteredLabel(16);
+	titleLabel->box.pos = Vec(15, 8);
 	titleLabel->text = "XY Pad";
 	addChild(titleLabel);
+	addChild(createScrew<Screw_J>(Vec(14, 20)));
+	addChild(createScrew<Screw_W>(Vec(29, 20)));
 
 	rack::Label* const rndLabel = new rack::Label;
-	rndLabel->box.pos = Vec(80-20, 2);
+	rndLabel->box.pos = Vec(69, 2);
 	rndLabel->text = "Rnd";
 	addChild(rndLabel);
 
@@ -606,7 +619,8 @@ XYPadWidget::XYPadWidget() {
 	yOffsetLabel->text = "Y Offset";
 	addChild(yOffsetLabel);
 
-	addParam(createParam<RandomizeShapeOnlyButton>(Vec(70, 18), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RandomShapeButton>(Vec(75, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RandomVariationButton>(Vec(90, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<TinyBlackKnob>(Vec(130, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<TinyBlackKnob>(Vec(190, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
@@ -661,8 +675,8 @@ XYPadWidget::XYPadWidget() {
 
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
 
-	addParam(createParam<LEDButton>(Vec(70, 358), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+5.5, 358+5.5), module, XYPad::AUTO_LIGHT));
+	addParam(createParam<LEDButtonSmall>(Vec(72, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+4.75, 360+2.75), module, XYPad::AUTO_LIGHT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));

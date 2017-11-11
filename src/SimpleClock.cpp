@@ -97,10 +97,10 @@ SimpleClockWidget::SimpleClockWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(15, 0)));
+	addChild(createScrew<Screw_J>(Vec(15, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
 	addParam(createParam<SmallWhiteKnob>(Vec(20, 40), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
 	addOutput(createOutput<PJ301MPort>(Vec(18, 78), module, SimpleClock::GATES_OUTPUT));

@@ -9,11 +9,12 @@ void init(rack::Plugin *p) {
 #ifdef VERSION
 	p->version = TOSTRING(VERSION);
 #endif
-	p->addModel(createModel<SimpleClockWidget>("JW-Modules", "JW-Modules", "SimpleClock", "SimpleClock"));
-	p->addModel(createModel<GridSeqWidget>("JW-Modules", "JW-Modules", "GridSeq", "GridSeq"));
-	p->addModel(createModel<RMSWidget>("JW-Modules", "JW-Modules", "RMS", "RMS"));
-	p->addModel(createModel<FullScopeWidget>("JW-Modules", "JW-Modules", "FullScope", "FullScope"));
-	p->addModel(createModel<XYPadWidget>("JW-Modules", "JW-Modules", "XYPad", "XYPad"));
-	p->addModel(createModel<QuantizerWidget>("JW-Modules", "JW-Modules", "Quantizer", "Quantizer"));
+	std::string me = "JW-Modules";
+	p->addModel(createModel<FullScopeWidget>(me, "FullScope", "FullScope", VISUAL_TAG));
+	p->addModel(createModel<GridSeqWidget>(me, "GridSeq", "GridSeq", SEQUENCER_TAG));
+	p->addModel(createModel<QuantizerWidget>(me, "Quantizer", "Quantizer", QUANTIZER_TAG));
+	p->addModel(createModel<RMSWidget>(me, "RMS", "RMS", UTILITY_TAG));
+	p->addModel(createModel<SimpleClockWidget>(me, "SimpleClock", "SimpleClock", CLOCK_TAG, RANDOM_TAG));
+	p->addModel(createModel<XYPadWidget>(me, "XYPad", "XYPad", LFO_TAG, ENVELOPE_GENERATOR_TAG, RANDOM_TAG, OSCILLATOR_TAG, SAMPLE_AND_HOLD_TAG));
 	// p->addModel(createModel<BouncyBallWidget>("JW-Modules", "JW-Modules", "BouncyBall", "BouncyBall"));
 }

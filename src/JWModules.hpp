@@ -84,13 +84,15 @@ struct GridSeqWidget : ModuleWidget {
 
 struct CenteredLabel : Widget {
 	std::string text;
-	CenteredLabel() {
+	int fontSize;
+	CenteredLabel(int _fontSize = 12) {
+		fontSize = _fontSize;
 		box.size.y = BND_WIDGET_HEIGHT;
 	}
 	void draw(NVGcontext *vg) override {
 		nvgTextAlign(vg, NVG_ALIGN_CENTER);
 		nvgFillColor(vg, nvgRGB(25, 150, 252));
-		nvgFontSize(vg, 12);
+		nvgFontSize(vg, fontSize);
 		nvgText(vg, box.pos.x, box.pos.y, text.c_str(), NULL);
 	}
 };
@@ -117,6 +119,26 @@ struct SmallWhiteKnob : RoundKnob {
 
 	virtual std::string formatCurrentValue() {
 		return std::to_string(static_cast<unsigned int>(value));
+	}
+};
+
+struct LEDButtonSmall : SVGSwitch, MomentarySwitch {
+	LEDButtonSmall() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/LEDButton_small.svg")));
+	}
+};
+
+struct Screw_J : SVGScrew {
+	Screw_J() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
+		box.size = sw->box.size;
+	}
+};
+
+struct Screw_W : SVGScrew {
+	Screw_W() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_W.svg")));
+		box.size = sw->box.size;
 	}
 };
 
