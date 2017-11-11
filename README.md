@@ -2,7 +2,7 @@
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
-![All](./doc/ALL-img1.gif)
+![All](./doc/jw-modules-img2.gif)
 
 by [@jeremywen](https://twitter.com/jeremywen)
 
@@ -29,7 +29,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **RND:** on trigger move one cell in a random direction and send out value if gate is on for that cell
   *  **REPEAT:**  stay on current cell and send out value if gate is on for that cell
 
-  NOTE: You can click the arrows or words above the inputs to trigger them.
+  **NOTE 1:** You can click the arrows or words above the inputs to trigger them.
 
 #### Left
 
@@ -48,13 +48,27 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **RND NOTES Button** randomize pitch only for each cell
   *  **RND NOTES Input** on trigger, randomize pitch only for each cell (NOTE: knobs don't update on 'random notes' cv in. If you want knobs to update after cv into 'random notes', right click the random notes button.)
 
+#### Right Click Context Menu
+
+  ![Menu](./doc/GridSeq-Menu-img1.png)
+
+  * **Trigger:** same as SEQ3
+  * **Retrigger:** same as SEQ3
+  * **Continuous:** same as SEQ3
+  * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
+  'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
+
 
 ## XY Pad
 
 ![XYPad](./doc/xy-pad-img1.gif)
 
+[Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
+
 #### Top
   
+  *  **Rnd Left Button:** random design will be generated
+  *  **Rnd Right Button:** random variation of the last design will be generated
   *  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
   *  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
   *  **X Offset Knob:** +/- 5v added to X Output
@@ -67,6 +81,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
       * Or if you just performed a motion while Auto was off, turning it on will play it back
       * Or if Auto is on and you want to stop playback, turn Auto off
   *  **Speed:** plays recorded path from 1x up to 10x faster
+  *  **Mult:** multiplies the current speed by larger amounts
   *  **X Output:** +/- 5v based on x position
   *  **Y Output:** +/- 5v based on y position
   *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
@@ -75,7 +90,9 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
   **The recorded path is saved and opened.**
 
-[Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
+#### Right Click Context Menu
+
+![Menu](./doc/XYPad-Menu-img1.png)
 
 ## SimpleClock
 
@@ -105,12 +122,14 @@ Scope in lissajous mode which takes up the full width and height of the module. 
     * X input (same as Fundamental Scope)
     * Y input (same as Fundamental Scope)
     * Color input
+    * Rotation input
     * Time input
   * Knobs in bottom right corner (same knobs exist in Fundamental Scope)
     * X Position
     * Y Position
     * X Scale
     * Y Scale
+    * Rotation
     * Time
 
 ## RMS
