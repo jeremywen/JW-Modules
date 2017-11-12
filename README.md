@@ -1,5 +1,7 @@
 # JW-Modules
 
+### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
+
 Modules for VCV Rack from https://vcvrack.com/ 
 
 ![All](./doc/jw-modules-img2.gif)
