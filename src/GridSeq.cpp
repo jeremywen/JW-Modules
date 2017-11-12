@@ -39,8 +39,6 @@ struct GridSeq : Module {
 	enum LightIds {
 		RUNNING_LIGHT,
 		RESET_LIGHT,
-		RND_NOTES_LIGHT,
-		RND_GATES_LIGHT,
 		GATES_LIGHT,
 		STEPS_LIGHT = GATES_LIGHT+ 16,
 		NUM_LIGHTS = STEPS_LIGHT + 16
@@ -270,12 +268,10 @@ void GridSeq::step() {
 	if(running){
 		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].value)) {
 			randomizeNotesOnly();
-			lights[RND_NOTES_LIGHT].value = 1.0;
 		}
 
 		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].value)) {
 			randomizeGateStates();
-			lights[RND_GATES_LIGHT].value = 1.0;
 		}
 
 		if (repeatTrigger.process(inputs[REPEAT_INPUT].value + params[REP_MOVE_BTN_PARAM].value)) {
@@ -314,8 +310,6 @@ void GridSeq::step() {
 		gatePulse.trigger(1e-3);
 	}
 
-	lights[RND_NOTES_LIGHT].value -= lights[RND_NOTES_LIGHT].value / lightLambda / engineGetSampleRate();
-	lights[RND_GATES_LIGHT].value -= lights[RND_GATES_LIGHT].value / lightLambda / engineGetSampleRate();
 	lights[RESET_LIGHT].value -= lights[RESET_LIGHT].value / lightLambda / engineGetSampleRate();
 	bool pulse = gatePulse.process(1.0 / engineGetSampleRate());
 
@@ -349,8 +343,9 @@ void GridSeq::step() {
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
-struct RandomizeNotesOnlyButton : LEDButton {
+struct RandomizeNotesOnlyButton : SmallButton {
 	void onMouseDown(EventMouseDown &e) override {
+		SmallButton::onMouseDown(e);
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 		for (int i = 0; i < 16; i++) {
@@ -364,8 +359,9 @@ struct RandomizeNotesOnlyButton : LEDButton {
 	}
 };
 
-struct RandomizeGatesOnlyButton : LEDButton {
+struct RandomizeGatesOnlyButton : SmallButton {
 	void onMouseDown(EventMouseDown &e) override {
+		SmallButton::onMouseDown(e);
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		for (int i = 0; i < 16; i++) {
 			gsw->gateButtons[i]->setValue(randomf() > 0.5);
@@ -431,13 +427,11 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 
-	addParam(createParam<RandomizeNotesOnlyButton>(Vec(235, 330), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(235+5.5, 330+5.5), module, GridSeq::RND_NOTES_LIGHT));
-	addInput(createInput<PJ301MPort>(Vec(258, 330-4), module, GridSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeGatesOnlyButton>(Vec(184, 332), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<PJ301MPort>(Vec(202, 330-4), module, GridSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeGatesOnlyButton>(Vec(178, 330), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(178+5.5, 330+5.5), module, GridSeq::RND_GATES_LIGHT));
-	addInput(createInput<PJ301MPort>(Vec(200, 330-4), module, GridSeq::RND_GATES_INPUT));
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(239, 332), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<PJ301MPort>(Vec(258, 330-4), module, GridSeq::RND_NOTES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
@@ -491,40 +485,40 @@ Menu *GridSeqWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
 	MenuLabel *spacerLabel = new MenuLabel();
-	menu->pushChild(spacerLabel);
+	menu->addChild(spacerLabel);
 
 	GridSeq *gridSeq = dynamic_cast<GridSeq*>(module);
 	assert(gridSeq);
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";
-	menu->pushChild(modeLabel);
+	menu->addChild(modeLabel);
 
 	GridSeqGateModeItem *triggerItem = new GridSeqGateModeItem();
 	triggerItem->text = "Trigger";
 	triggerItem->gridSeq = gridSeq;
 	triggerItem->gateMode = GridSeq::TRIGGER;
-	menu->pushChild(triggerItem);
+	menu->addChild(triggerItem);
 
 	GridSeqGateModeItem *retriggerItem = new GridSeqGateModeItem();
 	retriggerItem->text = "Retrigger";
 	retriggerItem->gridSeq = gridSeq;
 	retriggerItem->gateMode = GridSeq::RETRIGGER;
-	menu->pushChild(retriggerItem);
+	menu->addChild(retriggerItem);
 
 	GridSeqGateModeItem *continuousItem = new GridSeqGateModeItem();
 	continuousItem->text = "Continuous";
 	continuousItem->gridSeq = gridSeq;
 	continuousItem->gateMode = GridSeq::CONTINUOUS;
-	menu->pushChild(continuousItem);
+	menu->addChild(continuousItem);
 
 	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->pushChild(spacerLabel2);
+	menu->addChild(spacerLabel2);
 
 	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
-	menu->pushChild(pitchMenuItem);
+	menu->addChild(pitchMenuItem);
 
 	return menu;
 }

@@ -212,6 +212,7 @@ struct ScaleKnob : SmallWhiteKnob {
 struct RightMoveButton : SVGSwitch, MomentarySwitch {
 	RightMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RightButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/RightButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -220,6 +221,7 @@ struct RightMoveButton : SVGSwitch, MomentarySwitch {
 struct LeftMoveButton : SVGSwitch, MomentarySwitch {
 	LeftMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -228,6 +230,7 @@ struct LeftMoveButton : SVGSwitch, MomentarySwitch {
 struct DownMoveButton : SVGSwitch, MomentarySwitch {
 	DownMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/DownButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/DownButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -236,6 +239,7 @@ struct DownMoveButton : SVGSwitch, MomentarySwitch {
 struct UpMoveButton : SVGSwitch, MomentarySwitch {
 	UpMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/UpButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/UpButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -244,6 +248,7 @@ struct UpMoveButton : SVGSwitch, MomentarySwitch {
 struct RndMoveButton : SVGSwitch, MomentarySwitch {
 	RndMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RndButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/RndButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
 	}
@@ -252,8 +257,16 @@ struct RndMoveButton : SVGSwitch, MomentarySwitch {
 struct RepMoveButton : SVGSwitch, MomentarySwitch {
 	RepMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RepButton.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/RepButtonDown.svg")));
 		sw->wrap();
 		box.size = sw->box.size;
+	}
+};
+
+struct SmallButton : SVGSwitch, MomentarySwitch {
+	SmallButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/ButtonUp.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/ButtonDown.svg")));
 	}
 };
 

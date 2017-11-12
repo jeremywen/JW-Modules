@@ -547,16 +547,18 @@ struct XYPadDisplay : Widget {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct RandomShapeButton : LEDButtonSmall {
+struct RandomShapeButton : SmallButton {
 	void onMouseDown(EventMouseDown &e) override {
+		SmallButton::onMouseDown(e);
 		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
 		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
 		xyPad->randomizeShape();
 	}
 };
 
-struct RandomVariationButton : LEDButtonSmall {
+struct RandomVariationButton : SmallButton {
 	void onMouseDown(EventMouseDown &e) override {
+		SmallButton::onMouseDown(e);
 		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
 		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
 		xyPad->makeShape(xyPad->lastRandomShape);
@@ -714,7 +716,7 @@ Menu *XYPadWidget::createContextMenu() {
 
 {	
 	MenuLabel *spacerLabel = new MenuLabel();
-	menu->pushChild(spacerLabel);
+	menu->addChild(spacerLabel);
 }
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
@@ -724,88 +726,88 @@ Menu *XYPadWidget::createContextMenu() {
 		item->text = "Forward Loop";
 		item->xyPad = xyPad;
 		item->mode = XYPad::FWD_LOOP;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		PlayModeItem *item = new PlayModeItem();
 		item->text = "Backward Loop";
 		item->xyPad = xyPad;
 		item->mode = XYPad::BWD_LOOP;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		PlayModeItem *item = new PlayModeItem();
 		item->text = "Forward One-Shot";
 		item->xyPad = xyPad;
 		item->mode = XYPad::FWD_ONE_SHOT;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		PlayModeItem *item = new PlayModeItem();
 		item->text = "Backward One-Shot";
 		item->xyPad = xyPad;
 		item->mode = XYPad::BWD_ONE_SHOT;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		PlayModeItem *item = new PlayModeItem();
 		item->text = "Forward-Backward Loop";
 		item->xyPad = xyPad;
 		item->mode = XYPad::FWD_BWD_LOOP;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		PlayModeItem *item = new PlayModeItem();
 		item->text = "Backward-Forward Loop";
 		item->xyPad = xyPad;
 		item->mode = XYPad::BWD_FWD_LOOP;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{	
 		MenuLabel *spacerLabel = new MenuLabel();
-		menu->pushChild(spacerLabel);
+		menu->addChild(spacerLabel);
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Ramp";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_RAMP;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Line";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_LINE;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Sine";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SINE;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Sine Mod";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SINE_MOD;
-		menu->pushChild(item);
+		menu->addChild(item);
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Spiral";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_SPIRAL;
-		menu->pushChild(item);	
+		menu->addChild(item);	
 	}
 	{
 		ShapeMenuItem *item = new ShapeMenuItem();
 		item->text = "Random Steps";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_STEPS;
-		menu->pushChild(item);	
+		menu->addChild(item);	
 	}
 
 	return menu;
