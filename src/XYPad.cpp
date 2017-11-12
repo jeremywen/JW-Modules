@@ -45,9 +45,11 @@ struct XYPad : Module {
 	};
 
 	enum Shapes {
+		RND_SINE,
+		RND_SQUARE,
 		RND_RAMP,
 		RND_LINE,
-		RND_SINE,
+		RND_NOISE,
 		RND_SINE_MOD,
 		RND_SPIRAL,
 		RND_STEPS,
@@ -66,7 +68,8 @@ struct XYPad : Module {
 
 	float minX = 0, minY = 0, maxX = 0, maxY = 0;
 	float displayWidth = 0, displayHeight = 0;
-	float totalBallSize = 12;
+	float ballRadius = 10;
+	float ballStrokeWidth = 2;
 	float minVolt = -5, maxVolt = 5;
 	float recordPhase = 0.0;
 	float playbackPhase = 0.0;
@@ -102,11 +105,35 @@ struct XYPad : Module {
 	    setState(STATE_IDLE);
 	    points.clear();
 	    switch(shape){
+			case RND_SINE: {
+				    float twoPi = 2.0*M_PI;
+				    float cycles = 1 + int(randomf() * 13);
+				    bool inside = true;
+				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
+				    	float x = rescalef(i, 0, twoPi*cycles, minX, maxX);
+				    	float y = rescalef(sin(i), -1, 1, minY, maxY);
+						inside = isInView(x, y);
+				        if(inside)addPoint(x, y);
+			    	}
+			    }
+				break;
+			case RND_SQUARE: {
+				    float twoPi = 2.0*M_PI;
+				    float cycles = 1 + int(randomf() * 13);
+				    bool inside = true;
+				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
+				    	float x = rescalef(i, 0, twoPi*cycles, minX, maxX);
+				    	float y = rescalef(sin(i)<0, 0, 1, minY, maxY);
+						inside = isInView(x, y);
+				        if(inside)addPoint(x, y);
+			    	}
+			    }
+				break;
 			case RND_RAMP: {
 				    float lastY = maxY;
 				    float rate = randomf();
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
 				    	lastY -= powf(2, powf(x*0.005, 2)) * rate;
 				    	float y = lastY;
@@ -119,7 +146,7 @@ struct XYPad : Module {
 				    float startHeight = (randomf() * maxY * 0.5) + (maxY * 0.25);
 				    float rate = randomf() - 0.5;
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
 				    	float y = startHeight + rate * x;
 						inside = isInView(x, y);
@@ -127,14 +154,13 @@ struct XYPad : Module {
 			    	}
 			    }
 				break;
-			case RND_SINE: {
+			case RND_NOISE: {
 				    float midHeight = maxY / 2.0;
-				    float amp = midHeight * 0.90;
-				    float rate = randomf() * 0.1;
+				    float amp = midHeight * 0.9;
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
-				    	float y = sin(i*rate) * amp + (maxY / 2.0);
+				    	float y = (randomf()*2-1) * amp + midHeight;
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
 			    	}
@@ -142,12 +168,12 @@ struct XYPad : Module {
 				break;
 			case RND_SINE_MOD: {
 				    float midHeight = maxY / 2.0;
-				    float amp = midHeight * 0.50;
+				    float amp = midHeight * 0.90 * 0.50;
 				    float rate = randomf() * 0.1;
 				    float rateAdder = randomf() * 0.001;
 				    float ampAdder = randomf() * 0.25;
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
 				    	float y = sin(i*rate) * amp + (maxY / 2.0);
 						inside = isInView(x, y);
@@ -160,16 +186,15 @@ struct XYPad : Module {
 			case RND_SPIRAL: {
 				    float curX = maxX / 2.0;
 				    float curY = maxY / 2.0;
-				    float radius = 10;
-				    float rate = randomf() * 0.5;
+				    float radius = 5;
+				    float rate = 1 + (randomf()*0.1);
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = curX + sin(i/10.0) * radius;
 				    	float y = curY + cos(i/10.0) * radius;
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
-				        radius+=rate;
-				        rate+=0.005;
+				        radius*=rate;
 				    }
 				}
 			    break;
@@ -180,7 +205,7 @@ struct XYPad : Module {
 				    int squSt = ST_RIGHT;
 				    int stepsBeforeStateChange = 5 * int(randomf()*5+1);
 				    bool inside = true;
-				    for(int i=0; i<5000 && inside; i++){
+				    for(int i=0; i<5000 && inside; i+=2){
 				    	if(squSt == ST_RIGHT && x < maxX){
 				    		x++;
 				    	} else if(squSt == ST_LEFT && x > minX){
@@ -205,6 +230,7 @@ struct XYPad : Module {
 
 	json_t *toJson() {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "lastRandomShape", json_integer(lastRandomShape));
 		json_object_set_new(rootJ, "curPlayMode", json_integer(curPlayMode));
 		json_object_set_new(rootJ, "autoPlayOn", json_boolean(autoPlayOn));
 		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
@@ -222,6 +248,7 @@ struct XYPad : Module {
 	}
 
 	void fromJson(json_t *rootJ) {
+		lastRandomShape = json_integer_value(json_object_get(rootJ, "lastRandomShape"));
 		curPlayMode = json_integer_value(json_object_get(rootJ, "curPlayMode"));
 
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
@@ -279,10 +306,11 @@ struct XYPad : Module {
 	}
 
 	void updateMinMax(){
-		minX = totalBallSize;
-		minY = totalBallSize;
-		maxX = displayWidth - totalBallSize;
-		maxY = displayHeight - totalBallSize;
+		float distToMid = ballRadius + ballStrokeWidth;
+		minX = distToMid;
+		minY = distToMid;
+		maxX = displayWidth - distToMid;
+		maxY = displayHeight - distToMid;
 
 	}
 
@@ -495,9 +523,9 @@ struct XYPadDisplay : Widget {
 		//inv ball
 		nvgFillColor(vg, invertedColor);
 		nvgStrokeColor(vg, invertedColor);
-		nvgStrokeWidth(vg, 2);
+		nvgStrokeWidth(vg, module->ballStrokeWidth);
 		nvgBeginPath(vg);
-		nvgCircle(vg, module->displayWidth-ballX, module->displayHeight-ballY, 10);
+		nvgCircle(vg, module->displayWidth-ballX, module->displayHeight-ballY, module->ballRadius);
 		if(module->params[XYPad::GATE_PARAM].value)nvgFill(vg);
 		nvgStroke(vg);
 		
@@ -537,9 +565,9 @@ struct XYPadDisplay : Widget {
 		//ball
 		nvgFillColor(vg, ballColor);
 		nvgStrokeColor(vg, ballColor);
-		nvgStrokeWidth(vg, 2);
+		nvgStrokeWidth(vg, module->ballStrokeWidth);
 		nvgBeginPath(vg);
-		nvgCircle(vg, ballX, ballY, 10);
+		nvgCircle(vg, ballX, ballY, module->ballRadius);
 		if(module->params[XYPad::GATE_PARAM].value)nvgFill(vg);
 		nvgStroke(vg);
 	}
@@ -779,6 +807,20 @@ Menu *XYPadWidget::createContextMenu() {
 		item->text = "Random Line";
 		item->xyPad = xyPad;
 		item->shape = XYPad::RND_LINE;
+		menu->addChild(item);
+	}
+	{
+		ShapeMenuItem *item = new ShapeMenuItem();
+		item->text = "Random Square";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_SQUARE;
+		menu->addChild(item);
+	}
+	{
+		ShapeMenuItem *item = new ShapeMenuItem();
+		item->text = "Random Noise";
+		item->xyPad = xyPad;
+		item->shape = XYPad::RND_NOISE;
 		menu->addChild(item);
 	}
 	{
