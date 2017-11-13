@@ -69,8 +69,8 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Top
   
-  *  **Rnd Left Button:** random design will be generated
-  *  **Rnd Right Button:** random variation of the last design will be generated
+  *  **Rnd Left Button:** will cycle through different types of designs and generate random ones
+  *  **Rnd Right Button:** random variation of the last design will be generated (so click the left button until you find one you like, then click the right button to make a variation of that one.)
   *  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
   *  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
   *  **X Offset Knob:** +/- 5v added to X Output
@@ -94,7 +94,9 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 #### Right Click Context Menu
 
-![Menu](./doc/XYPad-Menu-img2.png)
+Change the playback mode by right clicking the module and selecting of of the playback options:
+
+![Menu](./doc/XYPad-Menu-img3.png)
 
 ## SimpleClock
 

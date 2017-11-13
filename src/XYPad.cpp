@@ -96,7 +96,7 @@ struct XYPad : Module {
 	}
 
 	void randomizeShape(){
-		makeShape(int(randomf() * NUM_SHAPES));
+		makeShape((lastRandomShape+1)%NUM_SHAPES);
 	}
 
 	void makeShape(int shape){
@@ -742,10 +742,10 @@ struct ShapeMenuItem : MenuItem {
 Menu *XYPadWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
-{	
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
-}
+	{	
+		MenuLabel *spacerLabel = new MenuLabel();
+		menu->addChild(spacerLabel);
+	}
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
 
@@ -791,66 +791,5 @@ Menu *XYPadWidget::createContextMenu() {
 		item->mode = XYPad::BWD_FWD_LOOP;
 		menu->addChild(item);
 	}
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Ramp";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_RAMP;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Line";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_LINE;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Square";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_SQUARE;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Noise";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_NOISE;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Sine";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_SINE;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Sine Mod";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_SINE_MOD;
-		menu->addChild(item);
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Spiral";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_SPIRAL;
-		menu->addChild(item);	
-	}
-	{
-		ShapeMenuItem *item = new ShapeMenuItem();
-		item->text = "Random Steps";
-		item->xyPad = xyPad;
-		item->shape = XYPad::RND_STEPS;
-		menu->addChild(item);	
-	}
-
 	return menu;
 }
