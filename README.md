@@ -96,7 +96,7 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 Change the playback mode by right clicking the module and selecting of of the playback options:
 
-![Menu](./doc/XYPad-Menu-img3.png)
+![Menu](./doc/XYPad-Menu-img4.png)
 
 ## SimpleClock
 
