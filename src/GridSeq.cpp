@@ -156,40 +156,7 @@ struct GridSeq : Module {
 	}
 
 	float getOneRandomNoteInScale(){
-		int rootNote = params[ROOT_NOTE_PARAM].value;
-		int curScaleVal = params[SCALE_PARAM].value;
-		int *curScaleArr;
-		int notesInScale = 0;
-		switch(curScaleVal){
-			case QuantizerWidget::AEOLIAN:        curScaleArr = SCALE_AEOLIAN;       notesInScale=LENGTHOF(SCALE_AEOLIAN); break;
-			case QuantizerWidget::BLUES:          curScaleArr = SCALE_BLUES;         notesInScale=LENGTHOF(SCALE_BLUES); break;
-			case QuantizerWidget::CHROMATIC:      curScaleArr = SCALE_CHROMATIC;     notesInScale=LENGTHOF(SCALE_CHROMATIC); break;
-			case QuantizerWidget::DIATONIC_MINOR: curScaleArr = SCALE_DIATONIC_MINOR;notesInScale=LENGTHOF(SCALE_DIATONIC_MINOR); break;
-			case QuantizerWidget::DORIAN:         curScaleArr = SCALE_DORIAN;        notesInScale=LENGTHOF(SCALE_DORIAN); break;
-			case QuantizerWidget::HARMONIC_MINOR: curScaleArr = SCALE_HARMONIC_MINOR;notesInScale=LENGTHOF(SCALE_HARMONIC_MINOR); break;
-			case QuantizerWidget::INDIAN:         curScaleArr = SCALE_INDIAN;        notesInScale=LENGTHOF(SCALE_INDIAN); break;
-			case QuantizerWidget::LOCRIAN:        curScaleArr = SCALE_LOCRIAN;       notesInScale=LENGTHOF(SCALE_LOCRIAN); break;
-			case QuantizerWidget::LYDIAN:         curScaleArr = SCALE_LYDIAN;        notesInScale=LENGTHOF(SCALE_LYDIAN); break;
-			case QuantizerWidget::MAJOR:          curScaleArr = SCALE_MAJOR;         notesInScale=LENGTHOF(SCALE_MAJOR); break;
-			case QuantizerWidget::MELODIC_MINOR:  curScaleArr = SCALE_MELODIC_MINOR; notesInScale=LENGTHOF(SCALE_MELODIC_MINOR); break;
-			case QuantizerWidget::MINOR:          curScaleArr = SCALE_MINOR;         notesInScale=LENGTHOF(SCALE_MINOR); break;
-			case QuantizerWidget::MIXOLYDIAN:     curScaleArr = SCALE_MIXOLYDIAN;    notesInScale=LENGTHOF(SCALE_MIXOLYDIAN); break;
-			case QuantizerWidget::NATURAL_MINOR:  curScaleArr = SCALE_NATURAL_MINOR; notesInScale=LENGTHOF(SCALE_NATURAL_MINOR); break;
-			case QuantizerWidget::PENTATONIC:     curScaleArr = SCALE_PENTATONIC;    notesInScale=LENGTHOF(SCALE_PENTATONIC); break;
-			case QuantizerWidget::PHRYGIAN:       curScaleArr = SCALE_PHRYGIAN;      notesInScale=LENGTHOF(SCALE_PHRYGIAN); break;
-			case QuantizerWidget::TURKISH:        curScaleArr = SCALE_TURKISH;       notesInScale=LENGTHOF(SCALE_TURKISH); break;
-		}
-
-		if(curScaleVal == QuantizerWidget::NONE){
-			return randomf() * 6.0;
-		} else {
-			float voltsOut = 0;
-			int rndOctaveInVolts = int(5 * randomf());
-			voltsOut += rndOctaveInVolts;
-			voltsOut += rootNote / 12.0;
-			voltsOut += curScaleArr[int(notesInScale * randomf())] / 12.0;
-			return voltsOut;
-		}
+		return closestVoltageInScale(randomf() * 6);
 	}
 
 	void randomizeNotesOnly(){
@@ -248,7 +215,7 @@ struct GridSeq : Module {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void GridSeq::step() {
-	const float lightLambda = 0.075;
+	const float lightLambda = 0.05;
 	// Run
 	if (runningTrigger.process(params[RUN_PARAM].value)) {
 		running = !running;
@@ -266,6 +233,7 @@ void GridSeq::step() {
 	}
 
 	if(running){
+
 		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].value)) {
 			randomizeNotesOnly();
 		}
@@ -277,6 +245,7 @@ void GridSeq::step() {
 		if (repeatTrigger.process(inputs[REPEAT_INPUT].value + params[REP_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 		} 
+
 		if (rndPosTrigger.process(inputs[RND_DIR_INPUT].value + params[RND_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
 			switch(int(4 * randomf())){
@@ -337,7 +306,6 @@ void GridSeq::step() {
 
 	// Outputs
 	if(gatesOn || ignoreGateOnPitchOut)	{
-		//don't want to change pitch if the step isn't turned on
 		outputs[CELL_OUTPUT].value = closestVoltageInScale(params[CELL_NOTE_PARAM + index].value);
 	}
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
@@ -386,12 +354,13 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
-	///// RUN AND RESET /////
+	///// RUN /////
 	addParam(createParam<LEDButton>(Vec(25, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(25+5.5, 90+5.5), module, GridSeq::RUNNING_LIGHT));
 
-	addParam(createParam<LEDButton>(Vec(25, 130), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(25+5.5, 130+5.5), module, GridSeq::RESET_LIGHT));
+	///// RESET /////
+	addParam(createParam<SmallButton>(Vec(27, 142), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 142+3.75), module, GridSeq::RESET_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(22, 160), module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
@@ -456,8 +425,8 @@ GridSeqWidget::GridSeqWidget() {
 	}
 
 	///// OUTPUTS /////
-	addOutput(createOutput<PJ301MPort>(Vec(22, 238), module, GridSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(22, 300), module, GridSeq::CELL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(22, 265), module, GridSeq::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(22, 327), module, GridSeq::CELL_OUTPUT));
 }
 
 struct GridSeqPitchMenuItem : MenuItem {

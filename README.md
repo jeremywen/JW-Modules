@@ -63,9 +63,11 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ## XY Pad
 
-![XYPad](./doc/xy-pad-img1.gif)
+![XYPad](./doc/xy-pad-img2.gif)
 
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
+
+Draw your own LFO.  The recorded path is saved and opened.
 
 #### Top
   
@@ -89,8 +91,6 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
   *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
   *  **Gate Out:** 10v gate out while mouse pressed
-
-  **The recorded path is saved and opened.**
 
 #### Right Click Context Menu
 

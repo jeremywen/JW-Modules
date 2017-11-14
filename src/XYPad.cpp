@@ -705,8 +705,8 @@ XYPadWidget::XYPadWidget() {
 
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
 
-	addParam(createParam<LEDButtonSmall>(Vec(72, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(70+4.75, 360+2.75), module, XYPad::AUTO_LIGHT));
+	addParam(createParam<SmallButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
