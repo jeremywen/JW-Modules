@@ -114,8 +114,9 @@ QuantizerWidget::QuantizerWidget() {
 	box.size = Vec(15*4, 380);
 
 	{
-		LightPanel *panel = new LightPanel();
+		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/WavHead.svg")));
 		addChild(panel);
 	}
 
@@ -149,21 +150,21 @@ QuantizerWidget::QuantizerWidget() {
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 220), module, Quantizer::SCALE_INPUT));
 
 
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 300), module, Quantizer::VOLT_INPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 300), module, Quantizer::VOLT_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 290), module, Quantizer::VOLT_OUTPUT));
 
 	CenteredLabel* const voctLabel = new CenteredLabel;
-	voctLabel->box.pos = Vec(15, 145);
+	voctLabel->box.pos = Vec(15, 140);
 	voctLabel->text = "V/OCT";
 	addChild(voctLabel);
 
 	CenteredLabel* const inLabel = new CenteredLabel;
-	inLabel->box.pos = Vec(8, 165);
+	inLabel->box.pos = Vec(8, 160);
 	inLabel->text = "In";
 	addChild(inLabel);
 
 	CenteredLabel* const outLabel = new CenteredLabel;
-	outLabel->box.pos = Vec(22, 165);
+	outLabel->box.pos = Vec(22, 160);
 	outLabel->text = "Out";
 	addChild(outLabel);
 }

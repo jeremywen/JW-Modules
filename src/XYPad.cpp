@@ -599,8 +599,9 @@ XYPadWidget::XYPadWidget() {
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 
 	{
-		LightPanel *panel = new LightPanel();
+		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/XYPad.svg")));
 		addChild(panel);
 	}
 	{
@@ -618,44 +619,44 @@ XYPadWidget::XYPadWidget() {
 
 	////////////////////////////////////////////////////////////
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
-	titleLabel->box.pos = Vec(15, 8);
+	titleLabel->box.pos = Vec(27, 8);
 	titleLabel->text = "XY Pad";
 	addChild(titleLabel);
-	addChild(createScrew<Screw_J>(Vec(14, 20)));
-	addChild(createScrew<Screw_W>(Vec(29, 20)));
+	addChild(createScrew<Screw_J>(Vec(40, 20)));
+	addChild(createScrew<Screw_W>(Vec(55, 20)));
 
 	rack::Label* const rndLabel = new rack::Label;
-	rndLabel->box.pos = Vec(69, 2);
+	rndLabel->box.pos = Vec(85, 2);
 	rndLabel->text = "Rnd";
 	addChild(rndLabel);
 
 	rack::Label* const xScaleLabel = new rack::Label;
-	xScaleLabel->box.pos = Vec(130-20, 2);
+	xScaleLabel->box.pos = Vec(140-20, 2);
 	xScaleLabel->text = "X Scale";
 	addChild(xScaleLabel);
 
 	rack::Label* const yScaleLabel = new rack::Label;
-	yScaleLabel->box.pos = Vec(190-20, 2);
+	yScaleLabel->box.pos = Vec(200-20, 2);
 	yScaleLabel->text = "Y Scale";
 	addChild(yScaleLabel);
 
 	rack::Label* const xOffsetLabel = new rack::Label;
-	xOffsetLabel->box.pos = Vec(250-20, 2);
+	xOffsetLabel->box.pos = Vec(260-20, 2);
 	xOffsetLabel->text = "X Offset";
 	addChild(xOffsetLabel);
 
 	rack::Label* const yOffsetLabel = new rack::Label;
-	yOffsetLabel->box.pos = Vec(310-20, 2);
+	yOffsetLabel->box.pos = Vec(320-20, 2);
 	yOffsetLabel->text = "Y Offset";
 	addChild(yOffsetLabel);
 
-	addParam(createParam<RandomShapeButton>(Vec(75, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<RandomVariationButton>(Vec(90, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<TinyBlackKnob>(Vec(130, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<TinyBlackKnob>(Vec(190, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<TinyBlackKnob>(Vec(250, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<TinyBlackKnob>(Vec(310, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<TinyBlackKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<TinyBlackKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<TinyBlackKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 	rack::Label* const trigLabel = new rack::Label;

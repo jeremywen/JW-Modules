@@ -184,6 +184,11 @@ RMSWidget::RMSWidget() {
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
+	CenteredLabel* const titleLabel = new CenteredLabel(16);
+	titleLabel->box.pos = Vec(22, 15);
+	titleLabel->text = "RMS";
+	addChild(titleLabel);
+
 	{
 		RMSDisplay *display = new RMSDisplay();
 		display->module = module;
@@ -192,6 +197,16 @@ RMSWidget::RMSWidget() {
 		addChild(display);
 	}
 
+	CenteredLabel* const timeLabel = new CenteredLabel(12);
+	timeLabel->box.pos = Vec(22, 101);
+	timeLabel->text = "Time";
+	addChild(timeLabel);
+
+	CenteredLabel* const inLabel = new CenteredLabel(12);
+	inLabel->box.pos = Vec(23, 132);
+	inLabel->text = "Input";
+	addChild(inLabel);
+
 	addParam(createParam<SmallWhiteKnob>(Vec(35, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(createInput<PJ301MPort>(Vec(33, 319), module, RMS::X_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(33, 275), module, RMS::X_INPUT));
 }

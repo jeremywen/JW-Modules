@@ -425,8 +425,8 @@ GridSeqWidget::GridSeqWidget() {
 	}
 
 	///// OUTPUTS /////
-	addOutput(createOutput<PJ301MPort>(Vec(22, 265), module, GridSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(22, 327), module, GridSeq::CELL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(22, 233), module, GridSeq::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(22, 295), module, GridSeq::CELL_OUTPUT));
 }
 
 struct GridSeqPitchMenuItem : MenuItem {
