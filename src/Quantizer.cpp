@@ -116,7 +116,7 @@ QuantizerWidget::QuantizerWidget() {
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/WavHead.svg")));
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/WavHeadPanel.svg")));
 		addChild(panel);
 	}
 

@@ -128,6 +128,13 @@ struct LEDButtonSmall : SVGSwitch, MomentarySwitch {
 	}
 };
 
+struct WavHeadLogo : SVGScrew {
+	WavHeadLogo() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/WavHeadSmall.svg")));
+		box.size = sw->box.size;
+	}
+};
+
 struct Screw_J : SVGScrew {
 	Screw_J() {
 		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
