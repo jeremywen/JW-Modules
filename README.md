@@ -14,6 +14,8 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## GridSeq
 
+![GridSeq](./doc/GridSeq-img7.png)
+
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
 #### 16 Step Sequencer
@@ -61,6 +63,8 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ## XY Pad
 
+![XYPad](./doc/XYPag-img4.png)
+
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
 
 Draw your own LFO.  The recorded path is saved and opened.
@@ -96,7 +100,16 @@ Change the playback mode by right clicking the module and selecting of of the pl
 
 ## SimpleClock
 
+![SimpleClock](./doc/SimpleClock-img6.png)
+
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
+
+## Quantizer
+
+![Quantizer](./doc/Quantizer-img1.png)
+
+  *  **Root Knob:** root note if scaling pitch sent to "OUT"
+  *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 
 #### Knobs 
 
@@ -113,6 +126,8 @@ Change the playback mode by right clicking the module and selecting of of the pl
 ## FullScope
 
 Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modied that code slightly.
+
+![FullScope](./doc/FullScope-img2.png)
 
   * Inputs in bottom left corner
     * X input (same as Fundamental Scope)
@@ -131,6 +146,8 @@ Scope in lissajous mode which takes up the full width and height of the module. 
 ## RMS
 
 Created to show RMS in a larger font than the Fundamental Scope 
+
+![RMS](./doc/RMS-img1.png)
 
 ## Building
 
