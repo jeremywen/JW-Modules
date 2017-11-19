@@ -151,9 +151,13 @@ Created to show RMS in a larger font than the Fundamental Scope
 
 ## WaveHead
 
-Move WavHead up and down based on voltage in.  Right click to invert direction or change to bidirectional -5 to +5 volts.
+Move WavHead up and down based on voltage in.  
 
 ![WaveHead](./doc/WavHead-img1.png)
+
+Right click to invert direction or change to bidirectional -5 to +5 volts.
+
+![WaveHead Menu](./doc/WavHead-menu-img1.png)
 
 ## Building
 
