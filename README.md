@@ -104,13 +104,6 @@ Change the playback mode by right clicking the module and selecting of of the pl
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
-## Quantizer
-
-![Quantizer](./doc/Quantizer-img1.png)
-
-  *  **Root Knob:** root note if scaling pitch sent to "OUT"
-  *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
-
 #### Knobs 
 
   *  **Clock knob:** determines speed of clock
@@ -122,6 +115,13 @@ Change the playback mode by right clicking the module and selecting of of the pl
   *  **Clock output:** Clock sends out a trigger at a certain interval based on the clock knob position.
 
   *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
+
+## Quantizer
+
+![Quantizer](./doc/Quantizer-img1.png)
+
+  *  **Root Knob:** root note if scaling pitch sent to "OUT"
+  *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 
 ## FullScope
 
@@ -148,6 +148,12 @@ Scope in lissajous mode which takes up the full width and height of the module. 
 Created to show RMS in a larger font than the Fundamental Scope 
 
 ![RMS](./doc/RMS-img1.png)
+
+## WaveHead
+
+Move WavHead up and down based on voltage in.  Right click to invert direction or change to bidirectional -5 to +5 volts.
+
+![WaveHead](./doc/WavHead-img1.png)
 
 ## Building
 
