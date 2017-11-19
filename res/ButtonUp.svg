@@ -26,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="7.919596"
-     inkscape:cx="-76.610479"
+     inkscape:cx="6.4718906"
      inkscape:cy="1.2689156"
      inkscape:document-units="px"
      inkscape:current-layer="g12430"
@@ -35,12 +35,13 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="2560"
-     inkscape:window-height="1396"
-     inkscape:window-x="1"
+     inkscape:window-width="912"
+     inkscape:window-height="768"
+     inkscape:window-x="259"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     units="px" />
+     units="px"
+     inkscape:pagecheckerboard="true" />
   <metadata
      id="metadata12481">
     <rdf:RDF>
@@ -65,11 +66,11 @@
       <g
          transform="matrix(0.5,0,0,0.50007363,288.35213,1183.162)"
          id="g5959-5"
-         style="stroke-width:2.58704758">
+         style="fill:#1996fc;fill-opacity:1">
         <path
            inkscape:connector-curvature="0"
            id="path5961-3"
-           style="fill:#212221;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.58704758"
+           style="fill:#1996fc;fill-opacity:1;fill-rule:nonzero"
            d="m 0,0 c 0,-7.5 -6.083,-13.58 -13.584,-13.58 -7.5,0 -13.582,6.08 -13.582,13.58 0,7.503 6.082,13.582 13.582,13.582 C -6.083,13.582 0,7.503 0,0" />
       </g>
       <ellipse
@@ -85,7 +86,7 @@
          cy="-1183.1625"
          cx="281.56061"
          id="path12411"
-         style="opacity:1;vector-effect:none;fill:#2b2d2b;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.29361904;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         style="opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.29361904;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          rx="5.6385689"
          ry="5.6393991" />
     </g>

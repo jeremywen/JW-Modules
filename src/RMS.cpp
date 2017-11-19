@@ -207,6 +207,6 @@ RMSWidget::RMSWidget() {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(35, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
 	addInput(createInput<PJ301MPort>(Vec(33, 275), module, RMS::X_INPUT));
 }

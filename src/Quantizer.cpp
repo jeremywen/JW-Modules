@@ -131,7 +131,7 @@ QuantizerWidget::QuantizerWidget() {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(19, 80), module, Quantizer::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM, 0.0, NUM_NOTES-1, NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 35);
 	noteLabel->text = "note here";
@@ -140,7 +140,7 @@ QuantizerWidget::QuantizerWidget() {
 	addParam(noteKnob);
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 110), module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(19, 190), module, Quantizer::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM, 0.0, NUM_SCALES-1, MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 90);
 	scaleLabel->text = "scale here";

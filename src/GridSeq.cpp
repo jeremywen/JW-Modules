@@ -355,12 +355,12 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
 	///// RUN /////
-	addParam(createParam<LEDButton>(Vec(25, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(25+5.5, 90+5.5), module, GridSeq::RUNNING_LIGHT));
+	addParam(createParam<SmallButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 90+3.75), module, GridSeq::RUNNING_LIGHT));
 
 	///// RESET /////
-	addParam(createParam<SmallButton>(Vec(27, 142), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 142+3.75), module, GridSeq::RESET_LIGHT));
+	addParam(createParam<SmallButton>(Vec(27, 138), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 138+3.75), module, GridSeq::RESET_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(22, 160), module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
@@ -380,7 +380,7 @@ GridSeqWidget::GridSeqWidget() {
 	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(71, 325), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizerWidget::NUM_NOTES-1, QuantizerWidget::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, 323), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizerWidget::NUM_NOTES-1, QuantizerWidget::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(41, 180);
 	noteLabel->text = "note here";
@@ -388,7 +388,7 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(130, 325), module, GridSeq::SCALE_PARAM, 0.0, QuantizerWidget::NUM_SCALES-1, QuantizerWidget::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(128, 323), module, GridSeq::SCALE_PARAM, 0.0, QuantizerWidget::NUM_SCALES-1, QuantizerWidget::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(71, 180);
 	scaleLabel->text = "scale here";
@@ -406,7 +406,7 @@ GridSeqWidget::GridSeqWidget() {
 	int boxSize = 55;
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
-			int knobX = x * boxSize + 76;
+			int knobX = x * boxSize + 75;
 			int knobY = y * boxSize + 110;
 			int idx = (x+(y*4));
 			module->gateState[idx] = true; //start with all gates on

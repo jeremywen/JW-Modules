@@ -122,9 +122,10 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 };
 
-struct LEDButtonSmall : SVGSwitch, MomentarySwitch {
-	LEDButtonSmall() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/LEDButton_small.svg")));
+struct TinyBlackKnob : RoundKnob {
+	TinyBlackKnob() {
+		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
+		box.size = Vec(15, 15);
 	}
 };
 
@@ -146,13 +147,6 @@ struct Screw_W : SVGScrew {
 	Screw_W() {
 		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_W.svg")));
 		box.size = sw->box.size;
-	}
-};
-
-struct TinyBlackKnob : RoundKnob {
-	TinyBlackKnob() {
-		setSVG(SVG::load(assetGlobal("res/ComponentLibrary/RoundBlack.svg")));
-		box.size = Vec(15, 15);
 	}
 };
 

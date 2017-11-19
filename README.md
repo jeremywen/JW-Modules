@@ -2,7 +2,7 @@
 
 ### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
 
-![All](./doc/all-img1.gif)
+![All](./doc/all-img2.gif)
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
@@ -13,8 +13,6 @@ by [@jeremywen](https://twitter.com/jeremywen)
 [Donate through Patreon](https://www.patreon.com/jeremywen)
 
 ## GridSeq
-
-![GridSeq](./doc/GridSeq-img6.gif)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
@@ -63,8 +61,6 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
 ## XY Pad
 
-![XYPad](./doc/xy-pad-img2.gif)
-
 [Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
 
 Draw your own LFO.  The recorded path is saved and opened.
@@ -100,8 +96,6 @@ Change the playback mode by right clicking the module and selecting of of the pl
 
 ## SimpleClock
 
-![SimpleClock](./doc/SimpleClock-img5.png)
-
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
 #### Knobs 
@@ -120,8 +114,6 @@ Change the playback mode by right clicking the module and selecting of of the pl
 
 Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modied that code slightly.
 
-![FullScope](./doc/FullScope-img1.gif)
-
   * Inputs in bottom left corner
     * X input (same as Fundamental Scope)
     * Y input (same as Fundamental Scope)
@@ -139,8 +131,6 @@ Scope in lissajous mode which takes up the full width and height of the module. 
 ## RMS
 
 Created to show RMS in a larger font than the Fundamental Scope 
-
-![RMS](./doc/RMS-img1.png)
 
 ## Building
 
