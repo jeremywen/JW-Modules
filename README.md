@@ -147,13 +147,13 @@ Scope in lissajous mode which takes up the full width and height of the module. 
 
 Created to show RMS in a larger font than the Fundamental Scope 
 
-![RMS](./doc/RMS-img1.png)
+![RMS](./doc/RMS-img2.png)
 
 ## WaveHead
 
 Move WavHead up and down based on voltage in.  
 
-![WaveHead](./doc/WavHead-img1.png)
+![WaveHead](./doc/WavHead-img2.png)
 
 Right click to invert direction or change to bidirectional -5 to +5 volts.
 
