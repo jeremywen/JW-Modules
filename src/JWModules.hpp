@@ -11,6 +11,13 @@ struct RMSWidget : ModuleWidget {
 	RMSWidget();
 };
 
+struct WavHeadWidget : ModuleWidget {
+	WavHeadWidget();
+	void step();
+	Widget *widgetToMove;
+	Menu *createContextMenu();
+};
+
 struct XYPadWidget : ModuleWidget {
 	XYPadWidget();
 	Menu *createContextMenu();
