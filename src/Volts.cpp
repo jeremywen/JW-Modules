@@ -5,7 +5,7 @@
 
 #define BUFFER_SIZE 512
 
-struct RMS : Module {
+struct Volts : Module {
 	enum ParamIds {
 		TIME_PARAM,
 		TRIG_PARAM,
@@ -31,7 +31,7 @@ struct RMS : Module {
 	bool lissajous = false;
 	SchmittTrigger resetTrigger;
 
-	RMS() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Volts() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 
 	json_t *toJson() {
@@ -53,7 +53,7 @@ struct RMS : Module {
 };
 
 
-void RMS::step() {
+void Volts::step() {
 	// Compute time
 	float deltaTime = powf(2.0, params[TIME_PARAM].value);
 	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
@@ -101,8 +101,8 @@ void RMS::step() {
 }
 
 
-struct RMSDisplay : TransparentWidget {
-	RMS *module;
+struct VoltsDisplay : TransparentWidget {
+	Volts *module;
 	int frame = 0;
 	std::shared_ptr<Font> font;
 
@@ -124,7 +124,7 @@ struct RMSDisplay : TransparentWidget {
 	};
 	Stats statsX, statsY;
 
-	RMSDisplay() {
+	VoltsDisplay() {
 		font = Font::load(assetPlugin(plugin, "res/DejaVuSansMono.ttf"));
 	}
 
@@ -135,8 +135,10 @@ struct RMSDisplay : TransparentWidget {
 
 		nvgFillColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0x80));
 		char text[128];
-		snprintf(text, sizeof(text), "%5.2f", stats->vrms);
-		nvgText(vg, pos.x + 10, pos.y + 20, text, NULL);
+		snprintf(text, sizeof(text), "%5.2f", stats->vmin);
+		nvgText(vg, pos.x + 10, pos.y + 28, text, NULL);
+		snprintf(text, sizeof(text), "%5.2f", stats->vmax);
+		nvgText(vg, pos.x + 10, pos.y + 78, text, NULL);
 	}
 
 	void draw(NVGcontext *vg) {
@@ -167,15 +169,15 @@ struct RMSDisplay : TransparentWidget {
 };
 
 
-RMSWidget::RMSWidget() {
-	RMS *module = new RMS();
+VoltsWidget::VoltsWidget() {
+	Volts *module = new Volts();
 	setModule(module);
 	box.size = Vec(15*6, 380);
 
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/RMS.svg")));
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/Volts.svg")));
 		addChild(panel);
 	}
 
@@ -186,16 +188,26 @@ RMSWidget::RMSWidget() {
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(22, 15);
-	titleLabel->text = "RMS";
+	titleLabel->text = "Volts";
 	addChild(titleLabel);
 
 	{
-		RMSDisplay *display = new RMSDisplay();
+		VoltsDisplay *display = new VoltsDisplay();
 		display->module = module;
 		display->box.pos = Vec(0, 44);
 		display->box.size = Vec(box.size.x, 140);
 		addChild(display);
 	}
+
+	CenteredLabel* const minLabel = new CenteredLabel(12);
+	minLabel->box.pos = Vec(22, 35);
+	minLabel->text = "Min";
+	addChild(minLabel);
+
+	CenteredLabel* const maxLabel = new CenteredLabel(12);
+	maxLabel->box.pos = Vec(22, 60);
+	maxLabel->text = "Max";
+	addChild(maxLabel);
 
 	CenteredLabel* const timeLabel = new CenteredLabel(12);
 	timeLabel->box.pos = Vec(22, 101);
@@ -207,6 +219,6 @@ RMSWidget::RMSWidget() {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, RMS::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(createInput<PJ301MPort>(Vec(33, 275), module, RMS::X_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, Volts::TIME_PARAM, -6.0, -16.0, -14.0));
+	addInput(createInput<PJ301MPort>(Vec(33, 275), module, Volts::X_INPUT));
 }
