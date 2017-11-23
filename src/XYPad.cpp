@@ -575,18 +575,18 @@ struct XYPadDisplay : Widget {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct RandomShapeButton : SmallButton {
+struct RandomShapeButton : TinyButton {
 	void onMouseDown(EventMouseDown &e) override {
-		SmallButton::onMouseDown(e);
+		TinyButton::onMouseDown(e);
 		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
 		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
 		xyPad->randomizeShape();
 	}
 };
 
-struct RandomVariationButton : SmallButton {
+struct RandomVariationButton : TinyButton {
 	void onMouseDown(EventMouseDown &e) override {
-		SmallButton::onMouseDown(e);
+		TinyButton::onMouseDown(e);
 		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
 		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
 		xyPad->makeShape(xyPad->lastRandomShape);
@@ -653,10 +653,10 @@ XYPadWidget::XYPadWidget() {
 	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<TinyBlackKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<TinyBlackKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<TinyBlackKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<TinyBlackKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 	rack::Label* const trigLabel = new rack::Label;
@@ -706,12 +706,12 @@ XYPadWidget::XYPadWidget() {
 
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
 
-	addParam(createParam<SmallButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
-	addParam(createParam<TinyBlackKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
-	addParam(createParam<TinyBlackKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
+	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
+	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));

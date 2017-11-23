@@ -186,8 +186,8 @@ BouncyBallWidget::BouncyBallWidget() {
 	gLabel->text = "G";
 	addChild(gLabel);
 
-	addParam(createParam<TinyBlackKnob>(Vec(120, 360), module, BouncyBall::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(180, 360), module, BouncyBall::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(120, 360), module, BouncyBall::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(180, 360), module, BouncyBall::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 0.0));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(240, 360), module, BouncyBall::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(260, 360), module, BouncyBall::Y_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(340, 360), module, BouncyBall::GATE_OUTPUT));

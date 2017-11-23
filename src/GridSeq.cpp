@@ -18,6 +18,7 @@ struct GridSeq : Module,QuantizeUtils {
 		UP_MOVE_BTN_PARAM,
 		RND_MOVE_BTN_PARAM,
 		REP_MOVE_BTN_PARAM,
+		VOLT_MAX_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -29,6 +30,7 @@ struct GridSeq : Module,QuantizeUtils {
 		RND_DIR_INPUT,		
 		RND_NOTES_INPUT,
 		RND_GATES_INPUT,
+		VOLT_MAX_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -58,11 +60,11 @@ struct GridSeq : Module,QuantizeUtils {
 	SchmittTrigger rndGatesTrigger;
 	SchmittTrigger gateTriggers[16];
 
-	float maxVoltageOut = 5.0;
 	int index = 0;
 	int posX = 0;
 	int posY = 0;
 	float phase = 0.0;
+	float noteParamMax = 10.0;
 	bool gateState[16] = {};
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
@@ -137,20 +139,22 @@ struct GridSeq : Module,QuantizeUtils {
 		}
 	}
 
-	float getOneRandomNoteInScale(){
-		return closestVoltageInScaleWrapper(randomf() * maxVoltageOut);
+	float getOneRandomNote(){
+		return randomf() * noteParamMax;
 	}
 
 	void randomizeNotesOnly(){
 		for (int i = 0; i < 16; i++) {
-			params[CELL_NOTE_PARAM + i].value = getOneRandomNoteInScale();
+			params[CELL_NOTE_PARAM + i].value = getOneRandomNote();
 		}
 	}
 
 	float closestVoltageInScaleWrapper(float voltsIn){
+		float totalMax = clampf(params[VOLT_MAX_PARAM].value+inputs[VOLT_MAX_INPUT].value, 0.0, 10.0);
+		float voltsScaled = rescalef(voltsIn, 0, noteParamMax, 0, totalMax);
 		int rootNote = params[ROOT_NOTE_PARAM].value;
 		int scale = params[SCALE_PARAM].value;
-		return closestVoltageInScale(voltsIn, rootNote, scale);
+		return closestVoltageInScale(voltsScaled, rootNote, scale);
 	}
 
 	void handleMoveRight(){ posX = posX == 3 ? 0 : posX + 1; }
@@ -266,7 +270,7 @@ struct RandomizeNotesOnlyButton : SmallButton {
 		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 		for (int i = 0; i < 16; i++) {
 			if(e.button == 0){
-				gsw->seqKnobs[i]->setValue(gs->getOneRandomNoteInScale());
+				gsw->seqKnobs[i]->setValue(gs->getOneRandomNote());
 			} else if(e.button == 1){
 				//right click this to update the knobs (if randomized by cv in)
 				gsw->seqKnobs[i]->setValue(module->params[GridSeq::CELL_NOTE_PARAM + i].value);
@@ -303,11 +307,11 @@ GridSeqWidget::GridSeqWidget() {
 	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
 
 	///// RUN /////
-	addParam(createParam<SmallButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 90+3.75), module, GridSeq::RUNNING_LIGHT));
 
 	///// RESET /////
-	addParam(createParam<SmallButton>(Vec(27, 138), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(27, 138), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 138+3.75), module, GridSeq::RESET_LIGHT));
 	addInput(createInput<PJ301MPort>(Vec(22, 160), module, GridSeq::RESET_INPUT));
 
@@ -319,48 +323,50 @@ GridSeqWidget::GridSeqWidget() {
 	addParam(createParam<RndMoveButton>(Vec(215, 30), module, GridSeq::RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<RepMoveButton>(Vec(255, 30), module, GridSeq::REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(70, 55), module, GridSeq::RIGHT_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(103, 55), module, GridSeq::LEFT_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(137, 55), module, GridSeq::DOWN_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(172, 55), module, GridSeq::UP_INPUT));
-
-	addInput(createInput<PJ301MPort>(Vec(212, 55), module, GridSeq::RND_DIR_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(253, 55), module, GridSeq::REPEAT_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(70, 52), module, GridSeq::RIGHT_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(103, 52), module, GridSeq::LEFT_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(137, 52), module, GridSeq::DOWN_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(172, 52), module, GridSeq::UP_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(212, 52), module, GridSeq::RND_DIR_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(253, 52), module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, 323), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, 315), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(41, 180);
+	noteLabel->box.pos = Vec(41, 178);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(128, 323), module, GridSeq::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(108, 315), module, GridSeq::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(71, 180);
+	scaleLabel->box.pos = Vec(61, 178);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 
-	addParam(createParam<RandomizeGatesOnlyButton>(Vec(184, 332), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ301MPort>(Vec(202, 330-4), module, GridSeq::RND_GATES_INPUT));
+	addParam(createParam<RandomizeGatesOnlyButton>(Vec(196, 315), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(201, 345), module, GridSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeNotesOnlyButton>(Vec(239, 332), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ301MPort>(Vec(258, 330-4), module, GridSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(250, 315), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, GridSeq::RND_NOTES_INPUT));
+
+	addParam(createParam<JwSmallSnapKnob>(Vec(146, 315), module, GridSeq::VOLT_MAX_PARAM, 0.0, 10.0, 5.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(152, 345), module, GridSeq::VOLT_MAX_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
 			int knobX = x * boxSize + 75;
-			int knobY = y * boxSize + 110;
+			int knobY = y * boxSize + 105;
 			int idx = (x+(y*4));
 			module->gateState[idx] = true; //start with all gates on
 
 			//maybe someday put note labels in each cell
-			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx, 0.0, module->maxVoltageOut, 3.0);
+			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx, 0.0, module->noteParamMax, 3.0);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);
 

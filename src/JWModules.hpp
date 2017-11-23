@@ -92,10 +92,16 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 };
 
-struct TinyBlackKnob : RoundKnob {
-	TinyBlackKnob() {
+struct JwTinyKnob : RoundKnob {
+	JwTinyKnob() {
 		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
 		box.size = Vec(15, 15);
+	}
+};
+
+struct JwSmallSnapKnob : SmallWhiteKnob {
+	JwSmallSnapKnob() {
+		snap = true;
 	}
 };
 
@@ -139,8 +145,6 @@ struct RightMoveButton : SVGSwitch, MomentarySwitch {
 	RightMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RightButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/RightButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
 	}
 };
 
@@ -148,8 +152,6 @@ struct LeftMoveButton : SVGSwitch, MomentarySwitch {
 	LeftMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
 	}
 };
 
@@ -157,8 +159,6 @@ struct DownMoveButton : SVGSwitch, MomentarySwitch {
 	DownMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/DownButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/DownButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
 	}
 };
 
@@ -166,8 +166,6 @@ struct UpMoveButton : SVGSwitch, MomentarySwitch {
 	UpMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/UpButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/UpButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
 	}
 };
 
@@ -175,8 +173,6 @@ struct RndMoveButton : SVGSwitch, MomentarySwitch {
 	RndMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RndButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/RndButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
 	}
 };
 
@@ -184,15 +180,20 @@ struct RepMoveButton : SVGSwitch, MomentarySwitch {
 	RepMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RepButton.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/RepButtonDown.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
+	}
+};
+
+struct TinyButton : SVGSwitch, MomentarySwitch {
+	TinyButton() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/TinyButtonUp.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/TinyButtonDown.svg")));
 	}
 };
 
 struct SmallButton : SVGSwitch, MomentarySwitch {
 	SmallButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/ButtonUp.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/ButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonUp.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonDown.svg")));
 	}
 };
 
@@ -326,10 +327,10 @@ struct QuantizeUtils {
 		//B1 == -1.08, B2 == -0.08, B3 == 0.92, B4 == 1.92
 		float closestVal = 10.0;
 		float closestDist = 10.0;
-		int octaveInVolts = int(floorf(voltsIn));
-		// int nextOctaveInVolts = (octaveInVolts + 1) * inverseMult;
 		float scaleNoteInVolts = 0;
 		float distAway = 0;
+		int octaveInVolts = int(floorf(voltsIn));
+		// int nextOctaveInVolts = (octaveInVolts + 1) * inverseMult; // If I decide to round to the next octave.
 		for (int i=0; i < notesInScale; i++) {
 			scaleNoteInVolts = octaveInVolts + ((rootNote + curScaleArr[i]) % 12) / 12.0;
 			distAway = fabs(voltsIn - scaleNoteInVolts);
@@ -338,7 +339,7 @@ struct QuantizeUtils {
 				closestDist = distAway;
 			}
 
-			// If I decide to round to the next octave...  (Ableton does NOT do this in their scale midi effect)
+			// If I decide to round to the next octave.  (Ableton does NOT do this in their scale midi effect)
 			// float distToNextOct = fabs(nextOctaveInVolts - voltsIn);
 			// if(distToNextOct < closestDist){
 			// 	closestVal = nextOctaveInVolts;

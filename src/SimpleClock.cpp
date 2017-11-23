@@ -130,7 +130,7 @@ SimpleClockWidget::SimpleClockWidget() {
 	titleLabel->text = "Clock";
 	addChild(titleLabel);
 
-	addParam(createParam<SmallButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
 
 	addParam(createParam<SmallWhiteKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
@@ -141,7 +141,7 @@ SimpleClockWidget::SimpleClockWidget() {
 	resetLabel->text = "Reset";
 	addChild(resetLabel);
 
-	addParam(createParam<SmallButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM, 0.0, 1.0, 0.0));
 	addOutput(createOutput<PJ301MPort>(Vec(18, 175), module, SimpleClock::RESET_OUTPUT));
 
 
