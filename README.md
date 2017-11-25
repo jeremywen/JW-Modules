@@ -14,7 +14,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## GridSeq
 
-![GridSeq](./doc/GridSeq-img8.png)
+![GridSeq](./doc/GridSeq-img9.png)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
