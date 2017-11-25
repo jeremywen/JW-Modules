@@ -2,7 +2,7 @@
 
 ### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
 
-![All](./doc/all-img2.gif)
+![All](./doc/all-img3.gif)
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
@@ -14,7 +14,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## GridSeq
 
-![GridSeq](./doc/GridSeq-img7.png)
+![GridSeq](./doc/GridSeq-img8.png)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
