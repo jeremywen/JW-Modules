@@ -38,7 +38,7 @@ struct FullScope : Module {
 
 	SchmittTrigger sumTrigger;
 	SchmittTrigger extTrigger;
-	bool lissajous = true;
+	bool lissajous = true;//make this a right click option
 	bool external = false;
 	float lights[4] = {};
 	SchmittTrigger resetTrigger;
@@ -163,9 +163,14 @@ struct FullScopeDisplay : TransparentWidget {
 		Rect b = Rect(Vec(0, 0), box.size);
 		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
 		
-		nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
 		float rotRate = rescalef(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
-		nvgRotate(vg, rot+=rotRate);
+		if(rotRate != 0){
+			nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);//todo fix this
+			nvgRotate(vg, rot+=rotRate);
+			nvgTranslate(vg, -box.size.x/2.0, -box.size.y/2.0);//todo fix this
+		} else {
+			nvgRotate(vg, 0);
+		}
 
 		nvgBeginPath(vg);
 		// Draw maximum display left to right
@@ -314,3 +319,31 @@ void FullScopeWidget::fromJson(json_t *rootJ) {
 	if (widthJ)
 		box.size.x = json_number_value(widthJ);
 }
+
+struct FullScopeLissajousModeMenuItem : MenuItem {
+	FullScope *fullScope;
+	void onAction(EventAction &e) override {
+		fullScope->lissajous = !fullScope->lissajous;
+	}
+	void step() override {
+		rightText = (fullScope->lissajous) ? "✔" : "";
+	}
+};
+
+Menu *FullScopeWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->addChild(spacerLabel);
+
+	FullScope *fullScope = dynamic_cast<FullScope*>(module);
+	assert(fullScope);
+
+	FullScopeLissajousModeMenuItem *lissMenuItem = new FullScopeLissajousModeMenuItem();
+	lissMenuItem->text = "Lissajous Mode";
+	lissMenuItem->fullScope = fullScope;
+	menu->addChild(lissMenuItem);
+
+	return menu;
+}
+

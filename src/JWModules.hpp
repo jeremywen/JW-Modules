@@ -40,6 +40,7 @@ struct FullScopeWidget : ModuleWidget {
 	void step();
 	json_t *toJson();
 	void fromJson(json_t *rootJ);
+	Menu *createContextMenu();
 };
 
 struct GridSeqWidget : ModuleWidget {
