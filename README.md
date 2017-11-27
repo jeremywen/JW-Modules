@@ -2,7 +2,7 @@
 
 ### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
 
-![All](./doc/all-img3.gif)
+![All](./doc/all-img4.gif)
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
@@ -144,6 +144,12 @@ Scope in lissajous mode which takes up the full width and height of the module. 
     * Y Scale
     * Rotation
     * Time
+
+#### Right Click Context Menu
+
+Change to the normal scope by unchecking lissajous mode.
+
+![FullScope Menu](./doc/FullScope-Menu-img1.png)
 
 ## MinMax
 
