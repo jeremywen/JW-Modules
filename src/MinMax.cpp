@@ -5,7 +5,7 @@
 
 #define BUFFER_SIZE 512
 
-struct Volts : Module {
+struct MinMax : Module {
 	enum ParamIds {
 		TIME_PARAM,
 		TRIG_PARAM,
@@ -31,7 +31,7 @@ struct Volts : Module {
 	bool lissajous = false;
 	SchmittTrigger resetTrigger;
 
-	Volts() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 
 	json_t *toJson() {
@@ -53,7 +53,7 @@ struct Volts : Module {
 };
 
 
-void Volts::step() {
+void MinMax::step() {
 	// Compute time
 	float deltaTime = powf(2.0, params[TIME_PARAM].value);
 	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
@@ -101,8 +101,8 @@ void Volts::step() {
 }
 
 
-struct VoltsDisplay : TransparentWidget {
-	Volts *module;
+struct MinMaxDisplay : TransparentWidget {
+	MinMax *module;
 	int frame = 0;
 	std::shared_ptr<Font> font;
 
@@ -124,7 +124,7 @@ struct VoltsDisplay : TransparentWidget {
 	};
 	Stats statsX, statsY;
 
-	VoltsDisplay() {
+	MinMaxDisplay() {
 		font = Font::load(assetPlugin(plugin, "res/DejaVuSansMono.ttf"));
 	}
 
@@ -169,15 +169,15 @@ struct VoltsDisplay : TransparentWidget {
 };
 
 
-VoltsWidget::VoltsWidget() {
-	Volts *module = new Volts();
+MinMaxWidget::MinMaxWidget() {
+	MinMax *module = new MinMax();
 	setModule(module);
 	box.size = Vec(15*6, 380);
 
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/Volts.svg")));
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/MinMax.svg")));
 		addChild(panel);
 	}
 
@@ -188,11 +188,11 @@ VoltsWidget::VoltsWidget() {
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(22, 15);
-	titleLabel->text = "Volts";
+	titleLabel->text = "MinMax";
 	addChild(titleLabel);
 
 	{
-		VoltsDisplay *display = new VoltsDisplay();
+		MinMaxDisplay *display = new MinMaxDisplay();
 		display->module = module;
 		display->box.pos = Vec(0, 44);
 		display->box.size = Vec(box.size.x, 140);
@@ -219,6 +219,6 @@ VoltsWidget::VoltsWidget() {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, Volts::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(createInput<PJ301MPort>(Vec(33, 275), module, Volts::X_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
+	addInput(createInput<PJ301MPort>(Vec(33, 275), module, MinMax::X_INPUT));
 }

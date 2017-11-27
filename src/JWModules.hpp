@@ -8,8 +8,8 @@ struct SimpleClockWidget : ModuleWidget {
 	SimpleClockWidget();
 };
 
-struct VoltsWidget : ModuleWidget {
-	VoltsWidget();
+struct MinMaxWidget : ModuleWidget {
+	MinMaxWidget();
 };
 
 struct WavHeadWidget : ModuleWidget {

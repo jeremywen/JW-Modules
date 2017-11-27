@@ -145,11 +145,11 @@ Scope in lissajous mode which takes up the full width and height of the module. 
     * Rotation
     * Time
 
-## RMS
+## MinMax
 
-Created to show RMS in a larger font than the Fundamental Scope 
+Created to show minumum and maximum voltages in a larger font than the Fundamental Scope 
 
-![RMS](./doc/RMS-img2.png)
+![MinMax](./doc/MinMax-img1.png)
 
 ## WaveHead
 
