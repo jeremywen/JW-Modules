@@ -311,7 +311,6 @@ struct XYPad : Module {
 		minY = distToMid;
 		maxX = displayWidth - distToMid;
 		maxY = displayHeight - distToMid;
-
 	}
 
 	bool isStatePlaying() {
@@ -598,121 +597,39 @@ XYPadWidget::XYPadWidget() {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/XYPad.svg")));
-		addChild(panel);
-	}
-	{
-		XYPadDisplay *display = new XYPadDisplay();
-		display->module = module;
-		display->box.pos = Vec(2, 40);
-		display->box.size = Vec(box.size.x - 4, RACK_GRID_HEIGHT - 80);
-		addChild(display);
+	SVGPanel *panel = new SVGPanel();
+	panel->box.size = box.size;
+	panel->setBackground(SVG::load(assetPlugin(plugin, "res/XYPad.svg")));
+	addChild(panel);
 
-		module->displayWidth = display->box.size.x;
-		module->displayHeight = display->box.size.y;
-		module->updateMinMax();
-		module->defaultPos();
-	}
+	XYPadDisplay *display = new XYPadDisplay();
+	display->module = module;
+	display->box.pos = Vec(2, 40);
+	display->box.size = Vec(box.size.x - 4, RACK_GRID_HEIGHT - 80);
+	addChild(display);
 
-	////////////////////////////////////////////////////////////
-	CenteredLabel* const titleLabel = new CenteredLabel(16);
-	titleLabel->box.pos = Vec(27, 8);
-	titleLabel->text = "XY Pad";
-	addChild(titleLabel);
+	module->displayWidth = display->box.size.x;
+	module->displayHeight = display->box.size.y;
+	module->updateMinMax();
+	module->defaultPos();
+
 	addChild(createScrew<Screw_J>(Vec(40, 20)));
 	addChild(createScrew<Screw_W>(Vec(55, 20)));
-
-	rack::Label* const rndLabel = new rack::Label;
-	rndLabel->box.pos = Vec(85, 2);
-	rndLabel->text = "Rnd";
-	addChild(rndLabel);
-
-	rack::Label* const xScaleLabel = new rack::Label;
-	xScaleLabel->box.pos = Vec(140-20, 2);
-	xScaleLabel->text = "X Scale";
-	addChild(xScaleLabel);
-
-	rack::Label* const yScaleLabel = new rack::Label;
-	yScaleLabel->box.pos = Vec(200-20, 2);
-	yScaleLabel->text = "Y Scale";
-	addChild(yScaleLabel);
-
-	rack::Label* const xOffsetLabel = new rack::Label;
-	xOffsetLabel->box.pos = Vec(260-20, 2);
-	xOffsetLabel->text = "X Offset";
-	addChild(xOffsetLabel);
-
-	rack::Label* const yOffsetLabel = new rack::Label;
-	yOffsetLabel->box.pos = Vec(320-20, 2);
-	yOffsetLabel->text = "Y Offset";
-	addChild(yOffsetLabel);
-
 	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
-
 	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
 	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
 	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
-	rack::Label* const trigLabel = new rack::Label;
-	trigLabel->box.pos = Vec(5, 340);
-	trigLabel->text = "Gate In";
-	addChild(trigLabel);
-
-	rack::Label* const autoLabel = new rack::Label;
-	autoLabel->box.pos = Vec(78-20, 340);
-	autoLabel->text = "Auto";
-	addChild(autoLabel);
-
-	rack::Label* const speedLabel = new rack::Label;
-	speedLabel->box.pos = Vec(122-20, 340);
-	speedLabel->text = "Speed";
-	addChild(speedLabel);
-
-	rack::Label* const speedMultLabel = new rack::Label;
-	speedMultLabel->box.pos = Vec(145, 340);
-	speedMultLabel->text = "Mult";
-	addChild(speedMultLabel);
-
-	rack::Label* const xLabel = new rack::Label;
-	xLabel->box.pos = Vec(195-4, 340);
-	xLabel->text = "X";
-	addChild(xLabel);
-
-	rack::Label* const yLabel = new rack::Label;
-	yLabel->box.pos = Vec(220-4, 340);
-	yLabel->text = "Y";
-	addChild(yLabel);
-
-	rack::Label* const xInvLabel = new rack::Label;
-	xInvLabel->box.pos = Vec(255-7, 340);
-	xInvLabel->text = "-X";
-	addChild(xInvLabel);
-
-	rack::Label* const yInvLabel = new rack::Label;
-	yInvLabel->box.pos = Vec(280-7, 340);
-	yInvLabel->text = "-Y";
-	addChild(yInvLabel);
-
-	rack::Label* const gLabel = new rack::Label;
-	gLabel->box.pos = Vec(300-5, 340);
-	gLabel->text = "Gate Out";
-	addChild(gLabel);
 
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
-
 	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
-
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
 	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
-
 	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(255, 360), module, XYPad::X_INV_OUTPUT));

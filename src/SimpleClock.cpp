@@ -86,7 +86,6 @@ void SimpleClock::step() {
 		if (phase >= 1.0) {
 			phase -= 1.0;
 			nextStep = true;
-			// lights[CLOCK_LIGHT].value = 1.0;
 		}
 	}
 	if (nextStep) {
@@ -132,9 +131,16 @@ SimpleClockWidget::SimpleClockWidget() {
 
 	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
+	
+	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 1.0));
+	CenteredLabel* const bpmLabel = new CenteredLabel;
+	bpmLabel->box.pos = Vec(15, 50);
+	bpmLabel->text = "0";
+	clockKnob->connectLabel(bpmLabel);
+	addChild(bpmLabel);
+	addParam(clockKnob);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 2.0));
-	addOutput(createOutput<PJ301MPort>(Vec(18, 90), module, SimpleClock::CLOCK_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 105), module, SimpleClock::CLOCK_OUTPUT));
 
 	CenteredLabel* const resetLabel = new CenteredLabel;
 	resetLabel->box.pos = Vec(15, 75);

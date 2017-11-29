@@ -260,3 +260,10 @@ struct ScaleKnob : SmallWhiteKnob {
 		return quantizeUtils->scaleName(int(value));
 	}
 };
+
+struct BPMKnob : SmallWhiteKnob {
+	BPMKnob(){}
+	std::string formatCurrentValue() {
+		return std::to_string(static_cast<unsigned int>(powf(2.0, value)*60.0)) + " BPM";
+	}
+};
