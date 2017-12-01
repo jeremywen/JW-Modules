@@ -266,8 +266,8 @@ FullScopeWidget::FullScopeWidget() {
 		addChild(panel);
 	}
 
-	ModuleResizeHandle *leftHandle = new ModuleResizeHandle(box.size.x);
-	ModuleResizeHandle *rightHandle = new ModuleResizeHandle(box.size.x);
+	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle(box.size.x);
+	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle(box.size.x);
 	rightHandle->right = true;
 	this->rightHandle = rightHandle;
 	addChild(leftHandle);

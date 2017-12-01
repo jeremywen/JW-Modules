@@ -199,12 +199,12 @@ struct SmallButton : SVGSwitch, MomentarySwitch {
 	}
 };
 
-struct ModuleResizeHandle : Widget {
+struct JWModuleResizeHandle : Widget {
 	float minWidth;
 	bool right = false;
 	float dragX;
 	Rect originalBox;
-	ModuleResizeHandle(float _minWidth) {
+	JWModuleResizeHandle(float _minWidth) {
 		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
 		minWidth = _minWidth;
 	}

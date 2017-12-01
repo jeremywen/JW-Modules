@@ -12,13 +12,14 @@ struct BouncyBall : Module {
 		VELOCITY_X_PARAM,
 		VELOCITY_Y_PARAM,
 		SPEED_MULT_PARAM,
-		DECAY_PARAM,
-		GRAVITY_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		RESET_INPUT,
 		BUMP_INPUT,
+		VELOCITY_X_INPUT,
+		VELOCITY_Y_INPUT,
+		SPEED_MULT_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -78,7 +79,8 @@ struct BouncyBall : Module {
 };
 
 void BouncyBall::step() {
-	velocity = Vec(params[VELOCITY_X_PARAM].value, params[VELOCITY_Y_PARAM].value);
+	velocity = Vec(params[VELOCITY_X_PARAM].value + inputs[VELOCITY_X_INPUT].value, 
+		           params[VELOCITY_Y_PARAM].value + inputs[VELOCITY_Y_INPUT].value);
 
 	if (resetTrigger.process(inputs[RESET_INPUT].value)) {
 		resetBall();
@@ -93,25 +95,25 @@ void BouncyBall::step() {
 
 		bool edgeHit = false;
 	  	if(ballPos.x >= maxX){
-	  		ballVel.x *= -params[DECAY_PARAM].value;//-1 reverses ball with no speed change
+	  		ballVel.x *= -1;//-1 reverses ball with no speed change
 			eastGatePulse.trigger(1e-3);
 			edgeHit = true;
 	  	}
 
 	  	if(ballPos.x <= minX){
-	  		ballVel.x *= -params[DECAY_PARAM].value;//-1 reverses ball with no speed change
+	  		ballVel.x *= -1;//-1 reverses ball with no speed change
 			westGatePulse.trigger(1e-3);
 			edgeHit = true;
 	  	}
 
 	  	if(ballPos.y >= maxY){
-	  		ballVel.y *= -params[DECAY_PARAM].value;//-1 reverses ball with no speed change
+	  		ballVel.y *= -1;//-1 reverses ball with no speed change
 			southGatePulse.trigger(1e-3);
 			edgeHit = true;
 	  	}
 
 	  	if(ballPos.y <= minY){
-	  		ballVel.y *= -params[DECAY_PARAM].value;//-1 reverses ball with no speed change
+	  		ballVel.y *= -1;//-1 reverses ball with no speed change
 			northGatePulse.trigger(1e-3);
 			edgeHit = true;
 	  	}
@@ -137,12 +139,9 @@ void BouncyBall::step() {
 	outputs[X_OUTPUT].value = (rescalef(ballPos.x, minX, maxX, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
 	outputs[Y_OUTPUT].value = (rescalef(ballPos.y, minY, maxY, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;//y is inverted because gui coords
 
-	Vec newPos = ballPos.plus(ballVel.mult(params[SPEED_MULT_PARAM].value));
+	Vec newPos = ballPos.plus(ballVel.mult(params[SPEED_MULT_PARAM].value + inputs[SPEED_MULT_INPUT].value));
   	ballPos.x = clampf(newPos.x, minX, maxX);
   	ballPos.y = clampf(newPos.y, minY, maxY);
-
-//TODO ADD GRAVITY for a more realistic bouncy ball
-  	// ballVel = ballVel.plus(gravity); 
 }
 
 struct BouncyBallDisplay : Widget {
@@ -199,15 +198,14 @@ BouncyBallWidget::BouncyBallWidget() {
 	//bottom row
 	addInput(createInput<TinyPJ301MPort>(Vec(20, 360), module, BouncyBall::RESET_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(60, 360), module, BouncyBall::BUMP_INPUT));
+	
+	addInput(createInput<TinyPJ301MPort>(Vec(90, 360), module, BouncyBall::VELOCITY_X_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(120, 360), module, BouncyBall::VELOCITY_Y_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(150, 360), module, BouncyBall::SPEED_MULT_INPUT));
 
-	addParam(createParam<JwTinyKnob>(Vec(100, 360), module, BouncyBall::VELOCITY_X_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, BouncyBall::VELOCITY_Y_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(100, 360), module, BouncyBall::VELOCITY_X_PARAM, -3.0, 3.0, 0.25));
+	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, BouncyBall::VELOCITY_Y_PARAM, -3.0, 3.0, 0.5));
 	addParam(createParam<JwTinyKnob>(Vec(165, 360), module, BouncyBall::SPEED_MULT_PARAM, 1.0, 20.0, 1.0));
-
-//TODO ADD Gravity knob back in and add labels in SVG
-	// addParam(createParam<JwTinyKnob>(Vec(195, 360), module, BouncyBall::GRAVITY_PARAM, -1.0, 1.0, 0.0));	
-
-	addParam(createParam<JwTinyKnob>(Vec(195, 360), module, BouncyBall::DECAY_PARAM, 1.0, 0.0, 1.0));	
 	
 	addOutput(createOutput<TinyPJ301MPort>(Vec(225, 360), module, BouncyBall::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(250, 360), module, BouncyBall::Y_OUTPUT));
