@@ -22,6 +22,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 * The top section contains all the inputs.
 * The bottom sections contains all the outputs.
 * The colors of the inputs/outputs correspond to the ball colors.
+* Click in the dark area to lock/unlock the paddle.
 
 #### Inputs
 
