@@ -1,35 +1,31 @@
+#pragma once
 #include "rack.hpp"
 #include "QuantizeUtils.cpp"
 
 using namespace rack;
 extern Plugin *plugin;
 
-struct SimpleClockWidget : ModuleWidget {
-	SimpleClockWidget();
-};
+struct SimpleClockWidget : ModuleWidget { SimpleClockWidget(); };
+struct MinMaxWidget : ModuleWidget { MinMaxWidget(); };
+struct QuantizerWidget : ModuleWidget { QuantizerWidget(); };
 
-struct MinMaxWidget : ModuleWidget {
-	MinMaxWidget();
+struct BouncyBallsWidget : ModuleWidget {
+	BouncyBallsWidget();
+	void addButton(Vec pos, int param);
+	void addColoredPort(int color, Vec pos, int param, bool input);
 };
 
 struct WavHeadWidget : ModuleWidget {
 	WavHeadWidget();
 	void step();
-	Widget *widgetToMove;
+	Widget* widgetToMove;
+	Widget* snowflakesArr[10];
 	Menu *createContextMenu();
 };
 
 struct XYPadWidget : ModuleWidget {
 	XYPadWidget();
 	Menu *createContextMenu();
-};
-
-struct BouncyBallWidget : ModuleWidget {
-	BouncyBallWidget();
-};
-
-struct QuantizerWidget : ModuleWidget {
-	QuantizerWidget();
 };
 
 struct FullScopeWidget : ModuleWidget {
@@ -107,6 +103,13 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 	}
 };
 
+struct Snowflake : SVGScrew {
+	Snowflake() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/SnowFlake.svg")));
+		box.size = sw->box.size;
+	}
+};
+
 struct WavHeadLogo : SVGScrew {
 	WavHeadLogo() {
 		sw->setSVG(SVG::load(assetPlugin(plugin, "res/WavHeadSmall.svg")));
@@ -131,6 +134,46 @@ struct Screw_W : SVGScrew {
 struct TinyPJ301MPort : SVGPort {
 	TinyPJ301MPort() {
 		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M.svg"));
+		background->wrap();
+		box.size = background->box.size;
+	}
+};
+
+struct Orange_TinyPJ301MPort : SVGPort {
+	Orange_TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_orange.svg"));
+		background->wrap();
+		box.size = background->box.size;
+	}
+};
+
+struct Yellow_TinyPJ301MPort : SVGPort {
+	Yellow_TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_yellow.svg"));
+		background->wrap();
+		box.size = background->box.size;
+	}
+};
+
+struct Purple_TinyPJ301MPort : SVGPort {
+	Purple_TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_purple.svg"));
+		background->wrap();
+		box.size = background->box.size;
+	}
+};
+
+struct Blue_TinyPJ301MPort : SVGPort {
+	Blue_TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_blue.svg"));
+		background->wrap();
+		box.size = background->box.size;
+	}
+};
+
+struct White_TinyPJ301MPort : SVGPort {
+	White_TinyPJ301MPort() {
+		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_white.svg"));
 		background->wrap();
 		box.size = background->box.size;
 	}
@@ -196,48 +239,6 @@ struct SmallButton : SVGSwitch, MomentarySwitch {
 	SmallButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonUp.svg")));
 		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonDown.svg")));
-	}
-};
-
-struct JWModuleResizeHandle : Widget {
-	float minWidth;
-	bool right = false;
-	float dragX;
-	Rect originalBox;
-	JWModuleResizeHandle(float _minWidth) {
-		box.size = Vec(RACK_GRID_WIDTH * 1, RACK_GRID_HEIGHT);
-		minWidth = _minWidth;
-	}
-	void onMouseDown(EventMouseDown &e) override {
-		if (e.button == 0) {
-			e.consumed = true;
-			e.target = this;
-		}
-	}
-	void onDragStart(EventDragStart &e) override {
-		dragX = gRackWidget->lastMousePos.x;
-		ModuleWidget *m = getAncestorOfType<ModuleWidget>();
-		originalBox = m->box;
-	}
-	void onDragMove(EventDragMove &e) override {
-		ModuleWidget *m = getAncestorOfType<ModuleWidget>();
-
-		float newDragX = gRackWidget->lastMousePos.x;
-		float deltaX = newDragX - dragX;
-
-		Rect newBox = originalBox;
-		if (right) {
-			newBox.size.x += deltaX;
-			newBox.size.x = fmaxf(newBox.size.x, minWidth);
-			newBox.size.x = roundf(newBox.size.x / RACK_GRID_WIDTH) * RACK_GRID_WIDTH;
-		}
-		else {
-			newBox.size.x -= deltaX;
-			newBox.size.x = fmaxf(newBox.size.x, minWidth);
-			newBox.size.x = roundf(newBox.size.x / RACK_GRID_WIDTH) * RACK_GRID_WIDTH;
-			newBox.pos.x = originalBox.pos.x + originalBox.size.x - newBox.size.x;
-		}
-		gRackWidget->requestModuleBox(m, newBox);
 	}
 };
 

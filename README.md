@@ -2,7 +2,7 @@
 
 ### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
 
-![All](./doc/all-img4.gif)
+![All](./doc/all-img5.gif)
 
 Modules for VCV Rack from https://vcvrack.com/ 
 
@@ -10,7 +10,44 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 [Donate through Paypal](https://www.paypal.me/jeremywen)
 
-[Donate through Patreon](https://www.patreon.com/jeremywen)
+[Dev FAQ for VCV Rack](https://github.com/jeremywen/JW-Modules/wiki/Dev-FAQ-for-VCV-Rack)
+
+
+## Bouncy Balls
+
+![Bouncy Balls](./doc/bouncy-balls-img1.png)
+
+#### Basics
+
+* The top section contains all the inputs.
+* The bottom sections contains all the outputs.
+* The colors of the inputs/outputs correspond to the ball colors.
+
+#### Inputs
+
+*  **RST:** starts ball back at center with initial velocity
+*  **TRIG:** speeds up ball based on velocity settings
+*  **VELX:** velocity in the x direction
+*  **VELY:** velocity in the y direction
+*  **MULT:** velocity multiplier
+
+#### Outputs
+
+*  **X:** x position for each ball
+*  **Y:** y position for each ball
+*  **N:** (north) trigger out for each ball that hits the top
+*  **E:** (east) trigger out for each ball that hits the right side
+*  **S:** (south) trigger out for each ball that hits the bottom
+*  **W:** (west) trigger out for each ball that hits the left side
+*  **EDGE:** trigger out for each ball that hits any side
+*  **PAD:** trigger out for each ball that hits the white pad
+
+#### Modifying the Output Signal
+
+*  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
+*  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
+*  **X Offset Knob:** +/- 5v added to X Output
+*  **Y Offset Knob:** +/- 5v added to Y Output
 
 ## GridSeq
 
@@ -163,9 +200,13 @@ Move WavHead up and down based on voltage in.
 
 ![WaveHead](./doc/WavHead-img2.png)
 
-Right click to invert direction or change to bidirectional -5 to +5 volts.
+Right click to:
 
-![WaveHead Menu](./doc/WavHead-menu-img1.png)
+* invert direction 
+* change to bidirectional -5 to +5 volts.
+* change to snow mode
+
+![WaveHead Menu](./doc/WavHead-menu-img2.png)
 
 ## Building
 

@@ -75,9 +75,9 @@ struct GridSeq : Module,QuantizeUtils {
 
 	GridSeq() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "running", json_boolean(running));
@@ -98,7 +98,7 @@ struct GridSeq : Module,QuantizeUtils {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
@@ -123,13 +123,13 @@ struct GridSeq : Module,QuantizeUtils {
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 	}
 
-	void reset() {
+	void reset() override {
 		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
 	}
 
-	void randomize() {
+	void randomize() override {
 		randomizeGateStates();
 	}
 
@@ -292,7 +292,7 @@ struct RandomizeGatesOnlyButton : SmallButton {
 GridSeqWidget::GridSeqWidget() {
 	GridSeq *module = new GridSeq();
 	setModule(module);
-	box.size = Vec(15*20, 380);
+	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
@@ -301,10 +301,10 @@ GridSeqWidget::GridSeqWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(15, 0)));
-	addChild(createScrew<Screw_J>(Vec(15, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///// RUN /////
 	addParam(createParam<TinyButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));

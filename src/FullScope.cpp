@@ -1,7 +1,7 @@
 #include <string.h>
 #include "JWModules.hpp"
+#include "JWResizableHandle.hpp"
 #include "dsp/digital.hpp"
-
 
 #define BUFFER_SIZE 512
 
@@ -38,22 +38,22 @@ struct FullScope : Module {
 
 	SchmittTrigger sumTrigger;
 	SchmittTrigger extTrigger;
-	bool lissajous = true;//make this a right click option
+	bool lissajous = true;
 	bool external = false;
 	float lights[4] = {};
 	SchmittTrigger resetTrigger;
 
 	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		json_object_set_new(rootJ, "external", json_integer((int) external));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *sumJ = json_object_get(rootJ, "lissajous");
 		if (sumJ)
 			lissajous = json_integer_value(sumJ);
@@ -63,17 +63,13 @@ struct FullScope : Module {
 			external = json_integer_value(extJ);
 	}
 
-	void reset() {
+	void reset() override {
 		lissajous = true;
 		external = false;
 	}
 };
 
 void FullScope::step() {
-	// Modes
-	// if (sumTrigger.process(params[LISSAJOUS_PARAM].value)) {
-	// 	lissajous = !lissajous;
-	// }
 	lights[0] = lissajous ? 0.0 : 1.0;
 	lights[1] = lissajous ? 1.0 : 0.0;
 
@@ -165,9 +161,9 @@ struct FullScopeDisplay : TransparentWidget {
 		
 		float rotRate = rescalef(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
 		if(rotRate != 0){
-			nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);//todo fix this
+			nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
 			nvgRotate(vg, rot+=rotRate);
-			nvgTranslate(vg, -box.size.x/2.0, -box.size.y/2.0);//todo fix this
+			nvgTranslate(vg, -box.size.x/2.0, -box.size.y/2.0);
 		} else {
 			nvgRotate(vg, 0);
 		}
@@ -218,23 +214,24 @@ struct FullScopeDisplay : TransparentWidget {
 			valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
 		}
 
+		//color
+		if(module->inputs[FullScope::COLOR_INPUT].active){
+			float hue = rescalef(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
+			nvgStrokeColor(vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+		} else {
+			nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
+		}
+
 		// Draw waveforms
 		if (module->lissajous) {
 			// X x Y
 			if (module->inputs[FullScope::X_INPUT].active || module->inputs[FullScope::Y_INPUT].active) {
-				if(module->inputs[FullScope::COLOR_INPUT].active){
-					float hue = rescalef(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
-					nvgStrokeColor(vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
-				} else {
-					nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
-				}
 				drawWaveform(vg, valuesX, valuesY);
 			}
 		}
 		else {
 			// Y
 			if (module->inputs[FullScope::Y_INPUT].active) {
-				nvgStrokeColor(vg, nvgRGBA(0xe1, 0x02, 0x78, 0xc0));
 				drawWaveform(vg, valuesY, NULL);
 			}
 

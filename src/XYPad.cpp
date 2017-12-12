@@ -83,15 +83,15 @@ struct XYPad : Module {
 	long curPointIdx = 0;
 
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step();
+	void step() override;
 
-	void reset(){
+	void reset() override {
 	    setState(STATE_IDLE);
 	    points.clear();
 	    defaultPos();
 	}
 
-	void randomize(){
+	void randomize() override {
 		randomizeShape();
 	}
 
@@ -228,7 +228,7 @@ struct XYPad : Module {
 		setState(stateBefore);
 	}
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lastRandomShape", json_integer(lastRandomShape));
 		json_object_set_new(rootJ, "curPlayMode", json_integer(curPlayMode));
@@ -247,7 +247,7 @@ struct XYPad : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		lastRandomShape = json_integer_value(json_object_get(rootJ, "lastRandomShape"));
 		curPlayMode = json_integer_value(json_object_get(rootJ, "curPlayMode"));
 

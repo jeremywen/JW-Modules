@@ -32,22 +32,22 @@ struct MinMax : Module {
 	SchmittTrigger resetTrigger;
 
 	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *sumJ = json_object_get(rootJ, "lissajous");
 		if (sumJ)
 			lissajous = json_integer_value(sumJ);
 
 	}
 
-	void reset() {
+	void reset() override {
 		lissajous = false;
 	}
 };
@@ -172,7 +172,7 @@ struct MinMaxDisplay : TransparentWidget {
 MinMaxWidget::MinMaxWidget() {
 	MinMax *module = new MinMax();
 	setModule(module);
-	box.size = Vec(15*6, 380);
+	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
@@ -181,10 +181,10 @@ MinMaxWidget::MinMaxWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(15, 0)));
-	addChild(createScrew<Screw_J>(Vec(15, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(22, 15);

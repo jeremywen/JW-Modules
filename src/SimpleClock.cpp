@@ -38,24 +38,18 @@ struct SimpleClock : Module {
 	const float lightLambda = 0.075;
 
 	SimpleClock() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
-	}
-
-	void reset() {
-	}
-
-	void randomize() {
 	}
 
 	void resetClock() {
@@ -63,7 +57,6 @@ struct SimpleClock : Module {
 		resetPulse.trigger(0.01);
 		stepCount = 0;
 	}
-
 };
 
 void SimpleClock::step() {
@@ -110,7 +103,7 @@ void SimpleClock::step() {
 SimpleClockWidget::SimpleClockWidget() {
 	SimpleClock *module = new SimpleClock();
 	setModule(module);
-	box.size = Vec(15*4, 380);
+	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
@@ -119,10 +112,10 @@ SimpleClockWidget::SimpleClockWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(15, 0)));
-	addChild(createScrew<Screw_J>(Vec(15, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(15, 15);

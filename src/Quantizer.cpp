@@ -23,16 +23,12 @@ struct Quantizer : Module,QuantizeUtils {
 
 	Quantizer() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		return rootJ;
 	}
-
-	void fromJson(json_t *rootJ) {}
-	void reset() {}
-	void randomize() {}
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +43,7 @@ void Quantizer::step() {
 QuantizerWidget::QuantizerWidget() {
 	Quantizer *module = new Quantizer();
 	setModule(module);
-	box.size = Vec(15*4, 380);
+	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
@@ -56,10 +52,10 @@ QuantizerWidget::QuantizerWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(15, 0)));
-	addChild(createScrew<Screw_J>(Vec(15, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-30, 365)));
+	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 365)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel;
 	titleLabel->box.pos = Vec(15, 15);

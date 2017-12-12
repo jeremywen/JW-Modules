@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="60"
+   width="45"
    height="380"
-   viewBox="0 0 15.875 100.54166"
+   viewBox="0 0 11.90625 100.54166"
    version="1.1"
    id="svg12553"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="WavHeadPanel.svg">
+   sodipodi:docname="BlankPanelSmall.svg">
   <defs
      id="defs12547" />
   <sodipodi:namedview
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6"
-     inkscape:cx="-11.696429"
-     inkscape:cy="40.312393"
+     inkscape:zoom="1.4"
+     inkscape:cx="-143.125"
+     inkscape:cy="166.43278"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -56,7 +56,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -68,10 +68,10 @@
     <path
        inkscape:connector-curvature="0"
        id="path33453"
-       d="m 26.543497,161.45211 h 15.874999 v 100.3961 H 26.543497 Z m 0,0"
-       style="fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.11770677" />
+       d="m 26.543497,161.45211 h 11.90625 v 100.3961 h -11.90625 z m 0,0"
+       style="fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.10193706" />
     <g
-       transform="matrix(0.37757778,0,0,0.37757778,21.988293,156.36556)"
+       transform="matrix(0.8272429,0,0,0.8272429,5.1261028,2.1511011)"
        id="layer1-8"
        inkscape:label="Layer 1">
       <rect
