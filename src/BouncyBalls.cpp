@@ -12,10 +12,17 @@ enum InputColor {
 
 struct Ball {
 	Rect box;
+	Rect previousBox;
 	Vec vel;
 	SchmittTrigger resetTrigger, bumpTrigger;
 	PulseGenerator northPulse, eastPulse, southPulse, westPulse, paddlePulse;
 	NVGcolor color;
+	void setPosition(float x, float y){
+		previousBox.pos.x = box.pos.x;
+		previousBox.pos.y = box.pos.y;
+		box.pos.x = x;
+		box.pos.y = y;
+	}
 };
 
 struct Paddle {
@@ -80,6 +87,8 @@ struct BouncyBall : Module {
 		for(int i=0; i<4; i++){
 			balls[i].box.size.x = ballRadius*2 + ballStrokeWidth*2;
 			balls[i].box.size.y = ballRadius*2 + ballStrokeWidth*2;
+			balls[i].previousBox.size.x = balls[i].box.size.x;
+			balls[i].previousBox.size.y = balls[i].box.size.y;
 		}
 	}
 	~BouncyBall() {
@@ -143,8 +152,17 @@ void BouncyBall::step() {
 		}
 
 		if(b.box.intersects(paddle.box)){
-			b.vel.y *= -1;
-			b.vel.x *= -1;
+			
+			if(b.previousBox.getBottomRight().y < paddle.box.getTopRight().y || //ball was above
+			   b.previousBox.getTopRight().y > paddle.box.getBottomRight().y){ //ball was below
+				b.vel.y *= -1;
+			}
+
+			if(b.previousBox.getBottomRight().x < paddle.box.getBottomLeft().x || //ball was left
+			   b.previousBox.getBottomLeft().x > paddle.box.getBottomRight().x){ //ball was right
+				b.vel.x *= -1;
+			}
+
 			b.paddlePulse.trigger(1e-3);
 		}
 
@@ -192,8 +210,10 @@ void BouncyBall::step() {
 		if(outputs[PAD_TRIG_OUTPUT + i].active)outputs[PAD_TRIG_OUTPUT + i].value = b.paddlePulse.process(rate) ? 10.0 : 0.0;
 
 		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].value + inputs[SPEED_MULT_INPUT + i].value));
-		b.box.pos.x = clampf(newPos.x, 0, displayWidth);
-		b.box.pos.y = clampf(newPos.y, 0, displayHeight);
+		b.setPosition(
+			clampf(newPos.x, 0, displayWidth), 
+			clampf(newPos.y, 0, displayHeight)
+		);
 	}
 }
 
@@ -333,6 +353,8 @@ BouncyBallsWidget::BouncyBallsWidget() {
 	//white pad pos
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 225), BouncyBall::PAD_POS_X_INPUT, true);
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 250), BouncyBall::PAD_POS_Y_INPUT, true);
+	
+	//TODO paddle and balls on/off switch
 
 	//scale and offset
 	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBall::SCALE_X_PARAM, 0.01, 1.0, 0.5));
