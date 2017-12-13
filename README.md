@@ -169,6 +169,8 @@ Scope in lissajous mode which takes up the full width and height of the module. 
 
 ![FullScope](./doc/FullScope-img2.png)
 
+Drag the right side of the module to resize it!
+
   * Inputs in bottom left corner
     * X input (same as Fundamental Scope)
     * Y input (same as Fundamental Scope)
