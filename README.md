@@ -15,21 +15,24 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## Bouncy Balls
 
-![Bouncy Balls](./doc/bouncy-balls-img1.png)
+![Bouncy Balls](./doc/bouncy-balls-img2.png)
 
 #### Basics
 
 * The top section contains all the inputs.
 * The bottom sections contains all the outputs.
 * The colors of the inputs/outputs correspond to the ball colors.
+* The top two rows have buttons next to the inputs to for manually triggering.
+* The next three rows have knobs next to the inputs for manually controlling the values.
 * Click in the dark area to lock/unlock the paddle.
+* Click the 'ON' button to toggle the paddle visibilty.
 
 #### Inputs
 
 *  **RST:** starts ball back at center with initial velocity
 *  **TRIG:** speeds up ball based on velocity settings
-*  **VELX:** velocity in the x direction
-*  **VELY:** velocity in the y direction
+*  **VELX:** velocity in the x direction, to the right is positive (towards east), to the left is negative (towards west)
+*  **VELY:** velocity in the y direction, to the right is positive (towards south), to the left is negative (towards north)
 *  **MULT:** velocity multiplier
 
 #### Outputs
