@@ -59,6 +59,8 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
+[Example Patch](./doc/gridseq-example-patch-1.png)
+
 #### 16 Step Sequencer
 
 When a direction input is sent a trigger and a cell is entered, a pitch will be sent to the OUT port if the cell's gate is on.
