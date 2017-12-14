@@ -15,7 +15,7 @@ by [@jeremywen](https://twitter.com/jeremywen)
 
 ## Bouncy Balls
 
-![Bouncy Balls](./doc/bouncy-balls-img2.png)
+![Bouncy Balls](./doc/bouncy-balls-img3.png)
 
 #### Basics
 
