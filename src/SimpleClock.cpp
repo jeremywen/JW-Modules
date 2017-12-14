@@ -48,8 +48,9 @@ struct SimpleClock : Module {
 
 	void fromJson(json_t *rootJ) override {
 		json_t *runningJ = json_object_get(rootJ, "running");
-		if (runningJ)
+		if (runningJ){
 			running = json_is_true(runningJ);
+		}
 	}
 
 	void resetClock() {

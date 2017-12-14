@@ -28,13 +28,14 @@ struct Ball {
 struct Paddle {
 	Rect box;
 	bool locked = true;
+	bool visible = true;
 	Paddle(){
 		box.size.x = 100.0;
 		box.size.y = 10.0;
 	}
 };
 
-struct BouncyBall : Module {
+struct BouncyBalls : Module {
 	enum ParamIds {
 		RESET_PARAM,
 		TRIG_BTN_PARAM = RESET_PARAM + 4,
@@ -45,6 +46,7 @@ struct BouncyBall : Module {
 		SCALE_Y_PARAM,
 		OFFSET_X_VOLTS_PARAM,
 		OFFSET_Y_VOLTS_PARAM,
+		PAD_ON_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -68,6 +70,10 @@ struct BouncyBall : Module {
 		PAD_TRIG_OUTPUT = EDGE_HIT_OUTPUT + 4,
 		NUM_OUTPUTS = PAD_TRIG_OUTPUT + 4
 	};
+	enum LightIds {
+		PAD_ON_LIGHT,
+		NUM_LIGHTS
+	};
 	
 	float displayWidth = 0, displayHeight = 0;
 	float ballRadius = 10;
@@ -79,7 +85,7 @@ struct BouncyBall : Module {
 	Ball *balls = new Ball[4];
 	Paddle paddle;
 
-	BouncyBall() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+	BouncyBalls() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		balls[0].color = nvgRGB(255, 151, 9);//orange
 		balls[1].color = nvgRGB(255, 243, 9);//yellow
 		balls[2].color = nvgRGB(144, 26, 252);//purple
@@ -90,8 +96,9 @@ struct BouncyBall : Module {
 			balls[i].previousBox.size.x = balls[i].box.size.x;
 			balls[i].previousBox.size.y = balls[i].box.size.y;
 		}
+		lights[PAD_ON_LIGHT].value = 1.0;
 	}
-	~BouncyBall() {
+	~BouncyBalls() {
 		delete [] balls;
 	}
 
@@ -99,6 +106,8 @@ struct BouncyBall : Module {
 	void reset() override {
 		resetBalls();
 		paddle.locked = true;
+		paddle.visible = true;
+		lights[PAD_ON_LIGHT].value = 1.0;
 	}
 
 	void onSampleRateChange() override {
@@ -109,6 +118,7 @@ struct BouncyBall : Module {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "paddleX", json_real(paddle.box.pos.x));
 		json_object_set_new(rootJ, "paddleY", json_real(paddle.box.pos.y));
+		json_object_set_new(rootJ, "paddleVisible", json_boolean(paddle.visible));
 		return rootJ;
 	}
 
@@ -117,6 +127,12 @@ struct BouncyBall : Module {
 		json_t *yPosJ = json_object_get(rootJ, "paddleY");
 		paddle.box.pos.x = json_real_value(xPosJ);
 		paddle.box.pos.y = json_real_value(yPosJ);
+
+		json_t *paddleVisibleJ = json_object_get(rootJ, "paddleVisible");
+		if (paddleVisibleJ){
+			paddle.visible = json_is_true(paddleVisibleJ);
+		}
+		lights[PAD_ON_LIGHT].value = paddle.visible ? 1.0 : 0.0;
 	}
 
 	void resetBallAtIdx(int i){
@@ -136,7 +152,7 @@ struct BouncyBall : Module {
 	}
 };
 
-void BouncyBall::step() {
+void BouncyBalls::step() {	
 	for(int i=0; i<4; i++){
 		Ball &b = balls[i];
 		Vec velocity = Vec(params[VEL_X_PARAM + i].value + inputs[VEL_X_INPUT + i].value, 
@@ -151,7 +167,7 @@ void BouncyBall::step() {
 			b.vel = b.vel.plus(velocity.mult(velScale));
 		}
 
-		if(b.box.intersects(paddle.box)){
+		if(paddle.visible && b.box.intersects(paddle.box)){
 			
 			if(b.previousBox.getBottomRight().y < paddle.box.getTopRight().y || //ball was above
 			   b.previousBox.getTopRight().y > paddle.box.getBottomRight().y){ //ball was below
@@ -191,10 +207,10 @@ void BouncyBall::step() {
 			hitEdge = true;
 		}
 
-		if(inputs[PAD_POS_X_INPUT].active){
+		if(paddle.visible && inputs[PAD_POS_X_INPUT].active){
 			paddle.box.pos.x = -50 + clampf(rescalef(inputs[PAD_POS_X_INPUT].value, -5, 5, 50, displayWidth - 50), 50, displayWidth - 50);
 		}
-		if(inputs[PAD_POS_Y_INPUT].active){
+		if(paddle.visible && inputs[PAD_POS_Y_INPUT].active){
 			paddle.box.pos.y = clampf(rescalef(inputs[PAD_POS_Y_INPUT].value, -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
 		}
 
@@ -218,23 +234,23 @@ void BouncyBall::step() {
 }
 
 struct BouncyBallDisplay : Widget {
-	BouncyBall *module;
+	BouncyBalls *module;
 	BouncyBallDisplay(){}
 
 	void onMouseMove(EventMouseMove &e) override {
 		Widget::onMouseMove(e);
-		BouncyBall* m = dynamic_cast<BouncyBall*>(module);
-		if(!m->paddle.locked && !m->inputs[BouncyBall::PAD_POS_X_INPUT].active){
+		BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
+		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
 			m->paddle.box.pos.x = -50 + clampf(e.pos.x, 50, box.size.x - 50);
 		}
-		if(!m->paddle.locked && !m->inputs[BouncyBall::PAD_POS_Y_INPUT].active){
+		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
 			m->paddle.box.pos.y = clampf(e.pos.y, 0, box.size.y - 10);
 		}
 	}
 
 	void onMouseDown(EventMouseDown &e) override {
 		Widget::onMouseDown(e);
-		BouncyBall* m = dynamic_cast<BouncyBall*>(module);
+		BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
 		m->paddle.locked = !m->paddle.locked;
 	}
 
@@ -245,11 +261,13 @@ struct BouncyBallDisplay : Widget {
 		nvgRect(vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(vg);
 			
-		//paddle
-		nvgFillColor(vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(vg);
-		nvgRect(vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
-		nvgFill(vg);
+		if(module->paddle.visible){
+			//paddle
+			nvgFillColor(vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(vg);
+			nvgRect(vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
+			nvgFill(vg);
+		}
 
 		for(int i=0; i<4; i++){
 			nvgFillColor(vg, module->balls[i].color);
@@ -264,8 +282,18 @@ struct BouncyBallDisplay : Widget {
 	}
 };
 
+struct PaddleVisibleButton : TinyButton {
+	void onMouseDown(EventMouseDown &e) override {
+		TinyButton::onMouseDown(e);
+		BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
+		BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
+		bbs->paddle.visible = !bbs->paddle.visible;
+		bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
+	}
+};
+
 BouncyBallsWidget::BouncyBallsWidget() {
-	BouncyBall *module = new BouncyBall();
+	BouncyBalls *module = new BouncyBalls();
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
@@ -289,28 +317,28 @@ BouncyBallsWidget::BouncyBallsWidget() {
 	/////////////////////// INPUTS ///////////////////////
 	float topY = 13.0, leftX = 40.0, xMult = 55.0, yAdder = 34.0, knobDist = 17.0;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::RESET_INPUT + x, true);
-		addButton(Vec(leftX + knobDist + x * xMult, topY-5), BouncyBall::RESET_PARAM + x);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::RESET_INPUT + x, true);
+		addButton(Vec(leftX + knobDist + x * xMult, topY-5), BouncyBalls::RESET_PARAM + x);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::TRIG_INPUT + x, true);
-		addButton(Vec(leftX + knobDist + x * xMult, topY-5), BouncyBall::TRIG_BTN_PARAM + x);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::TRIG_INPUT + x, true);
+		addButton(Vec(leftX + knobDist + x * xMult, topY-5), BouncyBalls::TRIG_BTN_PARAM + x);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::VEL_X_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBall::VEL_X_PARAM + x, -3.0, 3.0, 0.25));
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_X_INPUT + x, true);
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_X_PARAM + x, -3.0, 3.0, 0.25));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::VEL_Y_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBall::VEL_Y_PARAM + x, -3.0, 3.0, 0.5));
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_Y_INPUT + x, true);
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_Y_PARAM + x, -3.0, 3.0, 0.5));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::SPEED_MULT_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBall::SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0));
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::SPEED_MULT_INPUT + x, true);
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0));
 	}
 	
 	/////////////////////// OUTPUTS ///////////////////////
@@ -319,48 +347,49 @@ BouncyBallsWidget::BouncyBallsWidget() {
 	topY+=yAdder + 5;
 	leftX = 100;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::X_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::X_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::Y_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::Y_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::N_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::N_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::E_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::E_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::S_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::S_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::W_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::W_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::EDGE_HIT_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::EDGE_HIT_OUTPUT + x, false);
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
-		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBall::PAD_TRIG_OUTPUT + x, false);
+		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::PAD_TRIG_OUTPUT + x, false);
 	}
 
 	//white pad pos
-	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 225), BouncyBall::PAD_POS_X_INPUT, true);
-	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 250), BouncyBall::PAD_POS_Y_INPUT, true);
-	
-	//TODO paddle and balls on/off switch
+	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 220), BouncyBalls::PAD_POS_X_INPUT, true);
+	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 245), BouncyBalls::PAD_POS_Y_INPUT, true);
+
+	addParam(createParam<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(38+3.75, 270+3.75), module, BouncyBalls::PAD_ON_LIGHT));
 
 	//scale and offset
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBall::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 242), module, BouncyBall::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 290), module, BouncyBall::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 338), module, BouncyBall::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBalls::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 242), module, BouncyBalls::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 290), module, BouncyBalls::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 338), module, BouncyBalls::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 }
 
 void BouncyBallsWidget::addButton(Vec pos, int param) {

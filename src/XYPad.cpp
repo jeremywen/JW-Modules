@@ -270,6 +270,7 @@ struct XYPad : Module {
 		if (autoPlayOnJ){
 			autoPlayOn = json_is_true(autoPlayOnJ);
 		}
+		lights[AUTO_LIGHT].value = autoPlayOn ? 1.0 : 0.0;
 		params[AUTO_PLAY_PARAM].value = autoPlayOn ? 1 : 0;
 		if(autoPlayOn){setState(STATE_AUTO_PLAYING);}
 	}
@@ -628,7 +629,7 @@ XYPadWidget::XYPadWidget() {
 	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
 	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 5.0));
+	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
 	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));

@@ -2,7 +2,7 @@
 
 ### [Download the Latest Release Here](https://github.com/jeremywen/JW-Modules/releases)
 
-![All](./doc/all-img5.gif)
+![All](./doc/all-img6.gif)
 
 Modules for VCV Rack from https://vcvrack.com/ 
 

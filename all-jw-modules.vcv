@@ -31,12 +31,14 @@
         1.0,
         0.5,
         0.5,
+        1.0,
         5.0,
         5.0
       ],
       "data": {
         "paddleX": 174.0,
-        "paddleY": 346.0
+        "paddleY": 346.0,
+        "paddleVisible": true
       }
     },
     {
@@ -192,7 +194,8 @@
       "params": [],
       "data": {
         "invert": true,
-        "neg5ToPos5": false
+        "neg5ToPos5": false,
+        "snowMode": true
       }
     },
     {
@@ -217,8 +220,8 @@
         "lastRandomShape": 6,
         "curPlayMode": 4,
         "autoPlayOn": true,
-        "xPos": 175.06025695800781,
-        "yPos": 148.47317504882812,
+        "xPos": 233.39326477050781,
+        "yPos": 83.30877685546875,
         "points": [
           [
             172.0,
@@ -743,26 +746,26 @@
     },
     {
       "outputModuleId": 5,
-      "outputId": 0,
-      "inputModuleId": 2,
-      "inputId": 1
-    },
-    {
-      "outputModuleId": 5,
       "outputId": 2,
       "inputModuleId": 2,
       "inputId": 3
     },
     {
-      "outputModuleId": 0,
-      "outputId": 7,
-      "inputModuleId": 6,
-      "inputId": 0
+      "outputModuleId": 5,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 1
     },
     {
       "outputModuleId": 0,
       "outputId": 3,
       "inputModuleId": 4,
+      "inputId": 0
+    },
+    {
+      "outputModuleId": 0,
+      "outputId": 7,
+      "inputModuleId": 6,
       "inputId": 0
     }
   ]

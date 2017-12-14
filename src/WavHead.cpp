@@ -25,6 +25,7 @@ struct WavHead : Module {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "invert", json_boolean(invert));
 		json_object_set_new(rootJ, "neg5ToPos5", json_boolean(neg5ToPos5));
+		json_object_set_new(rootJ, "snowMode", json_boolean(snowMode));
 		return rootJ;
 	}
 
@@ -34,6 +35,9 @@ struct WavHead : Module {
 
 		json_t *neg5ToPos5J = json_object_get(rootJ, "neg5ToPos5");
 		if (neg5ToPos5J){ neg5ToPos5 = json_is_true(neg5ToPos5J); }
+
+		json_t *snowModeJ = json_object_get(rootJ, "snowMode");
+		if (snowModeJ){ snowMode = json_is_true(snowModeJ); }
 	}
 
 };
