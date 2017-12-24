@@ -1,3 +1,5 @@
+SLUG = JW-Modules
+VERSION = 0.5.7
 
 # FLAGS will be passed to both the C and C++ compiler
 FLAGS +=
@@ -16,15 +18,12 @@ SOURCES = $(wildcard src/*.cpp)
 include ../../plugin.mk
 
 
-# Convenience target for including files in the distributable release
-DIST_NAME = JW-Modules
+# Convenience target for packaging files into a ZIP file
 .PHONY: dist
 dist: all
-ifndef VERSION
-	$(error VERSION must be defined when making distributables)
-endif
-	mkdir -p dist/$(DIST_NAME)
-	cp LICENSE* README* dist/$(DIST_NAME)/
-	cp $(TARGET) dist/$(DIST_NAME)/
-	cp -R res dist/$(DIST_NAME)/
-	cd dist && zip -5 -r $(DIST_NAME)-$(VERSION)-$(ARCH).zip $(DIST_NAME)
+	rm -rf dist
+	mkdir -p dist/$(SLUG)
+	cp LICENSE* dist/$(SLUG)/
+	cp $(TARGET) dist/$(SLUG)/
+	cp -R res dist/$(SLUG)/
+	cd dist && zip -5 -r $(SLUG)-$(VERSION)-$(ARCH).zip $(SLUG)
