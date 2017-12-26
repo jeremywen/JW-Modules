@@ -186,6 +186,20 @@ struct MyBlueValueLight : ModuleLightWidget {
 	}
 };
 
+struct MyGreenValueLight : ModuleLightWidget {
+	MyGreenValueLight() {
+		firstLightId = 1;
+		addBaseColor(nvgRGB(0, 200, 0));
+	}
+};
+
+struct MyRedValueLight : ModuleLightWidget {
+	MyRedValueLight() {
+		firstLightId = 1;
+		addBaseColor(nvgRGB(200, 0, 0));
+	}
+};
+
 struct RightMoveButton : SVGSwitch, MomentarySwitch {
 	RightMoveButton() {
 		addFrame(SVG::load(assetPlugin(plugin, "res/RightButton.svg")));
