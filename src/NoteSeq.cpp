@@ -1,4 +1,5 @@
 #include <string.h>
+#include <algorithm>
 #include "JWModules.hpp"
 #include "dsp/digital.hpp"
 
