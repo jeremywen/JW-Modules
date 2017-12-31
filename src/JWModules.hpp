@@ -5,9 +5,21 @@
 using namespace rack;
 extern Plugin *plugin;
 
-struct SimpleClockWidget : ModuleWidget { SimpleClockWidget(); };
-struct MinMaxWidget : ModuleWidget { MinMaxWidget(); };
-struct QuantizerWidget : ModuleWidget { QuantizerWidget(); };
+struct SimpleClockWidget : ModuleWidget { 
+	SimpleClockWidget(); 
+};
+
+struct MinMaxWidget : ModuleWidget { 
+	MinMaxWidget(); 
+};
+
+struct QuantizerWidget : ModuleWidget { 
+	QuantizerWidget(); 
+};
+
+struct NoteSeqWidget : ModuleWidget { 
+	NoteSeqWidget(); 
+};
 
 struct BouncyBallsWidget : ModuleWidget {
 	BouncyBallsWidget();
@@ -100,6 +112,20 @@ struct JwTinyKnob : RoundKnob {
 struct JwSmallSnapKnob : SmallWhiteKnob {
 	JwSmallSnapKnob() {
 		snap = true;
+	}
+};
+
+struct JwHorizontalSwitch : SVGSwitch, ToggleSwitch {
+	JwHorizontalSwitch() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Horizontal_0.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Horizontal_1.svg")));
+	}
+};
+
+struct JwVerticalSwitch : SVGSwitch, ToggleSwitch {
+	JwVerticalSwitch() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Vertical_0.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Vertical_1.svg")));
 	}
 };
 

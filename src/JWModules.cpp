@@ -16,6 +16,7 @@ void init(rack::Plugin *p)
 	p->addModel(createModel<GridSeqWidget>(me, "GridSeq", "GridSeq", SEQUENCER_TAG));
 	p->addModel(createModel<QuantizerWidget>(me, "Quantizer", "Quantizer", QUANTIZER_TAG));
 	p->addModel(createModel<MinMaxWidget>(me, "MinMax", "Min Max", UTILITY_TAG));
+	p->addModel(createModel<NoteSeqWidget>(me, "NoteSeq", "NoteSeq", SEQUENCER_TAG));
 	p->addModel(createModel<SimpleClockWidget>(me, "SimpleClock", "Simple Clock", CLOCK_TAG, RANDOM_TAG));
 	p->addModel(createModel<WavHeadWidget>(me, "WavHead", "Wav Head", VISUAL_TAG));
 	p->addModel(createModel<XYPadWidget>(me, "XYPad", "XY Pad", LFO_TAG, ENVELOPE_GENERATOR_TAG, RANDOM_TAG, OSCILLATOR_TAG, SAMPLE_AND_HOLD_TAG));
