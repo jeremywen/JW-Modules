@@ -3,7 +3,6 @@
 Modules for [VCV Rack](https://vcvrack.com/) by [@jeremywen](https://twitter.com/jeremywen)
 
 Add JW-Modules through [the plugin manager](https://vcvrack.com/plugins.html) or download latest [release from here](https://github.com/jeremywen/JW-Modules/releases) and manually install it.
-
 WaveHead LE can be [found on CDM](http://cdm.link/2017/12/step-one-wire-vcv-rack-free-modular-software/)
 
 If you wish to support further development, [donations can be made here](https://www.paypal.me/jeremywen).  I send 3 blank logo panels to donors 😀
@@ -45,7 +44,7 @@ If you wish to support further development, [donations can be made here](https:/
 *  **Mono Outputs:** can be used to select one note from a column of many notes.
 *  **Highest Note Knob:** will set the orange line right above the highest note sent out the poly outputs.
 *  **Lowest Note Knob:** will set the yellow line right below the lowest note sent out the poly outputs.
-*  **Include Inactive Switch:** When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
+*  **Include Inactive Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
 output row up and they will work more like a midi sequencer. When 'Include Inactive' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Octave Knob:** octave for the lowest note in the grid
