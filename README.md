@@ -18,6 +18,7 @@ If you wish to support further development, [donations can be made here](https:/
 * Left side of module is for sequencer control, generation, and modification.
 * Right side of module is mainly for controlling the outputs.
 * You can click and drag cells in the grid to toggle them on and off.
+* Here is a video of a [patch from init](https://www.youtube.com/watch?v=P6cNFfb0w1s)
 
 #### Left
 
