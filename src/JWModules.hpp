@@ -5,62 +5,7 @@
 using namespace rack;
 extern Plugin *plugin;
 
-struct SimpleClockWidget : ModuleWidget { 
-	SimpleClockWidget(); 
-};
-
-struct MinMaxWidget : ModuleWidget { 
-	MinMaxWidget(); 
-};
-
-struct QuantizerWidget : ModuleWidget { 
-	QuantizerWidget(); 
-};
-
-struct NoteSeqWidget : ModuleWidget { 
-	NoteSeqWidget(); 
-};
-
-struct BouncyBallsWidget : ModuleWidget {
-	BouncyBallsWidget();
-	void addButton(Vec pos, int param);
-	void addColoredPort(int color, Vec pos, int param, bool input);
-};
-
-struct WavHeadWidget : ModuleWidget {
-	WavHeadWidget();
-	void step();
-	Widget* widgetToMove;
-	Widget* snowflakesArr[10];
-	Menu *createContextMenu();
-};
-
-struct XYPadWidget : ModuleWidget {
-	XYPadWidget();
-	Menu *createContextMenu();
-};
-
-struct FullScopeWidget : ModuleWidget {
-	Panel *panel;
-	Widget *rightHandle;
-	TransparentWidget *display;
-	FullScopeWidget();
-	void step();
-	json_t *toJson();
-	void fromJson(json_t *rootJ);
-	Menu *createContextMenu();
-};
-
-struct GridSeqWidget : ModuleWidget {
-	std::vector<ParamWidget*> seqKnobs;
-	std::vector<ParamWidget*> gateButtons;
-	GridSeqWidget();
-	~GridSeqWidget(){ 
-		seqKnobs.clear(); 
-		gateButtons.clear(); 
-	}
-	Menu *createContextMenu();
-};
+////////////////////////////////////////////// LABELS //////////////////////////////////////////////
 
 struct CenteredLabel : Widget {
 	std::string text;
@@ -76,6 +21,8 @@ struct CenteredLabel : Widget {
 		nvgText(vg, box.pos.x, box.pos.y, text.c_str(), NULL);
 	}
 };
+
+////////////////////////////////////////////// KNOBS //////////////////////////////////////////////
 
 struct SmallWhiteKnob : RoundKnob {
 	SmallWhiteKnob() {
@@ -93,12 +40,39 @@ struct SmallWhiteKnob : RoundKnob {
 	void onChange(EventChange &e) override {
 		RoundKnob::onChange(e);
 		if (linkedLabel) {
+
 			linkedLabel->text = formatCurrentValue();
 		}
 	}
 
 	virtual std::string formatCurrentValue() {
 		return std::to_string(static_cast<unsigned int>(value));
+	}
+};
+
+struct NoteKnob : SmallWhiteKnob {
+	QuantizeUtils *quantizeUtils;
+	NoteKnob(){
+		snap = true;
+	}
+	std::string formatCurrentValue() override {
+		return quantizeUtils->noteName(int(value));
+	}
+};
+
+struct ScaleKnob : SmallWhiteKnob {
+	QuantizeUtils *quantizeUtils;
+	ScaleKnob(){
+		snap = true;
+	}
+	std::string formatCurrentValue() override {
+		return quantizeUtils->scaleName(int(value));
+	}
+};
+
+struct JwSmallSnapKnob : SmallWhiteKnob {
+	JwSmallSnapKnob() {
+		snap = true;
 	}
 };
 
@@ -109,11 +83,11 @@ struct JwTinyKnob : RoundKnob {
 	}
 };
 
-struct JwSmallSnapKnob : SmallWhiteKnob {
-	JwSmallSnapKnob() {
-		snap = true;
-	}
+struct BPMPartKnob : JwSmallSnapKnob {	
+	BPMPartKnob(){} 
 };
+
+////////////////////////////////////////////// SWITCHES //////////////////////////////////////////////
 
 struct JwHorizontalSwitch : SVGSwitch, ToggleSwitch {
 	JwHorizontalSwitch() {
@@ -129,33 +103,7 @@ struct JwVerticalSwitch : SVGSwitch, ToggleSwitch {
 	}
 };
 
-struct Snowflake : SVGScrew {
-	Snowflake() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/SnowFlake.svg")));
-		box.size = sw->box.size;
-	}
-};
-
-struct WavHeadLogo : SVGScrew {
-	WavHeadLogo() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/WavHeadSmall.svg")));
-		box.size = sw->box.size;
-	}
-};
-
-struct Screw_J : SVGScrew {
-	Screw_J() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
-		box.size = sw->box.size;
-	}
-};
-
-struct Screw_W : SVGScrew {
-	Screw_W() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_W.svg")));
-		box.size = sw->box.size;
-	}
-};
+////////////////////////////////////////////// PORTS //////////////////////////////////////////////
 
 struct TinyPJ301MPort : SVGPort {
 	TinyPJ301MPort() {
@@ -205,6 +153,8 @@ struct White_TinyPJ301MPort : SVGPort {
 	}
 };
 
+////////////////////////////////////////////// LIGHTS //////////////////////////////////////////////
+
 struct MyBlueValueLight : ModuleLightWidget {
 	MyBlueValueLight() {
 		firstLightId = 1;
@@ -225,6 +175,8 @@ struct MyRedValueLight : ModuleLightWidget {
 		addBaseColor(nvgRGB(200, 0, 0));
 	}
 };
+
+////////////////////////////////////////////// BUTTONS //////////////////////////////////////////////
 
 struct RightMoveButton : SVGSwitch, MomentarySwitch {
 	RightMoveButton() {
@@ -282,29 +234,107 @@ struct SmallButton : SVGSwitch, MomentarySwitch {
 	}
 };
 
-struct NoteKnob : SmallWhiteKnob {
-	QuantizeUtils *quantizeUtils;
-	NoteKnob(){
-		snap = true;
-	}
-	std::string formatCurrentValue() override {
-		return quantizeUtils->noteName(int(value));
+////////////////////////////////////////////// SCREWS //////////////////////////////////////////////
+
+struct Snowflake : SVGScrew {
+	Snowflake() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/SnowFlake.svg")));
+		box.size = sw->box.size;
 	}
 };
 
-struct ScaleKnob : SmallWhiteKnob {
-	QuantizeUtils *quantizeUtils;
-	ScaleKnob(){
-		snap = true;
-	}
-	std::string formatCurrentValue() override {
-		return quantizeUtils->scaleName(int(value));
+struct WavHeadLogo : SVGScrew {
+	WavHeadLogo() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/WavHeadSmall.svg")));
+		box.size = sw->box.size;
 	}
 };
 
-struct BPMKnob : SmallWhiteKnob {
-	BPMKnob(){}
-	std::string formatCurrentValue() {
-		return std::to_string(static_cast<unsigned int>(powf(2.0, value)*60.0)) + " BPM";
+struct CatScrew : SVGScrew {
+	WavHeadLogo() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Cat.svg")));
+		box.size = sw->box.size;
 	}
 };
+
+struct Screw_J : SVGScrew {
+	Screw_J() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
+		box.size = sw->box.size;
+	}
+};
+
+struct Screw_W : SVGScrew {
+	Screw_W() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_W.svg")));
+		box.size = sw->box.size;
+	}
+};
+
+////////////////////////////////////////////// WIDGETS //////////////////////////////////////////////
+
+struct SimpleClockWidget : ModuleWidget { 
+	SimpleClockWidget(); 
+};
+
+struct MinMaxWidget : ModuleWidget { 
+	MinMaxWidget(); 
+};
+
+struct QuantizerWidget : ModuleWidget { 
+	QuantizerWidget(); 
+};
+
+struct NoteSeqWidget : ModuleWidget { 
+	NoteSeqWidget(); 
+};
+
+struct BouncyBallsWidget : ModuleWidget {
+	BouncyBallsWidget();
+	void addButton(Vec pos, int param);
+	void addColoredPort(int color, Vec pos, int param, bool input);
+};
+
+struct WavHeadWidget : ModuleWidget {
+	WavHeadWidget();
+	void step();
+	Widget* widgetToMove;
+	Widget* snowflakesArr[10];
+	Menu *createContextMenu();
+};
+
+struct CatWidget : ModuleWidget {
+	CatWidget();
+	void step();
+	Widget* widgetToMove;
+	Widget* snowflakesArr[10];
+	Menu *createContextMenu();
+};
+
+struct XYPadWidget : ModuleWidget {
+	XYPadWidget();
+	Menu *createContextMenu();
+};
+
+struct FullScopeWidget : ModuleWidget {
+	Panel *panel;
+	Widget *rightHandle;
+	TransparentWidget *display;
+	FullScopeWidget();
+	void step();
+	json_t *toJson();
+	void fromJson(json_t *rootJ);
+	Menu *createContextMenu();
+};
+
+struct GridSeqWidget : ModuleWidget {
+	std::vector<ParamWidget*> seqKnobs;
+	std::vector<ParamWidget*> gateButtons;
+	GridSeqWidget();
+	~GridSeqWidget(){ 
+		seqKnobs.clear(); 
+		gateButtons.clear(); 
+	}
+	Menu *createContextMenu();
+};
+

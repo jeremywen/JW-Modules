@@ -675,9 +675,9 @@ NoteSeqWidget::NoteSeqWidget() {
 	module->displayWidth = display->box.size.x;
 	module->displayHeight = display->box.size.y;
 
-	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 1)));
 	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////

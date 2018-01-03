@@ -181,9 +181,9 @@ MinMaxWidget::MinMaxWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 1)));
 	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);

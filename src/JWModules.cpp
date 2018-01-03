@@ -4,12 +4,10 @@ Plugin *plugin;
 
 void init(rack::Plugin *p)
 {
+	std::string me = "JW-Modules"; //DONT CHANGE THIS EVER!
 	plugin = p;
-	p->slug = "JW-Modules";
-#ifdef VERSION
+	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
-#endif
-	std::string me = "JW-Modules";
 	// NOTE: First module string is the slug, don't change it.
 	p->addModel(createModel<BouncyBallsWidget>(me, "BouncyBalls", "Bouncy Balls",  SEQUENCER_TAG, VISUAL_TAG));
 	p->addModel(createModel<FullScopeWidget>(me, "FullScope", "Full Scope", VISUAL_TAG));

@@ -101,6 +101,13 @@ void SimpleClock::step() {
 	outputs[DIV_32_OUTPUT].value = gpulse && (stepCount % 32 == 0) ? 10.0 : 0.0;
 }
 
+struct BPMKnob : SmallWhiteKnob {
+	BPMKnob(){}
+	std::string formatCurrentValue() {
+		return std::to_string(static_cast<unsigned int>(powf(2.0, value)*60.0)) + " BPM";
+	}
+};
+
 SimpleClockWidget::SimpleClockWidget() {
 	SimpleClock *module = new SimpleClock();
 	setModule(module);
@@ -113,9 +120,9 @@ SimpleClockWidget::SimpleClockWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(16, 0)));
+	addChild(createScrew<Screw_J>(Vec(16, 1)));
 	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
