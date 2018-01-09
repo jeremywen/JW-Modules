@@ -283,6 +283,5 @@ Then run:
 To make plugin zip:
 
 	make dist
-	zip -r JW-Modules.zip dist/JW-Modules
 
 SEE ALSO [Dev FAQ for VCV Rack](https://github.com/jeremywen/JW-Modules/wiki/Dev-FAQ-for-VCV-Rack)
