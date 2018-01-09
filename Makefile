@@ -1,5 +1,5 @@
 SLUG = JW-Modules
-VERSION = 0.5.10
+VERSION = 0.5.11
 
 # FLAGS will be passed to both the C and C++ compiler
 FLAGS +=

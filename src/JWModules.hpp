@@ -250,13 +250,6 @@ struct WavHeadLogo : SVGScrew {
 	}
 };
 
-struct CatScrew : SVGScrew {
-	WavHeadLogo() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Cat.svg")));
-		box.size = sw->box.size;
-	}
-};
-
 struct Screw_J : SVGScrew {
 	Screw_J() {
 		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
@@ -300,20 +293,12 @@ struct WavHeadWidget : ModuleWidget {
 	void step();
 	Widget* widgetToMove;
 	Widget* snowflakesArr[10];
-	Menu *createContextMenu();
-};
-
-struct CatWidget : ModuleWidget {
-	CatWidget();
-	void step();
-	Widget* widgetToMove;
-	Widget* snowflakesArr[10];
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
 struct XYPadWidget : ModuleWidget {
 	XYPadWidget();
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
 struct FullScopeWidget : ModuleWidget {
@@ -324,7 +309,7 @@ struct FullScopeWidget : ModuleWidget {
 	void step();
 	json_t *toJson();
 	void fromJson(json_t *rootJ);
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
 struct GridSeqWidget : ModuleWidget {
@@ -335,6 +320,9 @@ struct GridSeqWidget : ModuleWidget {
 		seqKnobs.clear(); 
 		gateButtons.clear(); 
 	}
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
+struct ThingThingWidget : ModuleWidget {
+	ThingThingWidget();
+};
