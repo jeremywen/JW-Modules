@@ -13,6 +13,9 @@ If you wish to support further development, [donations can be made here](https:/
 ## ThingThing (Coming Soon...)
 ![thingthing](https://user-images.githubusercontent.com/408586/34746722-1d9dfa8a-f563-11e7-9116-7c356d4efc72.gif)
 
+ * inputs 1 through 4 are +/-5v
+ * 5th input and knob are the BALL size uh huh huh :)
+ * 6th input and knob zoOM in :)
 
 ## NoteSeq
 
