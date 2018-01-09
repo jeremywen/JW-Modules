@@ -195,7 +195,7 @@ Change the playback mode by right clicking the module and selecting of of the pl
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
-**Outputs 1/4 notes because this was like vcv rack standard er something at first but I don't agree.  Working on a module with optional note divisions.**
+_Outputs 1/4 notes because this was like vcv rack standard er something at first but I don't agree.  Working on a module with optional note divisions..._
 
 #### Knobs 
 
