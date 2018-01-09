@@ -10,6 +10,10 @@ If you wish to support further development, [donations can be made here](https:/
 
 ![All](./doc/all-img7.gif)
 
+## ThingThing (Coming Soon...)
+![thingthing](https://user-images.githubusercontent.com/408586/34746722-1d9dfa8a-f563-11e7-9116-7c356d4efc72.gif)
+
+
 ## NoteSeq
 
 ![NoteSeq](./doc/NoteSeq-img1.png)
