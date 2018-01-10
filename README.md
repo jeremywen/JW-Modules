@@ -266,9 +266,9 @@ Right click to:
 
 ![WaveHead Menu](./doc/WavHead-menu-img2.png)
 
-## Other goofy crap not released
+## Other goofy crap
 
-![goofy](https://user-images.githubusercontent.com/408586/34747256-67b9b1de-f565-11e7-81b6-043506050b07.gif)
+![goofy](https://user-images.githubusercontent.com/408586/34752974-6934555a-f583-11e7-8fd1-bc378e455839.gif)
 
 ## Building
 
