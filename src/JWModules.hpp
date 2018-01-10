@@ -103,6 +103,13 @@ struct JwVerticalSwitch : SVGSwitch, ToggleSwitch {
 	}
 };
 
+struct BowlSwitch : SVGSwitch, ToggleSwitch {
+	BowlSwitch() {
+		addFrame(SVG::load(assetPlugin(plugin, "res/Bowl-no-food.svg")));
+		addFrame(SVG::load(assetPlugin(plugin, "res/Bowl-food.svg")));
+	}
+};
+
 ////////////////////////////////////////////// PORTS //////////////////////////////////////////////
 
 struct TinyPJ301MPort : SVGPort {
@@ -264,6 +271,20 @@ struct Screw_W : SVGScrew {
 	}
 };
 
+struct CatScrew : SVGScrew {
+	CatScrew() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Cat.svg")));
+		box.size = sw->box.size;
+	}
+};
+
+struct HairballScrew : SVGScrew {
+	HairballScrew() {
+		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Hairball.svg")));
+		box.size = sw->box.size;
+	}
+};
+
 ////////////////////////////////////////////// WIDGETS //////////////////////////////////////////////
 
 struct SimpleClockWidget : ModuleWidget { 
@@ -325,4 +346,12 @@ struct GridSeqWidget : ModuleWidget {
 
 struct ThingThingWidget : ModuleWidget {
 	ThingThingWidget();
+};
+
+struct CatWidget : ModuleWidget {
+	CatWidget();
+	void step();
+	Widget* widgetToMove;
+	Widget* hairballs[10];
+	Menu *createContextMenu();
 };

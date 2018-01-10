@@ -9,6 +9,7 @@ void init(rack::Plugin *p)
 	p->slug = "JW-Modules";
 	p->version = TOSTRING(VERSION);
 	// NOTE: First module string is the slug, don't change it.
+	p->addModel(createModel<CatWidget>(me, "Cat", "0Cat", VISUAL_TAG));
 	p->addModel(createModel<BouncyBallsWidget>(me, "BouncyBalls", "Bouncy Balls",  SEQUENCER_TAG, VISUAL_TAG));
 	p->addModel(createModel<FullScopeWidget>(me, "FullScope", "Full Scope", VISUAL_TAG));
 	p->addModel(createModel<GridSeqWidget>(me, "GridSeq", "GridSeq", SEQUENCER_TAG));
