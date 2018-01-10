@@ -97,12 +97,12 @@ CatWidget::CatWidget() {
 	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
 
+	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
+
 	for(int i=0; i<10; i++){
 		hairballs[i] = createScrew<HairballScrew>(Vec(randomf()*7, widgetToMove->box.pos.y));
 		addChild(hairballs[i]);
 	}
-
-	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
 }
 
 struct InvertMenuItem : MenuItem {
