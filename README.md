@@ -10,8 +10,8 @@ If you wish to support further development, [donations can be made here](https:/
 
 ![All](./doc/all-img7.gif)
 
-## Thing Thing (Coming Soon...)
-![thingthing](https://user-images.githubusercontent.com/408586/34746722-1d9dfa8a-f563-11e7-9116-7c356d4efc72.gif)
+## Thing Thing
+![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
 
  * inputs 1 through 4 are +/-5v
  * 5th input and knob are the BALL size uh huh huh :)
