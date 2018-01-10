@@ -311,7 +311,7 @@ struct BouncyBallsWidget : ModuleWidget {
 
 struct WavHeadWidget : ModuleWidget {
 	WavHeadWidget();
-	void step();
+	void step() override;
 	Widget* widgetToMove;
 	Widget* snowflakesArr[10];
 	Menu *createContextMenu() override;
@@ -327,9 +327,9 @@ struct FullScopeWidget : ModuleWidget {
 	Widget *rightHandle;
 	TransparentWidget *display;
 	FullScopeWidget();
-	void step();
-	json_t *toJson();
-	void fromJson(json_t *rootJ);
+	void step() override;
+	json_t *toJson() override;
+	void fromJson(json_t *rootJ) override;
 	Menu *createContextMenu() override;
 };
 
