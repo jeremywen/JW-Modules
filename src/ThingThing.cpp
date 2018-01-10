@@ -72,20 +72,27 @@ struct ThingThingDisplay : Widget {
 			ballRadius += rescalef(module->inputs[ThingThing::ZOOM_MULT_INPUT].value, -5.0, 5.0, 1.0, 50.0);
 		}
 
+      float x[5];
+      float y[5];
+      float angle[5];
+
+      for(int i=0; i<5; i++){
+         angle[i] = i==0 ? 0 : (module->inputs[ThingThing::ANG_INPUT+i].value + angle[i-1]) * module->atten[i];
+			x[i] = i==0 ? 0 : sinf(rescalef(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+			y[i] = i==0 ? 0 : cosf(rescalef(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+      }
+
 		/////////////////////// LINES ///////////////////////
 		nvgSave(vg);
 		nvgTranslate(vg, box.size.x * 0.5, box.size.y * 0.5);
 		for(int i=0; i<5; i++){
-			float angle = module->inputs[ThingThing::ANG_INPUT+i].value * module->atten[i];
-			float x = i==0 ? 0 : sinf(rescalef(angle, -5, 5, -2*M_PI, 2*M_PI)) * zoom;
-			float y = i==0 ? 0 : cosf(rescalef(angle, -5, 5, -2*M_PI, 2*M_PI)) * zoom;
-			nvgTranslate(vg, x, y);
+			nvgTranslate(vg, x[i], y[i]);
 			nvgStrokeColor(vg, nvgRGB(255, 255, 255));
 			if(i>0){
 				nvgStrokeWidth(vg, 1);
 				nvgBeginPath(vg);
 				nvgMoveTo(vg, 0, 0);
-				nvgLineTo(vg, -x, -y);
+				nvgLineTo(vg, -x[i], -y[i]);
 				nvgStroke(vg);
 			}
 		}
@@ -95,10 +102,7 @@ struct ThingThingDisplay : Widget {
 		nvgSave(vg);
 		nvgTranslate(vg, box.size.x * 0.5, box.size.y * 0.5);
 		for(int i=0; i<5; i++){
-			float angle = module->inputs[ThingThing::ANG_INPUT+i].value * module->atten[i];
-			float x = i==0 ? 0 : sinf(rescalef(angle, -5, 5, -2*M_PI, 2*M_PI)) * zoom;
-			float y = i==0 ? 0 : cosf(rescalef(angle, -5, 5, -2*M_PI, 2*M_PI)) * zoom;
-			nvgTranslate(vg, x, y);
+			nvgTranslate(vg, x[i], y[i]);
 			nvgStrokeColor(vg, module->balls[i].color);
 			nvgFillColor(vg, module->balls[i].color);
 			nvgStrokeWidth(vg, 2);
