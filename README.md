@@ -6,7 +6,7 @@ Modules for [VCV Rack](https://vcvrack.com/) by Jeremy Wentworth (http://jeremyw
 
 Add JW-Modules through [the plugin manager](https://vcvrack.com/plugins.html) or download latest [release from here](https://github.com/jeremywen/JW-Modules/releases) and manually install it.  WaveHead LE can be [found on CDM](http://cdm.link/2017/12/step-one-wire-vcv-rack-free-modular-software/).  You can see these modules used in [my youtube videos here](https://www.youtube.com/user/jeremywen/videos).
 
-If you wish to support further development, [I have a patreon](https://www.patreon.com/jeremywen).  I send 3 blank logo panels to donors 😀(Good for using when your ears are tired)
+If you wish to give me all your money, [I have a patreon](https://www.patreon.com/jeremywen).  I send 3 blank logo panels to donors 😀(Good for using when your ears are tired)
 
 ![All](./doc/all-img9.gif)
 
