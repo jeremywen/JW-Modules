@@ -8,7 +8,7 @@ Add JW-Modules through [the plugin manager](https://vcvrack.com/plugins.html) or
 
 If you wish to support further development, [I have a patreon](https://www.patreon.com/jeremywen).  I send 3 blank logo panels to donors 😀(Good for using when your ears are tired)
 
-![All](./doc/all-img7.gif)
+![All](./doc/all-img9.gif)
 
 ## Thing Thing
 ![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
