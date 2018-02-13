@@ -75,19 +75,19 @@ WavHeadWidget::WavHeadWidget() {
 	panel->box.size = box.size;
 	addChild(panel);
 
-	widgetToMove = createScrew<WavHeadLogo>(Vec(5, 250));
+	widgetToMove = Widget::create<WavHeadLogo>(Vec(5, 250));
 	addChild(widgetToMove);
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	for(int i=0; i<10; i++){
-		snowflakesArr[i] = createScrew<Snowflake>(Vec(randomf()*box.size.x, -randomf()*200-30));
+		snowflakesArr[i] = Widget::create<Snowflake>(Vec(randomf()*box.size.x, -randomf()*200-30));
 		addChild(snowflakesArr[i]);
 	}
 
-	addInput(createInput<PJ301MPort>(Vec(18, 330), module, WavHead::VOLT_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(18, 330), Port::INPUT, module, WavHead::VOLT_INPUT));
 }
 
 struct InvertMenuItem : MenuItem {

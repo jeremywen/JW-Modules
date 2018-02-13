@@ -128,20 +128,20 @@ ThingThingWidget::ThingThingWidget() {
 
 	ThingThingDisplay *display = new ThingThingDisplay();
 	display->module = module;
-	display->box.pos = Vec(0, 2);
+	display->box.pos = Vec(0, 0);
 	display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
 	addChild(display);
 
-	addChild(createScrew<Screw_J>(Vec(265, 365)));
-	addChild(createScrew<Screw_W>(Vec(280, 365)));
+	addChild(Widget::create<Screw_J>(Vec(265, 365)));
+	addChild(Widget::create<Screw_W>(Vec(280, 365)));
 
 	for(int i=0; i<4; i++){
-		addInput(createInput<TinyPJ301MPort>(Vec(5+(20*i), 360), module, ThingThing::ANG_INPUT+i+1));
+		addInput(Port::create<TinyPJ301MPort>(Vec(5+(20*i), 360), Port::INPUT, module, ThingThing::ANG_INPUT+i+1));
 	}
 	
-	addInput(createInput<TinyPJ301MPort>(Vec(140, 360), module, ThingThing::BALL_RAD_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(155, 360), module, ThingThing::BALL_RAD_PARAM, 0.0, 30.0, 10.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(140, 360), Port::INPUT, module, ThingThing::BALL_RAD_INPUT));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(155, 360), module, ThingThing::BALL_RAD_PARAM, 0.0, 30.0, 10.0));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(190, 360), module, ThingThing::ZOOM_MULT_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM, 1.0, 200.0, 20.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(190, 360), Port::INPUT, module, ThingThing::ZOOM_MULT_INPUT));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM, 1.0, 200.0, 20.0));
 }

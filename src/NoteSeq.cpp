@@ -675,19 +675,19 @@ NoteSeqWidget::NoteSeqWidget() {
 	module->displayWidth = display->box.size.x;
 	module->displayHeight = display->box.size.y;
 
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 40), module, NoteSeq::CLOCK_INPUT));
-	addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeq::STEP_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(92, 35), module, NoteSeq::LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(25, 40), Port::INPUT, module, NoteSeq::CLOCK_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(58, 35), module, NoteSeq::STEP_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(92, 35), module, NoteSeq::LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(126, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_PLAY_MODES - 1, 0.0));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(ParamWidget::create<PlayModeKnob>(Vec(126, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_PLAY_MODES - 1, 0.0));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(69.5, 35);
 	playModeLabel->text = "";
@@ -696,12 +696,12 @@ NoteSeqWidget::NoteSeqWidget() {
 	addParam(playModeKnob);
 
 	//row 2
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 92), module, NoteSeq::RESET_INPUT));
-	addParam(createParam<SmallButton>(Vec(30, 87), module, NoteSeq::RESET_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 92), module, NoteSeq::CLEAR_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 87), module, NoteSeq::CLEAR_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(10, 92), Port::INPUT, module, NoteSeq::RESET_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(30, 87), module, NoteSeq::RESET_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(60, 92), Port::INPUT, module, NoteSeq::CLEAR_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(80, 87), module, NoteSeq::CLEAR_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 87), module, NoteSeq::RND_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_RND_MODES - 1, 0.0));
+	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(ParamWidget::create<RndModeKnob>(Vec(120, 87), module, NoteSeq::RND_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_RND_MODES - 1, 0.0));
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
 	rndModeLabel->box.pos = Vec(67, 61);
 	rndModeLabel->text = "";
@@ -710,28 +710,28 @@ NoteSeqWidget::NoteSeqWidget() {
 	addParam(rndModeKnob);
 
 	//row 3
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 150), module, NoteSeq::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeq::RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeq::RND_AMT_INPUT));
-	addParam(createParam<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq::RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1));
+	addInput(Port::create<TinyPJ301MPort>(Vec(60, 150), Port::INPUT, module, NoteSeq::RND_TRIG_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(80, 145), module, NoteSeq::RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(118, 150), Port::INPUT, module, NoteSeq::RND_AMT_INPUT));
+	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq::RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 201), module, NoteSeq::SHIFT_UP_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq::SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 201), module, NoteSeq::SHIFT_DOWN_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq::SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(60, 201), Port::INPUT, module, NoteSeq::SHIFT_UP_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(80, 196), module, NoteSeq::SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(118, 201), Port::INPUT, module, NoteSeq::SHIFT_DOWN_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(138, 196), module, NoteSeq::SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 252), module, NoteSeq::ROT_RIGHT_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 247), module, NoteSeq::ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 252), module, NoteSeq::ROT_LEFT_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeq::ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(60, 252), Port::INPUT, module, NoteSeq::ROT_RIGHT_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(80, 247), module, NoteSeq::ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(118, 252), Port::INPUT, module, NoteSeq::ROT_LEFT_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(138, 247), module, NoteSeq::ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeq::FLIP_HORIZ_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq::FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeq::FLIP_VERT_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(60, 304), Port::INPUT, module, NoteSeq::FLIP_HORIZ_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(80, 299), module, NoteSeq::FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(118, 304), Port::INPUT, module, NoteSeq::FLIP_VERT_INPUT));
+	addParam(ParamWidget::create<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0));
+	addParam(ParamWidget::create<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
@@ -739,33 +739,33 @@ NoteSeqWidget::NoteSeqWidget() {
 	float outputRowDist = 21.0;
 	for(int i=0;i<POLY;i++){
 		int paramIdx = POLY - i - 1;
-		addOutput(createOutput<TinyPJ301MPort>(Vec(559.081, outputRowTop + i * outputRowDist), module, NoteSeq::VOCT_MAIN_OUTPUT + paramIdx)); //param # from bottom up
-		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(Port::create<TinyPJ301MPort>(Vec(559.081, outputRowTop + i * outputRowDist), Port::OUTPUT, module, NoteSeq::VOCT_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
+		addOutput(Port::create<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), Port::OUTPUT, module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq::MIN_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq::MIN_GATE_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + outputRowDist), module, NoteSeq::MID_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + outputRowDist), module, NoteSeq::MID_GATE_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 2*outputRowDist), module, NoteSeq::MAX_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 2*outputRowDist), module, NoteSeq::MAX_GATE_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 3*outputRowDist), module, NoteSeq::RND_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 3*outputRowDist), module, NoteSeq::RND_GATE_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(656.303, outputRowTop), Port::OUTPUT, module, NoteSeq::MIN_VOCT_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(689.081, outputRowTop), Port::OUTPUT, module, NoteSeq::MIN_GATE_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(656.303, outputRowTop + outputRowDist), Port::OUTPUT, module, NoteSeq::MID_VOCT_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(689.081, outputRowTop + outputRowDist), Port::OUTPUT, module, NoteSeq::MID_GATE_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(656.303, outputRowTop + 2*outputRowDist), Port::OUTPUT, module, NoteSeq::MAX_VOCT_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(689.081, outputRowTop + 2*outputRowDist), Port::OUTPUT, module, NoteSeq::MAX_GATE_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(656.303, outputRowTop + 3*outputRowDist), Port::OUTPUT, module, NoteSeq::RND_VOCT_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(689.081, outputRowTop + 3*outputRowDist), Port::OUTPUT, module, NoteSeq::RND_GATE_OUTPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(643, 152), module, NoteSeq::HIGHEST_NOTE_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(663, 147), module, NoteSeq::HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0));
-	addInput(createInput<TinyPJ301MPort>(Vec(643, 195), module, NoteSeq::LOWEST_NOTE_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq::LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(643, 152), Port::INPUT, module, NoteSeq::HIGHEST_NOTE_INPUT));
+	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(663, 147), module, NoteSeq::HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0));
+	addInput(Port::create<TinyPJ301MPort>(Vec(643, 195), Port::INPUT, module, NoteSeq::LOWEST_NOTE_INPUT));
+	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq::LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0));
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0));
+	addParam(ParamWidget::create<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float pitchParamYVal = 320;
 	float labelY = 178;
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(626, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(ParamWidget::create<NoteKnob>(Vec(626, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(319, labelY);
 	noteLabel->text = "";
@@ -773,7 +773,7 @@ NoteSeqWidget::NoteSeqWidget() {
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(677, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(ParamWidget::create<ScaleKnob>(Vec(677, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(345, labelY);
 	scaleLabel->text = "";

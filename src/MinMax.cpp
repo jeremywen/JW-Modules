@@ -71,32 +71,32 @@ void MinMax::step() {
 	// Are we waiting on the next trigger?
 	if (bufferIndex >= BUFFER_SIZE) {
 		// Trigger immediately if external but nothing plugged in, or in Lissajous mode
-		if (lissajous) {
-			bufferIndex = 0;
-			frameIndex = 0;
-			return;
-		}
+		// if (lissajous) {
+		// 	bufferIndex = 0;
+		// 	frameIndex = 0;
+		// 	return;
+		// }
 
-		// Reset the Schmitt trigger so we don't trigger immediately if the input is high
-		if (frameIndex == 0) {
-			resetTrigger.reset();
-		}
-		frameIndex++;
+		// // Reset the Schmitt trigger so we don't trigger immediately if the input is high
+		// if (frameIndex == 0) {
+		// 	resetTrigger.reset();
+		// }
+		// frameIndex++;
 
-		// Must go below 0.1V to trigger
-		resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		float gate = inputs[X_INPUT].value;
+		// // Must go below 0.1V to trigger
+		// resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
+		// float gate = inputs[X_INPUT].value;
 
-		// Reset if triggered
-		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
-			bufferIndex = 0; frameIndex = 0; return;
-		}
+		// // Reset if triggered
+		// float holdTime = 0.1;
+		// if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
+		// 	bufferIndex = 0; frameIndex = 0; return;
+		// }
 
-		// Reset if we've waited too long
-		if (frameIndex >= engineGetSampleRate() * holdTime) {
-			bufferIndex = 0; frameIndex = 0; return;
-		}
+		// // Reset if we've waited too long
+		// if (frameIndex >= engineGetSampleRate() * holdTime) {
+		// 	bufferIndex = 0; frameIndex = 0; return;
+		// }
 	}
 }
 
@@ -181,10 +181,10 @@ MinMaxWidget::MinMaxWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(22, 15);
@@ -219,6 +219,6 @@ MinMaxWidget::MinMaxWidget() {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(createInput<PJ301MPort>(Vec(33, 275), module, MinMax::X_INPUT));
+	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
+	addInput(Port::create<PJ301MPort>(Vec(33, 275), Port::INPUT, module, MinMax::X_INPUT));
 }

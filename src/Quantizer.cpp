@@ -52,10 +52,10 @@ QuantizerWidget::QuantizerWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel;
 	titleLabel->box.pos = Vec(15, 15);
@@ -63,27 +63,27 @@ QuantizerWidget::QuantizerWidget() {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(ParamWidget::create<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 35);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel);
 	addChild(noteLabel);
 	addParam(noteKnob);
-	addInput(createInput<TinyPJ301MPort>(Vec(23, 110), module, Quantizer::NOTE_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(23, 110), Port::INPUT, module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(ParamWidget::create<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 90);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
-	addInput(createInput<TinyPJ301MPort>(Vec(23, 220), module, Quantizer::SCALE_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(23, 220), Port::INPUT, module, Quantizer::SCALE_INPUT));
 
 
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 290), module, Quantizer::VOLT_OUTPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(10, 290), Port::INPUT, module, Quantizer::VOLT_INPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(35, 290), Port::OUTPUT, module, Quantizer::VOLT_OUTPUT));
 
 	CenteredLabel* const voctLabel = new CenteredLabel;
 	voctLabel->box.pos = Vec(15, 140);

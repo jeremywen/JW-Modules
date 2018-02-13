@@ -94,35 +94,35 @@ void FullScope::step() {
 	}
 
 	// Are we waiting on the next trigger?
-	if (bufferIndex >= BUFFER_SIZE) {
+	// if (bufferIndex >= BUFFER_SIZE) {
 		// Trigger immediately if external but nothing plugged in, or in Lissajous mode
-		if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
-			bufferIndex = 0;
-			frameIndex = 0;
-			return;
-		}
+		// if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
+		// 	bufferIndex = 0;
+		// 	frameIndex = 0;
+		// 	return;
+		// }
 
 		// Reset the Schmitt trigger so we don't trigger immediately if the input is high
-		if (frameIndex == 0) {
-			resetTrigger.reset();
-		}
-		frameIndex++;
+		// if (frameIndex == 0) {
+		// 	resetTrigger.reset();
+		// }
+		// frameIndex++;
 
 		// Must go below 0.1V to trigger
-		resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
+		// resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
+		// float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
 
 		// Reset if triggered
-		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
-			bufferIndex = 0; frameIndex = 0; return;
-		}
+		// float holdTime = 0.1;
+		// if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
+			// bufferIndex = 0; frameIndex = 0; return;
+		// }
 
 		// Reset if we've waited too long
-		if (frameIndex >= engineGetSampleRate() * holdTime) {
-			bufferIndex = 0; frameIndex = 0; return;
-		}
-	}
+		// if (frameIndex >= engineGetSampleRate() * holdTime) {
+		// 	bufferIndex = 0; frameIndex = 0; return;
+		// }
+	// }
 }
 
 struct FullScopeDisplay : TransparentWidget {
@@ -258,7 +258,7 @@ FullScopeWidget::FullScopeWidget() {
 
 	{
 		panel = new Panel();
-		panel->backgroundColor = nvgRGB(30, 40, 43);
+		panel->backgroundColor = nvgRGB(20, 30, 33);
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -280,21 +280,21 @@ FullScopeWidget::FullScopeWidget() {
 	}
 
 	int compX = -15, adder = 19;
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::X_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::Y_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::COLOR_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::ROTATION_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(compX+=adder, 360), module, FullScope::TIME_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(compX+=adder, 360), Port::INPUT, module, FullScope::X_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(compX+=adder, 360), Port::INPUT, module, FullScope::Y_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(compX+=adder, 360), Port::INPUT, module, FullScope::COLOR_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(compX+=adder, 360), Port::INPUT, module, FullScope::ROTATION_INPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(compX+=adder, 360), Port::INPUT, module, FullScope::TIME_INPUT));
 
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
-	addParam(createParam<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX+=adder, 360), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
 
-	addChild(createScrew<Screw_J>(Vec(compX+25, 362)));
-	addChild(createScrew<Screw_W>(Vec(compX+40, 362)));
+	addChild(Widget::create<Screw_J>(Vec(compX+25, 362)));
+	addChild(Widget::create<Screw_W>(Vec(compX+40, 362)));
 }
 
 void FullScopeWidget::step() {

@@ -1,5 +1,7 @@
 SLUG = JW-Modules
-VERSION = 0.5.11
+VERSION = 0.6.0
+DISTRIBUTABLES += $(wildcard LICENSE*) res
+RACK_DIR ?= ../..
 
 # FLAGS will be passed to both the C and C++ compiler
 FLAGS +=
@@ -16,14 +18,3 @@ SOURCES = $(wildcard src/*.cpp)
 
 # Must include the VCV plugin Makefile framework
 include ../../plugin.mk
-
-
-# Convenience target for packaging files into a ZIP file
-.PHONY: dist
-dist: all
-	rm -rf dist
-	mkdir -p dist/$(SLUG)
-	cp LICENSE* dist/$(SLUG)/
-	cp $(TARGET) dist/$(SLUG)/
-	cp -R res dist/$(SLUG)/
-	cd dist && zip -5 -r $(SLUG)-$(VERSION)-$(ARCH).zip $(SLUG)

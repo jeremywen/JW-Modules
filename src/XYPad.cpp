@@ -614,28 +614,28 @@ XYPadWidget::XYPadWidget() {
 	module->updateMinMax();
 	module->defaultPos();
 
-	addChild(createScrew<Screw_J>(Vec(40, 20)));
-	addChild(createScrew<Screw_W>(Vec(55, 20)));
-	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addChild(Widget::create<Screw_J>(Vec(40, 20)));
+	addChild(Widget::create<Screw_W>(Vec(55, 20)));
+	addParam(ParamWidget::create<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
-	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
-	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(255, 360), module, XYPad::X_INV_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(280, 360), module, XYPad::Y_INV_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(320, 360), module, XYPad::GATE_OUTPUT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(25, 360), Port::INPUT, module, XYPad::PLAY_GATE_INPUT));
+	addParam(ParamWidget::create<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
+	addInput(Port::create<TinyPJ301MPort>(Vec(110, 360), Port::INPUT, module, XYPad::PLAY_SPEED_INPUT));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
+	addParam(ParamWidget::create<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(195, 360), Port::OUTPUT, module, XYPad::X_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(220, 360), Port::OUTPUT, module, XYPad::Y_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(255, 360), Port::OUTPUT, module, XYPad::X_INV_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(280, 360), Port::OUTPUT, module, XYPad::Y_INV_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(320, 360), Port::OUTPUT, module, XYPad::GATE_OUTPUT));
 }
 
 struct PlayModeItem : MenuItem {

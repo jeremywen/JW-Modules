@@ -120,20 +120,20 @@ SimpleClockWidget::SimpleClockWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(15, 15);
 	titleLabel->text = "Clock";
 	addChild(titleLabel);
 
-	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
+	addParam(ParamWidget::create<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
 	
-	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 1.0));
+	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(ParamWidget::create<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 1.0));
 	CenteredLabel* const bpmLabel = new CenteredLabel;
 	bpmLabel->box.pos = Vec(15, 50);
 	bpmLabel->text = "0";
@@ -141,22 +141,22 @@ SimpleClockWidget::SimpleClockWidget() {
 	addChild(bpmLabel);
 	addParam(clockKnob);
 
-	addOutput(createOutput<PJ301MPort>(Vec(18, 105), module, SimpleClock::CLOCK_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(18, 105), Port::OUTPUT, module, SimpleClock::CLOCK_OUTPUT));
 
 	CenteredLabel* const resetLabel = new CenteredLabel;
 	resetLabel->box.pos = Vec(15, 75);
 	resetLabel->text = "Reset";
 	addChild(resetLabel);
 
-	addParam(createParam<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM, 0.0, 1.0, 0.0));
-	addOutput(createOutput<PJ301MPort>(Vec(18, 175), module, SimpleClock::RESET_OUTPUT));
+	addParam(ParamWidget::create<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM, 0.0, 1.0, 0.0));
+	addOutput(Port::create<PJ301MPort>(Vec(18, 175), Port::OUTPUT, module, SimpleClock::RESET_OUTPUT));
 
 
 	CenteredLabel* const rndResetLabel = new CenteredLabel(10);
 	rndResetLabel->box.pos = Vec(15, 108);
 	rndResetLabel->text = "Rnd Rst";
 	addChild(rndResetLabel);
-	addParam(createParam<SmallWhiteKnob>(Vec(17, 220), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
+	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(17, 220), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
 
 
 	CenteredLabel* const div4Label = new CenteredLabel(10);
@@ -179,8 +179,8 @@ SimpleClockWidget::SimpleClockWidget() {
 	div32Label->text = "/32";
 	addChild(div32Label);
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(10, 270), module, SimpleClock::DIV_4_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 270), module, SimpleClock::DIV_8_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(10, 310), module, SimpleClock::DIV_16_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 310), module, SimpleClock::DIV_32_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(10, 270), Port::OUTPUT, module, SimpleClock::DIV_4_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(34, 270), Port::OUTPUT, module, SimpleClock::DIV_8_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(10, 310), Port::OUTPUT, module, SimpleClock::DIV_16_OUTPUT));
+	addOutput(Port::create<TinyPJ301MPort>(Vec(34, 310), Port::OUTPUT, module, SimpleClock::DIV_32_OUTPUT));
 }

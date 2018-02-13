@@ -90,17 +90,17 @@ CatWidget::CatWidget() {
 	panel->box.size = box.size;
 	addChild(panel);
 
-	widgetToMove = createScrew<CatScrew>(Vec(5, 250));
+	widgetToMove = Widget::create<CatScrew>(Vec(5, 250));
 	addChild(widgetToMove);
-	addChild(createScrew<Screw_J>(Vec(16, 1)));
-	addChild(createScrew<Screw_J>(Vec(16, 365)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(createScrew<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(Widget::create<Screw_J>(Vec(16, 1)));
+	addChild(Widget::create<Screw_J>(Vec(16, 365)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
-	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
 
 	for(int i=0; i<10; i++){
-		hairballs[i] = createScrew<HairballScrew>(Vec(randomf()*7, widgetToMove->box.pos.y));
+		hairballs[i] = Widget::create<HairballScrew>(Vec(randomf()*7, widgetToMove->box.pos.y));
 		addChild(hairballs[i]);
 	}
 }
