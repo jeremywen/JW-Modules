@@ -208,16 +208,16 @@ void BouncyBalls::step() {
 		}
 
 		if(paddle.visible && inputs[PAD_POS_X_INPUT].active){
-			paddle.box.pos.x = -50 + clampf(rescalef(inputs[PAD_POS_X_INPUT].value, -5, 5, 50, displayWidth - 50), 50, displayWidth - 50);
+			paddle.box.pos.x = -50 + clampfjw(rescalefjw(inputs[PAD_POS_X_INPUT].value, -5, 5, 50, displayWidth - 50), 50, displayWidth - 50);
 		}
 		if(paddle.visible && inputs[PAD_POS_Y_INPUT].active){
-			paddle.box.pos.y = clampf(rescalef(inputs[PAD_POS_Y_INPUT].value, -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
+			paddle.box.pos.y = clampfjw(rescalefjw(inputs[PAD_POS_Y_INPUT].value, -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
 		}
 
 		//TODO rotate corners of rectangle
 
-		if(outputs[X_OUTPUT + i].active)outputs[X_OUTPUT + i].value = (rescalef(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
-		if(outputs[Y_OUTPUT + i].active)outputs[Y_OUTPUT + i].value = (rescalef(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;//y is inverted because gui coords
+		if(outputs[X_OUTPUT + i].active)outputs[X_OUTPUT + i].value = (rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
+		if(outputs[Y_OUTPUT + i].active)outputs[Y_OUTPUT + i].value = (rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;//y is inverted because gui coords
 		if(outputs[N_OUTPUT + i].active)outputs[N_OUTPUT + i].value = b.northPulse.process(rate) ? 10.0 : 0.0;
 		if(outputs[E_OUTPUT + i].active)outputs[E_OUTPUT + i].value = b.eastPulse.process(rate) ? 10.0 : 0.0;
 		if(outputs[S_OUTPUT + i].active)outputs[S_OUTPUT + i].value = b.southPulse.process(rate) ? 10.0 : 0.0;
@@ -227,8 +227,8 @@ void BouncyBalls::step() {
 
 		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].value + inputs[SPEED_MULT_INPUT + i].value));
 		b.setPosition(
-			clampf(newPos.x, 0, displayWidth), 
-			clampf(newPos.y, 0, displayHeight)
+			clampfjw(newPos.x, 0, displayWidth), 
+			clampfjw(newPos.y, 0, displayHeight)
 		);
 	}
 }
@@ -241,10 +241,10 @@ struct BouncyBallDisplay : Widget {
 		Widget::onMouseMove(e);
 		BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
 		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
-			m->paddle.box.pos.x = -50 + clampf(e.pos.x, 50, box.size.x - 50);
+			m->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
 		}
 		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
-			m->paddle.box.pos.y = clampf(e.pos.y, 0, box.size.y - 10);
+			m->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
 		}
 	}
 
@@ -282,6 +282,12 @@ struct BouncyBallDisplay : Widget {
 	}
 };
 
+struct BouncyBallsWidget : ModuleWidget {
+	BouncyBallsWidget(BouncyBalls *module);
+	void addButton(Vec pos, int param);
+	void addColoredPort(int color, Vec pos, int param, bool input);
+};
+
 struct PaddleVisibleButton : TinyButton {
 	void onMouseDown(EventMouseDown &e) override {
 		TinyButton::onMouseDown(e);
@@ -292,9 +298,9 @@ struct PaddleVisibleButton : TinyButton {
 	}
 };
 
-BouncyBallsWidget::BouncyBallsWidget() {
-	BouncyBalls *module = new BouncyBalls();
-	setModule(module);
+BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module) {
+	// BouncyBalls *module = new BouncyBalls();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
@@ -420,3 +426,5 @@ void BouncyBallsWidget::addColoredPort(int color, Vec pos, int param, bool input
 			break;
 	}
 }
+
+Model *modelBouncyBalls = Model::create<BouncyBalls, BouncyBallsWidget>("JW-Modules", "BouncyBalls", "Bouncy Balls",  SEQUENCER_TAG, VISUAL_TAG);

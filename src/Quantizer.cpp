@@ -35,14 +35,18 @@ struct Quantizer : Module,QuantizeUtils {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void Quantizer::step() {
-	int rootNote = params[ROOT_NOTE_PARAM].value + rescalef(inputs[NOTE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
-	int scale = params[SCALE_PARAM].value + rescalef(inputs[SCALE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	int rootNote = params[ROOT_NOTE_PARAM].value + rescalefjw(inputs[NOTE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
+	int scale = params[SCALE_PARAM].value + rescalefjw(inputs[SCALE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
 	outputs[VOLT_OUTPUT].value = closestVoltageInScale(inputs[VOLT_INPUT].value, rootNote, scale);
 }
 
-QuantizerWidget::QuantizerWidget() {
-	Quantizer *module = new Quantizer();
-	setModule(module);
+struct QuantizerWidget : ModuleWidget { 
+	QuantizerWidget(Quantizer *module); 
+};
+
+QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
+	// Quantizer *module = new Quantizer();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
@@ -100,3 +104,5 @@ QuantizerWidget::QuantizerWidget() {
 	outLabel->text = "Out";
 	addChild(outLabel);
 }
+
+Model *modelQuantizer = Model::create<Quantizer, QuantizerWidget>("JW-Modules", "Quantizer", "Quantizer", QUANTIZER_TAG);

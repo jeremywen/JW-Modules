@@ -64,12 +64,12 @@ struct ThingThingDisplay : Widget {
 
 		float ballRadius = module->params[ThingThing::BALL_RAD_PARAM].value;
 		if(module->inputs[ThingThing::BALL_RAD_INPUT].active){
-			ballRadius += rescalef(module->inputs[ThingThing::BALL_RAD_INPUT].value, -5.0, 5.0, 0.0, 30.0);
+			ballRadius += rescalefjw(module->inputs[ThingThing::BALL_RAD_INPUT].value, -5.0, 5.0, 0.0, 30.0);
 		}
 
 		float zoom = module->params[ThingThing::ZOOM_MULT_PARAM].value;
 		if(module->inputs[ThingThing::ZOOM_MULT_INPUT].active){
-			ballRadius += rescalef(module->inputs[ThingThing::ZOOM_MULT_INPUT].value, -5.0, 5.0, 1.0, 50.0);
+			ballRadius += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].value, -5.0, 5.0, 1.0, 50.0);
 		}
 
       float x[5];
@@ -78,8 +78,8 @@ struct ThingThingDisplay : Widget {
 
       for(int i=0; i<5; i++){
          angle[i] = i==0 ? 0 : (module->inputs[ThingThing::ANG_INPUT+i].value + angle[i-1]) * module->atten[i];
-			x[i] = i==0 ? 0 : sinf(rescalef(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
-			y[i] = i==0 ? 0 : cosf(rescalef(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+			x[i] = i==0 ? 0 : sinf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+			y[i] = i==0 ? 0 : cosf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
       }
 
 		/////////////////////// LINES ///////////////////////
@@ -116,9 +116,13 @@ struct ThingThingDisplay : Widget {
 };
 
 
-ThingThingWidget::ThingThingWidget() {
-	ThingThing *module = new ThingThing();
-	setModule(module);
+struct ThingThingWidget : ModuleWidget {
+	ThingThingWidget(ThingThing *module);
+};
+
+ThingThingWidget::ThingThingWidget(ThingThing *module) : ModuleWidget(module) {
+	// ThingThing *module = new ThingThing();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
@@ -145,3 +149,5 @@ ThingThingWidget::ThingThingWidget() {
 	addInput(Port::create<TinyPJ301MPort>(Vec(190, 360), Port::INPUT, module, ThingThing::ZOOM_MULT_INPUT));
 	addParam(ParamWidget::create<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM, 1.0, 200.0, 20.0));
 }
+
+Model *modelThingThing = Model::create<ThingThing, ThingThingWidget>("JW-Modules", "ThingThing", "Thing Thing", VISUAL_TAG);

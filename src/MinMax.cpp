@@ -169,9 +169,13 @@ struct MinMaxDisplay : TransparentWidget {
 };
 
 
-MinMaxWidget::MinMaxWidget() {
-	MinMax *module = new MinMax();
-	setModule(module);
+struct MinMaxWidget : ModuleWidget { 
+	MinMaxWidget(MinMax *module); 
+};
+
+MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
+	// MinMax *module = new MinMax();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
 	{
@@ -222,3 +226,5 @@ MinMaxWidget::MinMaxWidget() {
 	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
 	addInput(Port::create<PJ301MPort>(Vec(33, 275), Port::INPUT, module, MinMax::X_INPUT));
 }
+
+Model *modelMinMax = Model::create<MinMax, MinMaxWidget>("JW-Modules", "MinMax", "Min Max", UTILITY_TAG);

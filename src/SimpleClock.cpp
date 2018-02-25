@@ -84,8 +84,8 @@ void SimpleClock::step() {
 	}
 	if (nextStep) {
 		stepCount = (stepCount + 1) % 256;
-		float probScaled = rescalef(params[PROB_PARAM].value, -2, 6, 0, 1);
-		if(randomf() < probScaled){
+		float probScaled = rescalefjw(params[PROB_PARAM].value, -2, 6, 0, 1);
+		if(randomUniform() < probScaled){
 			resetPulse.trigger(0.01);
 		}
 		gatePulse.trigger(1e-3);
@@ -108,9 +108,13 @@ struct BPMKnob : SmallWhiteKnob {
 	}
 };
 
-SimpleClockWidget::SimpleClockWidget() {
-	SimpleClock *module = new SimpleClock();
-	setModule(module);
+struct SimpleClockWidget : ModuleWidget { 
+	SimpleClockWidget(SimpleClock *module); 
+};
+
+SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module) {
+	// SimpleClock *module = new SimpleClock();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
@@ -184,3 +188,5 @@ SimpleClockWidget::SimpleClockWidget() {
 	addOutput(Port::create<TinyPJ301MPort>(Vec(10, 310), Port::OUTPUT, module, SimpleClock::DIV_16_OUTPUT));
 	addOutput(Port::create<TinyPJ301MPort>(Vec(34, 310), Port::OUTPUT, module, SimpleClock::DIV_32_OUTPUT));
 }
+
+Model *modelSimpleClock = Model::create<SimpleClock, SimpleClockWidget>("JW-Modules", "SimpleClock", "Simple Clock", CLOCK_TAG, RANDOM_TAG);

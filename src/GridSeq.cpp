@@ -135,12 +135,12 @@ struct GridSeq : Module,QuantizeUtils {
 
 	void randomizeGateStates() {
 		for (int i = 0; i < 16; i++) {
-			gateState[i] = (randomf() > 0.50);
+			gateState[i] = (randomUniform() > 0.50);
 		}
 	}
 
 	float getOneRandomNote(){
-		return randomf() * noteParamMax;
+		return randomUniform() * noteParamMax;
 	}
 
 	void randomizeNotesOnly(){
@@ -150,8 +150,8 @@ struct GridSeq : Module,QuantizeUtils {
 	}
 
 	float closestVoltageInScaleWrapper(float voltsIn){
-		float totalMax = clampf(params[VOLT_MAX_PARAM].value+inputs[VOLT_MAX_INPUT].value, 0.0, 10.0);
-		float voltsScaled = rescalef(voltsIn, 0, noteParamMax, 0, totalMax);
+		float totalMax = clampfjw(params[VOLT_MAX_PARAM].value+inputs[VOLT_MAX_INPUT].value, 0.0, 10.0);
+		float voltsScaled = rescalefjw(voltsIn, 0, noteParamMax, 0, totalMax);
 		int rootNote = params[ROOT_NOTE_PARAM].value;
 		int scale = params[SCALE_PARAM].value;
 		return closestVoltageInScale(voltsScaled, rootNote, scale);
@@ -200,7 +200,7 @@ void GridSeq::step() {
 
 		if (rndPosTrigger.process(inputs[RND_DIR_INPUT].value + params[RND_MOVE_BTN_PARAM].value)) {
 			nextStep = true;
-			switch(int(4 * randomf())){
+			switch(int(4 * randomUniform())){
 				case 0:handleMoveRight();break;
 				case 1:handleMoveLeft();break;
 				case 2:handleMoveDown();break;
@@ -263,6 +263,17 @@ void GridSeq::step() {
 	outputs[GATES_OUTPUT].value = gatesOn ? 10.0 : 0.0;
 }
 
+struct GridSeqWidget : ModuleWidget {
+	std::vector<ParamWidget*> seqKnobs;
+	std::vector<ParamWidget*> gateButtons;
+	GridSeqWidget(GridSeq *module);
+	~GridSeqWidget(){ 
+		seqKnobs.clear(); 
+		gateButtons.clear(); 
+	}
+	Menu *createContextMenu() override;
+};
+
 struct RandomizeNotesOnlyButton : SmallButton {
 	void onMouseDown(EventMouseDown &e) override {
 		SmallButton::onMouseDown(e);
@@ -284,14 +295,14 @@ struct RandomizeGatesOnlyButton : SmallButton {
 		SmallButton::onMouseDown(e);
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		for (int i = 0; i < 16; i++) {
-			gsw->gateButtons[i]->setValue(randomf() > 0.5);
+			gsw->gateButtons[i]->setValue(randomUniform() > 0.5);
 		}
 	}
 };
 
-GridSeqWidget::GridSeqWidget() {
-	GridSeq *module = new GridSeq();
-	setModule(module);
+GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
+	// GridSeq *module = new GridSeq();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	{
@@ -446,3 +457,4 @@ Menu *GridSeqWidget::createContextMenu() {
 	return menu;
 }
 
+Model *modelGridSeq = Model::create<GridSeq, GridSeqWidget>("JW-Modules", "GridSeq", "GridSeq", SEQUENCER_TAG);

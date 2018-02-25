@@ -107,11 +107,11 @@ struct XYPad : Module {
 	    switch(shape){
 			case RND_SINE: {
 				    float twoPi = 2.0*M_PI;
-				    float cycles = 1 + int(randomf() * 13);
+				    float cycles = 1 + int(randomUniform() * 13);
 				    bool inside = true;
 				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
-				    	float x = rescalef(i, 0, twoPi*cycles, minX, maxX);
-				    	float y = rescalef(sin(i), -1, 1, minY, maxY);
+				    	float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
+				    	float y = rescalefjw(sin(i), -1, 1, minY, maxY);
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
 			    	}
@@ -119,11 +119,11 @@ struct XYPad : Module {
 				break;
 			case RND_SQUARE: {
 				    float twoPi = 2.0*M_PI;
-				    float cycles = 1 + int(randomf() * 13);
+				    float cycles = 1 + int(randomUniform() * 13);
 				    bool inside = true;
 				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
-				    	float x = rescalef(i, 0, twoPi*cycles, minX, maxX);
-				    	float y = rescalef(sin(i)<0, 0, 1, minY, maxY);
+				    	float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
+				    	float y = rescalefjw(sin(i)<0, 0, 1, minY, maxY);
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
 			    	}
@@ -131,7 +131,7 @@ struct XYPad : Module {
 				break;
 			case RND_RAMP: {
 				    float lastY = maxY;
-				    float rate = randomf();
+				    float rate = randomUniform();
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -143,8 +143,8 @@ struct XYPad : Module {
 			    }
 				break;
 			case RND_LINE: {
-				    float startHeight = (randomf() * maxY * 0.5) + (maxY * 0.25);
-				    float rate = randomf() - 0.5;
+				    float startHeight = (randomUniform() * maxY * 0.5) + (maxY * 0.25);
+				    float rate = randomUniform() - 0.5;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -160,7 +160,7 @@ struct XYPad : Module {
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
-				    	float y = (randomf()*2-1) * amp + midHeight;
+				    	float y = (randomUniform()*2-1) * amp + midHeight;
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
 			    	}
@@ -169,9 +169,9 @@ struct XYPad : Module {
 			case RND_SINE_MOD: {
 				    float midHeight = maxY / 2.0;
 				    float amp = midHeight * 0.90 * 0.50;
-				    float rate = randomf() * 0.1;
-				    float rateAdder = randomf() * 0.001;
-				    float ampAdder = randomf() * 0.25;
+				    float rate = randomUniform() * 0.1;
+				    float rateAdder = randomUniform() * 0.001;
+				    float ampAdder = randomUniform() * 0.25;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -187,7 +187,7 @@ struct XYPad : Module {
 				    float curX = maxX / 2.0;
 				    float curY = maxY / 2.0;
 				    float radius = 5;
-				    float rate = 1 + (randomf()*0.1);
+				    float rate = 1 + (randomUniform()*0.1);
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = curX + sin(i/10.0) * radius;
@@ -203,7 +203,7 @@ struct XYPad : Module {
 				    float y = maxY * 0.5;
 				    enum stateEnum { ST_RIGHT, ST_LEFT, ST_UP, ST_DOWN };
 				    int squSt = ST_RIGHT;
-				    int stepsBeforeStateChange = 5 * int(randomf()*5+1);
+				    int stepsBeforeStateChange = 5 * int(randomUniform()*5+1);
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	if(squSt == ST_RIGHT && x < maxX){
@@ -216,7 +216,7 @@ struct XYPad : Module {
 				    		y++;
 				    	}
 				    	if(i % stepsBeforeStateChange == 0){
-				    		squSt = int(randomf() * 4);
+				    		squSt = int(randomUniform() * 4);
 				    	}
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
@@ -294,8 +294,8 @@ struct XYPad : Module {
 	}
 
 	void setCurrentPos(float x, float y){
-		params[X_POS_PARAM].value = clampf(x, minX, maxX);
-		params[Y_POS_PARAM].value = clampf(y, minY, maxY);
+		params[X_POS_PARAM].value = clampfjw(x, minX, maxX);
+		params[Y_POS_PARAM].value = clampfjw(y, minY, maxY);
 	}
 
 	bool isInView(float x, float y){
@@ -422,8 +422,8 @@ void XYPad::step() {
 		}
 
 	} else if(isStatePlaying()){
-		float playSpeedTotal = clampf(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 20);
-		float playbackClockTime = rescalef(playSpeedTotal, 0, 20, 1, 500 * params[SPEED_MULT_PARAM].value);
+		float playSpeedTotal = clampfjw(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 20);
+		float playbackClockTime = rescalefjw(playSpeedTotal, 0, 20, 1, 500 * params[SPEED_MULT_PARAM].value);
 		playbackPhase += playbackClockTime / engineGetSampleRate();
 		if (playbackPhase >= 1.0) {
 			playbackPhase -= 1.0;
@@ -431,13 +431,13 @@ void XYPad::step() {
 		}
 	}
 
-	float xOut = rescalef(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt);
-	float yOut = rescalef(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt); //y is inverted because gui coords
+	float xOut = rescalefjw(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt);
+	float yOut = rescalefjw(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt); //y is inverted because gui coords
 	outputs[X_OUTPUT].value = (xOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
 	outputs[Y_OUTPUT].value = (yOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
 	
-	float xInvOut = rescalef(params[X_POS_PARAM].value, minX, maxX, maxVolt, minVolt);
-	float yInvOut = rescalef(params[Y_POS_PARAM].value, minY, maxY, minVolt, maxVolt); //y is inverted because gui coords
+	float xInvOut = rescalefjw(params[X_POS_PARAM].value, minX, maxX, maxVolt, minVolt);
+	float yInvOut = rescalefjw(params[Y_POS_PARAM].value, minY, maxY, minVolt, maxVolt); //y is inverted because gui coords
 	outputs[X_INV_OUTPUT].value = (xInvOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
 	outputs[Y_INV_OUTPUT].value = (yInvOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
 	
@@ -575,6 +575,11 @@ struct XYPadDisplay : Widget {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct XYPadWidget : ModuleWidget {
+	XYPadWidget(XYPad *module);
+	Menu *createContextMenu() override;
+};
+
 struct RandomShapeButton : TinyButton {
 	void onMouseDown(EventMouseDown &e) override {
 		TinyButton::onMouseDown(e);
@@ -593,9 +598,9 @@ struct RandomVariationButton : TinyButton {
 	}
 };
 
-XYPadWidget::XYPadWidget() {
-	XYPad *module = new XYPad();
-	setModule(module);
+XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
+	// XYPad *module = new XYPad();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
@@ -712,3 +717,5 @@ Menu *XYPadWidget::createContextMenu() {
 	}
 	return menu;
 }
+
+Model *modelXYPad = Model::create<XYPad, XYPadWidget>("JW-Modules", "XYPad", "XY Pad", LFO_TAG, ENVELOPE_GENERATOR_TAG, RANDOM_TAG, OSCILLATOR_TAG, SAMPLE_AND_HOLD_TAG);

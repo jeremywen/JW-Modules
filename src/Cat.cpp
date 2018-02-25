@@ -40,6 +40,14 @@ struct Cat : Module {
 
 };
 
+struct CatWidget : ModuleWidget {
+	CatWidget(Cat *module);
+	void step();
+	Widget* widgetToMove;
+	Widget* hairballs[10];
+	Menu *createContextMenu();
+};
+
 void CatWidget::step() {
 	Cat *cat = dynamic_cast<Cat*>(module);
 	widgetToMove->box.pos.y = cat->catY;
@@ -61,12 +69,12 @@ void CatWidget::step() {
 		if(hairballs[i]->box.pos.y > box.size.y*1.5 && !bool(cat->params[Cat::BOWL_PARAM].value)){
 			hairballs[i]->box.pos.y = widgetToMove->box.pos.y;
 		} else {
-			hairballs[i]->box.pos.y += randomf()*10;
+			hairballs[i]->box.pos.y += randomUniform()*10;
 		}
 	}
 
 	if(!bool(cat->params[Cat::BOWL_PARAM].value)){
-		if(randomf() < 0.008){
+		if(randomUniform() < 0.008){
 			WireWidget *wire = gRackWidget->getFirstDescendantOfType<WireWidget>();
 			if(wire){
 				// printf("wire!!!!! \n");
@@ -81,9 +89,9 @@ void CatWidget::step() {
 	}
 };
 
-CatWidget::CatWidget() {
-	Cat *module = new Cat();
-	setModule(module);
+CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
+	// Cat *module = new Cat();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	LightPanel *panel = new LightPanel();
@@ -100,7 +108,7 @@ CatWidget::CatWidget() {
 	addParam(ParamWidget::create<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
 
 	for(int i=0; i<10; i++){
-		hairballs[i] = Widget::create<HairballScrew>(Vec(randomf()*7, widgetToMove->box.pos.y));
+		hairballs[i] = Widget::create<HairballScrew>(Vec(randomUniform()*7, widgetToMove->box.pos.y));
 		addChild(hairballs[i]);
 	}
 }
@@ -145,3 +153,4 @@ Menu *CatWidget::createContextMenu() {
 	return menu;
 }
 
+Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat", VISUAL_TAG);

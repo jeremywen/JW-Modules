@@ -287,71 +287,26 @@ struct HairballScrew : SVGScrew {
 
 ////////////////////////////////////////////// WIDGETS //////////////////////////////////////////////
 
-struct SimpleClockWidget : ModuleWidget { 
-	SimpleClockWidget(); 
-};
+extern Model *modelBouncyBalls;
+extern Model *modelSimpleClock;
+extern Model *modelMinMax;
+extern Model *modelQuantizer;
+extern Model *modelNoteSeq;
+extern Model *modelWavHead;
+extern Model *modelXYPad;
+extern Model *modelFullScope;
+extern Model *modelGridSeq;
+extern Model *modelThingThing;
+extern Model *modelCat;
 
-struct MinMaxWidget : ModuleWidget { 
-	MinMaxWidget(); 
-};
 
-struct QuantizerWidget : ModuleWidget { 
-	QuantizerWidget(); 
-};
+inline int clampijw(int x, int minimum, int maximum) {
+	return min(max(x, minimum), maximum);
+}
+inline float clampfjw(float x, float minimum, float maximum) {
+	return fminf(fmaxf(x, minimum), maximum);
+}
+inline float rescalefjw(float x, float xMin, float xMax, float yMin, float yMax) {
+	return yMin + (x - xMin) / (xMax - xMin) * (yMax - yMin);
+}
 
-struct NoteSeqWidget : ModuleWidget { 
-	NoteSeqWidget(); 
-};
-
-struct BouncyBallsWidget : ModuleWidget {
-	BouncyBallsWidget();
-	void addButton(Vec pos, int param);
-	void addColoredPort(int color, Vec pos, int param, bool input);
-};
-
-struct WavHeadWidget : ModuleWidget {
-	WavHeadWidget();
-	void step() override;
-	Widget* widgetToMove;
-	Widget* snowflakesArr[10];
-	Menu *createContextMenu() override;
-};
-
-struct XYPadWidget : ModuleWidget {
-	XYPadWidget();
-	Menu *createContextMenu() override;
-};
-
-struct FullScopeWidget : ModuleWidget {
-	Panel *panel;
-	Widget *rightHandle;
-	TransparentWidget *display;
-	FullScopeWidget();
-	void step() override;
-	json_t *toJson() override;
-	void fromJson(json_t *rootJ) override;
-	Menu *createContextMenu() override;
-};
-
-struct GridSeqWidget : ModuleWidget {
-	std::vector<ParamWidget*> seqKnobs;
-	std::vector<ParamWidget*> gateButtons;
-	GridSeqWidget();
-	~GridSeqWidget(){ 
-		seqKnobs.clear(); 
-		gateButtons.clear(); 
-	}
-	Menu *createContextMenu() override;
-};
-
-struct ThingThingWidget : ModuleWidget {
-	ThingThingWidget();
-};
-
-struct CatWidget : ModuleWidget {
-	CatWidget();
-	void step();
-	Widget* widgetToMove;
-	Widget* hairballs[10];
-	Menu *createContextMenu();
-};

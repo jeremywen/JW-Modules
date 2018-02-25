@@ -102,7 +102,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	float lifeRate = 0.5 * engineGetSampleRate();	
 	long lifeCounter = 0;
 	int seqPos = 0;
-	float rndFloat0to1AtClockStep = randomf();
+	float rndFloat0to1AtClockStep = randomUniform();
 	bool goingForward = true;
 	bool *cells = new bool[CELLS];
 	SchmittTrigger clockTrig, resetTrig, clearTrig;
@@ -259,12 +259,12 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	int getFinalHighestNote1to32(){
-		int inputOffset = inputs[HIGHEST_NOTE_INPUT].active ? clampi(int(rescalef(inputs[HIGHEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
+		int inputOffset = inputs[HIGHEST_NOTE_INPUT].active ? clampijw(int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
 		return params[HIGHEST_NOTE_PARAM].value + inputOffset;
 	}
 
 	int getFinalLowestNote1to32(){
-		int inputOffset = inputs[LOWEST_NOTE_INPUT].active ? clampi(int(rescalef(inputs[LOWEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
+		int inputOffset = inputs[LOWEST_NOTE_INPUT].active ? clampijw(int(rescalefjw(inputs[LOWEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
 		return params[LOWEST_NOTE_PARAM].value + inputOffset;
 	}
 
@@ -278,7 +278,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	void clockStep(){
 		gatePulse.trigger(1e-3);
 		lifeCounter++;
-		rndFloat0to1AtClockStep = randomf();
+		rndFloat0to1AtClockStep = randomUniform();
 
 		//iterate seq pos
 		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].value);
@@ -306,7 +306,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
-			seqPos = int(randomf() * seqLen);
+			seqPos = int(randomUniform() * seqLen);
 		}
 	}
 
@@ -385,14 +385,14 @@ struct NoteSeq : Module,QuantizeUtils {
 		switch(int(params[RND_MODE_KNOB_PARAM].value)){
 			case RND_BASIC:{
 				for(int i=0;i<CELLS;i++){
-					setCellOn(xFromI(i), yFromI(i), randomf() < rndAmt);
+					setCellOn(xFromI(i), yFromI(i), randomUniform() < rndAmt);
 				}
 				break;
 			}
 			case RND_EUCLID:{
 				for(int y=0; y < ROWS; y++){
-					if(randomf() < rndAmt){
-						int div = int(randomf() * COLS * 0.5) + 1;
+					if(randomUniform() < rndAmt){
+						int div = int(randomUniform() * COLS * 0.5) + 1;
 						for(int x=0; x < COLS; x++){
 							setCellOn(x, y, x % div == 0);
 						}
@@ -404,7 +404,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				int sinCount = int(rndAmt * 3) + 1;
 				for(int i=0;i<sinCount;i++){
 					float angle = 0;
-					float angleInc = randomf();
+					float angleInc = randomUniform();
 					float offset = ROWS * 0.5;
 					for(int x=0;x<COLS;x+=1){
 						int y = int(offset + (sinf(angle)*(offset)));
@@ -418,11 +418,11 @@ struct NoteSeq : Module,QuantizeUtils {
 				int gliderCount = int(rndAmt * 20);
 				int size = 3;
 				for(int i=0;i<gliderCount;i++){
-					int x = size + int(randomf() * (COLS-size*2));
-					int y = size + int(randomf() * (ROWS-size*2));
-					if(randomf() < 0.5){
+					int x = size + int(randomUniform() * (COLS-size*2));
+					int y = size + int(randomUniform() * (ROWS-size*2));
+					if(randomUniform() < 0.5){
 						//down
-						if(randomf() < 0.5){
+						if(randomUniform() < 0.5){
 							//right
 							setCellOn(x, y, true);
 							setCellOn(x+1, y+1, true);
@@ -439,7 +439,7 @@ struct NoteSeq : Module,QuantizeUtils {
 						}
 					} else {
 						//up
-						if(randomf() < 0.5){
+						if(randomUniform() < 0.5){
 							//right
 							setCellOn(x, y, true);
 							setCellOn(x+1, y-1, true);
@@ -657,9 +657,13 @@ struct RndModeKnob : JwSmallSnapKnob {
 	}
 };
 
-NoteSeqWidget::NoteSeqWidget() {
-	NoteSeq *module = new NoteSeq();
-	setModule(module);
+struct NoteSeqWidget : ModuleWidget { 
+	NoteSeqWidget(NoteSeq *module); 
+};
+
+NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
+	// NoteSeq *module = new NoteSeq();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
@@ -782,3 +786,4 @@ NoteSeqWidget::NoteSeqWidget() {
 	addParam(scaleKnob);
 }
 
+Model *modelNoteSeq = Model::create<NoteSeq, NoteSeqWidget>("JW-Modules", "NoteSeq", "NoteSeq", SEQUENCER_TAG);

@@ -159,7 +159,7 @@ struct FullScopeDisplay : TransparentWidget {
 		Rect b = Rect(Vec(0, 0), box.size);
 		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
 		
-		float rotRate = rescalef(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
+		float rotRate = rescalefjw(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
 		if(rotRate != 0){
 			nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
 			nvgRotate(vg, rot+=rotRate);
@@ -216,7 +216,7 @@ struct FullScopeDisplay : TransparentWidget {
 
 		//color
 		if(module->inputs[FullScope::COLOR_INPUT].active){
-			float hue = rescalef(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
+			float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
 			nvgStrokeColor(vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
 		} else {
 			nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
@@ -251,9 +251,20 @@ struct FullScopeDisplay : TransparentWidget {
 	}
 };
 
-FullScopeWidget::FullScopeWidget() {
-	FullScope *module = new FullScope();
-	setModule(module);
+struct FullScopeWidget : ModuleWidget {
+	Panel *panel;
+	Widget *rightHandle;
+	TransparentWidget *display;
+	FullScopeWidget(FullScope *module);
+	void step() override;
+	json_t *toJson() override;
+	void fromJson(json_t *rootJ) override;
+	Menu *createContextMenu() override;
+};
+
+FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
+	// FullScope *module = new FullScope();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 
 	{
@@ -344,3 +355,4 @@ Menu *FullScopeWidget::createContextMenu() {
 	return menu;
 }
 
+Model *modelFullScope = Model::create<FullScope, FullScopeWidget>("JW-Modules", "FullScope", "Full Scope", VISUAL_TAG);

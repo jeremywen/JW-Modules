@@ -42,33 +42,41 @@ struct WavHead : Module {
 
 };
 
+struct WavHeadWidget : ModuleWidget {
+	WavHeadWidget(WavHead *module);
+	void step() override;
+	Widget* widgetToMove;
+	Widget* snowflakesArr[10];
+	Menu *createContextMenu() override;
+};
+
 void WavHeadWidget::step() {
 	WavHead *wavHead = dynamic_cast<WavHead*>(module);
 	float minVolts = wavHead->neg5ToPos5 ? -5 : 0;
 	float maxVolts = minVolts + 10;
-	float clamped = clampf(module->inputs[WavHead::VOLT_INPUT].value, minVolts, maxVolts);
+	float clamped = clampfjw(module->inputs[WavHead::VOLT_INPUT].value, minVolts, maxVolts);
 	float minY = wavHead->invert ? 250 : 15;
 	float maxY = wavHead->invert ? 15 : 250;
-	widgetToMove->box.pos.y = rescalef(clamped, minVolts, maxVolts, minY, maxY);
+	widgetToMove->box.pos.y = rescalefjw(clamped, minVolts, maxVolts, minY, maxY);
 
 	if(wavHead->snowMode){
 		for(int i=0; i<10; i++){
 			if(snowflakesArr[i]->box.pos.y > box.size.y){
-				snowflakesArr[i]->box.pos.y = -randomf()*200-30;
+				snowflakesArr[i]->box.pos.y = -randomUniform()*200-30;
 			} else {
-				snowflakesArr[i]->box.pos.y += randomf();
+				snowflakesArr[i]->box.pos.y += randomUniform();
 			}
 		}
 	} else {
 		for(int i=0; i<10; i++){
-			snowflakesArr[i]->box.pos.y = -randomf()*200-30;
+			snowflakesArr[i]->box.pos.y = -randomUniform()*200-30;
 		}
 	}
 };
 
-WavHeadWidget::WavHeadWidget() {
-	WavHead *module = new WavHead();
-	setModule(module);
+WavHeadWidget::WavHeadWidget(WavHead *module) : ModuleWidget(module) {
+	// WavHead *module = new WavHead();
+	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	LightPanel *panel = new LightPanel();
@@ -83,7 +91,7 @@ WavHeadWidget::WavHeadWidget() {
 	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
 
 	for(int i=0; i<10; i++){
-		snowflakesArr[i] = Widget::create<Snowflake>(Vec(randomf()*box.size.x, -randomf()*200-30));
+		snowflakesArr[i] = Widget::create<Snowflake>(Vec(randomUniform()*box.size.x, -randomUniform()*200-30));
 		addChild(snowflakesArr[i]);
 	}
 
@@ -145,3 +153,4 @@ Menu *WavHeadWidget::createContextMenu() {
 	return menu;
 }
 
+Model *modelWavHead = Model::create<WavHead, WavHeadWidget>("JW-Modules", "WavHead", "Wav Head", VISUAL_TAG);
