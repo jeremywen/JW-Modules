@@ -17,4 +17,4 @@ SOURCES = $(wildcard src/*.cpp)
 
 
 # Must include the VCV plugin Makefile framework
-include ../../plugin.mk
+include $(RACK_DIR)/plugin.mk
