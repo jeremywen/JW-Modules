@@ -78,8 +78,7 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 
 struct JwTinyKnob : RoundKnob {
 	JwTinyKnob() {
-		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
-		box.size = Vec(15, 15);
+		setSVG(SVG::load(assetPlugin(plugin, "res/TinyWhiteKnob.svg")));
 	}
 };
 
