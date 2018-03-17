@@ -94,35 +94,35 @@ void FullScope::step() {
 	}
 
 	// Are we waiting on the next trigger?
-	// if (bufferIndex >= BUFFER_SIZE) {
+	if (bufferIndex >= BUFFER_SIZE) {
 		// Trigger immediately if external but nothing plugged in, or in Lissajous mode
-		// if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
-		// 	bufferIndex = 0;
-		// 	frameIndex = 0;
-		// 	return;
-		// }
+		if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
+			bufferIndex = 0;
+			frameIndex = 0;
+			return;
+		}
 
 		// Reset the Schmitt trigger so we don't trigger immediately if the input is high
-		// if (frameIndex == 0) {
-		// 	resetTrigger.reset();
-		// }
-		// frameIndex++;
+		if (frameIndex == 0) {
+			resetTrigger.reset();
+		}
+		frameIndex++;
 
 		// Must go below 0.1V to trigger
 		// resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		// float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
+		float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
 
 		// Reset if triggered
-		// float holdTime = 0.1;
-		// if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
-			// bufferIndex = 0; frameIndex = 0; return;
-		// }
+		float holdTime = 0.1;
+		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
+			bufferIndex = 0; frameIndex = 0; return;
+		}
 
 		// Reset if we've waited too long
-		// if (frameIndex >= engineGetSampleRate() * holdTime) {
-		// 	bufferIndex = 0; frameIndex = 0; return;
-		// }
-	// }
+		if (frameIndex >= engineGetSampleRate() * holdTime) {
+			bufferIndex = 0; frameIndex = 0; return;
+		}
+	}
 }
 
 struct FullScopeDisplay : TransparentWidget {
