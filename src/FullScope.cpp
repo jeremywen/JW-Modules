@@ -263,8 +263,6 @@ struct FullScopeWidget : ModuleWidget {
 };
 
 FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
-	// FullScope *module = new FullScope();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 
 	{

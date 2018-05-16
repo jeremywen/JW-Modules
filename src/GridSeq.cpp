@@ -301,8 +301,6 @@ struct RandomizeGatesOnlyButton : SmallButton {
 };
 
 GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
-	// GridSeq *module = new GridSeq();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	{

@@ -174,8 +174,6 @@ struct MinMaxWidget : ModuleWidget {
 };
 
 MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
-	// MinMax *module = new MinMax();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
 	{

@@ -45,8 +45,6 @@ struct QuantizerWidget : ModuleWidget {
 };
 
 QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
-	// Quantizer *module = new Quantizer();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{

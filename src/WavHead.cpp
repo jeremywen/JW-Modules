@@ -75,8 +75,6 @@ void WavHeadWidget::step() {
 };
 
 WavHeadWidget::WavHeadWidget(WavHead *module) : ModuleWidget(module) {
-	// WavHead *module = new WavHead();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	LightPanel *panel = new LightPanel();

@@ -90,8 +90,6 @@ void CatWidget::step() {
 };
 
 CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
-	// Cat *module = new Cat();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	LightPanel *panel = new LightPanel();
@@ -153,4 +151,4 @@ Menu *CatWidget::createContextMenu() {
 	return menu;
 }
 
-Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat", VISUAL_TAG);
+Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat (WARNING: Removes Wires)", VISUAL_TAG);

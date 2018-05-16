@@ -599,8 +599,6 @@ struct RandomVariationButton : TinyButton {
 };
 
 XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
-	// XYPad *module = new XYPad();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();

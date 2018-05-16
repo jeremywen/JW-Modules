@@ -299,8 +299,6 @@ struct PaddleVisibleButton : TinyButton {
 };
 
 BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module) {
-	// BouncyBalls *module = new BouncyBalls();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();

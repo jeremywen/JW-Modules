@@ -121,8 +121,6 @@ struct ThingThingWidget : ModuleWidget {
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) : ModuleWidget(module) {
-	// ThingThing *module = new ThingThing();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();

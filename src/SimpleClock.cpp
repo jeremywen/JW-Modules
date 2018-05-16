@@ -113,8 +113,6 @@ struct SimpleClockWidget : ModuleWidget {
 };
 
 SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module) {
-	// SimpleClock *module = new SimpleClock();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{

@@ -662,8 +662,6 @@ struct NoteSeqWidget : ModuleWidget {
 };
 
 NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
-	// NoteSeq *module = new NoteSeq();
-	// setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
