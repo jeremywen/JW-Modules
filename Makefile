@@ -1,5 +1,5 @@
 SLUG = JW-Modules
-VERSION = 0.6.0
+VERSION = 0.6.1
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 RACK_DIR ?= ../..
 
