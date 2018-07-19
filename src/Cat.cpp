@@ -72,21 +72,6 @@ void CatWidget::step() {
 			hairballs[i]->box.pos.y += randomUniform()*10;
 		}
 	}
-
-	if(!bool(cat->params[Cat::BOWL_PARAM].value)){
-		if(randomUniform() < 0.008){
-			WireWidget *wire = gRackWidget->getFirstDescendantOfType<WireWidget>();
-			if(wire){
-				// printf("wire!!!!! \n");
-				wire->parent->removeChild(wire);
-				wire->inputPort = NULL;
-				wire->outputPort = NULL;
-				wire->updateWire();
-			} else {
-				// printf("no wire :(");
-			}
-		}
-	}
 };
 
 CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
@@ -151,4 +136,4 @@ Menu *CatWidget::createContextMenu() {
 	return menu;
 }
 
-Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat (WARNING: Removes Wires)", VISUAL_TAG);
+Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat", VISUAL_TAG);

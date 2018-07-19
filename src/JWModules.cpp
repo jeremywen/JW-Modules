@@ -18,4 +18,7 @@ void init(rack::Plugin *p)
 	p->addModel(modelThingThing);
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);
+	p->addModel(modelBlankPanelSmall);
+	p->addModel(modelBlankPanelMedium);
+	p->addModel(modelBlankPanelLarge);
 }

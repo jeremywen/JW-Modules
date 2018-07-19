@@ -297,7 +297,9 @@ extern Model *modelFullScope;
 extern Model *modelGridSeq;
 extern Model *modelThingThing;
 extern Model *modelCat;
-
+extern Model *modelBlankPanelSmall;
+extern Model *modelBlankPanelMedium;
+extern Model *modelBlankPanelLarge;
 
 inline int clampijw(int x, int minimum, int maximum) {
 	return min(max(x, minimum), maximum);
