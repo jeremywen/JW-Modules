@@ -253,7 +253,8 @@ struct FullScopeDisplay : TransparentWidget {
 
 struct FullScopeWidget : ModuleWidget {
 	Panel *panel;
-	Widget *rightHandle;
+	JWModuleResizeHandle *leftHandle;
+	JWModuleResizeHandle *rightHandle;
 	TransparentWidget *display;
 	FullScopeWidget(FullScope *module);
 	void step() override;
@@ -272,10 +273,9 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 		addChild(panel);
 	}
 
-	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle(box.size.x);
-	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle(box.size.x);
+	leftHandle = new JWModuleResizeHandle(box.size.x);
+	rightHandle = new JWModuleResizeHandle(box.size.x);
 	rightHandle->right = true;
-	this->rightHandle = rightHandle;
 	addChild(leftHandle);
 	addChild(rightHandle);
 
@@ -283,7 +283,7 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 		FullScopeDisplay *display = new FullScopeDisplay();
 		display->module = module;
 		display->box.pos = Vec(0, 0);
-		display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
+		display->box.size = Vec(box.size.x, box.size.y);
 		addChild(display);
 		this->display = display;
 	}
@@ -308,8 +308,10 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 
 void FullScopeWidget::step() {
 	panel->box.size = box.size;
-	display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
+	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
+	rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
+	leftHandle->box.pos.y = box.size.y - leftHandle->box.size.y;
 	ModuleWidget::step();
 }
 
