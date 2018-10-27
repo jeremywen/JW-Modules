@@ -9,6 +9,14 @@
 #define POLY 16
 #define HW 11.75 //cell height and width
 
+struct ColNotes {
+	int *vals = new int[32];
+	bool includeInactive;
+	bool valid;
+	int finalHigh;
+	int finalLow;
+};
+
 struct NoteSeq : Module,QuantizeUtils {
 	enum ParamIds {
 		STEP_BTN_PARAM,
@@ -105,6 +113,8 @@ struct NoteSeq : Module,QuantizeUtils {
 	float rndFloat0to1AtClockStep = randomUniform();
 	bool goingForward = true;
 	bool *cells = new bool[CELLS];
+	ColNotes *colNotesCache = new ColNotes[COLS];
+	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	SchmittTrigger clockTrig, resetTrig, clearTrig;
 	SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
@@ -187,11 +197,11 @@ struct NoteSeq : Module,QuantizeUtils {
 		}
 
 		bool pulse = gatePulse.process(1.0 / engineGetSampleRate());
-		////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
-
-		std::vector<int> polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].value, pulse);
+		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
+		
+		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].value);
 		for(int i=0;i<POLY;i++){ //param # starts from bottom
-			bool hasVal = i < int(polyYVals.size());
+			bool hasVal = polyYVals[i] > -1;
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
 				outputs[VOCT_MAIN_OUTPUT + i].value = closestVoltageForRow(polyYVals[i]);
@@ -201,61 +211,87 @@ struct NoteSeq : Module,QuantizeUtils {
 		}
 
 		////////////////////////////////////////////// MONO OUTPUTS //////////////////////////////////////////////
-		std::vector<int> monoYVals = getYValsFromBottomAtSeqPos(false, pulse);
-		bool atLeastOne = int(monoYVals.size()) > 0;
-		if(outputs[MIN_VOCT_OUTPUT].active && atLeastOne){
-			std::vector<int>::iterator pos = std::min_element(monoYVals.begin(), monoYVals.end());
-			outputs[MIN_VOCT_OUTPUT].value = closestVoltageForRow(*pos);
-		}
-		if(outputs[MIN_GATE_OUTPUT].active){
-			outputs[MIN_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
-		}
+		if(outputs[MIN_VOCT_OUTPUT].active || outputs[MIN_GATE_OUTPUT].active || 
+		   outputs[MID_VOCT_OUTPUT].active || outputs[MID_GATE_OUTPUT].active ||
+		   outputs[MAX_VOCT_OUTPUT].active || outputs[MAX_GATE_OUTPUT].active ||
+		   outputs[RND_VOCT_OUTPUT].active || outputs[RND_GATE_OUTPUT].active){
+			int *monoYVals = getYValsFromBottomAtSeqPos(false);
+			bool atLeastOne = monoYVals[0] > -1;
+			if(outputs[MIN_VOCT_OUTPUT].active && atLeastOne){
+				outputs[MIN_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[0]);
+			}
+			if(outputs[MIN_GATE_OUTPUT].active){
+				outputs[MIN_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			}
 
-		if(outputs[MID_VOCT_OUTPUT].active && atLeastOne){
-			std::vector<int>::iterator minPos = std::min_element(monoYVals.begin(), monoYVals.end());
-			std::vector<int>::iterator maxPos = std::max_element(monoYVals.begin(), monoYVals.end());
-			outputs[MID_VOCT_OUTPUT].value = closestVoltageForRow((*minPos + *maxPos) * 0.5);
-		}
-		if(outputs[MID_GATE_OUTPUT].active){
-			outputs[MID_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
-		}
+			if(outputs[MID_VOCT_OUTPUT].active && atLeastOne){
+				int minPos = 0;
+				int maxPos = findYValIdx(monoYVals, -1) - 1;
+				outputs[MID_VOCT_OUTPUT].value = closestVoltageForRow((monoYVals[minPos] + monoYVals[maxPos]) * 0.5);
+			}
+			if(outputs[MID_GATE_OUTPUT].active){
+				outputs[MID_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			}
 
-		if(outputs[MAX_VOCT_OUTPUT].active && atLeastOne){
-			std::vector<int>::iterator pos = std::max_element(monoYVals.begin(), monoYVals.end());
-			outputs[MAX_VOCT_OUTPUT].value = closestVoltageForRow(*pos);
-		}
-		if(outputs[MAX_GATE_OUTPUT].active){
-			outputs[MAX_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
-		}
+			if(outputs[MAX_VOCT_OUTPUT].active && atLeastOne){
+				int maxPos = findYValIdx(monoYVals, -1) - 1;
+				outputs[MAX_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[maxPos]);
+			}
+			if(outputs[MAX_GATE_OUTPUT].active){
+				outputs[MAX_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			}
 
-		if(outputs[RND_VOCT_OUTPUT].active && atLeastOne){
-			outputs[RND_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * monoYVals.size())]);
+			if(outputs[RND_VOCT_OUTPUT].active && atLeastOne){
+				int maxPos = findYValIdx(monoYVals, -1) - 1;
+				outputs[RND_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * maxPos)]);
+			}
+			if(outputs[RND_GATE_OUTPUT].active){
+				outputs[RND_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			}
 		}
-		if(outputs[RND_GATE_OUTPUT].active){
-			outputs[RND_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
-		}
-
 	}
 
-	std::vector<int> getYValsFromBottomAtSeqPos(bool includeInactive, bool pulse){
-		std::vector<int> v;
+	int * getYValsFromBottomAtSeqPos(bool includeInactive){
+		int finalHigh = getFinalHighestNote1to32();
+		int finalLow = getFinalLowestNote1to32();
+		ColNotes *cache = includeInactive ? colNotesCache : colNotesCache2;
+		if(cache[seqPos].valid && cache[seqPos].finalHigh == finalHigh && cache[seqPos].finalLow == finalLow){
+			return cache[seqPos].vals;
+		}
+		
+		cache[seqPos].valid = true;
+		cache[seqPos].finalHigh = finalHigh;
+		cache[seqPos].finalLow = finalLow;
+		cache[seqPos].includeInactive = includeInactive;
+		for(int i=0;i<COLS;i++){ cache[seqPos].vals[i] = -1; }
+
+		int valIdx = 0;
 		for(int i=CELLS-1;i>=0;i--){
 			int x = xFromI(i);
 			if(x == seqPos && (cells[i] || includeInactive)){
 				int y = yFromI(i);
 				int yFromBottom = ROWS - 1 - y;
-				if(yFromBottom <= getFinalHighestNote1to32()-1 && 
-				   yFromBottom >= getFinalLowestNote1to32()-1){
-					v.push_back(yFromBottom);
+				if(yFromBottom <= finalHigh-1 && yFromBottom >= finalLow-1){
+					cache[seqPos].vals[valIdx++] = yFromBottom;
 				}
 			}
 		}
-		// if(pulse){
-		// 	printf("getActiveYValsAtSeqPos ");
-		// 	for(int n : v) { printf("%i ", n); }
-		// 	printf("\n\n");
-		// }
-		return v;
+		return cache[seqPos].vals;
+	}
+
+	int findYValIdx(int arr[], int valToFind){
+		for(int i=0; i < ROWS; i++){
+			if(arr[i] == valToFind){
+				return i;
+			}
+		}		
+	}
+
+	void gridChanged(){
+		for(int x=0; x < COLS; x++){
+			colNotesCache[x].valid = false;
+			colNotesCache2[x].valid = false;
+		}
 	}
 
 	int getFinalHighestNote1to32(){
@@ -335,6 +371,7 @@ struct NoteSeq : Module,QuantizeUtils {
 			}
 		}
 		cells = newCells;
+		gridChanged();
 	}
 
 	void flipCells(FlipDirection dir){
@@ -353,6 +390,7 @@ struct NoteSeq : Module,QuantizeUtils {
 			}
 		}
 		cells = newCells;
+		gridChanged();
 	}
 
 	void shiftCells(ShiftDirection dir){
@@ -371,12 +409,14 @@ struct NoteSeq : Module,QuantizeUtils {
 			}
 		}
 		cells = newCells;
+		gridChanged();
 	}
 
 	void clearCells() {
 		for(int i=0;i<CELLS;i++){
 			cells[i] = false;
 		}
+		gridChanged();
 	}
 
 	void randomizeCells() {
@@ -476,6 +516,7 @@ struct NoteSeq : Module,QuantizeUtils {
 			}
 		}
 		cells = newCells;
+		gridChanged();
 	}
 	
 	int getNeighborCount(int x, int y){
@@ -500,6 +541,8 @@ struct NoteSeq : Module,QuantizeUtils {
 		if(cellX >= 0 && cellX < COLS && 
 		   cellY >=0 && cellY < ROWS){
 			cells[iFromXY(cellX, cellY)] = on;
+			colNotesCache[cellX].valid = false;
+			colNotesCache2[cellX].valid = false;
 		}
 	}
 
