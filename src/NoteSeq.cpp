@@ -126,6 +126,8 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	~NoteSeq() {
 		delete [] cells;
+		delete [] colNotesCache;
+		delete [] colNotesCache2;
 	}
 
 	void randomize() override {
@@ -285,6 +287,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				return i;
 			}
 		}		
+		return -1;
 	}
 
 	void gridChanged(){
