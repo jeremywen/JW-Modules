@@ -1,6 +1,5 @@
 #include <string.h>
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 
 #define BUFFER_SIZE 512
@@ -34,20 +33,20 @@ struct MinMax : Module {
 	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *sumJ = json_object_get(rootJ, "lissajous");
 		if (sumJ)
 			lissajous = json_integer_value(sumJ);
 
 	}
 
-	void reset() override {
+	void onReset() override {
 		lissajous = false;
 	}
 };
@@ -125,7 +124,7 @@ struct MinMaxDisplay : TransparentWidget {
 	Stats statsX, statsY;
 
 	MinMaxDisplay() {
-		font = Font::load(assetPlugin(plugin, "res/DejaVuSansMono.ttf"));
+		font = Font::load(assetPlugin(pluginInstance, "res/DejaVuSansMono.ttf"));
 	}
 
 	void drawStats(NVGcontext *vg, Vec pos, const char *title, Stats *stats) {
@@ -179,14 +178,14 @@ MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/MinMax.svg")));
+		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/MinMax.svg")));
 		addChild(panel);
 	}
 
-	addChild(Widget::create<Screw_J>(Vec(16, 1)));
-	addChild(Widget::create<Screw_J>(Vec(16, 365)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 365)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);
 	titleLabel->box.pos = Vec(22, 15);
@@ -221,8 +220,10 @@ MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(Port::create<PJ301MPort>(Vec(33, 275), Port::INPUT, module, MinMax::X_INPUT));
+	//TODO add labels to all params
+
+	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
+	addInput(createPort<PJ301MPort>(Vec(33, 275), PortWidget::INPUT, module, MinMax::X_INPUT));
 }
 
-Model *modelMinMax = Model::create<MinMax, MinMaxWidget>("JW-Modules", "MinMax", "Min Max", UTILITY_TAG);
+Model *modelMinMax = createModel<MinMax, MinMaxWidget>("MinMax");

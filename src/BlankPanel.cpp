@@ -10,11 +10,11 @@ BlankPanelSmallWidget::BlankPanelSmallWidget(BlankPanel *module) : ModuleWidget(
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/BlankPanelSmall.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelSmall.svg")));
 	addChild(panel);
 
-	addChild(Widget::create<Screw_J>(Vec(16, 0)));
-	addChild(Widget::create<Screw_W>(Vec(16, 365)));
+	addChild(createWidget<Screw_J>(Vec(16, 0)));
+	addChild(createWidget<Screw_W>(Vec(16, 365)));
 }
 
 BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) : ModuleWidget(module) {
@@ -22,13 +22,13 @@ BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) : ModuleWidge
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/BlankPanelMedium.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelMedium.svg")));
 	addChild(panel);
 
-	addChild(Widget::create<Screw_J>(Vec(16, 0)));
-	addChild(Widget::create<Screw_J>(Vec(16, 365)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 0)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(createWidget<Screw_J>(Vec(16, 0)));
+	addChild(createWidget<Screw_J>(Vec(16, 365)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 }
 
 BlankPanelLargeWidget::BlankPanelLargeWidget(BlankPanel *module) : ModuleWidget(module) {
@@ -36,15 +36,15 @@ BlankPanelLargeWidget::BlankPanelLargeWidget(BlankPanel *module) : ModuleWidget(
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/BlankPanelLarge.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelLarge.svg")));
 	addChild(panel);
 
-	addChild(Widget::create<Screw_J>(Vec(16, 0)));
-	addChild(Widget::create<Screw_J>(Vec(16, 365)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 0)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(createWidget<Screw_J>(Vec(16, 0)));
+	addChild(createWidget<Screw_J>(Vec(16, 365)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 0)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 }
 
-Model *modelBlankPanelSmall = Model::create<BlankPanel, BlankPanelSmallWidget>("JW-Modules", "BlankPanel_SM", "BlankPanel (Small)",  VISUAL_TAG);
-Model *modelBlankPanelMedium = Model::create<BlankPanel, BlankPanelMediumWidget>("JW-Modules", "BlankPanel_MD", "BlankPanel (Medium)",  VISUAL_TAG);
-Model *modelBlankPanelLarge = Model::create<BlankPanel, BlankPanelLargeWidget>("JW-Modules", "BlankPanel_LG", "BlankPanel (Large)",  VISUAL_TAG);
+Model *modelBlankPanelSmall = createModel<BlankPanel, BlankPanelSmallWidget>("BlankPanel_SM");
+Model *modelBlankPanelMedium = createModel<BlankPanel, BlankPanelMediumWidget>("BlankPanel_MD");
+Model *modelBlankPanelLarge = createModel<BlankPanel, BlankPanelLargeWidget>("BlankPanel_LG");

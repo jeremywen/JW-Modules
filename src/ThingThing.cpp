@@ -1,6 +1,5 @@
 #include <string.h>
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 struct ThingThingBall {
 	NVGcolor color;
@@ -41,14 +40,14 @@ struct ThingThing : Module {
 	}
 
 	void step() override {};
-	void reset() override {}
+	void onReset() override {}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {}
+	void dataFromJson(json_t *rootJ) override {}
 };
 
 struct ThingThingDisplay : Widget {
@@ -61,6 +60,8 @@ struct ThingThingDisplay : Widget {
 		nvgBeginPath(vg);
 		nvgRect(vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(vg);
+
+		if(module == NULL) return;
 
 		float ballRadius = module->params[ThingThing::BALL_RAD_PARAM].value;
 		if(module->inputs[ThingThing::BALL_RAD_INPUT].active){
@@ -125,7 +126,7 @@ ThingThingWidget::ThingThingWidget(ThingThing *module) : ModuleWidget(module) {
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/ThingThing.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/ThingThing.svg")));
 	addChild(panel);
 
 	ThingThingDisplay *display = new ThingThingDisplay();
@@ -134,18 +135,19 @@ ThingThingWidget::ThingThingWidget(ThingThing *module) : ModuleWidget(module) {
 	display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
 	addChild(display);
 
-	addChild(Widget::create<Screw_J>(Vec(265, 365)));
-	addChild(Widget::create<Screw_W>(Vec(280, 365)));
+	addChild(createWidget<Screw_J>(Vec(265, 365)));
+	addChild(createWidget<Screw_W>(Vec(280, 365)));
 
 	for(int i=0; i<4; i++){
-		addInput(Port::create<TinyPJ301MPort>(Vec(5+(20*i), 360), Port::INPUT, module, ThingThing::ANG_INPUT+i+1));
+		addInput(createPort<TinyPJ301MPort>(Vec(5+(20*i), 360), PortWidget::INPUT, module, ThingThing::ANG_INPUT+i+1));
 	}
 	
-	addInput(Port::create<TinyPJ301MPort>(Vec(140, 360), Port::INPUT, module, ThingThing::BALL_RAD_INPUT));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(155, 360), module, ThingThing::BALL_RAD_PARAM, 0.0, 30.0, 10.0));
+	//TODO add labels to all params
+	addInput(createPort<TinyPJ301MPort>(Vec(140, 360), PortWidget::INPUT, module, ThingThing::BALL_RAD_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(155, 360), module, ThingThing::BALL_RAD_PARAM, 0.0, 30.0, 10.0));
 
-	addInput(Port::create<TinyPJ301MPort>(Vec(190, 360), Port::INPUT, module, ThingThing::ZOOM_MULT_INPUT));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM, 1.0, 200.0, 20.0));
+	addInput(createPort<TinyPJ301MPort>(Vec(190, 360), PortWidget::INPUT, module, ThingThing::ZOOM_MULT_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM, 1.0, 200.0, 20.0));
 }
 
-Model *modelThingThing = Model::create<ThingThing, ThingThingWidget>("JW-Modules", "ThingThing", "Thing Thing", VISUAL_TAG);
+Model *modelThingThing = createModel<ThingThing, ThingThingWidget>("ThingThing");

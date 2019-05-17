@@ -1,7 +1,6 @@
 #include <string.h>
 #include "JWModules.hpp"
 #include "JWResizableHandle.hpp"
-#include "dsp/digital.hpp"
 
 #define BUFFER_SIZE 512
 
@@ -46,14 +45,14 @@ struct FullScope : Module {
 	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		json_object_set_new(rootJ, "external", json_integer((int) external));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *sumJ = json_object_get(rootJ, "lissajous");
 		if (sumJ)
 			lissajous = json_integer_value(sumJ);
@@ -63,7 +62,7 @@ struct FullScope : Module {
 			external = json_integer_value(extJ);
 	}
 
-	void reset() override {
+	void onReset() override {
 		lissajous = true;
 		external = false;
 	}
@@ -198,6 +197,8 @@ struct FullScopeDisplay : TransparentWidget {
 	}
 
 	void draw(NVGcontext *vg) {
+		if(module == NULL) return;
+
 		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].value));
 		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].value));
 		float offsetX = module->params[FullScope::X_POS_PARAM].value;
@@ -252,7 +253,7 @@ struct FullScopeDisplay : TransparentWidget {
 };
 
 struct FullScopeWidget : ModuleWidget {
-	Panel *panel;
+	BGPanel *panel;
 	JWModuleResizeHandle *leftHandle;
 	JWModuleResizeHandle *rightHandle;
 	TransparentWidget *display;
@@ -260,19 +261,19 @@ struct FullScopeWidget : ModuleWidget {
 	void step() override;
 	json_t *toJson() override;
 	void fromJson(json_t *rootJ) override;
-	Menu *createContextMenu() override;
+	void appendContextMenu(Menu *menu) override;
 };
 
 FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
-
+	
 	{
-		panel = new Panel();
-		panel->backgroundColor = nvgRGB(20, 30, 33);
+		panel = new BGPanel(nvgRGB(20, 30, 33));
 		panel->box.size = box.size;
 		addChild(panel);
 	}
 
+//TODO fix resize isn't working
 	leftHandle = new JWModuleResizeHandle(box.size.x);
 	rightHandle = new JWModuleResizeHandle(box.size.x);
 	rightHandle->right = true;
@@ -289,25 +290,28 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	}
 
 	int compX = 5, compY = -15, adder = 20;
-	addInput(Port::create<TinyPJ301MPort>(Vec(compX, compY+=adder), Port::INPUT, module, FullScope::X_INPUT));
-	addInput(Port::create<TinyPJ301MPort>(Vec(compX, compY+=adder), Port::INPUT, module, FullScope::Y_INPUT));
-	addInput(Port::create<TinyPJ301MPort>(Vec(compX, compY+=adder), Port::INPUT, module, FullScope::COLOR_INPUT));
-	addInput(Port::create<TinyPJ301MPort>(Vec(compX, compY+=adder), Port::INPUT, module, FullScope::ROTATION_INPUT));
-	addInput(Port::create<TinyPJ301MPort>(Vec(compX, compY+=adder), Port::INPUT, module, FullScope::TIME_INPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::X_INPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::Y_INPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::COLOR_INPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::ROTATION_INPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::TIME_INPUT));
 
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+	//TODO add labels to all params
 
-	addChild(Widget::create<Screw_J>(Vec(compX+2, compY+=adder)));
-	addChild(Widget::create<Screw_W>(Vec(compX+2, compY+=adder-5)));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
+	//last knob isn't turning?????
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+
+	addChild(createWidget<Screw_J>(Vec(compX+2, compY+=adder)));
+	addChild(createWidget<Screw_W>(Vec(compX+2, compY+=adder-5)));
 }
 
 void FullScopeWidget::step() {
-	panel->box.size = box.size;
+	// panel->box.size = box.size;
 	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
 	rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
@@ -334,7 +338,7 @@ void FullScopeWidget::fromJson(json_t *rootJ) {
 
 struct FullScopeLissajousModeMenuItem : MenuItem {
 	FullScope *fullScope;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		fullScope->lissajous = !fullScope->lissajous;
 	}
 	void step() override {
@@ -342,9 +346,7 @@ struct FullScopeLissajousModeMenuItem : MenuItem {
 	}
 };
 
-Menu *FullScopeWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
+void FullScopeWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
@@ -355,8 +357,6 @@ Menu *FullScopeWidget::createContextMenu() {
 	lissMenuItem->text = "Lissajous Mode";
 	lissMenuItem->fullScope = fullScope;
 	menu->addChild(lissMenuItem);
-
-	return menu;
 }
 
-Model *modelFullScope = Model::create<FullScope, FullScopeWidget>("JW-Modules", "FullScope", "Full Scope", VISUAL_TAG);
+Model *modelFullScope = createModel<FullScope, FullScopeWidget>("FullScope");

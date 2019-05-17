@@ -1,5 +1,4 @@
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 struct GridSeq : Module,QuantizeUtils {
 	enum ParamIds {
@@ -77,7 +76,7 @@ struct GridSeq : Module,QuantizeUtils {
 
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "running", json_boolean(running));
@@ -98,7 +97,7 @@ struct GridSeq : Module,QuantizeUtils {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ)
 			running = json_is_true(runningJ);
@@ -123,13 +122,13 @@ struct GridSeq : Module,QuantizeUtils {
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 	}
 
-	void reset() override {
+	void onReset() override {
 		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
 	}
 
-	void randomize() override {
+	void onRandomize() override {
 		randomizeGateStates();
 	}
 
@@ -271,31 +270,31 @@ struct GridSeqWidget : ModuleWidget {
 		seqKnobs.clear(); 
 		gateButtons.clear(); 
 	}
-	Menu *createContextMenu() override;
+	void appendContextMenu(Menu *menu) override;
 };
 
 struct RandomizeNotesOnlyButton : SmallButton {
-	void onMouseDown(EventMouseDown &e) override {
-		SmallButton::onMouseDown(e);
+	void onButton(const event::Button &e) override {
+		SmallButton::onButton(e);
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 		for (int i = 0; i < 16; i++) {
 			if(e.button == 0){
-				gsw->seqKnobs[i]->setValue(gs->getOneRandomNote());
+				gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
 			} else if(e.button == 1){
 				//right click this to update the knobs (if randomized by cv in)
-				gsw->seqKnobs[i]->setValue(module->params[GridSeq::CELL_NOTE_PARAM + i].value);
+				gsw->seqKnobs[i]->paramQuantity->setValue(gs->params[GridSeq::CELL_NOTE_PARAM + i].value);
 			}
 		}
 	}
 };
 
 struct RandomizeGatesOnlyButton : SmallButton {
-	void onMouseDown(EventMouseDown &e) override {
-		SmallButton::onMouseDown(e);
+	void onButton(const event::Button &e) override {
+		SmallButton::onButton(e);
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		for (int i = 0; i < 16; i++) {
-			gsw->gateButtons[i]->setValue(randomUniform() > 0.5);
+			gsw->gateButtons[i]->paramQuantity->setValue(randomUniform() > 0.5);
 		}
 	}
 };
@@ -306,41 +305,43 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/GridSeq.svg")));
+		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/GridSeq.svg")));
 		addChild(panel);
 	}
 
-	addChild(Widget::create<Screw_J>(Vec(16, 1)));
-	addChild(Widget::create<Screw_J>(Vec(16, 365)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
+	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 365)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
+
+	//TODO add labels to all params
 
 	///// RUN /////
-	addParam(ParamWidget::create<TinyButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
-	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 90+3.75), module, GridSeq::RUNNING_LIGHT));
+	addParam(createParam<TinyButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 90+3.75), module, GridSeq::RUNNING_LIGHT));
 
 	///// RESET /////
-	addParam(ParamWidget::create<TinyButton>(Vec(27, 138), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
-	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 138+3.75), module, GridSeq::RESET_LIGHT));
-	addInput(Port::create<PJ301MPort>(Vec(22, 160), Port::INPUT, module, GridSeq::RESET_INPUT));
+	addParam(createParam<TinyButton>(Vec(27, 138), module, GridSeq::RESET_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 138+3.75), module, GridSeq::RESET_LIGHT));
+	addInput(createPort<PJ301MPort>(Vec(22, 160), PortWidget::INPUT, module, GridSeq::RESET_INPUT));
 
 	///// DIR CONTROLS /////
-	addParam(ParamWidget::create<RightMoveButton>(Vec(70, 30), module, GridSeq::RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<LeftMoveButton>(Vec(103, 30), module, GridSeq::LEFT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<DownMoveButton>(Vec(137, 30), module, GridSeq::DOWN_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<UpMoveButton>(Vec(172, 30), module, GridSeq::UP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<RndMoveButton>(Vec(215, 30), module, GridSeq::RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<RepMoveButton>(Vec(255, 30), module, GridSeq::REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RightMoveButton>(Vec(70, 30), module, GridSeq::RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<LeftMoveButton>(Vec(103, 30), module, GridSeq::LEFT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<DownMoveButton>(Vec(137, 30), module, GridSeq::DOWN_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<UpMoveButton>(Vec(172, 30), module, GridSeq::UP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RndMoveButton>(Vec(215, 30), module, GridSeq::RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RepMoveButton>(Vec(255, 30), module, GridSeq::REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(Port::create<PJ301MPort>(Vec(70, 52), Port::INPUT, module, GridSeq::RIGHT_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(103, 52), Port::INPUT, module, GridSeq::LEFT_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(137, 52), Port::INPUT, module, GridSeq::DOWN_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(172, 52), Port::INPUT, module, GridSeq::UP_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(212, 52), Port::INPUT, module, GridSeq::RND_DIR_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(253, 52), Port::INPUT, module, GridSeq::REPEAT_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(70, 52), PortWidget::INPUT, module, GridSeq::RIGHT_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(103, 52), PortWidget::INPUT, module, GridSeq::LEFT_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(137, 52), PortWidget::INPUT, module, GridSeq::DOWN_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(172, 52), PortWidget::INPUT, module, GridSeq::UP_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(212, 52), PortWidget::INPUT, module, GridSeq::RND_DIR_INPUT));
+	addInput(createPort<PJ301MPort>(Vec(253, 52), PortWidget::INPUT, module, GridSeq::REPEAT_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(ParamWidget::create<NoteKnob>(Vec(70, 315), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, 315), module, GridSeq::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(41, 178);
 	noteLabel->text = "note here";
@@ -348,7 +349,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(ParamWidget::create<ScaleKnob>(Vec(108, 315), module, GridSeq::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(108, 315), module, GridSeq::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(61, 178);
 	scaleLabel->text = "scale here";
@@ -356,14 +357,14 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 
-	addParam(ParamWidget::create<RandomizeGatesOnlyButton>(Vec(196, 315), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
-	addInput(Port::create<TinyPJ301MPort>(Vec(201, 345), Port::INPUT, module, GridSeq::RND_GATES_INPUT));
+	addParam(createParam<RandomizeGatesOnlyButton>(Vec(196, 315), module, GridSeq::RND_GATES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createPort<TinyPJ301MPort>(Vec(201, 345), PortWidget::INPUT, module, GridSeq::RND_GATES_INPUT));
 
-	addParam(ParamWidget::create<RandomizeNotesOnlyButton>(Vec(250, 315), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
-	addInput(Port::create<TinyPJ301MPort>(Vec(255, 345), Port::INPUT, module, GridSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(250, 315), module, GridSeq::RND_NOTES_PARAM, 0.0, 1.0, 0.0));
+	addInput(createPort<TinyPJ301MPort>(Vec(255, 345), PortWidget::INPUT, module, GridSeq::RND_NOTES_INPUT));
 
-	addParam(ParamWidget::create<JwSmallSnapKnob>(Vec(146, 315), module, GridSeq::VOLT_MAX_PARAM, 0.0, 10.0, 5.0));
-	addInput(Port::create<TinyPJ301MPort>(Vec(152, 345), Port::INPUT, module, GridSeq::VOLT_MAX_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(146, 315), module, GridSeq::VOLT_MAX_PARAM, 0.0, 10.0, 5.0));
+	addInput(createPort<TinyPJ301MPort>(Vec(152, 345), PortWidget::INPUT, module, GridSeq::VOLT_MAX_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
@@ -372,29 +373,35 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 			int knobX = x * boxSize + 75;
 			int knobY = y * boxSize + 105;
 			int idx = (x+(y*4));
-			module->gateState[idx] = true; //start with all gates on
+			if(module != NULL){
+				module->gateState[idx] = true; //start with all gates on
+			}
 
 			//maybe someday put note labels in each cell
-			ParamWidget *cellNoteKnob = ParamWidget::create<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx, 0.0, module->noteParamMax, 3.0);
+			float noteParamMax = 0;
+			if(module != NULL){
+				noteParamMax = module->noteParamMax;
+			}
+			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);
 
-			ParamWidget *cellGateButton = ParamWidget::create<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0);
+			ParamWidget *cellGateButton = createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0);
 			addParam(cellGateButton);
 			gateButtons.push_back(cellGateButton);
 
-			addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(knobX+27.5, knobY-9.5), module, GridSeq::GATES_LIGHT + idx));
+			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(knobX+27.5, knobY-9.5), module, GridSeq::GATES_LIGHT + idx));
 		}
 	}
 
 	///// OUTPUTS /////
-	addOutput(Port::create<PJ301MPort>(Vec(22, 233), Port::OUTPUT, module, GridSeq::GATES_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(22, 295), Port::OUTPUT, module, GridSeq::CELL_OUTPUT));
+	addOutput(createPort<PJ301MPort>(Vec(22, 233), PortWidget::OUTPUT, module, GridSeq::GATES_OUTPUT));
+	addOutput(createPort<PJ301MPort>(Vec(22, 295), PortWidget::OUTPUT, module, GridSeq::CELL_OUTPUT));
 }
 
 struct GridSeqPitchMenuItem : MenuItem {
 	GridSeq *gridSeq;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
 	}
 	void step() override {
@@ -405,7 +412,7 @@ struct GridSeqPitchMenuItem : MenuItem {
 struct GridSeqGateModeItem : MenuItem {
 	GridSeq *gridSeq;
 	GridSeq::GateMode gateMode;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		gridSeq->gateMode = gateMode;
 	}
 	void step() override {
@@ -413,9 +420,7 @@ struct GridSeqGateModeItem : MenuItem {
 	}
 };
 
-Menu *GridSeqWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
+void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
@@ -451,8 +456,6 @@ Menu *GridSeqWidget::createContextMenu() {
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);
-
-	return menu;
 }
 
-Model *modelGridSeq = Model::create<GridSeq, GridSeqWidget>("JW-Modules", "GridSeq", "GridSeq", SEQUENCER_TAG);
+Model *modelGridSeq = createModel<GridSeq, GridSeqWidget>("GridSeq");

@@ -1,19 +1,17 @@
 #include "JWModules.hpp"
 
-Plugin *plugin;
+Plugin *pluginInstance;
 
 void init(rack::Plugin *p)
 {
-	plugin = p;
-	p->slug = "JW-Modules";
-	p->version = TOSTRING(VERSION);
-	p->addModel(modelCat);
+	pluginInstance = p;
 	p->addModel(modelBouncyBalls);
+	p->addModel(modelCat);
 	p->addModel(modelFullScope);
 	p->addModel(modelGridSeq);
-	p->addModel(modelQuantizer);
 	p->addModel(modelMinMax);
 	p->addModel(modelNoteSeq);
+	p->addModel(modelQuantizer);
 	p->addModel(modelSimpleClock);
 	p->addModel(modelThingThing);
 	p->addModel(modelWavHead);

@@ -1,5 +1,5 @@
 #pragma once
-#include "rack.hpp"
+#include "rack0.hpp"
 
 using namespace rack;
 
@@ -16,30 +16,30 @@ struct JWModuleResizeHandle : Widget {
 		minWidth = _minWidth;
 	}
 	
-	void onMouseDown(EventMouseDown &e) override {
-		if (e.button == 0) {
-			e.consumed = true;
-			e.target = this;
+	void onButton(const event::Button &e) override {
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			e.consume(this);
 		}
 	}
 
-	void onDragStart(EventDragStart &e) override {
-		dragX = gRackWidget->lastMousePos.x;
-		dragY = gRackWidget->lastMousePos.y;
+	void onDragStart(const event::DragStart &e) override {
+		dragX = APP->scene->rack->mousePos.x;
+		dragY = APP->scene->rack->mousePos.y;
 		ModuleWidget *m = getAncestorOfType<ModuleWidget>();
 		originalBox = m->box;
 	}
 
-	void onDragMove(EventDragMove &e) override {
-		ModuleWidget *m = getAncestorOfType<ModuleWidget>();
+	void onDragMove(const event::DragMove &e) override {
+		ModuleWidget *mw = getAncestorOfType<ModuleWidget>();
 
-		float newDragX = gRackWidget->lastMousePos.x;
+		float newDragX = APP->scene->rack->mousePos.x;
 		float deltaX = newDragX - dragX;
-		float newDragY = gRackWidget->lastMousePos.y;
+		float newDragY = APP->scene->rack->mousePos.y;
 		float deltaY = newDragY - dragY;
 
 		Rect newBox = originalBox;
-		
+		Rect oldBox = mw->box;
+
 		// resize width
 		if (right) {
 			newBox.size.x += deltaX;
@@ -58,6 +58,9 @@ struct JWModuleResizeHandle : Widget {
 		newBox.size.y = fmaxf(newBox.size.y, RACK_GRID_HEIGHT);
 		newBox.size.y = roundf(newBox.size.y / RACK_GRID_HEIGHT) * RACK_GRID_HEIGHT;
 
-		gRackWidget->requestModuleBox(m, newBox);
+		mw->box = newBox;
+		if (!APP->scene->rack->requestModulePos(mw, newBox.pos)) {
+			mw->box = oldBox;
+		}
 	}
 };

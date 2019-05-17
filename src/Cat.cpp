@@ -1,5 +1,4 @@
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 struct Cat : Module {
 	enum ParamIds {
@@ -23,14 +22,14 @@ struct Cat : Module {
 	bool neg5ToPos5 = false;
 	Cat() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "invert", json_boolean(invert));
 		json_object_set_new(rootJ, "neg5ToPos5", json_boolean(neg5ToPos5));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *invertJ = json_object_get(rootJ, "invert");
 		if (invertJ){ invert = json_is_true(invertJ); }
 
@@ -40,65 +39,9 @@ struct Cat : Module {
 
 };
 
-struct CatWidget : ModuleWidget {
-	CatWidget(Cat *module);
-	void step();
-	Widget* widgetToMove;
-	Widget* hairballs[10];
-	Menu *createContextMenu();
-};
-
-void CatWidget::step() {
-	Cat *cat = dynamic_cast<Cat*>(module);
-	widgetToMove->box.pos.y = cat->catY;
-
-	
-	if(cat->goingDown){
-		cat->catY+=2;
-		if(cat->catY > 250){
-			cat->goingDown = false;
-		}
-	} else {
-		cat->catY-=2;
-		if(cat->catY < 15){
-			cat->goingDown = true;
-		}
-	}
-
-	for(int i=0; i<10; i++){
-		if(hairballs[i]->box.pos.y > box.size.y*1.5 && !bool(cat->params[Cat::BOWL_PARAM].value)){
-			hairballs[i]->box.pos.y = widgetToMove->box.pos.y;
-		} else {
-			hairballs[i]->box.pos.y += randomUniform()*10;
-		}
-	}
-};
-
-CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
-	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
-
-	LightPanel *panel = new LightPanel();
-	panel->box.size = box.size;
-	addChild(panel);
-
-	widgetToMove = Widget::create<CatScrew>(Vec(5, 250));
-	addChild(widgetToMove);
-	addChild(Widget::create<Screw_J>(Vec(16, 1)));
-	addChild(Widget::create<Screw_J>(Vec(16, 365)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 1)));
-	addChild(Widget::create<Screw_W>(Vec(box.size.x-29, 365)));
-
-	addParam(ParamWidget::create<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
-
-	for(int i=0; i<10; i++){
-		hairballs[i] = Widget::create<HairballScrew>(Vec(randomUniform()*7, widgetToMove->box.pos.y));
-		addChild(hairballs[i]);
-	}
-}
-
 struct InvertMenuItem : MenuItem {
 	Cat *cat;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		cat->invert = !cat->invert;
 	}
 	void step() override {
@@ -108,7 +51,7 @@ struct InvertMenuItem : MenuItem {
 
 struct Neg5MenuItem : MenuItem {
 	Cat *cat;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		cat->neg5ToPos5 = !cat->neg5ToPos5;
 	}
 	void step() override {
@@ -116,8 +59,15 @@ struct Neg5MenuItem : MenuItem {
 	}
 };
 
-Menu *CatWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
+struct CatWidget : ModuleWidget {
+	CatWidget(Cat *module);
+	Widget* widgetToMove;
+	Widget* hairballs[10];
+	void step() override;
+	void appendContextMenu(Menu *menu) override;
+};
+
+void CatWidget::appendContextMenu(Menu *menu) {
 	Cat *cat = dynamic_cast<Cat*>(module);
 
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -132,8 +82,59 @@ Menu *CatWidget::createContextMenu() {
 	neg5MenuItem->text = "-5 to +5";
 	neg5MenuItem->cat = cat;
 	menu->addChild(neg5MenuItem);
+};
 
-	return menu;
+void CatWidget::step() {
+	if(module != NULL){
+		ModuleWidget::step();
+		Cat *cat = dynamic_cast<Cat*>(module);
+		widgetToMove->box.pos.y = cat->catY;
+
+		
+		if(cat->goingDown){
+			cat->catY+=2;
+			if(cat->catY > 250){
+				cat->goingDown = false;
+			}
+		} else {
+			cat->catY-=2;
+			if(cat->catY < 15){
+				cat->goingDown = true;
+			}
+		}
+
+		for(int i=0; i<10; i++){
+			if(hairballs[i]->box.pos.y > box.size.y*1.5 && !bool(cat->params[Cat::BOWL_PARAM].value)){
+				hairballs[i]->box.pos.y = widgetToMove->box.pos.y;
+			} else {
+				hairballs[i]->box.pos.y += randomUniform()*10;
+			}
+		}
+	}
+};
+
+CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
+	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
+
+	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230));
+	panel->box.size = box.size;
+	addChild(panel);
+
+	widgetToMove = createWidget<CatScrew>(Vec(5, 250));
+	addChild(widgetToMove);
+	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 365)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
+
+	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
+
+	if(module != NULL){
+		for(int i=0; i<10; i++){
+			hairballs[i] = createWidget<HairballScrew>(Vec(randomUniform()*7, widgetToMove->box.pos.y));
+			addChild(hairballs[i]);
+		}
+	}
 }
 
-Model *modelCat = Model::create<Cat, CatWidget>("JW-Modules", "0Cat", "0Cat", VISUAL_TAG);
+Model *modelCat = createModel<Cat, CatWidget>("0Cat");

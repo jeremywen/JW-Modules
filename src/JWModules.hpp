@@ -1,9 +1,35 @@
 #pragma once
-#include "rack.hpp"
+#include "rack0.hpp"
 #include "QuantizeUtils.cpp"
 
 using namespace rack;
-extern Plugin *plugin;
+extern Plugin *pluginInstance;
+
+////////////////////////////////////////////// PANELS //////////////////////////////////////////////
+
+struct BGPanel : Widget {
+	Widget *panelBorder;
+	NVGcolor color;
+
+	BGPanel(NVGcolor _color) {
+		panelBorder = new PanelBorder;
+		color = _color;
+		addChild(panelBorder);
+	}
+
+	void step() override {
+		panelBorder->box.size = box.size;
+		Widget::step();
+	}
+
+	void draw(const DrawArgs &args) override {
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
+		nvgFillColor(args.vg, color);
+		nvgFill(args.vg);
+		Widget::draw(args);
+	}
+};
 
 ////////////////////////////////////////////// LABELS //////////////////////////////////////////////
 
@@ -26,9 +52,9 @@ struct CenteredLabel : Widget {
 
 struct SmallWhiteKnob : RoundKnob {
 	SmallWhiteKnob() {
-		setSVG(SVG::load(assetPlugin(plugin, "res/SmallWhiteKnob.svg")));
+		setSVG(SVG::load(assetPlugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
-	CenteredLabel* linkedLabel = nullptr;
+	CenteredLabel* linkedLabel = NULL;
 	
 	void connectLabel(CenteredLabel* label) {
 		linkedLabel = label;
@@ -37,16 +63,17 @@ struct SmallWhiteKnob : RoundKnob {
 		}
 	}
 
-	void onChange(EventChange &e) override {
+	void onChange(const event::Change &e) override {
 		RoundKnob::onChange(e);
 		if (linkedLabel) {
-
 			linkedLabel->text = formatCurrentValue();
 		}
 	}
 
 	virtual std::string formatCurrentValue() {
-		return std::to_string(static_cast<unsigned int>(value));
+		return "";
+	//TODO FIX
+		// return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
 	}
 };
 
@@ -56,7 +83,9 @@ struct NoteKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		return quantizeUtils->noteName(int(value));
+		return "";
+	//TODO FIX
+	// 	return quantizeUtils->noteName(int(paramQuantity->getValue()));
 	}
 };
 
@@ -66,7 +95,9 @@ struct ScaleKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		return quantizeUtils->scaleName(int(value));
+		return "";
+	//TODO FIX
+	// 	return quantizeUtils->scaleName(int(paramQuantity->getValue()));
 	}
 };
 
@@ -78,7 +109,7 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 
 struct JwTinyKnob : RoundKnob {
 	JwTinyKnob() {
-		setSVG(SVG::load(assetPlugin(plugin, "res/TinyWhiteKnob.svg")));
+		setSVG(SVG::load(assetPlugin(pluginInstance, "res/TinyWhiteKnob.svg")));
 	}
 };
 
@@ -88,74 +119,62 @@ struct BPMPartKnob : JwSmallSnapKnob {
 
 ////////////////////////////////////////////// SWITCHES //////////////////////////////////////////////
 
-struct JwHorizontalSwitch : SVGSwitch, ToggleSwitch {
+struct JwHorizontalSwitch : SVGSwitch {
 	JwHorizontalSwitch() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Horizontal_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Horizontal_1.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Horizontal_0.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Horizontal_1.svg")));
 	}
 };
 
-struct JwVerticalSwitch : SVGSwitch, ToggleSwitch {
+struct JwVerticalSwitch : SVGSwitch {
 	JwVerticalSwitch() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Vertical_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/Switch_Vertical_1.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Vertical_0.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Vertical_1.svg")));
 	}
 };
 
-struct BowlSwitch : SVGSwitch, ToggleSwitch {
+struct BowlSwitch : SVGSwitch {
 	BowlSwitch() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/Bowl-no-food.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/Bowl-food.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Bowl-no-food.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Bowl-food.svg")));
 	}
 };
 
 ////////////////////////////////////////////// PORTS //////////////////////////////////////////////
 
-struct TinyPJ301MPort : SVGPort {
+struct TinyPJ301MPort : SvgPort {
 	TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M.svg")));
 	}
 };
 
-struct Orange_TinyPJ301MPort : SVGPort {
+struct Orange_TinyPJ301MPort : SvgPort {
 	Orange_TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_orange.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_orange.svg")));
 	}
 };
 
-struct Yellow_TinyPJ301MPort : SVGPort {
+struct Yellow_TinyPJ301MPort : SvgPort {
 	Yellow_TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_yellow.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_yellow.svg")));
 	}
 };
 
-struct Purple_TinyPJ301MPort : SVGPort {
+struct Purple_TinyPJ301MPort : SvgPort {
 	Purple_TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_purple.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_purple.svg")));
 	}
 };
 
-struct Blue_TinyPJ301MPort : SVGPort {
+struct Blue_TinyPJ301MPort : SvgPort {
 	Blue_TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_blue.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_blue.svg")));
 	}
 };
 
-struct White_TinyPJ301MPort : SVGPort {
+struct White_TinyPJ301MPort : SvgPort {
 	White_TinyPJ301MPort() {
-		background->svg = SVG::load(assetPlugin(plugin, "res/TinyPJ301M_white.svg"));
-		background->wrap();
-		box.size = background->box.size;
+		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_white.svg")));
 	}
 };
 
@@ -184,59 +203,59 @@ struct MyRedValueLight : ModuleLightWidget {
 
 ////////////////////////////////////////////// BUTTONS //////////////////////////////////////////////
 
-struct RightMoveButton : SVGSwitch, MomentarySwitch {
+struct RightMoveButton : SVGSwitch {
 	RightMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/RightButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/RightButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RightButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RightButtonDown.svg")));
 	}
 };
 
-struct LeftMoveButton : SVGSwitch, MomentarySwitch {
+struct LeftMoveButton : SVGSwitch {
 	LeftMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/LeftButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/LeftButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/LeftButtonDown.svg")));
 	}
 };
 
-struct DownMoveButton : SVGSwitch, MomentarySwitch {
+struct DownMoveButton : SVGSwitch {
 	DownMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/DownButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/DownButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/DownButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/DownButtonDown.svg")));
 	}
 };
 
-struct UpMoveButton : SVGSwitch, MomentarySwitch {
+struct UpMoveButton : SVGSwitch {
 	UpMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/UpButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/UpButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/UpButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/UpButtonDown.svg")));
 	}
 };
 
-struct RndMoveButton : SVGSwitch, MomentarySwitch {
+struct RndMoveButton : SVGSwitch {
 	RndMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/RndButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/RndButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RndButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RndButtonDown.svg")));
 	}
 };
 
-struct RepMoveButton : SVGSwitch, MomentarySwitch {
+struct RepMoveButton : SVGSwitch {
 	RepMoveButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/RepButton.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/RepButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RepButton.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RepButtonDown.svg")));
 	}
 };
 
-struct TinyButton : SVGSwitch, MomentarySwitch {
+struct TinyButton : SVGSwitch {
 	TinyButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/TinyButtonUp.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/TinyButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/TinyButtonUp.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/TinyButtonDown.svg")));
 	}
 };
 
-struct SmallButton : SVGSwitch, MomentarySwitch {
+struct SmallButton : SVGSwitch {
 	SmallButton() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonUp.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/SmallButtonDown.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/SmallButtonUp.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/SmallButtonDown.svg")));
 	}
 };
 
@@ -244,42 +263,42 @@ struct SmallButton : SVGSwitch, MomentarySwitch {
 
 struct Snowflake : SVGScrew {
 	Snowflake() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/SnowFlake.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/SnowFlake.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct WavHeadLogo : SVGScrew {
 	WavHeadLogo() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/WavHeadSmall.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/WavHeadSmall.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct Screw_J : SVGScrew {
 	Screw_J() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_J.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw_J.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct Screw_W : SVGScrew {
 	Screw_W() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Screw_W.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw_W.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct CatScrew : SVGScrew {
 	CatScrew() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Cat.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Cat.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct HairballScrew : SVGScrew {
 	HairballScrew() {
-		sw->setSVG(SVG::load(assetPlugin(plugin, "res/Hairball.svg")));
+		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Hairball.svg")));
 		box.size = sw->box.size;
 	}
 };

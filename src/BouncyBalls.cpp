@@ -1,6 +1,5 @@
 #include <string.h>
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 enum InputColor {
 	ORANGE_INPUT_COLOR,
@@ -103,7 +102,7 @@ struct BouncyBalls : Module {
 	}
 
 	void step() override;
-	void reset() override {
+	void onReset() override {
 		resetBalls();
 		paddle.locked = true;
 		paddle.visible = true;
@@ -114,7 +113,7 @@ struct BouncyBalls : Module {
 		rate = 1.0 / engineGetSampleRate();
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "paddleX", json_real(paddle.box.pos.x));
 		json_object_set_new(rootJ, "paddleY", json_real(paddle.box.pos.y));
@@ -122,7 +121,7 @@ struct BouncyBalls : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *xPosJ = json_object_get(rootJ, "paddleX");
 		json_t *yPosJ = json_object_get(rootJ, "paddleY");
 		paddle.box.pos.x = json_real_value(xPosJ);
@@ -237,22 +236,23 @@ struct BouncyBallDisplay : Widget {
 	BouncyBalls *module;
 	BouncyBallDisplay(){}
 
-	void onMouseMove(EventMouseMove &e) override {
-		Widget::onMouseMove(e);
-		BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
-		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
-			m->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
-		}
-		if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
-			m->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
-		}
-	}
+	//TODO FIX
+	// void onMouseMove(EventMouseMove &e) override {
+	// 	Widget::onMouseMove(e);
+	// 	BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
+	// 	if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
+	// 		m->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
+	// 	}
+	// 	if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
+	// 		m->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
+	// 	}
+	// }
 
-	void onMouseDown(EventMouseDown &e) override {
-		Widget::onMouseDown(e);
-		BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
-		m->paddle.locked = !m->paddle.locked;
-	}
+	// void onMouseDown(EventMouseDown &e) override {
+	// 	Widget::onMouseDown(e);
+	// 	BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
+	// 	m->paddle.locked = !m->paddle.locked;
+	// }
 
 	void draw(NVGcontext *vg) override {
 		//background
@@ -260,24 +260,28 @@ struct BouncyBallDisplay : Widget {
 		nvgBeginPath(vg);
 		nvgRect(vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(vg);
-			
-		if(module->paddle.visible){
+		
+		if(module != NULL){
 			//paddle
-			nvgFillColor(vg, nvgRGB(255, 255, 255));
-			nvgBeginPath(vg);
-			nvgRect(vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
-			nvgFill(vg);
-		}
-
-		for(int i=0; i<4; i++){
-			nvgFillColor(vg, module->balls[i].color);
-			nvgStrokeColor(vg, module->balls[i].color);
-			nvgStrokeWidth(vg, 2);
-			nvgBeginPath(vg);
-			Vec ctr = module->balls[i].box.getCenter();
-			nvgCircle(vg, ctr.x, ctr.y, module->ballRadius);
-			nvgFill(vg);
-			nvgStroke(vg);
+			if(module->paddle.visible){
+				nvgFillColor(vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(vg);
+				nvgRect(vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
+				nvgFill(vg);
+			}
+			//balls
+			for(int i=0; i<4; i++){
+				nvgFillColor(vg, module->balls[i].color);
+				nvgStrokeColor(vg, module->balls[i].color);
+				nvgStrokeWidth(vg, 2);
+				nvgBeginPath(vg);
+				Vec ctr = module->balls[i].box.getCenter();
+				nvgCircle(vg, ctr.x, ctr.y, module->ballRadius);
+				nvgFill(vg);
+				nvgStroke(vg);
+			}
+		} else {
+			//TODO maybe draw some balls and a paddle in preview
 		}
 	}
 };
@@ -289,13 +293,14 @@ struct BouncyBallsWidget : ModuleWidget {
 };
 
 struct PaddleVisibleButton : TinyButton {
-	void onMouseDown(EventMouseDown &e) override {
-		TinyButton::onMouseDown(e);
-		BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
-		BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
-		bbs->paddle.visible = !bbs->paddle.visible;
-		bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
-	}
+	//TODO FIX
+	// void onMouseDown(EventMouseDown &e) override {
+	// 	TinyButton::onMouseDown(e);
+	// 	BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
+	// 	BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
+	// 	bbs->paddle.visible = !bbs->paddle.visible;
+	// 	bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
+	// }
 };
 
 BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module) {
@@ -303,7 +308,7 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/BouncyBalls.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BouncyBalls.svg")));
 	addChild(panel);
 
 	BouncyBallDisplay *display = new BouncyBallDisplay();
@@ -311,12 +316,17 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 	display->box.pos = Vec(270, 2);
 	display->box.size = Vec(box.size.x - display->box.pos.x - 2, RACK_GRID_HEIGHT - 4);
 	addChild(display);
-	module->displayWidth = display->box.size.x;
-	module->displayHeight = display->box.size.y;
-	module->resetBalls();
 
-	addChild(Widget::create<Screw_J>(Vec(31, 365)));
-	addChild(Widget::create<Screw_W>(Vec(46, 365)));
+	if(module != NULL){
+		module->displayWidth = display->box.size.x;
+		module->displayHeight = display->box.size.y;
+		module->resetBalls();
+	}
+
+	addChild(createWidget<Screw_J>(Vec(31, 365)));
+	addChild(createWidget<Screw_W>(Vec(46, 365)));
+
+	//TODO add labels to all params
 
 	/////////////////////// INPUTS ///////////////////////
 	float topY = 13.0, leftX = 40.0, xMult = 55.0, yAdder = 34.0, knobDist = 17.0;
@@ -332,17 +342,17 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_X_INPUT + x, true);
-		addParam(ParamWidget::create<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_X_PARAM + x, -3.0, 3.0, 0.25));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_X_PARAM + x, -3.0, 3.0, 0.25));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_Y_INPUT + x, true);
-		addParam(ParamWidget::create<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_Y_PARAM + x, -3.0, 3.0, 0.5));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_Y_PARAM + x, -3.0, 3.0, 0.5));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::SPEED_MULT_INPUT + x, true);
-		addParam(ParamWidget::create<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0));
 	}
 	
 	/////////////////////// OUTPUTS ///////////////////////
@@ -386,43 +396,43 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 220), BouncyBalls::PAD_POS_X_INPUT, true);
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 245), BouncyBalls::PAD_POS_Y_INPUT, true);
 
-	addParam(ParamWidget::create<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM, 0.0, 1.0, 0.0));
-	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(38+3.75, 270+3.75), module, BouncyBalls::PAD_ON_LIGHT));
+	addParam(createParam<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(38+3.75, 270+3.75), module, BouncyBalls::PAD_ON_LIGHT));
 
 	//scale and offset
-	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(222, 200), module, BouncyBalls::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(222, 242), module, BouncyBalls::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(222, 290), module, BouncyBalls::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(ParamWidget::create<SmallWhiteKnob>(Vec(222, 338), module, BouncyBalls::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBalls::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 242), module, BouncyBalls::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 290), module, BouncyBalls::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 338), module, BouncyBalls::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 }
 
 void BouncyBallsWidget::addButton(Vec pos, int param) {
-	addParam(ParamWidget::create<SmallButton>(pos, module, param, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallButton>(pos, module, param, 0.0, 1.0, 0.0));
 }
 
 void BouncyBallsWidget::addColoredPort(int color, Vec pos, int param, bool input) {
 	switch(color){
 		case ORANGE_INPUT_COLOR:
-			if(input) { addInput(Port::create<Orange_TinyPJ301MPort>(pos, Port::INPUT, module, param)); } 
-			else { addOutput(Port::create<Orange_TinyPJ301MPort>(pos, Port::OUTPUT, module, param));	}
+			if(input) { addInput(createPort<Orange_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
+			else { addOutput(createPort<Orange_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
 			break;
 		case YELLOW_INPUT_COLOR:
-			if(input) { addInput(Port::create<Yellow_TinyPJ301MPort>(pos, Port::INPUT, module, param)); } 
-			else { addOutput(Port::create<Yellow_TinyPJ301MPort>(pos, Port::OUTPUT, module, param));	}
+			if(input) { addInput(createPort<Yellow_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
+			else { addOutput(createPort<Yellow_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
 			break;
 		case PURPLE_INPUT_COLOR:
-			if(input) { addInput(Port::create<Purple_TinyPJ301MPort>(pos, Port::INPUT, module, param)); } 
-			else { addOutput(Port::create<Purple_TinyPJ301MPort>(pos, Port::OUTPUT, module, param));	}
+			if(input) { addInput(createPort<Purple_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
+			else { addOutput(createPort<Purple_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
 			break;
 		case BLUE_INPUT_COLOR:
-			if(input) { addInput(Port::create<Blue_TinyPJ301MPort>(pos, Port::INPUT, module, param)); } 
-			else { addOutput(Port::create<Blue_TinyPJ301MPort>(pos, Port::OUTPUT, module, param));	}
+			if(input) { addInput(createPort<Blue_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
+			else { addOutput(createPort<Blue_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
 			break;
 		case WHITE_INPUT_COLOR:
-			if(input) { addInput(Port::create<White_TinyPJ301MPort>(pos, Port::INPUT, module, param)); } 
-			else { addOutput(Port::create<White_TinyPJ301MPort>(pos, Port::OUTPUT, module, param));	}
+			if(input) { addInput(createPort<White_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
+			else { addOutput(createPort<White_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
 			break;
 	}
 }
 
-Model *modelBouncyBalls = Model::create<BouncyBalls, BouncyBallsWidget>("JW-Modules", "BouncyBalls", "Bouncy Balls",  SEQUENCER_TAG, VISUAL_TAG);
+Model *modelBouncyBalls = createModel<BouncyBalls, BouncyBallsWidget>("BouncyBalls");

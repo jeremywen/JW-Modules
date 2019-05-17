@@ -1,6 +1,5 @@
 #include <string.h>
 #include "JWModules.hpp"
-#include "dsp/digital.hpp"
 
 struct XYPad : Module {
 	enum ParamIds {
@@ -85,13 +84,13 @@ struct XYPad : Module {
 	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 
-	void reset() override {
+	void onReset() override {
 	    setState(STATE_IDLE);
 	    points.clear();
 	    defaultPos();
 	}
 
-	void randomize() override {
+	void onRandomize() override {
 		randomizeShape();
 	}
 
@@ -228,7 +227,7 @@ struct XYPad : Module {
 		setState(stateBefore);
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lastRandomShape", json_integer(lastRandomShape));
 		json_object_set_new(rootJ, "curPlayMode", json_integer(curPlayMode));
@@ -247,7 +246,7 @@ struct XYPad : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		lastRandomShape = json_integer_value(json_object_get(rootJ, "lastRandomShape"));
 		curPlayMode = json_integer_value(json_object_get(rootJ, "curPlayMode"));
 
@@ -454,54 +453,52 @@ struct XYPadDisplay : Widget {
 	float dragX = 0;
 	float dragY = 0;
 
-	void onMouseDown(EventMouseDown &e) override { 
-		if (e.button == 0) {
-			e.consumed = true;
-			e.target = this;
-
-			initX = e.pos.x;
-			initY = e.pos.y;
-			module->setMouseDown(e.pos, true);
+	void onButton(const event::Button &e) override {
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			if(e.action == GLFW_PRESS){
+				e.consume(this);
+				// e.target = this;
+				initX = e.pos.x;
+				initY = e.pos.y;
+				module->setMouseDown(e.pos, true);
+			} else {
+				module->setMouseDown(e.pos, false);
+			}		
 		}
 	}
-	
-	void onMouseMove(EventMouseMove &e) override {
+
+	void onDragStart(const event::DragStart &e) override {
+		dragX = APP->scene->rack->mousePos.x;
+		dragY = APP->scene->rack->mousePos.x;
 	}
 
-	void onMouseUp(EventMouseUp &e) override { 
-		if(e.button==0)module->setMouseDown(e.pos, false);
-	}
-
-	void onDragStart(EventDragStart &e) override {
-		dragX = gRackWidget->lastMousePos.x;
-		dragY = gRackWidget->lastMousePos.y;
-	}
-
-	void onDragEnd(EventDragEnd &e) override { 
+	void onDragEnd(const event::DragEnd &e) override { 
 		module->setMouseDown(Vec(0,0), false); 
-		gDraggedWidget = NULL;
+		// gDraggedWidget = NULL;
 	}
 
-	void onDragMove(EventDragMove &e) override {
+	void onDragMove(const event::DragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
-			float newDragX = gRackWidget->lastMousePos.x;
-			float newDragY = gRackWidget->lastMousePos.y;
+			float newDragX = APP->scene->rack->mousePos.x;
+			float newDragY = APP->scene->rack->mousePos.x;
 			module->setCurrentPos(initX+(newDragX-dragX), initY+(newDragY-dragY));
 		}
 	}
 
 	void draw(NVGcontext *vg) override {
-		float ballX = module->params[XYPad::X_POS_PARAM].value;
-		float ballY = module->params[XYPad::Y_POS_PARAM].value;
-		float invBallX = module->displayWidth-ballX;
-		float invBallY = module->displayHeight-ballY;
-
 		//background
 		nvgFillColor(vg, nvgRGB(20, 30, 33));
 		nvgBeginPath(vg);
 		nvgRect(vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(vg);
+
+		if(module == NULL) return;
 			
+		float ballX = module->params[XYPad::X_POS_PARAM].value;
+		float ballY = module->params[XYPad::Y_POS_PARAM].value;
+		float invBallX = module->displayWidth-ballX;
+		float invBallY = module->displayHeight-ballY;
+
 		//INVERTED///////////////////////////////////
 		NVGcolor invertedColor = nvgRGB(20, 50, 53);
 		NVGcolor ballColor = nvgRGB(25, 150, 252);
@@ -577,24 +574,32 @@ struct XYPadDisplay : Widget {
 
 struct XYPadWidget : ModuleWidget {
 	XYPadWidget(XYPad *module);
-	Menu *createContextMenu() override;
+	void appendContextMenu(Menu *menu) override;
 };
 
 struct RandomShapeButton : TinyButton {
-	void onMouseDown(EventMouseDown &e) override {
-		TinyButton::onMouseDown(e);
-		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
-		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
-		xyPad->randomizeShape();
+	void onButton(const event::Button &e) override {
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			if(e.action == GLFW_PRESS){
+				TinyButton::onButton(e);
+				XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
+				XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
+				xyPad->randomizeShape();
+			}
+		}
 	}
 };
 
 struct RandomVariationButton : TinyButton {
-	void onMouseDown(EventMouseDown &e) override {
-		TinyButton::onMouseDown(e);
-		XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
-		XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
-		xyPad->makeShape(xyPad->lastRandomShape);
+	void onButton(const event::Button &e) override {
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			if(e.action == GLFW_PRESS){
+				TinyButton::onButton(e);
+				XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
+				XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
+				xyPad->makeShape(xyPad->lastRandomShape);
+			}
+		}
 	}
 };
 
@@ -603,7 +608,7 @@ XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(plugin, "res/XYPad.svg")));
+	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/XYPad.svg")));
 	addChild(panel);
 
 	XYPadDisplay *display = new XYPadDisplay();
@@ -612,39 +617,43 @@ XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
 	display->box.size = Vec(box.size.x - 4, RACK_GRID_HEIGHT - 80);
 	addChild(display);
 
-	module->displayWidth = display->box.size.x;
-	module->displayHeight = display->box.size.y;
-	module->updateMinMax();
-	module->defaultPos();
+	if(module != NULL){
+		module->displayWidth = display->box.size.x;
+		module->displayHeight = display->box.size.y;
+		module->updateMinMax();
+		module->defaultPos();
+	}
 
-	addChild(Widget::create<Screw_J>(Vec(40, 20)));
-	addChild(Widget::create<Screw_W>(Vec(55, 20)));
-	addParam(ParamWidget::create<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	//TODO add labels to all params
+
+	addChild(createWidget<Screw_J>(Vec(40, 20)));
+	addChild(createWidget<Screw_W>(Vec(55, 20)));
+	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
+	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
 
 	////////////////////////////////////////////////////////////
 
-	addInput(Port::create<TinyPJ301MPort>(Vec(25, 360), Port::INPUT, module, XYPad::PLAY_GATE_INPUT));
-	addParam(ParamWidget::create<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
-	addChild(ModuleLightWidget::create<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
-	addInput(Port::create<TinyPJ301MPort>(Vec(110, 360), Port::INPUT, module, XYPad::PLAY_SPEED_INPUT));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
-	addParam(ParamWidget::create<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
-	addOutput(Port::create<TinyPJ301MPort>(Vec(195, 360), Port::OUTPUT, module, XYPad::X_OUTPUT));
-	addOutput(Port::create<TinyPJ301MPort>(Vec(220, 360), Port::OUTPUT, module, XYPad::Y_OUTPUT));
-	addOutput(Port::create<TinyPJ301MPort>(Vec(255, 360), Port::OUTPUT, module, XYPad::X_INV_OUTPUT));
-	addOutput(Port::create<TinyPJ301MPort>(Vec(280, 360), Port::OUTPUT, module, XYPad::Y_INV_OUTPUT));
-	addOutput(Port::create<TinyPJ301MPort>(Vec(320, 360), Port::OUTPUT, module, XYPad::GATE_OUTPUT));
+	addInput(createPort<TinyPJ301MPort>(Vec(25, 360), PortWidget::INPUT, module, XYPad::PLAY_GATE_INPUT));
+	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
+	addInput(createPort<TinyPJ301MPort>(Vec(110, 360), PortWidget::INPUT, module, XYPad::PLAY_SPEED_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
+	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
+	addOutput(createPort<TinyPJ301MPort>(Vec(195, 360), PortWidget::OUTPUT, module, XYPad::X_OUTPUT));
+	addOutput(createPort<TinyPJ301MPort>(Vec(220, 360), PortWidget::OUTPUT, module, XYPad::Y_OUTPUT));
+	addOutput(createPort<TinyPJ301MPort>(Vec(255, 360), PortWidget::OUTPUT, module, XYPad::X_INV_OUTPUT));
+	addOutput(createPort<TinyPJ301MPort>(Vec(280, 360), PortWidget::OUTPUT, module, XYPad::Y_INV_OUTPUT));
+	addOutput(createPort<TinyPJ301MPort>(Vec(320, 360), PortWidget::OUTPUT, module, XYPad::GATE_OUTPUT));
 }
 
 struct PlayModeItem : MenuItem {
 	XYPad *xyPad;
 	int mode;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		xyPad->curPlayMode = mode;
 		xyPad->setState(XYPad::STATE_AUTO_PLAYING);
 	}
@@ -656,14 +665,12 @@ struct PlayModeItem : MenuItem {
 struct ShapeMenuItem : MenuItem {
 	XYPad *xyPad;
 	int shape = -1;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		xyPad->makeShape(shape);
 	}
 };
 
-Menu *XYPadWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
+void XYPadWidget::appendContextMenu(Menu *menu) {
 	{	
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
@@ -713,7 +720,6 @@ Menu *XYPadWidget::createContextMenu() {
 		item->mode = XYPad::BWD_FWD_LOOP;
 		menu->addChild(item);
 	}
-	return menu;
 }
 
-Model *modelXYPad = Model::create<XYPad, XYPadWidget>("JW-Modules", "XYPad", "XY Pad", LFO_TAG, ENVELOPE_GENERATOR_TAG, RANDOM_TAG, OSCILLATOR_TAG, SAMPLE_AND_HOLD_TAG);
+Model *modelXYPad = createModel<XYPad, XYPadWidget>("XYPad");
