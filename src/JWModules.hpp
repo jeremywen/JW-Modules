@@ -71,9 +71,9 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 
 	virtual std::string formatCurrentValue() {
-		return "";
+		// return "";
 	//TODO FIX
-		// return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
+		return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
 	}
 };
 

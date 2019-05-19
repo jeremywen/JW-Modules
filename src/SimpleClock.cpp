@@ -103,9 +103,11 @@ void SimpleClock::step() {
 struct BPMKnob : SmallWhiteKnob {
 	BPMKnob(){}
 	std::string formatCurrentValue() {
-		return "";
+		// return "";
 		//TODO FIX
-		// return std::to_string(static_cast<unsigned int>(powf(2.0, paramQuantity->getValue())*60.0)) + " BPM";
+		if(paramQuantity != NULL){
+			return std::to_string(static_cast<unsigned int>(powf(2.0, paramQuantity->getValue())*60.0)) + " BPM";
+		}
 	}
 };
 
