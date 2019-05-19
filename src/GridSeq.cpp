@@ -345,7 +345,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(41, 178);
 	noteLabel->text = "note here";
-	noteKnob->connectLabel(noteLabel);
+	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
@@ -353,7 +353,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(61, 178);
 	scaleLabel->text = "scale here";
-	scaleKnob->connectLabel(scaleLabel);
+	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 

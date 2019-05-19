@@ -51,29 +51,32 @@ struct CenteredLabel : Widget {
 ////////////////////////////////////////////// KNOBS //////////////////////////////////////////////
 
 struct SmallWhiteKnob : RoundKnob {
+	CenteredLabel* linkedLabel = NULL;
+	Module* linkedModule = NULL;
+
 	SmallWhiteKnob() {
 		setSVG(SVG::load(assetPlugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
-	CenteredLabel* linkedLabel = NULL;
 	
-	void connectLabel(CenteredLabel* label) {
+	void connectLabel(CenteredLabel* label, Module* module) {
 		linkedLabel = label;
-		if (linkedLabel) {
+		linkedModule = module;
+		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
 	}
 
 	void onChange(const event::Change &e) override {
 		RoundKnob::onChange(e);
-		if (linkedLabel) {
+		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
 	}
 
 	virtual std::string formatCurrentValue() {
-		// return "";
-	//TODO FIX
-		return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
+		if(paramQuantity != NULL){
+			return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
+		}
 	}
 };
 

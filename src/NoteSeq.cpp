@@ -749,7 +749,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(69.5, 35);
 	playModeLabel->text = "";
-	playModeKnob->connectLabel(playModeLabel);
+	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
@@ -763,7 +763,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
 	rndModeLabel->box.pos = Vec(67, 61);
 	rndModeLabel->text = "";
-	rndModeKnob->connectLabel(rndModeLabel);
+	rndModeKnob->connectLabel(rndModeLabel, module);
 	addChild(rndModeLabel);
 	addParam(rndModeKnob);
 
@@ -829,7 +829,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(319, labelY);
 	noteLabel->text = "";
-	noteKnob->connectLabel(noteLabel);
+	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
@@ -837,7 +837,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(345, labelY);
 	scaleLabel->text = "";
-	scaleKnob->connectLabel(scaleLabel);
+	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 }

@@ -101,7 +101,7 @@ void SimpleClock::step() {
 }
 
 struct BPMKnob : SmallWhiteKnob {
-	BPMKnob(){}
+	// BPMKnob(){}
 	std::string formatCurrentValue() {
 		// return "";
 		//TODO FIX
@@ -143,8 +143,10 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 1.0));
 	CenteredLabel* const bpmLabel = new CenteredLabel;
 	bpmLabel->box.pos = Vec(15, 50);
-	bpmLabel->text = "0";
-	clockKnob->connectLabel(bpmLabel);
+	bpmLabel->text = "120 BPM";
+	if(module){
+		clockKnob->connectLabel(bpmLabel, module);
+	}
 	addChild(bpmLabel);
 	addParam(clockKnob);
 

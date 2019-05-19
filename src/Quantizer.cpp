@@ -70,7 +70,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 35);
 	noteLabel->text = "note here";
-	noteKnob->connectLabel(noteLabel);
+	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 	addInput(createPort<TinyPJ301MPort>(Vec(23, 110), PortWidget::INPUT, module, Quantizer::NOTE_INPUT));
@@ -79,7 +79,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 90);
 	scaleLabel->text = "scale here";
-	scaleKnob->connectLabel(scaleLabel);
+	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
 	addInput(createPort<TinyPJ301MPort>(Vec(23, 220), PortWidget::INPUT, module, Quantizer::SCALE_INPUT));
