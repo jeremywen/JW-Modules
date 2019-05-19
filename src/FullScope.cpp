@@ -303,7 +303,6 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
-	//last knob isn't turning?????
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
 
 	addChild(createWidget<Screw_J>(Vec(compX+2, compY+=adder)));
