@@ -580,7 +580,7 @@ struct NoteSeqDisplay : Widget {
 	NoteSeqDisplay(){}
 
 	void onButton(const event::Button &e) override {
-		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
 			// e.target = this;
 			initX = e.pos.x;
@@ -677,17 +677,13 @@ struct PlayModeKnob : JwSmallSnapKnob {
 	PlayModeKnob(){}
 	std::string formatCurrentValue() override {
 		if(paramQuantity != NULL){
-			// printf("test");
-			// printf("paramQuantity->getValue()=%f", paramQuantity->getValue());
-			// printf("paramQuantity->getValue()=%i", int(paramQuantity->getValue()));
-			//TODO FIX
-			// switch(int(paramQuantity->getValue())){
-			// 	case NoteSeq::PM_FWD_LOOP:return "→";
-			// 	case NoteSeq::PM_BWD_LOOP:return "←";
-			// 	case NoteSeq::PM_FWD_BWD_LOOP:return "→←";
-			// 	case NoteSeq::PM_BWD_FWD_LOOP:return "←→";
-			// 	case NoteSeq::PM_RANDOM_POS:return "*";
-			// }
+			switch(int(paramQuantity->getValue())){
+				case NoteSeq::PM_FWD_LOOP:return "→";
+				case NoteSeq::PM_BWD_LOOP:return "←";
+				case NoteSeq::PM_FWD_BWD_LOOP:return "→←";
+				case NoteSeq::PM_BWD_FWD_LOOP:return "←→";
+				case NoteSeq::PM_RANDOM_POS:return "*";
+			}
 		}
 		return "";
 	}
@@ -697,13 +693,12 @@ struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
 		if(paramQuantity != NULL){
-			//TODO FIX
-			// switch(int(paramQuantity->getValue())){
-			// 	case NoteSeq::RND_BASIC:return "Basic";
-			// 	case NoteSeq::RND_EUCLID:return "Euclid";
-			// 	case NoteSeq::RND_SIN_WAVE:return "Sine";
-			// 	case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
-			// }
+			switch(int(paramQuantity->getValue())){
+				case NoteSeq::RND_BASIC:return "Basic";
+				case NoteSeq::RND_EUCLID:return "Euclid";
+				case NoteSeq::RND_SIN_WAVE:return "Sine";
+				case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
+			}
 		}
 		return "";
 	}
@@ -788,8 +783,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addInput(createPort<TinyPJ301MPort>(Vec(118, 304), PortWidget::INPUT, module, NoteSeq::FLIP_VERT_INPUT));
 	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0));
 
-//TODO FIX
-	// addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
@@ -817,8 +811,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addInput(createPort<TinyPJ301MPort>(Vec(643, 195), PortWidget::INPUT, module, NoteSeq::LOWEST_NOTE_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq::LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0));
 
-	//TODO FIX
-	// addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0));
 
 	///// NOTE AND SCALE CONTROLS /////

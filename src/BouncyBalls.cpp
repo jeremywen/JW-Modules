@@ -236,23 +236,26 @@ struct BouncyBallDisplay : Widget {
 	BouncyBalls *module;
 	BouncyBallDisplay(){}
 
-	//TODO FIX
-	// void onMouseMove(EventMouseMove &e) override {
-	// 	Widget::onMouseMove(e);
-	// 	BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
-	// 	if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
-	// 		m->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
-	// 	}
-	// 	if(!m->paddle.locked && !m->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
-	// 		m->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
-	// 	}
-	// }
+	void onHover(const event::Hover &e) override {
+		Widget::onHover(e);
+		if(module){
+			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
+				module->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
+			}
+			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
+				module->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
+			}
+		}
+	}
 
-	// void onMouseDown(EventMouseDown &e) override {
-	// 	Widget::onMouseDown(e);
-	// 	BouncyBalls* m = dynamic_cast<BouncyBalls*>(module);
-	// 	m->paddle.locked = !m->paddle.locked;
-	// }
+	void onButton(const event::Button &e) override {
+		Widget::onButton(e);
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			if(module){
+				module->paddle.locked = !module->paddle.locked;
+			}
+		}
+	}
 
 	void draw(NVGcontext *vg) override {
 		//background
@@ -293,14 +296,17 @@ struct BouncyBallsWidget : ModuleWidget {
 };
 
 struct PaddleVisibleButton : TinyButton {
-	//TODO FIX
-	// void onMouseDown(EventMouseDown &e) override {
-	// 	TinyButton::onMouseDown(e);
-	// 	BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
-	// 	BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
-	// 	bbs->paddle.visible = !bbs->paddle.visible;
-	// 	bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
-	// }
+	void onButton(const event::Button &e) override {
+		TinyButton::onButton(e);
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
+			if(widg->module){
+				BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
+				bbs->paddle.visible = !bbs->paddle.visible;
+				bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
+			}
+		}
+	}
 };
 
 BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module) {

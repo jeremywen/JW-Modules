@@ -279,9 +279,9 @@ struct RandomizeNotesOnlyButton : SmallButton {
 		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 		for (int i = 0; i < 16; i++) {
-			if(e.button == 0){
+			if(e.action == GLFW_PRESS && e.button == 0){
 				gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
-			} else if(e.button == 1){
+			} else if(e.action == GLFW_PRESS && e.button == 1){
 				//right click this to update the knobs (if randomized by cv in)
 				gsw->seqKnobs[i]->paramQuantity->setValue(gs->params[GridSeq::CELL_NOTE_PARAM + i].value);
 			}
@@ -292,9 +292,11 @@ struct RandomizeNotesOnlyButton : SmallButton {
 struct RandomizeGatesOnlyButton : SmallButton {
 	void onButton(const event::Button &e) override {
 		SmallButton::onButton(e);
-		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
-		for (int i = 0; i < 16; i++) {
-			gsw->gateButtons[i]->paramQuantity->setValue(randomUniform() > 0.5);
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+			for (int i = 0; i < 16; i++) {
+				gsw->gateButtons[i]->paramQuantity->setValue(randomUniform() > 0.5);
+			}
 		}
 	}
 };
