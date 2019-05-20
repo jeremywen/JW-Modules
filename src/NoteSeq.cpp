@@ -688,8 +688,8 @@ struct PlayModeKnob : JwSmallSnapKnob {
 			// 	case NoteSeq::PM_BWD_FWD_LOOP:return "←→";
 			// 	case NoteSeq::PM_RANDOM_POS:return "*";
 			// }
-			return "";
 		}
+		return "";
 	}
 };
 
@@ -704,8 +704,8 @@ struct RndModeKnob : JwSmallSnapKnob {
 			// 	case NoteSeq::RND_SIN_WAVE:return "Sine";
 			// 	case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
 			// }
-			return "";
 		}
+		return "";
 	}
 };
 
