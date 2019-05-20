@@ -469,7 +469,7 @@ struct XYPadDisplay : Widget {
 
 	void onDragStart(const event::DragStart &e) override {
 		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.x;
+		dragY = APP->scene->rack->mousePos.y;
 	}
 
 	void onDragEnd(const event::DragEnd &e) override { 
@@ -480,7 +480,7 @@ struct XYPadDisplay : Widget {
 	void onDragMove(const event::DragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
 			float newDragX = APP->scene->rack->mousePos.x;
-			float newDragY = APP->scene->rack->mousePos.x;
+			float newDragY = APP->scene->rack->mousePos.y;
 			module->setCurrentPos(initX+(newDragX-dragX), initY+(newDragY-dragY));
 		}
 	}
