@@ -316,8 +316,6 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) : ModuleWidget(module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	//TODO add labels to all params
-
 	///// RUN /////
 	addParam(createParam<TinyButton>(Vec(27, 90), module, GridSeq::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(27+3.75, 90+3.75), module, GridSeq::RUNNING_LIGHT));

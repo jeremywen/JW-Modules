@@ -213,8 +213,6 @@ void BouncyBalls::step() {
 			paddle.box.pos.y = clampfjw(rescalefjw(inputs[PAD_POS_Y_INPUT].value, -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
 		}
 
-		//TODO rotate corners of rectangle
-
 		if(outputs[X_OUTPUT + i].active)outputs[X_OUTPUT + i].value = (rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
 		if(outputs[Y_OUTPUT + i].active)outputs[Y_OUTPUT + i].value = (rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;//y is inverted because gui coords
 		if(outputs[N_OUTPUT + i].active)outputs[N_OUTPUT + i].value = b.northPulse.process(rate) ? 10.0 : 0.0;
@@ -331,8 +329,6 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 
 	addChild(createWidget<Screw_J>(Vec(31, 365)));
 	addChild(createWidget<Screw_W>(Vec(46, 365)));
-
-	//TODO add labels to all params
 
 	/////////////////////// INPUTS ///////////////////////
 	float topY = 13.0, leftX = 40.0, xMult = 55.0, yAdder = 34.0, knobDist = 17.0;

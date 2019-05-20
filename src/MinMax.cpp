@@ -220,8 +220,6 @@ MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	//TODO add labels to all params
-
 	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
 	addInput(createPort<PJ301MPort>(Vec(33, 275), PortWidget::INPUT, module, MinMax::X_INPUT));
 }

@@ -731,8 +731,6 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	//TODO add labels to all params
-
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1

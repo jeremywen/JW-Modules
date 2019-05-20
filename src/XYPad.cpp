@@ -624,8 +624,6 @@ XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
 		module->defaultPos();
 	}
 
-	//TODO add labels to all params
-
 	addChild(createWidget<Screw_J>(Vec(40, 20)));
 	addChild(createWidget<Screw_W>(Vec(55, 20)));
 	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));

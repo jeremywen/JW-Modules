@@ -134,8 +134,6 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 	titleLabel->text = "Clock";
 	addChild(titleLabel);
 
-	//TODO add labels to all params
-
 	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
 	

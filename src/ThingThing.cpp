@@ -142,7 +142,6 @@ ThingThingWidget::ThingThingWidget(ThingThing *module) : ModuleWidget(module) {
 		addInput(createPort<TinyPJ301MPort>(Vec(5+(20*i), 360), PortWidget::INPUT, module, ThingThing::ANG_INPUT+i+1));
 	}
 	
-	//TODO add labels to all params
 	addInput(createPort<TinyPJ301MPort>(Vec(140, 360), PortWidget::INPUT, module, ThingThing::BALL_RAD_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(155, 360), module, ThingThing::BALL_RAD_PARAM, 0.0, 30.0, 10.0));
 

@@ -1,4 +1,4 @@
-#include <string.h>
+// #include <string.h>
 #include "JWModules.hpp"
 #include "JWResizableHandle.hpp"
 
@@ -274,8 +274,8 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	}
 
 //TODO fix resize isn't working
-	leftHandle = new JWModuleResizeHandle(box.size.x);
-	rightHandle = new JWModuleResizeHandle(box.size.x);
+	leftHandle = new JWModuleResizeHandle();
+	rightHandle = new JWModuleResizeHandle();
 	rightHandle->right = true;
 	addChild(leftHandle);
 	addChild(rightHandle);
@@ -296,8 +296,6 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::ROTATION_INPUT));
 	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::TIME_INPUT));
 
-	//TODO add labels to all params
-
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
 	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
@@ -310,11 +308,11 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 }
 
 void FullScopeWidget::step() {
-	// panel->box.size = box.size;
+	panel->box.size = box.size;
 	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
-	rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
-	leftHandle->box.pos.y = box.size.y - leftHandle->box.size.y;
+	// rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
+	// leftHandle->box.pos.y = box.size.y - leftHandle->box.size.y;
 	ModuleWidget::step();
 }
 

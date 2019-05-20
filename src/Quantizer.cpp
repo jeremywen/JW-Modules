@@ -63,8 +63,6 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
 	titleLabel->text = "Quantizer";
 	addChild(titleLabel);
 
-	//TODO add labels to all params
-
 	///// NOTE AND SCALE CONTROLS /////
 	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
 	CenteredLabel* const noteLabel = new CenteredLabel;
