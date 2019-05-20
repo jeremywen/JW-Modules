@@ -101,13 +101,14 @@ void SimpleClock::step() {
 }
 
 struct BPMKnob : SmallWhiteKnob {
-	// BPMKnob(){}
+	BPMKnob(){ paramQuantity = NULL; }
 	std::string formatCurrentValue() {
 		// return "";
 		//TODO FIX
 		if(paramQuantity != NULL){
 			return std::to_string(static_cast<unsigned int>(powf(2.0, paramQuantity->getValue())*60.0)) + " BPM";
 		}
+		return "null";
 	}
 };
 
@@ -116,6 +117,7 @@ struct SimpleClockWidget : ModuleWidget {
 };
 
 SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module) {
+	
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
@@ -124,7 +126,6 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/WavHeadPanel.svg")));
 		addChild(panel);
 	}
-
 	addChild(createWidget<Screw_J>(Vec(16, 1)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));

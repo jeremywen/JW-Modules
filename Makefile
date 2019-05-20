@@ -2,7 +2,7 @@ DISTRIBUTABLES += $(wildcard LICENSE*) res
 RACK_DIR ?= ../..
 
 # FLAGS will be passed to both the C and C++ compiler
-FLAGS +=
+FLAGS += -Wno-deprecated-declarations
 CFLAGS +=
 CXXFLAGS +=
 

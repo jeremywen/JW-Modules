@@ -77,6 +77,7 @@ struct SmallWhiteKnob : RoundKnob {
 		if(paramQuantity != NULL){
 			return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
 		}
+		return "null";
 	}
 };
 

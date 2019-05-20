@@ -690,6 +690,7 @@ struct PlayModeKnob : JwSmallSnapKnob {
 			// }
 			return "";
 		}
+		return "null";
 	}
 };
 
@@ -706,6 +707,7 @@ struct RndModeKnob : JwSmallSnapKnob {
 			// }
 			return "";
 		}
+		return "null";
 	}
 };
 
