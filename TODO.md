@@ -6,7 +6,7 @@
 
 ## Eventually
 
-  * move on to phase 2 of migration - https://vcvrack.com/manual/Migrate1.html#phase-2-updating-your-code-to-the-rack-v1-api      
+  * move on to phase 2 of migration - https://vcvrack.com/manual/Migrate1.html
   * look at github issues - https://github.com/jeremywen/JW-Modules/issues
         
 
