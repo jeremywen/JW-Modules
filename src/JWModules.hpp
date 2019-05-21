@@ -212,6 +212,7 @@ struct MyRedValueLight : ModuleLightWidget {
 struct RightMoveButton : SVGSwitch {
 	RightMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButtonDown.svg")));
 	}
@@ -220,6 +221,7 @@ struct RightMoveButton : SVGSwitch {
 struct LeftMoveButton : SVGSwitch {
 	LeftMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButtonDown.svg")));
 	}
@@ -228,6 +230,7 @@ struct LeftMoveButton : SVGSwitch {
 struct DownMoveButton : SVGSwitch {
 	DownMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButtonDown.svg")));
 	}
@@ -236,6 +239,7 @@ struct DownMoveButton : SVGSwitch {
 struct UpMoveButton : SVGSwitch {
 	UpMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButtonDown.svg")));
 	}
@@ -244,6 +248,7 @@ struct UpMoveButton : SVGSwitch {
 struct RndMoveButton : SVGSwitch {
 	RndMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButtonDown.svg")));
 	}
@@ -252,6 +257,7 @@ struct RndMoveButton : SVGSwitch {
 struct RepMoveButton : SVGSwitch {
 	RepMoveButton() {
 		momentary = true;
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButtonDown.svg")));
 	}
