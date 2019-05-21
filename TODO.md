@@ -1,8 +1,7 @@
 # TODO
 
-  * look for TODO FIX in code
-  * trigger buttons in all modules stay "on"
-  * full scope dragging edges
+  * fix dragging full scope edges
+  * trigger buttons in all modules stay "on" when they should be momentary
 
 ## Eventually
 

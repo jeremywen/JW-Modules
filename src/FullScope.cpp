@@ -254,7 +254,7 @@ struct FullScopeDisplay : TransparentWidget {
 
 struct FullScopeWidget : ModuleWidget {
 	BGPanel *panel;
-	JWModuleResizeHandle *leftHandle;
+	// JWModuleResizeHandle *leftHandle;
 	JWModuleResizeHandle *rightHandle;
 	TransparentWidget *display;
 	FullScopeWidget(FullScope *module);
@@ -273,10 +273,10 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 		addChild(panel);
 	}
 
-//TODO fix resize isn't working
-	leftHandle = new JWModuleResizeHandle();
-	rightHandle = new JWModuleResizeHandle();
+	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
+	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
 	rightHandle->right = true;
+	this->rightHandle = rightHandle;
 	addChild(leftHandle);
 	addChild(rightHandle);
 
