@@ -77,12 +77,24 @@ struct XYPad : Module {
 	int state = STATE_IDLE;
 	int curPlayMode = FWD_LOOP;
 	int lastRandomShape = RND_STEPS;
-	SchmittTrigger autoBtnTrigger;
+	dsp::SchmittTrigger autoBtnTrigger;
 	std::vector<Vec> points;
 	long curPointIdx = 0;
 
-	XYPad() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+	XYPad() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(RND_SHAPES_PARAM, 0.0, 1.0, 0.0);
+		configParam(RND_VARIATION_PARAM, 0.0, 1.0, 0.0);
+		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5);
+		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5);
+		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0);
+		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0);
+		configParam(AUTO_PLAY_PARAM, 0.0, 1.0, 0.0);
+		configParam(PLAY_SPEED_PARAM, 0.0, 10.0, 1.0);
+		configParam(SPEED_MULT_PARAM, 1.0, 100.0, 1.0);
+	}
+
+	void process(const ProcessArgs &args) override;
 
 	void onReset() override {
 	    setState(STATE_IDLE);
@@ -106,7 +118,7 @@ struct XYPad : Module {
 	    switch(shape){
 			case RND_SINE: {
 				    float twoPi = 2.0*M_PI;
-				    float cycles = 1 + int(randomUniform() * 13);
+				    float cycles = 1 + int(random::uniform() * 13);
 				    bool inside = true;
 				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
 				    	float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
@@ -118,7 +130,7 @@ struct XYPad : Module {
 				break;
 			case RND_SQUARE: {
 				    float twoPi = 2.0*M_PI;
-				    float cycles = 1 + int(randomUniform() * 13);
+				    float cycles = 1 + int(random::uniform() * 13);
 				    bool inside = true;
 				    for(float i=0; i<twoPi * cycles; i+=M_PI/displayWidth*cycles){
 				    	float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
@@ -130,7 +142,7 @@ struct XYPad : Module {
 				break;
 			case RND_RAMP: {
 				    float lastY = maxY;
-				    float rate = randomUniform();
+				    float rate = random::uniform();
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -142,8 +154,8 @@ struct XYPad : Module {
 			    }
 				break;
 			case RND_LINE: {
-				    float startHeight = (randomUniform() * maxY * 0.5) + (maxY * 0.25);
-				    float rate = randomUniform() - 0.5;
+				    float startHeight = (random::uniform() * maxY * 0.5) + (maxY * 0.25);
+				    float rate = random::uniform() - 0.5;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -159,7 +171,7 @@ struct XYPad : Module {
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
-				    	float y = (randomUniform()*2-1) * amp + midHeight;
+				    	float y = (random::uniform()*2-1) * amp + midHeight;
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
 			    	}
@@ -168,9 +180,9 @@ struct XYPad : Module {
 			case RND_SINE_MOD: {
 				    float midHeight = maxY / 2.0;
 				    float amp = midHeight * 0.90 * 0.50;
-				    float rate = randomUniform() * 0.1;
-				    float rateAdder = randomUniform() * 0.001;
-				    float ampAdder = randomUniform() * 0.25;
+				    float rate = random::uniform() * 0.1;
+				    float rateAdder = random::uniform() * 0.001;
+				    float ampAdder = random::uniform() * 0.25;
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = minX + i;
@@ -186,7 +198,7 @@ struct XYPad : Module {
 				    float curX = maxX / 2.0;
 				    float curY = maxY / 2.0;
 				    float radius = 5;
-				    float rate = 1 + (randomUniform()*0.1);
+				    float rate = 1 + (random::uniform()*0.1);
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	float x = curX + sin(i/10.0) * radius;
@@ -202,7 +214,7 @@ struct XYPad : Module {
 				    float y = maxY * 0.5;
 				    enum stateEnum { ST_RIGHT, ST_LEFT, ST_UP, ST_DOWN };
 				    int squSt = ST_RIGHT;
-				    int stepsBeforeStateChange = 5 * int(randomUniform()*5+1);
+				    int stepsBeforeStateChange = 5 * int(random::uniform()*5+1);
 				    bool inside = true;
 				    for(int i=0; i<5000 && inside; i+=2){
 				    	if(squSt == ST_RIGHT && x < maxX){
@@ -215,7 +227,7 @@ struct XYPad : Module {
 				    		y++;
 				    	}
 				    	if(i % stepsBeforeStateChange == 0){
-				    		squSt = int(randomUniform() * 4);
+				    		squSt = int(random::uniform() * 4);
 				    	}
 						inside = isInView(x, y);
 				        if(inside)addPoint(x, y);
@@ -232,8 +244,8 @@ struct XYPad : Module {
 		json_object_set_new(rootJ, "lastRandomShape", json_integer(lastRandomShape));
 		json_object_set_new(rootJ, "curPlayMode", json_integer(curPlayMode));
 		json_object_set_new(rootJ, "autoPlayOn", json_boolean(autoPlayOn));
-		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].value));
-		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].value));
+		json_object_set_new(rootJ, "xPos", json_real(params[X_POS_PARAM].getValue()));
+		json_object_set_new(rootJ, "yPos", json_real(params[Y_POS_PARAM].getValue()));
 
 		json_t *pointsArr = json_array();
 		for(Vec pt : points){
@@ -270,13 +282,13 @@ struct XYPad : Module {
 			autoPlayOn = json_is_true(autoPlayOnJ);
 		}
 		lights[AUTO_LIGHT].value = autoPlayOn ? 1.0 : 0.0;
-		params[AUTO_PLAY_PARAM].value = autoPlayOn ? 1 : 0;
+		params[AUTO_PLAY_PARAM].setValue(autoPlayOn ? 1 : 0);
 		if(autoPlayOn){setState(STATE_AUTO_PLAYING);}
 	}
 
 	void defaultPos() {
-		params[XYPad::X_POS_PARAM].value = displayWidth / 2.0;
-		params[XYPad::Y_POS_PARAM].value = displayHeight / 2.0;		
+		params[XYPad::X_POS_PARAM].setValue(displayWidth / 2.0);
+		params[XYPad::Y_POS_PARAM].setValue(displayHeight / 2.0);		
 	}
 
 	void setMouseDown(const Vec &pos, bool down){
@@ -284,7 +296,7 @@ struct XYPad : Module {
 			setCurrentPos(pos.x, pos.y);
 			setState(STATE_RECORDING);
 		} else {
-			if(autoPlayOn && !inputs[PLAY_GATE_INPUT].active){ //no auto play if wire connected to play in
+			if(autoPlayOn && !inputs[PLAY_GATE_INPUT].isConnected()){ //no auto play if wire connected to play in
 				setState(STATE_AUTO_PLAYING);
 			} else {
 				setState(STATE_IDLE);
@@ -293,8 +305,8 @@ struct XYPad : Module {
 	}
 
 	void setCurrentPos(float x, float y){
-		params[X_POS_PARAM].value = clampfjw(x, minX, maxX);
-		params[Y_POS_PARAM].value = clampfjw(y, minY, maxY);
+		params[X_POS_PARAM].setValue(clampfjw(x, minX, maxX));
+		params[Y_POS_PARAM].setValue(clampfjw(y, minY, maxY));
 	}
 
 	bool isInView(float x, float y){
@@ -319,8 +331,8 @@ struct XYPad : Module {
 
 	void playback(){
 		if(isStatePlaying() && points.size() > 0){
-			params[X_POS_PARAM].value = points[curPointIdx].x;
-			params[Y_POS_PARAM].value = points[curPointIdx].y;
+			params[X_POS_PARAM].setValue(points[curPointIdx].x);
+			params[Y_POS_PARAM].setValue(points[curPointIdx].y);
 
 			if(curPlayMode == FWD_LOOP || curPlayMode == FWD_ONE_SHOT){
 				playingFwd = true;
@@ -330,9 +342,9 @@ struct XYPad : Module {
 
 			curPointIdx += playingFwd ? 1 : -1;
 			if(curPointIdx >= 0 && curPointIdx < long(points.size())){
-				params[GATE_PARAM].value = true; //keep gate on
+				params[GATE_PARAM].setValue(true); //keep gate on
 			} else {
-				params[GATE_PARAM].value = false;
+				params[GATE_PARAM].setValue(false);
 
 				if(curPlayMode == FWD_LOOP){
 					curPointIdx = 0;
@@ -353,18 +365,18 @@ struct XYPad : Module {
 		switch(newState){		
 			case STATE_IDLE:
 				curPointIdx = 0;
-				params[GATE_PARAM].value = false;		
+				params[GATE_PARAM].setValue(false);		
 				break;
 			case STATE_RECORDING:
 				points.clear();
 				curPointIdx = 0;
-				params[GATE_PARAM].value = true;
+				params[GATE_PARAM].setValue(true);
 				break;
 			case STATE_AUTO_PLAYING:
-				params[GATE_PARAM].value = true;
+				params[GATE_PARAM].setValue(true);
 				break;
 			case STATE_GATE_PLAYING:
-				params[GATE_PARAM].value = true;
+				params[GATE_PARAM].setValue(true);
 				break;
 		}
 		if(isStatePlaying()){
@@ -381,8 +393,8 @@ struct XYPad : Module {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void XYPad::step() {
-	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].value)) {
+void XYPad::process(const ProcessArgs &args) {
+	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].getValue())) {
 		autoPlayOn = !autoPlayOn;
 		if(autoPlayOn){ 
 			if(!isStatePlaying()){
@@ -395,11 +407,11 @@ void XYPad::step() {
 	}
 	lights[AUTO_LIGHT].value = autoPlayOn ? 1.0 : 0.0;
 
-	if (inputs[PLAY_GATE_INPUT].active) {
-		params[AUTO_PLAY_PARAM].value = 0; //disable autoplay if wire connected to play gate
+	if (inputs[PLAY_GATE_INPUT].isConnected()) {
+		params[AUTO_PLAY_PARAM].setValue(0); //disable autoplay if wire connected to play gate
 		autoPlayOn = false; //disable autoplay if wire connected to play gate
 
-		if (inputs[PLAY_GATE_INPUT].value >= 1.0) {
+		if (inputs[PLAY_GATE_INPUT].getVoltage() >= 1.0) {
 			if(!isStatePlaying() && state != STATE_RECORDING){
 				setState(STATE_GATE_PLAYING);
 			}
@@ -414,33 +426,33 @@ void XYPad::step() {
 
 	if(state == STATE_RECORDING){
 		float recordClockTime = 50;
-		recordPhase += recordClockTime / engineGetSampleRate();
+		recordPhase += recordClockTime / args.sampleRate;
 		if (recordPhase >= 1.0) {
 			recordPhase -= 1.0;
-			addPoint(params[X_POS_PARAM].value, params[Y_POS_PARAM].value);
+			addPoint(params[X_POS_PARAM].getValue(), params[Y_POS_PARAM].getValue());
 		}
 
 	} else if(isStatePlaying()){
-		float playSpeedTotal = clampfjw(inputs[PLAY_SPEED_INPUT].value + params[PLAY_SPEED_PARAM].value, 0, 20);
-		float playbackClockTime = rescalefjw(playSpeedTotal, 0, 20, 1, 500 * params[SPEED_MULT_PARAM].value);
-		playbackPhase += playbackClockTime / engineGetSampleRate();
+		float playSpeedTotal = clampfjw(inputs[PLAY_SPEED_INPUT].getVoltage() + params[PLAY_SPEED_PARAM].getValue(), 0, 20);
+		float playbackClockTime = rescalefjw(playSpeedTotal, 0, 20, 1, 500 * params[SPEED_MULT_PARAM].getValue());
+		playbackPhase += playbackClockTime / args.sampleRate;
 		if (playbackPhase >= 1.0) {
 			playbackPhase -= 1.0;
 			playback();
 		}
 	}
 
-	float xOut = rescalefjw(params[X_POS_PARAM].value, minX, maxX, minVolt, maxVolt);
-	float yOut = rescalefjw(params[Y_POS_PARAM].value, minY, maxY, maxVolt, minVolt); //y is inverted because gui coords
-	outputs[X_OUTPUT].value = (xOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
-	outputs[Y_OUTPUT].value = (yOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
+	float xOut = rescalefjw(params[X_POS_PARAM].getValue(), minX, maxX, minVolt, maxVolt);
+	float yOut = rescalefjw(params[Y_POS_PARAM].getValue(), minY, maxY, maxVolt, minVolt); //y is inverted because gui coords
+	outputs[X_OUTPUT].setVoltage((xOut + params[OFFSET_X_VOLTS_PARAM].getValue()) * params[SCALE_X_PARAM].getValue());
+	outputs[Y_OUTPUT].setVoltage((yOut + params[OFFSET_Y_VOLTS_PARAM].getValue()) * params[SCALE_Y_PARAM].getValue());
 	
-	float xInvOut = rescalefjw(params[X_POS_PARAM].value, minX, maxX, maxVolt, minVolt);
-	float yInvOut = rescalefjw(params[Y_POS_PARAM].value, minY, maxY, minVolt, maxVolt); //y is inverted because gui coords
-	outputs[X_INV_OUTPUT].value = (xInvOut + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
-	outputs[Y_INV_OUTPUT].value = (yInvOut + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;
+	float xInvOut = rescalefjw(params[X_POS_PARAM].getValue(), minX, maxX, maxVolt, minVolt);
+	float yInvOut = rescalefjw(params[Y_POS_PARAM].getValue(), minY, maxY, minVolt, maxVolt); //y is inverted because gui coords
+	outputs[X_INV_OUTPUT].setVoltage((xInvOut + params[OFFSET_X_VOLTS_PARAM].getValue()) * params[SCALE_X_PARAM].getValue());
+	outputs[Y_INV_OUTPUT].setVoltage((yInvOut + params[OFFSET_Y_VOLTS_PARAM].getValue()) * params[SCALE_Y_PARAM].getValue());
 	
-	outputs[GATE_OUTPUT].value = params[GATE_PARAM].value * 10;
+	outputs[GATE_OUTPUT].setVoltage(params[GATE_PARAM].getValue() * 10);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -485,17 +497,17 @@ struct XYPadDisplay : Widget {
 		}
 	}
 
-	void draw(NVGcontext *vg) override {
+	void draw(const DrawArgs &args) override {
 		//background
-		nvgFillColor(vg, nvgRGB(20, 30, 33));
-		nvgBeginPath(vg);
-		nvgRect(vg, 0, 0, box.size.x, box.size.y);
-		nvgFill(vg);
+		nvgFillColor(args.vg, nvgRGB(20, 30, 33));
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+		nvgFill(args.vg);
 
 		if(module == NULL) return;
 			
-		float ballX = module->params[XYPad::X_POS_PARAM].value;
-		float ballY = module->params[XYPad::Y_POS_PARAM].value;
+		float ballX = module->params[XYPad::X_POS_PARAM].getValue();
+		float ballY = module->params[XYPad::Y_POS_PARAM].getValue();
 		float invBallX = module->displayWidth-ballX;
 		float invBallY = module->displayHeight-ballY;
 
@@ -504,69 +516,69 @@ struct XYPadDisplay : Widget {
 		NVGcolor ballColor = nvgRGB(25, 150, 252);
 
 		//horizontal line
-		nvgStrokeColor(vg, invertedColor);
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, 0, invBallY);
-		nvgLineTo(vg, box.size.x, invBallY);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, invertedColor);
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, 0, invBallY);
+		nvgLineTo(args.vg, box.size.x, invBallY);
+		nvgStroke(args.vg);
 		
 		//vertical line
-		nvgStrokeColor(vg, invertedColor);
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, invBallX, 0);
-		nvgLineTo(vg, invBallX, box.size.y);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, invertedColor);
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, invBallX, 0);
+		nvgLineTo(args.vg, invBallX, box.size.y);
+		nvgStroke(args.vg);
 		
 		//inv ball
-		nvgFillColor(vg, invertedColor);
-		nvgStrokeColor(vg, invertedColor);
-		nvgStrokeWidth(vg, module->ballStrokeWidth);
-		nvgBeginPath(vg);
-		nvgCircle(vg, module->displayWidth-ballX, module->displayHeight-ballY, module->ballRadius);
-		if(module->params[XYPad::GATE_PARAM].value)nvgFill(vg);
-		nvgStroke(vg);
+		nvgFillColor(args.vg, invertedColor);
+		nvgStrokeColor(args.vg, invertedColor);
+		nvgStrokeWidth(args.vg, module->ballStrokeWidth);
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, module->displayWidth-ballX, module->displayHeight-ballY, module->ballRadius);
+		if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
+		nvgStroke(args.vg);
 		
 		//POINTS///////////////////////////////////
 		if(module->points.size() > 0){
-			nvgStrokeColor(vg, ballColor);
-			nvgStrokeWidth(vg, 2);
-			nvgBeginPath(vg);
+			nvgStrokeColor(args.vg, ballColor);
+			nvgStrokeWidth(args.vg, 2);
+			nvgBeginPath(args.vg);
 			long lastI = module->points.size() - 1;
 			for (long i = lastI; i>=0 && i<long(module->points.size()); i--) {
 				if(i == lastI){ 
-					nvgMoveTo(vg, module->points[i].x, module->points[i].y); 
+					nvgMoveTo(args.vg, module->points[i].x, module->points[i].y); 
 				} else {
-					nvgLineTo(vg, module->points[i].x, module->points[i].y); 
+					nvgLineTo(args.vg, module->points[i].x, module->points[i].y); 
 				}
 			}
-			nvgStroke(vg);
+			nvgStroke(args.vg);
 		}
 
 
 		//MAIN///////////////////////////////////
 
 		//horizontal line
-		nvgStrokeColor(vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, 0, ballY);
-		nvgLineTo(vg, box.size.x, ballY);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, 0, ballY);
+		nvgLineTo(args.vg, box.size.x, ballY);
+		nvgStroke(args.vg);
 		
 		//vertical line
-		nvgStrokeColor(vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, ballX, 0);
-		nvgLineTo(vg, ballX, box.size.y);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, ballX, 0);
+		nvgLineTo(args.vg, ballX, box.size.y);
+		nvgStroke(args.vg);
 		
 		//ball
-		nvgFillColor(vg, ballColor);
-		nvgStrokeColor(vg, ballColor);
-		nvgStrokeWidth(vg, module->ballStrokeWidth);
-		nvgBeginPath(vg);
-		nvgCircle(vg, ballX, ballY, module->ballRadius);
-		if(module->params[XYPad::GATE_PARAM].value)nvgFill(vg);
-		nvgStroke(vg);
+		nvgFillColor(args.vg, ballColor);
+		nvgStrokeColor(args.vg, ballColor);
+		nvgStrokeWidth(args.vg, module->ballStrokeWidth);
+		nvgBeginPath(args.vg);
+		nvgCircle(args.vg, ballX, ballY, module->ballRadius);
+		if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
+		nvgStroke(args.vg);
 	}
 };
 
@@ -603,12 +615,13 @@ struct RandomVariationButton : TinyButton {
 	}
 };
 
-XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
+XYPadWidget::XYPadWidget(XYPad *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/XYPad.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/XYPad.svg")));
 	addChild(panel);
 
 	XYPadDisplay *display = new XYPadDisplay();
@@ -626,26 +639,26 @@ XYPadWidget::XYPadWidget(XYPad *module) : ModuleWidget(module) {
 
 	addChild(createWidget<Screw_J>(Vec(40, 20)));
 	addChild(createWidget<Screw_W>(Vec(55, 20)));
-	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM));
+	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM));
 
 	////////////////////////////////////////////////////////////
 
-	addInput(createPort<TinyPJ301MPort>(Vec(25, 360), PortWidget::INPUT, module, XYPad::PLAY_GATE_INPUT));
-	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 360), module, XYPad::PLAY_GATE_INPUT));
+	addParam(createParam<TinyButton>(Vec(71, 360), module, XYPad::AUTO_PLAY_PARAM));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(71+3.75, 360+3.75), module, XYPad::AUTO_LIGHT));
-	addInput(createPort<TinyPJ301MPort>(Vec(110, 360), PortWidget::INPUT, module, XYPad::PLAY_SPEED_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM, 0.0, 10.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM, 1.0, 100.0, 1.0));
-	addOutput(createPort<TinyPJ301MPort>(Vec(195, 360), PortWidget::OUTPUT, module, XYPad::X_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(220, 360), PortWidget::OUTPUT, module, XYPad::Y_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(255, 360), PortWidget::OUTPUT, module, XYPad::X_INV_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(280, 360), PortWidget::OUTPUT, module, XYPad::Y_INV_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(320, 360), PortWidget::OUTPUT, module, XYPad::GATE_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(110, 360), module, XYPad::PLAY_SPEED_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(130, 360), module, XYPad::PLAY_SPEED_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(157, 360), module, XYPad::SPEED_MULT_PARAM));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(195, 360), module, XYPad::X_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(220, 360), module, XYPad::Y_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(255, 360), module, XYPad::X_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(280, 360), module, XYPad::Y_INV_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(320, 360), module, XYPad::GATE_OUTPUT));
 }
 
 struct PlayModeItem : MenuItem {

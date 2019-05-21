@@ -5,24 +5,26 @@ struct BlankPanelSmallWidget : ModuleWidget { BlankPanelSmallWidget(BlankPanel *
 struct BlankPanelMediumWidget : ModuleWidget { BlankPanelMediumWidget(BlankPanel *module); };
 struct BlankPanelLargeWidget : ModuleWidget { BlankPanelLargeWidget(BlankPanel *module); };
 
-BlankPanelSmallWidget::BlankPanelSmallWidget(BlankPanel *module) : ModuleWidget(module) {
+BlankPanelSmallWidget::BlankPanelSmallWidget(BlankPanel *module) {
+		setModule(module);
 	box.size = Vec(15*3, 380);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelSmall.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/BlankPanelSmall.svg")));
 	addChild(panel);
 
 	addChild(createWidget<Screw_J>(Vec(16, 0)));
 	addChild(createWidget<Screw_W>(Vec(16, 365)));
 }
 
-BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) : ModuleWidget(module) {
+BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) {
+		setModule(module);
 	box.size = Vec(15*6, 380);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelMedium.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/BlankPanelMedium.svg")));
 	addChild(panel);
 
 	addChild(createWidget<Screw_J>(Vec(16, 0)));
@@ -31,12 +33,13 @@ BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) : ModuleWidge
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 }
 
-BlankPanelLargeWidget::BlankPanelLargeWidget(BlankPanel *module) : ModuleWidget(module) {
+BlankPanelLargeWidget::BlankPanelLargeWidget(BlankPanel *module) {
+		setModule(module);
 	box.size = Vec(15*12, 380);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BlankPanelLarge.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/BlankPanelLarge.svg")));
 	addChild(panel);
 
 	addChild(createWidget<Screw_J>(Vec(16, 0)));

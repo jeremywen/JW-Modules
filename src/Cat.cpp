@@ -20,7 +20,10 @@ struct Cat : Module {
 
 	bool invert = true;
 	bool neg5ToPos5 = false;
-	Cat() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+	Cat() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(BOWL_PARAM, 0.0, 1.0, 0.0);
+	}
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -104,16 +107,17 @@ void CatWidget::step() {
 		}
 
 		for(int i=0; i<10; i++){
-			if(hairballs[i]->box.pos.y > box.size.y*1.5 && !bool(cat->params[Cat::BOWL_PARAM].value)){
+			if(hairballs[i]->box.pos.y > box.size.y*1.5 && !bool(cat->params[Cat::BOWL_PARAM].getValue())){
 				hairballs[i]->box.pos.y = widgetToMove->box.pos.y;
 			} else {
-				hairballs[i]->box.pos.y += randomUniform()*10;
+				hairballs[i]->box.pos.y += random::uniform()*10;
 			}
 		}
 	}
 };
 
-CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
+CatWidget::CatWidget(Cat *module) {
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230));
@@ -127,11 +131,11 @@ CatWidget::CatWidget(Cat *module) : ModuleWidget(module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM));
 
 	if(module != NULL){
 		for(int i=0; i<10; i++){
-			hairballs[i] = createWidget<HairballScrew>(Vec(randomUniform()*7, widgetToMove->box.pos.y));
+			hairballs[i] = createWidget<HairballScrew>(Vec(random::uniform()*7, widgetToMove->box.pos.y));
 			addChild(hairballs[i]);
 		}
 	}

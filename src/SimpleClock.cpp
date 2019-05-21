@@ -27,17 +27,24 @@ struct SimpleClock : Module {
 
 	bool running = true;
 	bool rndReset = false;
-	SchmittTrigger runningTrigger;
-	SchmittTrigger resetTrigger;
+	dsp::SchmittTrigger runningTrigger;
+	dsp::SchmittTrigger resetTrigger;
 	float runningLight = 0.0;
 	float phase = 0.0;
-	PulseGenerator gatePulse;
-	PulseGenerator resetPulse;
+	dsp::PulseGenerator gatePulse;
+	dsp::PulseGenerator resetPulse;
 	int stepCount = 0;
 	const float lightLambda = 0.075;
 
-	SimpleClock() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+	SimpleClock() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(RUN_PARAM, 0.0, 1.0, 0.0);
+		configParam(CLOCK_PARAM, -2.0, 6.0, 1.0);
+		configParam(RESET_PARAM, 0.0, 1.0, 0.0);
+		configParam(PROB_PARAM, -2.0, 6.0, -2);
+	}
+
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -59,8 +66,8 @@ struct SimpleClock : Module {
 	}
 };
 
-void SimpleClock::step() {
-	if (runningTrigger.process(params[RUN_PARAM].value)) {
+void SimpleClock::process(const ProcessArgs &args) {
+	if (runningTrigger.process(params[RUN_PARAM].getValue())) {
 		running = !running;
 		if(running){
 			resetClock();
@@ -68,14 +75,14 @@ void SimpleClock::step() {
 	}
 	lights[RUNNING_LIGHT].value = running ? 1.0 : 0.0;
 
-	if (resetTrigger.process(params[RESET_PARAM].value)){
+	if (resetTrigger.process(params[RESET_PARAM].getValue())){
 		resetClock();
 	}
 
 	bool nextStep = false;
 	if (running) {
-		float clockTime = powf(2.0, params[CLOCK_PARAM].value);
-		phase += clockTime / engineGetSampleRate();
+		float clockTime = powf(2.0, params[CLOCK_PARAM].getValue());
+		phase += clockTime / args.sampleRate;
 		if (phase >= 1.0) {
 			phase -= 1.0;
 			nextStep = true;
@@ -83,21 +90,21 @@ void SimpleClock::step() {
 	}
 	if (nextStep) {
 		stepCount = (stepCount + 1) % 256;
-		float probScaled = rescalefjw(params[PROB_PARAM].value, -2, 6, 0, 1);
-		if(randomUniform() < probScaled){
+		float probScaled = rescalefjw(params[PROB_PARAM].getValue(), -2, 6, 0, 1);
+		if(random::uniform() < probScaled){
 			resetPulse.trigger(0.01);
 		}
 		gatePulse.trigger(1e-3);
 	}
 
-	bool gpulse = running && gatePulse.process(1.0 / engineGetSampleRate());
-	bool rpulse = running && resetPulse.process(1.0 / engineGetSampleRate());
-	outputs[RESET_OUTPUT].value = rpulse ? 10.0 : 0.0;
-	outputs[CLOCK_OUTPUT].value = gpulse ? 10.0 : 0.0;
-	outputs[DIV_4_OUTPUT].value = gpulse && (stepCount % 4 == 0) ? 10.0 : 0.0;
-	outputs[DIV_8_OUTPUT].value = gpulse && (stepCount % 8 == 0) ? 10.0 : 0.0;
-	outputs[DIV_16_OUTPUT].value = gpulse && (stepCount % 16 == 0) ? 10.0 : 0.0;
-	outputs[DIV_32_OUTPUT].value = gpulse && (stepCount % 32 == 0) ? 10.0 : 0.0;
+	bool gpulse = running && gatePulse.process(1.0 / args.sampleRate);
+	bool rpulse = running && resetPulse.process(1.0 / args.sampleRate);
+	outputs[RESET_OUTPUT].setVoltage(rpulse ? 10.0 : 0.0);
+	outputs[CLOCK_OUTPUT].setVoltage(gpulse ? 10.0 : 0.0);
+	outputs[DIV_4_OUTPUT].setVoltage(gpulse && (stepCount % 4 == 0) ? 10.0 : 0.0);
+	outputs[DIV_8_OUTPUT].setVoltage(gpulse && (stepCount % 8 == 0) ? 10.0 : 0.0);
+	outputs[DIV_16_OUTPUT].setVoltage(gpulse && (stepCount % 16 == 0) ? 10.0 : 0.0);
+	outputs[DIV_32_OUTPUT].setVoltage(gpulse && (stepCount % 32 == 0) ? 10.0 : 0.0);
 }
 
 struct BPMKnob : SmallWhiteKnob {
@@ -114,13 +121,14 @@ struct SimpleClockWidget : ModuleWidget {
 	SimpleClockWidget(SimpleClock *module); 
 };
 
-SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module) {
+SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/WavHeadPanel.svg")));
+		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadPanel.svg")));
 		addChild(panel);
 	}
 
@@ -134,10 +142,10 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 	titleLabel->text = "Clock";
 	addChild(titleLabel);
 
-	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
 	
-	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM, -2.0, 6.0, 1.0));
+	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM));
 	CenteredLabel* const bpmLabel = new CenteredLabel;
 	bpmLabel->box.pos = Vec(15, 50);
 	bpmLabel->text = "120 BPM";
@@ -147,22 +155,22 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 	addChild(bpmLabel);
 	addParam(clockKnob);
 
-	addOutput(createPort<PJ301MPort>(Vec(18, 105), PortWidget::OUTPUT, module, SimpleClock::CLOCK_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 105), module, SimpleClock::CLOCK_OUTPUT));
 
 	CenteredLabel* const resetLabel = new CenteredLabel;
 	resetLabel->box.pos = Vec(15, 75);
 	resetLabel->text = "Reset";
 	addChild(resetLabel);
 
-	addParam(createParam<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM, 0.0, 1.0, 0.0));
-	addOutput(createPort<PJ301MPort>(Vec(18, 175), PortWidget::OUTPUT, module, SimpleClock::RESET_OUTPUT));
+	addParam(createParam<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM));
+	addOutput(createOutput<PJ301MPort>(Vec(18, 175), module, SimpleClock::RESET_OUTPUT));
 
 
 	CenteredLabel* const rndResetLabel = new CenteredLabel(10);
 	rndResetLabel->box.pos = Vec(15, 108);
 	rndResetLabel->text = "Rnd Rst";
 	addChild(rndResetLabel);
-	addParam(createParam<SmallWhiteKnob>(Vec(17, 220), module, SimpleClock::PROB_PARAM, -2.0, 6.0, -2));
+	addParam(createParam<SmallWhiteKnob>(Vec(17, 220), module, SimpleClock::PROB_PARAM));
 
 
 	CenteredLabel* const div4Label = new CenteredLabel(10);
@@ -185,10 +193,10 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) : ModuleWidget(module)
 	div32Label->text = "/32";
 	addChild(div32Label);
 
-	addOutput(createPort<TinyPJ301MPort>(Vec(10, 270), PortWidget::OUTPUT, module, SimpleClock::DIV_4_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(34, 270), PortWidget::OUTPUT, module, SimpleClock::DIV_8_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(10, 310), PortWidget::OUTPUT, module, SimpleClock::DIV_16_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(34, 310), PortWidget::OUTPUT, module, SimpleClock::DIV_32_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(10, 270), module, SimpleClock::DIV_4_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 270), module, SimpleClock::DIV_8_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(10, 310), module, SimpleClock::DIV_16_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 310), module, SimpleClock::DIV_32_OUTPUT));
 }
 
 Model *modelSimpleClock = createModel<SimpleClock, SimpleClockWidget>("SimpleClock");

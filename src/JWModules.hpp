@@ -1,5 +1,5 @@
 #pragma once
-#include "rack0.hpp"
+#include "rack.hpp"
 #include "QuantizeUtils.cpp"
 
 using namespace rack;
@@ -40,11 +40,11 @@ struct CenteredLabel : Widget {
 		fontSize = _fontSize;
 		box.size.y = BND_WIDGET_HEIGHT;
 	}
-	void draw(NVGcontext *vg) override {
-		nvgTextAlign(vg, NVG_ALIGN_CENTER);
-		nvgFillColor(vg, nvgRGB(25, 150, 252));
-		nvgFontSize(vg, fontSize);
-		nvgText(vg, box.pos.x, box.pos.y, text.c_str(), NULL);
+	void draw(const DrawArgs &args) override {
+		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
+		nvgFillColor(args.vg, nvgRGB(25, 150, 252));
+		nvgFontSize(args.vg, fontSize);
+		nvgText(args.vg, box.pos.x, box.pos.y, text.c_str(), NULL);
 	}
 };
 
@@ -55,7 +55,7 @@ struct SmallWhiteKnob : RoundKnob {
 	Module* linkedModule = NULL;
 
 	SmallWhiteKnob() {
-		setSVG(SVG::load(assetPlugin(pluginInstance, "res/SmallWhiteKnob.svg")));
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
 	
 	void connectLabel(CenteredLabel* label, Module* module) {
@@ -115,7 +115,7 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 
 struct JwTinyKnob : RoundKnob {
 	JwTinyKnob() {
-		setSVG(SVG::load(assetPlugin(pluginInstance, "res/TinyWhiteKnob.svg")));
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteKnob.svg")));
 	}
 };
 
@@ -127,22 +127,22 @@ struct BPMPartKnob : JwSmallSnapKnob {
 
 struct JwHorizontalSwitch : SVGSwitch {
 	JwHorizontalSwitch() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Horizontal_0.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Horizontal_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Horizontal_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Horizontal_1.svg")));
 	}
 };
 
 struct JwVerticalSwitch : SVGSwitch {
 	JwVerticalSwitch() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Vertical_0.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Switch_Vertical_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Vertical_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Vertical_1.svg")));
 	}
 };
 
 struct BowlSwitch : SVGSwitch {
 	BowlSwitch() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Bowl-no-food.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/Bowl-food.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Bowl-no-food.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Bowl-food.svg")));
 	}
 };
 
@@ -150,37 +150,37 @@ struct BowlSwitch : SVGSwitch {
 
 struct TinyPJ301MPort : SvgPort {
 	TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M.svg")));
 	}
 };
 
 struct Orange_TinyPJ301MPort : SvgPort {
 	Orange_TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_orange.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M_orange.svg")));
 	}
 };
 
 struct Yellow_TinyPJ301MPort : SvgPort {
 	Yellow_TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_yellow.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M_yellow.svg")));
 	}
 };
 
 struct Purple_TinyPJ301MPort : SvgPort {
 	Purple_TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_purple.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M_purple.svg")));
 	}
 };
 
 struct Blue_TinyPJ301MPort : SvgPort {
 	Blue_TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_blue.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M_blue.svg")));
 	}
 };
 
 struct White_TinyPJ301MPort : SvgPort {
 	White_TinyPJ301MPort() {
-		setSvg(SVG::load(assetPlugin(pluginInstance, "res/TinyPJ301M_white.svg")));
+		setSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyPJ301M_white.svg")));
 	}
 };
 
@@ -211,57 +211,57 @@ struct MyRedValueLight : ModuleLightWidget {
 
 struct RightMoveButton : SVGSwitch {
 	RightMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RightButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RightButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButtonDown.svg")));
 	}
 };
 
 struct LeftMoveButton : SVGSwitch {
 	LeftMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/LeftButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/LeftButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButtonDown.svg")));
 	}
 };
 
 struct DownMoveButton : SVGSwitch {
 	DownMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/DownButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/DownButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButtonDown.svg")));
 	}
 };
 
 struct UpMoveButton : SVGSwitch {
 	UpMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/UpButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/UpButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButtonDown.svg")));
 	}
 };
 
 struct RndMoveButton : SVGSwitch {
 	RndMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RndButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RndButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButtonDown.svg")));
 	}
 };
 
 struct RepMoveButton : SVGSwitch {
 	RepMoveButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RepButton.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/RepButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButton.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButtonDown.svg")));
 	}
 };
 
 struct TinyButton : SVGSwitch {
 	TinyButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/TinyButtonUp.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/TinyButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyButtonUp.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyButtonDown.svg")));
 	}
 };
 
 struct SmallButton : SVGSwitch {
 	SmallButton() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/SmallButtonUp.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/SmallButtonDown.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallButtonUp.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallButtonDown.svg")));
 	}
 };
 
@@ -269,42 +269,42 @@ struct SmallButton : SVGSwitch {
 
 struct Snowflake : SVGScrew {
 	Snowflake() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/SnowFlake.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SnowFlake.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct WavHeadLogo : SVGScrew {
 	WavHeadLogo() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/WavHeadSmall.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadSmall.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct Screw_J : SVGScrew {
 	Screw_J() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw_J.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Screw_J.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct Screw_W : SVGScrew {
 	Screw_W() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Screw_W.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Screw_W.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct CatScrew : SVGScrew {
 	CatScrew() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Cat.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Cat.svg")));
 		box.size = sw->box.size;
 	}
 };
 
 struct HairballScrew : SVGScrew {
 	HairballScrew() {
-		sw->setSVG(SVG::load(assetPlugin(pluginInstance, "res/Hairball.svg")));
+		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Hairball.svg")));
 		box.size = sw->box.size;
 	}
 };
@@ -327,7 +327,7 @@ extern Model *modelBlankPanelMedium;
 extern Model *modelBlankPanelLarge;
 
 inline int clampijw(int x, int minimum, int maximum) {
-	return min(max(x, minimum), maximum);
+	return clamp(x, minimum, maximum);
 }
 inline float clampfjw(float x, float minimum, float maximum) {
 	return fminf(fmaxf(x, minimum), maximum);

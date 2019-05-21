@@ -20,9 +20,13 @@ struct Quantizer : Module,QuantizeUtils {
 		NUM_LIGHTS
 	};
 
-	Quantizer() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+	Quantizer() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
+		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
+	}
 
-	void step() override;
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -33,23 +37,24 @@ struct Quantizer : Module,QuantizeUtils {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void Quantizer::step() {
-	int rootNote = params[ROOT_NOTE_PARAM].value + rescalefjw(inputs[NOTE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
-	int scale = params[SCALE_PARAM].value + rescalefjw(inputs[SCALE_INPUT].value, 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
-	outputs[VOLT_OUTPUT].value = closestVoltageInScale(inputs[VOLT_INPUT].value, rootNote, scale);
+void Quantizer::process(const ProcessArgs &args) {
+	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
+	int scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	outputs[VOLT_OUTPUT].setVoltage(closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(), rootNote, scale));
 }
 
 struct QuantizerWidget : ModuleWidget { 
 	QuantizerWidget(Quantizer *module); 
 };
 
-QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
+QuantizerWidget::QuantizerWidget(Quantizer *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/WavHeadPanel.svg")));
+		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadPanel.svg")));
 		addChild(panel);
 	}
 
@@ -64,27 +69,27 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) : ModuleWidget(module) {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 35);
 	noteLabel->text = "note here";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
-	addInput(createPort<TinyPJ301MPort>(Vec(23, 110), PortWidget::INPUT, module, Quantizer::NOTE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 110), module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 90);
 	scaleLabel->text = "scale here";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
-	addInput(createPort<TinyPJ301MPort>(Vec(23, 220), PortWidget::INPUT, module, Quantizer::SCALE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 220), module, Quantizer::SCALE_INPUT));
 
 
-	addInput(createPort<TinyPJ301MPort>(Vec(10, 290), PortWidget::INPUT, module, Quantizer::VOLT_INPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(35, 290), PortWidget::OUTPUT, module, Quantizer::VOLT_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 290), module, Quantizer::VOLT_OUTPUT));
 
 	CenteredLabel* const voctLabel = new CenteredLabel;
 	voctLabel->box.pos = Vec(15, 140);

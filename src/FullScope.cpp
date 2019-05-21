@@ -35,15 +35,22 @@ struct FullScope : Module {
 	int bufferIndex = 0;
 	float frameIndex = 0;
 
-	SchmittTrigger sumTrigger;
-	SchmittTrigger extTrigger;
+	dsp::SchmittTrigger sumTrigger;
+	dsp::SchmittTrigger extTrigger;
 	bool lissajous = true;
 	bool external = false;
 	float lights[4] = {};
-	SchmittTrigger resetTrigger;
+	dsp::SchmittTrigger resetTrigger;
 
-	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step() override;
+	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+		configParam(X_POS_PARAM, -10.0, 10.0, 0.0);
+		configParam(Y_POS_PARAM, -10.0, 10.0, 0.0);
+		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0);
+		configParam(Y_SCALE_PARAM, -2.0, 8.0, 1.0);
+		configParam(ROTATION_PARAM, -10.0, 10.0, 0);
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0);		
+	}
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -68,26 +75,26 @@ struct FullScope : Module {
 	}
 };
 
-void FullScope::step() {
+void FullScope::process(const ProcessArgs &args) {
 	lights[0] = lissajous ? 0.0 : 1.0;
 	lights[1] = lissajous ? 1.0 : 0.0;
 
-	if (extTrigger.process(params[EXTERNAL_PARAM].value)) {
+	if (extTrigger.process(params[EXTERNAL_PARAM].getValue())) {
 		external = !external;
 	}
 	lights[2] = external ? 0.0 : 1.0;
 	lights[3] = external ? 1.0 : 0.0;
 
 	// Compute time
-	float deltaTime = powf(2.0, params[TIME_PARAM].value + inputs[TIME_INPUT].value);
-	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
+	float deltaTime = powf(2.0, params[TIME_PARAM].getValue() + inputs[TIME_INPUT].getVoltage());
+	int frameCount = (int)ceilf(deltaTime * args.sampleRate);
 
 	// Add frame to buffer
 	if (bufferIndex < BUFFER_SIZE) {
 		if (++frameIndex > frameCount) {
 			frameIndex = 0;
-			bufferX[bufferIndex] = inputs[X_INPUT].value;
-			bufferY[bufferIndex] = inputs[Y_INPUT].value;
+			bufferX[bufferIndex] = inputs[X_INPUT].getVoltage();
+			bufferY[bufferIndex] = inputs[Y_INPUT].getVoltage();
 			bufferIndex++;
 		}
 	}
@@ -95,7 +102,7 @@ void FullScope::step() {
 	// Are we waiting on the next trigger?
 	if (bufferIndex >= BUFFER_SIZE) {
 		// Trigger immediately if external but nothing plugged in, or in Lissajous mode
-		if (lissajous || (external && !inputs[TRIG_INPUT].active)) {
+		if (lissajous || (external && !inputs[TRIG_INPUT].isConnected())) {
 			bufferIndex = 0;
 			frameIndex = 0;
 			return;
@@ -108,17 +115,17 @@ void FullScope::step() {
 		frameIndex++;
 
 		// Must go below 0.1V to trigger
-		// resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		float gate = external ? inputs[TRIG_INPUT].value : inputs[X_INPUT].value;
+		// resetTrigger.setThresholds(params[TRIG_PARAM].getValue() - 0.1, params[TRIG_PARAM].getValue());
+		float gate = external ? inputs[TRIG_INPUT].getVoltage() : inputs[X_INPUT].getVoltage();
 
 		// Reset if triggered
 		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
+		if (resetTrigger.process(gate) || (frameIndex >= args.sampleRate * holdTime)) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 
 		// Reset if we've waited too long
-		if (frameIndex >= engineGetSampleRate() * holdTime) {
+		if (frameIndex >= args.sampleRate * holdTime) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 	}
@@ -151,23 +158,23 @@ struct FullScopeDisplay : TransparentWidget {
 	FullScopeDisplay() {
 	}
 
-	void drawWaveform(NVGcontext *vg, float *valuesX, float *valuesY) {
+	void drawWaveform(const DrawArgs &args, float *valuesX, float *valuesY) {
 		if (!valuesX)
 			return;
-		nvgSave(vg);
+		nvgSave(args.vg);
 		Rect b = Rect(Vec(0, 0), box.size);
-		nvgScissor(vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
+		nvgScissor(args.vg, b.pos.x, b.pos.y, b.size.x, b.size.y);
 		
-		float rotRate = rescalefjw(module->params[FullScope::ROTATION_PARAM].value + module->inputs[FullScope::ROTATION_INPUT].value, 0, 10, 0, 0.5);
+		float rotRate = rescalefjw(module->params[FullScope::ROTATION_PARAM].getValue() + module->inputs[FullScope::ROTATION_INPUT].getVoltage(), 0, 10, 0, 0.5);
 		if(rotRate != 0){
-			nvgTranslate(vg, box.size.x/2.0, box.size.y/2.0);
-			nvgRotate(vg, rot+=rotRate);
-			nvgTranslate(vg, -box.size.x/2.0, -box.size.y/2.0);
+			nvgTranslate(args.vg, box.size.x/2.0, box.size.y/2.0);
+			nvgRotate(args.vg, rot+=rotRate);
+			nvgTranslate(args.vg, -box.size.x/2.0, -box.size.y/2.0);
 		} else {
-			nvgRotate(vg, 0);
+			nvgRotate(args.vg, 0);
 		}
 
-		nvgBeginPath(vg);
+		nvgBeginPath(args.vg);
 		// Draw maximum display left to right
 		for (int i = 0; i < BUFFER_SIZE; i++) {
 			float x, y;
@@ -183,26 +190,26 @@ struct FullScopeDisplay : TransparentWidget {
 			p.x = b.pos.x + b.size.x * x;
 			p.y = b.pos.y + b.size.y * (1.0 - y);
 			if (i == 0)
-				nvgMoveTo(vg, p.x, p.y);
+				nvgMoveTo(args.vg, p.x, p.y);
 			else
-				nvgLineTo(vg, p.x, p.y);
+				nvgLineTo(args.vg, p.x, p.y);
 		}
-		nvgLineCap(vg, NVG_ROUND);
-		nvgMiterLimit(vg, 2.0);
-		nvgStrokeWidth(vg, 1.5);
-		nvgGlobalCompositeOperation(vg, NVG_LIGHTER);
-		nvgStroke(vg);
-		nvgResetScissor(vg);
-		nvgRestore(vg);
+		nvgLineCap(args.vg, NVG_ROUND);
+		nvgMiterLimit(args.vg, 2.0);
+		nvgStrokeWidth(args.vg, 1.5);
+		nvgGlobalCompositeOperation(args.vg, NVG_LIGHTER);
+		nvgStroke(args.vg);
+		nvgResetScissor(args.vg);
+		nvgRestore(args.vg);
 	}
 
-	void draw(NVGcontext *vg) {
+	void draw(const DrawArgs &args) {
 		if(module == NULL) return;
 
-		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].value));
-		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].value));
-		float offsetX = module->params[FullScope::X_POS_PARAM].value;
-		float offsetY = module->params[FullScope::Y_POS_PARAM].value;
+		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
+		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));
+		float offsetX = module->params[FullScope::X_POS_PARAM].getValue();
+		float offsetY = module->params[FullScope::Y_POS_PARAM].getValue();
 
 		float valuesX[BUFFER_SIZE];
 		float valuesY[BUFFER_SIZE];
@@ -216,30 +223,30 @@ struct FullScopeDisplay : TransparentWidget {
 		}
 
 		//color
-		if(module->inputs[FullScope::COLOR_INPUT].active){
-			float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].value, 0.0, 6.0, 0, 1.0);
-			nvgStrokeColor(vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+		if(module->inputs[FullScope::COLOR_INPUT].isConnected()){
+			float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].getVoltage(), 0.0, 6.0, 0, 1.0);
+			nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
 		} else {
-			nvgStrokeColor(vg, nvgRGBA(25, 150, 252, 0xc0));
+			nvgStrokeColor(args.vg, nvgRGBA(25, 150, 252, 0xc0));
 		}
 
 		// Draw waveforms
 		if (module->lissajous) {
 			// X x Y
-			if (module->inputs[FullScope::X_INPUT].active || module->inputs[FullScope::Y_INPUT].active) {
-				drawWaveform(vg, valuesX, valuesY);
+			if (module->inputs[FullScope::X_INPUT].isConnected() || module->inputs[FullScope::Y_INPUT].isConnected()) {
+				drawWaveform(args, valuesX, valuesY);
 			}
 		}
 		else {
 			// Y
-			if (module->inputs[FullScope::Y_INPUT].active) {
-				drawWaveform(vg, valuesY, NULL);
+			if (module->inputs[FullScope::Y_INPUT].isConnected()) {
+				drawWaveform(args, valuesY, NULL);
 			}
 
 			// X
-			if (module->inputs[FullScope::X_INPUT].active) {
-				nvgStrokeColor(vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
-				drawWaveform(vg, valuesX, NULL);
+			if (module->inputs[FullScope::X_INPUT].isConnected()) {
+				nvgStrokeColor(args.vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
+				drawWaveform(args, valuesX, NULL);
 			}
 		}
 
@@ -264,7 +271,8 @@ struct FullScopeWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
+FullScopeWidget::FullScopeWidget(FullScope *module) {
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 	
 	{
@@ -290,18 +298,18 @@ FullScopeWidget::FullScopeWidget(FullScope *module) : ModuleWidget(module) {
 	}
 
 	int compX = 5, compY = -15, adder = 20;
-	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::X_INPUT));
-	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::Y_INPUT));
-	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::COLOR_INPUT));
-	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::ROTATION_INPUT));
-	addInput(createPort<TinyPJ301MPort>(Vec(compX, compY+=adder), PortWidget::INPUT, module, FullScope::TIME_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX, compY+=adder), module, FullScope::X_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX, compY+=adder), module, FullScope::Y_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX, compY+=adder), module, FullScope::COLOR_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX, compY+=adder), module, FullScope::ROTATION_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(compX, compY+=adder), module, FullScope::TIME_INPUT));
 
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_POS_PARAM, -10.0, 10.0, 0.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_SCALE_PARAM, -2.0, 8.0, 1.0));
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::ROTATION_PARAM, -10.0, 10.0, 0));
-	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::TIME_PARAM, -6.0, -16.0, -14.0));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_POS_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_POS_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::X_SCALE_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::Y_SCALE_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::ROTATION_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(compX, compY+=adder), module, FullScope::TIME_PARAM));
 
 	addChild(createWidget<Screw_J>(Vec(compX+2, compY+=adder)));
 	addChild(createWidget<Screw_W>(Vec(compX+2, compY+=adder-5)));

@@ -18,7 +18,8 @@ struct WavHead : Module {
 	bool invert = true;
 	bool neg5ToPos5 = false;
 	bool snowMode = false;
-	WavHead() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
+	WavHead() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);}
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -55,7 +56,7 @@ void WavHeadWidget::step() {
 		WavHead *wavHead = dynamic_cast<WavHead*>(module);
 		float minVolts = wavHead->neg5ToPos5 ? -5 : 0;
 		float maxVolts = minVolts + 10;
-		float clamped = clampfjw(module->inputs[WavHead::VOLT_INPUT].value, minVolts, maxVolts);
+		float clamped = clampfjw(module->inputs[WavHead::VOLT_INPUT].getVoltage(), minVolts, maxVolts);
 		float minY = wavHead->invert ? 250 : 15;
 		float maxY = wavHead->invert ? 15 : 250;
 		widgetToMove->box.pos.y = rescalefjw(clamped, minVolts, maxVolts, minY, maxY);
@@ -63,20 +64,21 @@ void WavHeadWidget::step() {
 		if(wavHead->snowMode){
 			for(int i=0; i<10; i++){
 				if(snowflakesArr[i]->box.pos.y > box.size.y){
-					snowflakesArr[i]->box.pos.y = -randomUniform()*200-30;
+					snowflakesArr[i]->box.pos.y = -random::uniform()*200-30;
 				} else {
-					snowflakesArr[i]->box.pos.y += randomUniform();
+					snowflakesArr[i]->box.pos.y += random::uniform();
 				}
 			}
 		} else {
 			for(int i=0; i<10; i++){
-				snowflakesArr[i]->box.pos.y = -randomUniform()*200-30;
+				snowflakesArr[i]->box.pos.y = -random::uniform()*200-30;
 			}
 		}
 	}
 };
 
-WavHeadWidget::WavHeadWidget(WavHead *module) : ModuleWidget(module) {
+WavHeadWidget::WavHeadWidget(WavHead *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230));
@@ -91,11 +93,11 @@ WavHeadWidget::WavHeadWidget(WavHead *module) : ModuleWidget(module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	for(int i=0; i<10; i++){
-		snowflakesArr[i] = createWidget<Snowflake>(Vec(randomUniform()*box.size.x, -randomUniform()*200-30));
+		snowflakesArr[i] = createWidget<Snowflake>(Vec(random::uniform()*box.size.x, -random::uniform()*200-30));
 		addChild(snowflakesArr[i]);
 	}
 
-	addInput(createPort<PJ301MPort>(Vec(18, 330), PortWidget::INPUT, module, WavHead::VOLT_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(18, 330), module, WavHead::VOLT_INPUT));
 }
 
 struct InvertMenuItem : MenuItem {

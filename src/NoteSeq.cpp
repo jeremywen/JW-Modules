@@ -105,21 +105,44 @@ struct NoteSeq : Module,QuantizeUtils {
 	};
 
 	float displayWidth = 0, displayHeight = 0;
-	float rate = 1.0 / engineGetSampleRate();	
-	float lifeRate = 0.5 * engineGetSampleRate();	
+	float rate = 1.0 / APP->engine->getSampleRate();
+	float lifeRate = 0.5 * APP->engine->getSampleRate();
 	long lifeCounter = 0;
 	int seqPos = 0;
-	float rndFloat0to1AtClockStep = randomUniform();
+	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
 	bool *cells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
-	SchmittTrigger clockTrig, resetTrig, clearTrig;
-	SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
-	SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
-	PulseGenerator gatePulse;
+	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
+	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
+	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
+	dsp::PulseGenerator gatePulse;
 
-	NoteSeq() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	NoteSeq() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0);
+		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0);
+		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0);
+		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1);
+		configParam(SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0);
+		configParam(LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0);
+		configParam(HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0);
+		configParam(LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0);
+		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0);
+		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0);
+		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
+		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
 		resetSeq();
 		clearCells();
 	}
@@ -140,7 +163,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void onSampleRateChange() override {
-		rate = 1.0 / engineGetSampleRate();
+		rate = 1.0 / APP->engine->getSampleRate();
 	}
 
 	json_t *dataToJson() override {
@@ -170,85 +193,85 @@ struct NoteSeq : Module,QuantizeUtils {
 	//TODO maybe add length input
 	//TODO maybe add start pos knob and input
 
-	void step() override {
-		if(params[LIFE_ON_SWITCH_PARAM].value){
-			if(lifeCounter % int(params[LIFE_SPEED_KNOB_PARAM].value) == 0){ 
+	void process(const ProcessArgs &args) override {
+		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
+			if(lifeCounter % int(params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
 				stepLife();
 				lifeCounter = 1;
 			}
 		}
 
-		if (clearTrig.process(params[CLEAR_BTN_PARAM].value + inputs[CLEAR_INPUT].value)) { clearCells(); }
-		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].value + inputs[RND_TRIG_INPUT].value)) { randomizeCells(); }
+		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue() + inputs[CLEAR_INPUT].getVoltage())) { clearCells(); }
+		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 
-		if (rotateRightTrig.process(params[ROT_RIGHT_BTN_PARAM].value + inputs[ROT_RIGHT_INPUT].value)) { rotateCells(DIR_RIGHT); }
-		if (rotateLeftTrig.process(params[ROT_LEFT_BTN_PARAM].value + inputs[ROT_LEFT_INPUT].value)) { rotateCells(DIR_LEFT); }
+		if (rotateRightTrig.process(params[ROT_RIGHT_BTN_PARAM].getValue() + inputs[ROT_RIGHT_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
+		if (rotateLeftTrig.process(params[ROT_LEFT_BTN_PARAM].getValue() + inputs[ROT_LEFT_INPUT].getVoltage())) { rotateCells(DIR_LEFT); }
 
-		if (flipHorizTrig.process(params[FLIP_HORIZ_BTN_PARAM].value + inputs[FLIP_HORIZ_INPUT].value)) { flipCells(DIR_HORIZ); }
-		if (flipVertTrig.process(params[FLIP_VERT_BTN_PARAM].value + inputs[FLIP_VERT_INPUT].value)) { flipCells(DIR_VERT); }
+		if (flipHorizTrig.process(params[FLIP_HORIZ_BTN_PARAM].getValue() + inputs[FLIP_HORIZ_INPUT].getVoltage())) { flipCells(DIR_HORIZ); }
+		if (flipVertTrig.process(params[FLIP_VERT_BTN_PARAM].getValue() + inputs[FLIP_VERT_INPUT].getVoltage())) { flipCells(DIR_VERT); }
 
-		if (shiftUpTrig.process(params[SHIFT_UP_BTN_PARAM].value + inputs[SHIFT_UP_INPUT].value)) { shiftCells(DIR_UP); }
-		if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].value + inputs[SHIFT_DOWN_INPUT].value)) { shiftCells(DIR_DOWN); }
+		if (shiftUpTrig.process(params[SHIFT_UP_BTN_PARAM].getValue() + inputs[SHIFT_UP_INPUT].getVoltage())) { shiftCells(DIR_UP); }
+		if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].getValue() + inputs[SHIFT_DOWN_INPUT].getVoltage())) { shiftCells(DIR_DOWN); }
 
-		if (resetTrig.process(params[RESET_BTN_PARAM].value + inputs[RESET_INPUT].value)) {
+		if (resetTrig.process(params[RESET_BTN_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
 			resetSeq();
 		}
 
-		if (clockTrig.process(inputs[CLOCK_INPUT].value + params[STEP_BTN_PARAM].value)) {
+		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {
 			clockStep();
 		}
 
-		bool pulse = gatePulse.process(1.0 / engineGetSampleRate());
+		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
 		
-		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].value);
+		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue());
 		for(int i=0;i<POLY;i++){ //param # starts from bottom
 			bool hasVal = polyYVals[i] > -1;
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
-				outputs[VOCT_MAIN_OUTPUT + i].value = closestVoltageForRow(polyYVals[i]);
+				outputs[VOCT_MAIN_OUTPUT + i].setVoltage(closestVoltageForRow(polyYVals[i]));
 			}
-			outputs[GATE_MAIN_OUTPUT + i].value = pulse && cellActive ? 10.0 : 0.0;
+			outputs[GATE_MAIN_OUTPUT + i].setVoltage(pulse && cellActive ? 10.0 : 0.0);
 			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;
 		}
 
 		////////////////////////////////////////////// MONO OUTPUTS //////////////////////////////////////////////
-		if(outputs[MIN_VOCT_OUTPUT].active || outputs[MIN_GATE_OUTPUT].active || 
-		   outputs[MID_VOCT_OUTPUT].active || outputs[MID_GATE_OUTPUT].active ||
-		   outputs[MAX_VOCT_OUTPUT].active || outputs[MAX_GATE_OUTPUT].active ||
-		   outputs[RND_VOCT_OUTPUT].active || outputs[RND_GATE_OUTPUT].active){
+		if(outputs[MIN_VOCT_OUTPUT].isConnected() || outputs[MIN_GATE_OUTPUT].isConnected() || 
+		   outputs[MID_VOCT_OUTPUT].isConnected() || outputs[MID_GATE_OUTPUT].isConnected() ||
+		   outputs[MAX_VOCT_OUTPUT].isConnected() || outputs[MAX_GATE_OUTPUT].isConnected() ||
+		   outputs[RND_VOCT_OUTPUT].isConnected() || outputs[RND_GATE_OUTPUT].isConnected()){
 			int *monoYVals = getYValsFromBottomAtSeqPos(false);
 			bool atLeastOne = monoYVals[0] > -1;
-			if(outputs[MIN_VOCT_OUTPUT].active && atLeastOne){
-				outputs[MIN_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[0]);
+			if(outputs[MIN_VOCT_OUTPUT].isConnected() && atLeastOne){
+				outputs[MIN_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[0]));
 			}
-			if(outputs[MIN_GATE_OUTPUT].active){
-				outputs[MIN_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			if(outputs[MIN_GATE_OUTPUT].isConnected()){
+				outputs[MIN_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
 			}
 
-			if(outputs[MID_VOCT_OUTPUT].active && atLeastOne){
+			if(outputs[MID_VOCT_OUTPUT].isConnected() && atLeastOne){
 				int minPos = 0;
 				int maxPos = findYValIdx(monoYVals, -1) - 1;
-				outputs[MID_VOCT_OUTPUT].value = closestVoltageForRow((monoYVals[minPos] + monoYVals[maxPos]) * 0.5);
+				outputs[MID_VOCT_OUTPUT].setVoltage(closestVoltageForRow((monoYVals[minPos] + monoYVals[maxPos]) * 0.5));
 			}
-			if(outputs[MID_GATE_OUTPUT].active){
-				outputs[MID_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
-			}
-
-			if(outputs[MAX_VOCT_OUTPUT].active && atLeastOne){
-				int maxPos = findYValIdx(monoYVals, -1) - 1;
-				outputs[MAX_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[maxPos]);
-			}
-			if(outputs[MAX_GATE_OUTPUT].active){
-				outputs[MAX_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			if(outputs[MID_GATE_OUTPUT].isConnected()){
+				outputs[MID_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
 			}
 
-			if(outputs[RND_VOCT_OUTPUT].active && atLeastOne){
+			if(outputs[MAX_VOCT_OUTPUT].isConnected() && atLeastOne){
 				int maxPos = findYValIdx(monoYVals, -1) - 1;
-				outputs[RND_VOCT_OUTPUT].value = closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * maxPos)]);
+				outputs[MAX_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[maxPos]));
 			}
-			if(outputs[RND_GATE_OUTPUT].active){
-				outputs[RND_GATE_OUTPUT].value = (pulse && atLeastOne) ? 10.0 : 0.0;
+			if(outputs[MAX_GATE_OUTPUT].isConnected()){
+				outputs[MAX_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
+			}
+
+			if(outputs[RND_VOCT_OUTPUT].isConnected() && atLeastOne){
+				int maxPos = findYValIdx(monoYVals, -1) - 1;
+				outputs[RND_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * maxPos)]));
+			}
+			if(outputs[RND_GATE_OUTPUT].isConnected()){
+				outputs[RND_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
 			}
 		}
 	}
@@ -298,30 +321,30 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	int getFinalHighestNote1to32(){
-		int inputOffset = inputs[HIGHEST_NOTE_INPUT].active ? clampijw(int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
-		return params[HIGHEST_NOTE_PARAM].value + inputOffset;
+		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? clampijw(int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)), 1, 32) : 0;
+		return params[HIGHEST_NOTE_PARAM].getValue() + inputOffset;
 	}
 
 	int getFinalLowestNote1to32(){
-		int inputOffset = inputs[LOWEST_NOTE_INPUT].active ? clampijw(int(rescalefjw(inputs[LOWEST_NOTE_INPUT].value, -5, 5, -16, 16)), 1, 32) : 0;
-		return params[LOWEST_NOTE_PARAM].value + inputOffset;
+		int inputOffset = inputs[LOWEST_NOTE_INPUT].isConnected() ? clampijw(int(rescalefjw(inputs[LOWEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)), 1, 32) : 0;
+		return params[LOWEST_NOTE_PARAM].getValue() + inputOffset;
 	}
 
 	float closestVoltageForRow(int cellYFromBottom){
-		int octave = params[OCTAVE_KNOB_PARAM].value;
-		int rootNote = params[NOTE_KNOB_PARAM].value;
-		int scale = params[SCALE_KNOB_PARAM].value;
+		int octave = params[OCTAVE_KNOB_PARAM].getValue();
+		int rootNote = params[NOTE_KNOB_PARAM].getValue();
+		int scale = params[SCALE_KNOB_PARAM].getValue();
 		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
 	void clockStep(){
 		gatePulse.trigger(1e-3);
 		lifeCounter++;
-		rndFloat0to1AtClockStep = randomUniform();
+		rndFloat0to1AtClockStep = random::uniform();
 
 		//iterate seq pos
-		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].value);
-		int seqLen = int(params[NoteSeq::LENGTH_KNOB_PARAM].value);
+		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
+		int seqLen = int(params[NoteSeq::LENGTH_KNOB_PARAM].getValue());
 		if(curPlayMode == PM_FWD_LOOP){
 			seqPos = (seqPos + 1) % seqLen;
 			goingForward = true;
@@ -345,16 +368,16 @@ struct NoteSeq : Module,QuantizeUtils {
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
-			seqPos = int(randomUniform() * seqLen);
+			seqPos = int(random::uniform() * seqLen);
 		}
 	}
 
 	void resetSeq(){
-		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].value);
+		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 			seqPos = 0;
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = int(params[NoteSeq::LENGTH_KNOB_PARAM].value) - 1;
+			seqPos = int(params[NoteSeq::LENGTH_KNOB_PARAM].getValue()) - 1;
 		}
 	}
 
@@ -424,18 +447,18 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	void randomizeCells() {
 		clearCells();
-		float rndAmt = params[RND_AMT_KNOB_PARAM].value + inputs[RND_AMT_INPUT].value*0.1;
-		switch(int(params[RND_MODE_KNOB_PARAM].value)){
+		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue() + inputs[RND_AMT_INPUT].getVoltage()*0.1;
+		switch(int(params[RND_MODE_KNOB_PARAM].getValue())){
 			case RND_BASIC:{
 				for(int i=0;i<CELLS;i++){
-					setCellOn(xFromI(i), yFromI(i), randomUniform() < rndAmt);
+					setCellOn(xFromI(i), yFromI(i), random::uniform() < rndAmt);
 				}
 				break;
 			}
 			case RND_EUCLID:{
 				for(int y=0; y < ROWS; y++){
-					if(randomUniform() < rndAmt){
-						int div = int(randomUniform() * COLS * 0.5) + 1;
+					if(random::uniform() < rndAmt){
+						int div = int(random::uniform() * COLS * 0.5) + 1;
 						for(int x=0; x < COLS; x++){
 							setCellOn(x, y, x % div == 0);
 						}
@@ -447,7 +470,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				int sinCount = int(rndAmt * 3) + 1;
 				for(int i=0;i<sinCount;i++){
 					float angle = 0;
-					float angleInc = randomUniform();
+					float angleInc = random::uniform();
 					float offset = ROWS * 0.5;
 					for(int x=0;x<COLS;x+=1){
 						int y = int(offset + (sinf(angle)*(offset)));
@@ -461,11 +484,11 @@ struct NoteSeq : Module,QuantizeUtils {
 				int gliderCount = int(rndAmt * 20);
 				int size = 3;
 				for(int i=0;i<gliderCount;i++){
-					int x = size + int(randomUniform() * (COLS-size*2));
-					int y = size + int(randomUniform() * (ROWS-size*2));
-					if(randomUniform() < 0.5){
+					int x = size + int(random::uniform() * (COLS-size*2));
+					int y = size + int(random::uniform() * (ROWS-size*2));
+					if(random::uniform() < 0.5){
 						//down
-						if(randomUniform() < 0.5){
+						if(random::uniform() < 0.5){
 							//right
 							setCellOn(x, y, true);
 							setCellOn(x+1, y+1, true);
@@ -482,7 +505,7 @@ struct NoteSeq : Module,QuantizeUtils {
 						}
 					} else {
 						//up
-						if(randomUniform() < 0.5){
+						if(random::uniform() < 0.5){
 							//right
 							setCellOn(x, y, true);
 							setCellOn(x+1, y-1, true);
@@ -601,75 +624,75 @@ struct NoteSeqDisplay : Widget {
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(NVGcontext *vg) override {
+	void draw(const DrawArgs &args) override {
 		//background
-		nvgFillColor(vg, nvgRGB(20, 30, 33));
-		nvgBeginPath(vg);
-		nvgRect(vg, 0, 0, box.size.x, box.size.y);
-		nvgFill(vg);
+		nvgFillColor(args.vg, nvgRGB(20, 30, 33));
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+		nvgFill(args.vg);
 
 		//grid
-		nvgStrokeColor(vg, nvgRGB(60, 70, 73));
+		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
 		for(int i=1;i<COLS;i++){
-			nvgStrokeWidth(vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(vg);
-			nvgMoveTo(vg, i * HW, 0);
-			nvgLineTo(vg, i * HW, box.size.y);
-			nvgStroke(vg);
+			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, i * HW, 0);
+			nvgLineTo(args.vg, i * HW, box.size.y);
+			nvgStroke(args.vg);
 		}
 		for(int i=1;i<ROWS;i++){
-			nvgStrokeWidth(vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(vg);
-			nvgMoveTo(vg, 0, i * HW);
-			nvgLineTo(vg, box.size.x, i * HW);
-			nvgStroke(vg);
+			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, i * HW);
+			nvgLineTo(args.vg, box.size.x, i * HW);
+			nvgStroke(args.vg);
 		}
 
 		if(module == NULL) return;
 
 		//cells
-		nvgFillColor(vg, nvgRGB(25, 150, 252)); //blue
+		nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
 		for(int i=0;i<CELLS;i++){
 			if(module->cells[i]){
 				int y = i / ROWS;
 				int x = i % COLS;
-				nvgBeginPath(vg);
-				nvgRect(vg, x * HW, y * HW, HW, HW);
-				nvgFill(vg);
+				nvgBeginPath(args.vg);
+				nvgRect(args.vg, x * HW, y * HW, HW, HW);
+				nvgFill(args.vg);
 			}
 		}
 
-		nvgStrokeWidth(vg, 2);
+		nvgStrokeWidth(args.vg, 2);
 
 		//highest note line
 		float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
-		nvgStrokeColor(vg, nvgRGB(255, 151, 9));//orange
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, 0, rowHighLimitY);
-		nvgLineTo(vg, box.size.x, rowHighLimitY);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, nvgRGB(255, 151, 9));//orange
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, 0, rowHighLimitY);
+		nvgLineTo(args.vg, box.size.x, rowHighLimitY);
+		nvgStroke(args.vg);
 
 		//lowest note line
 		float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
-		nvgStrokeColor(vg, nvgRGB(255, 243, 9));//yellow
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, 0, rowLowLimitY);
-		nvgLineTo(vg, box.size.x, rowLowLimitY);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, 0, rowLowLimitY);
+		nvgLineTo(args.vg, box.size.x, rowLowLimitY);
+		nvgStroke(args.vg);
 
 		//seq length line
-		float colLimitX = module->params[NoteSeq::LENGTH_KNOB_PARAM].value * HW;
-		nvgStrokeColor(vg, nvgRGB(144, 26, 252));//purple
-		nvgBeginPath(vg);
-		nvgMoveTo(vg, colLimitX, 0);
-		nvgLineTo(vg, colLimitX, box.size.y);
-		nvgStroke(vg);
+		float colLimitX = module->params[NoteSeq::LENGTH_KNOB_PARAM].getValue() * HW;
+		nvgStrokeColor(args.vg, nvgRGB(144, 26, 252));//purple
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, colLimitX, 0);
+		nvgLineTo(args.vg, colLimitX, box.size.y);
+		nvgStroke(args.vg);
 
 		//seq pos
-		nvgStrokeColor(vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(vg);
-		nvgRect(vg, module->seqPos * HW, 0, HW, box.size.y);
-		nvgStroke(vg);
+		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, module->seqPos * HW, 0, HW, box.size.y);
+		nvgStroke(args.vg);
 	}
 };
 
@@ -708,12 +731,13 @@ struct NoteSeqWidget : ModuleWidget {
 	NoteSeqWidget(NoteSeq *module); 
 };
 
-NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
+NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/NoteSeq.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/NoteSeq.svg")));
 	addChild(panel);
 
 	NoteSeqDisplay *display = new NoteSeqDisplay();
@@ -734,11 +758,11 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createPort<TinyPJ301MPort>(Vec(25, 40), PortWidget::INPUT, module, NoteSeq::CLOCK_INPUT));
-	addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeq::STEP_BTN_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(92, 35), module, NoteSeq::LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 40), module, NoteSeq::CLOCK_INPUT));
+	addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeq::STEP_BTN_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(92, 35), module, NoteSeq::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(126, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_PLAY_MODES - 1, 0.0));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(126, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(69.5, 35);
 	playModeLabel->text = "";
@@ -747,12 +771,12 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addParam(playModeKnob);
 
 	//row 2
-	addInput(createPort<TinyPJ301MPort>(Vec(10, 92), PortWidget::INPUT, module, NoteSeq::RESET_INPUT));
-	addParam(createParam<SmallButton>(Vec(30, 87), module, NoteSeq::RESET_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(60, 92), PortWidget::INPUT, module, NoteSeq::CLEAR_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 87), module, NoteSeq::CLEAR_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 92), module, NoteSeq::RESET_INPUT));
+	addParam(createParam<SmallButton>(Vec(30, 87), module, NoteSeq::RESET_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 92), module, NoteSeq::CLEAR_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 87), module, NoteSeq::CLEAR_BTN_PARAM));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 87), module, NoteSeq::RND_MODE_KNOB_PARAM, 0.0, NoteSeq::NUM_RND_MODES - 1, 0.0));
+	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 87), module, NoteSeq::RND_MODE_KNOB_PARAM));
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
 	rndModeLabel->box.pos = Vec(67, 61);
 	rndModeLabel->text = "";
@@ -761,28 +785,28 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addParam(rndModeKnob);
 
 	//row 3
-	addInput(createPort<TinyPJ301MPort>(Vec(60, 150), PortWidget::INPUT, module, NoteSeq::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeq::RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(118, 150), PortWidget::INPUT, module, NoteSeq::RND_AMT_INPUT));
-	addParam(createParam<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq::RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 150), module, NoteSeq::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeq::RND_TRIG_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeq::RND_AMT_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq::RND_AMT_KNOB_PARAM));
 
-	addInput(createPort<TinyPJ301MPort>(Vec(60, 201), PortWidget::INPUT, module, NoteSeq::SHIFT_UP_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq::SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(118, 201), PortWidget::INPUT, module, NoteSeq::SHIFT_DOWN_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq::SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 201), module, NoteSeq::SHIFT_UP_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq::SHIFT_UP_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 201), module, NoteSeq::SHIFT_DOWN_INPUT));
+	addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq::SHIFT_DOWN_BTN_PARAM));
 
-	addInput(createPort<TinyPJ301MPort>(Vec(60, 252), PortWidget::INPUT, module, NoteSeq::ROT_RIGHT_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 247), module, NoteSeq::ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(118, 252), PortWidget::INPUT, module, NoteSeq::ROT_LEFT_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeq::ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 252), module, NoteSeq::ROT_RIGHT_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 247), module, NoteSeq::ROT_RIGHT_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 252), module, NoteSeq::ROT_LEFT_INPUT));
+	addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeq::ROT_LEFT_BTN_PARAM));
 
-	addInput(createPort<TinyPJ301MPort>(Vec(60, 304), PortWidget::INPUT, module, NoteSeq::FLIP_HORIZ_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq::FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(118, 304), PortWidget::INPUT, module, NoteSeq::FLIP_VERT_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeq::FLIP_HORIZ_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq::FLIP_HORIZ_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeq::FLIP_VERT_INPUT));
+	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM));
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0));
+	addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
@@ -790,33 +814,33 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	float outputRowDist = 21.0;
 	for(int i=0;i<POLY;i++){
 		int paramIdx = POLY - i - 1;
-		addOutput(createPort<TinyPJ301MPort>(Vec(559.081, outputRowTop + i * outputRowDist), PortWidget::OUTPUT, module, NoteSeq::VOCT_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(559.081, outputRowTop + i * outputRowDist), module, NoteSeq::VOCT_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
-		addOutput(createPort<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), PortWidget::OUTPUT, module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 
-	addOutput(createPort<TinyPJ301MPort>(Vec(656.303, outputRowTop), PortWidget::OUTPUT, module, NoteSeq::MIN_VOCT_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(689.081, outputRowTop), PortWidget::OUTPUT, module, NoteSeq::MIN_GATE_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(656.303, outputRowTop + outputRowDist), PortWidget::OUTPUT, module, NoteSeq::MID_VOCT_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(689.081, outputRowTop + outputRowDist), PortWidget::OUTPUT, module, NoteSeq::MID_GATE_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(656.303, outputRowTop + 2*outputRowDist), PortWidget::OUTPUT, module, NoteSeq::MAX_VOCT_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(689.081, outputRowTop + 2*outputRowDist), PortWidget::OUTPUT, module, NoteSeq::MAX_GATE_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(656.303, outputRowTop + 3*outputRowDist), PortWidget::OUTPUT, module, NoteSeq::RND_VOCT_OUTPUT));
-	addOutput(createPort<TinyPJ301MPort>(Vec(689.081, outputRowTop + 3*outputRowDist), PortWidget::OUTPUT, module, NoteSeq::RND_GATE_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq::MIN_VOCT_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq::MIN_GATE_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + outputRowDist), module, NoteSeq::MID_VOCT_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + outputRowDist), module, NoteSeq::MID_GATE_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 2*outputRowDist), module, NoteSeq::MAX_VOCT_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 2*outputRowDist), module, NoteSeq::MAX_GATE_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 3*outputRowDist), module, NoteSeq::RND_VOCT_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 3*outputRowDist), module, NoteSeq::RND_GATE_OUTPUT));
 
-	addInput(createPort<TinyPJ301MPort>(Vec(643, 152), PortWidget::INPUT, module, NoteSeq::HIGHEST_NOTE_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(663, 147), module, NoteSeq::HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0));
-	addInput(createPort<TinyPJ301MPort>(Vec(643, 195), PortWidget::INPUT, module, NoteSeq::LOWEST_NOTE_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq::LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0));
+	addInput(createInput<TinyPJ301MPort>(Vec(643, 152), module, NoteSeq::HIGHEST_NOTE_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(663, 147), module, NoteSeq::HIGHEST_NOTE_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(643, 195), module, NoteSeq::LOWEST_NOTE_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq::LOWEST_NOTE_PARAM));
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0));
+	addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq::INCLUDE_INACTIVE_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float pitchParamYVal = 320;
 	float labelY = 178;
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(626, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(626, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(319, labelY);
 	noteLabel->text = "";
@@ -824,7 +848,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) : ModuleWidget(module) {
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(677, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(677, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(345, labelY);
 	scaleLabel->text = "";

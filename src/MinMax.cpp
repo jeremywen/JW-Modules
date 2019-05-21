@@ -25,13 +25,15 @@ struct MinMax : Module {
 	int bufferIndex = 0;
 	float frameIndex = 0;
 
-	SchmittTrigger sumTrigger;
-	SchmittTrigger extTrigger;
+	dsp::SchmittTrigger sumTrigger;
+	dsp::SchmittTrigger extTrigger;
 	bool lissajous = false;
-	SchmittTrigger resetTrigger;
+	dsp::SchmittTrigger resetTrigger;
 
-	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step() override;
+	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0);		
+	}
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -52,17 +54,17 @@ struct MinMax : Module {
 };
 
 
-void MinMax::step() {
+void MinMax::process(const ProcessArgs &args) {
 	// Compute time
-	float deltaTime = powf(2.0, params[TIME_PARAM].value);
-	int frameCount = (int)ceilf(deltaTime * engineGetSampleRate());
+	float deltaTime = powf(2.0, params[TIME_PARAM].getValue());
+	int frameCount = (int)ceilf(deltaTime * args.sampleRate);
 
 	// Add frame to buffer
 	if (bufferIndex < BUFFER_SIZE) {
 		if (++frameIndex > frameCount) {
 			frameIndex = 0;
-			bufferX[bufferIndex] = inputs[X_INPUT].value;
-			bufferY[bufferIndex] = inputs[Y_INPUT].value;
+			bufferX[bufferIndex] = inputs[X_INPUT].getVoltage();
+			bufferY[bufferIndex] = inputs[Y_INPUT].getVoltage();
 			bufferIndex++;
 		}
 	}
@@ -83,17 +85,17 @@ void MinMax::step() {
 		frameIndex++;
 
 		// Must go below 0.1V to trigger
-		// resetTrigger.setThresholds(params[TRIG_PARAM].value - 0.1, params[TRIG_PARAM].value);
-		float gate = inputs[X_INPUT].value;
+		// resetTrigger.setThresholds(params[TRIG_PARAM].getValue() - 0.1, params[TRIG_PARAM].getValue());
+		float gate = inputs[X_INPUT].getVoltage();
 
 		// Reset if triggered
 		float holdTime = 0.1;
-		if (resetTrigger.process(gate) || (frameIndex >= engineGetSampleRate() * holdTime)) {
+		if (resetTrigger.process(gate) || (frameIndex >= args.sampleRate * holdTime)) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 
 		// Reset if we've waited too long
-		if (frameIndex >= engineGetSampleRate() * holdTime) {
+		if (frameIndex >= args.sampleRate * holdTime) {
 			bufferIndex = 0; frameIndex = 0; return;
 		}
 	}
@@ -124,23 +126,23 @@ struct MinMaxDisplay : TransparentWidget {
 	Stats statsX, statsY;
 
 	MinMaxDisplay() {
-		font = Font::load(assetPlugin(pluginInstance, "res/DejaVuSansMono.ttf"));
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/DejaVuSansMono.ttf"));
 	}
 
-	void drawStats(NVGcontext *vg, Vec pos, const char *title, Stats *stats) {
-		nvgFontSize(vg, 24);
-		nvgFontFaceId(vg, font->handle);
-		nvgTextLetterSpacing(vg, -2);
+	void drawStats(const DrawArgs &args, Vec pos, const char *title, Stats *stats) {
+		nvgFontSize(args.vg, 24);
+		nvgFontFaceId(args.vg, font->handle);
+		nvgTextLetterSpacing(args.vg, -2);
 
-		nvgFillColor(vg, nvgRGBA(0xff, 0xff, 0xff, 0x80));
+		nvgFillColor(args.vg, nvgRGBA(0xff, 0xff, 0xff, 0x80));
 		char text[128];
 		snprintf(text, sizeof(text), "%5.2f", stats->vmin);
-		nvgText(vg, pos.x + 10, pos.y + 28, text, NULL);
+		nvgText(args.vg, pos.x + 10, pos.y + 28, text, NULL);
 		snprintf(text, sizeof(text), "%5.2f", stats->vmax);
-		nvgText(vg, pos.x + 10, pos.y + 78, text, NULL);
+		nvgText(args.vg, pos.x + 10, pos.y + 78, text, NULL);
 	}
 
-	void draw(NVGcontext *vg) {
+	void draw(const DrawArgs &args) {
 		float gainX = 1;
 		float gainY = 1;
 		float offsetX = 0;
@@ -163,7 +165,7 @@ struct MinMaxDisplay : TransparentWidget {
 			statsX.calculate(module->bufferX);
 			statsY.calculate(module->bufferY);
 		}
-		drawStats(vg, Vec(0, 20), "X", &statsX);
+		drawStats(args, Vec(0, 20), "X", &statsX);
 	}
 };
 
@@ -172,13 +174,14 @@ struct MinMaxWidget : ModuleWidget {
 	MinMaxWidget(MinMax *module); 
 };
 
-MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
+MinMaxWidget::MinMaxWidget(MinMax *module) {
+		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
 	{
 		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/MinMax.svg")));
+		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/MinMax.svg")));
 		addChild(panel);
 	}
 
@@ -220,8 +223,8 @@ MinMaxWidget::MinMaxWidget(MinMax *module) : ModuleWidget(module) {
 	inLabel->text = "Input";
 	addChild(inLabel);
 
-	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM, -6.0, -16.0, -14.0));
-	addInput(createPort<PJ301MPort>(Vec(33, 275), PortWidget::INPUT, module, MinMax::X_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(32, 209), module, MinMax::TIME_PARAM));
+	addInput(createInput<PJ301MPort>(Vec(33, 275), module, MinMax::X_INPUT));
 }
 
 Model *modelMinMax = createModel<MinMax, MinMaxWidget>("MinMax");

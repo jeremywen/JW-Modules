@@ -13,8 +13,8 @@ struct Ball {
 	Rect box;
 	Rect previousBox;
 	Vec vel;
-	SchmittTrigger resetTrigger, bumpTrigger;
-	PulseGenerator northPulse, eastPulse, southPulse, westPulse, paddlePulse;
+	dsp::SchmittTrigger resetTrigger, bumpTrigger;
+	dsp::PulseGenerator northPulse, eastPulse, southPulse, westPulse, paddlePulse;
 	NVGcolor color;
 	void setPosition(float x, float y){
 		previousBox.pos.x = box.pos.x;
@@ -79,12 +79,34 @@ struct BouncyBalls : Module {
 	float ballStrokeWidth = 2;
 	float minVolt = -5, maxVolt = 5;
 	float velScale = 0.01;
-	float rate = 1.0 / engineGetSampleRate();
+	float rate = 1.0 / APP->engine->getSampleRate();
 	
 	Ball *balls = new Ball[4];
 	Paddle paddle;
 
-	BouncyBalls() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	BouncyBalls() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		for(int x=0; x<4; x++){
+			configParam(RESET_PARAM + x, 0.0, 1.0, 0.0);
+		}
+		for(int x=0; x<4; x++){
+			configParam(TRIG_BTN_PARAM + x, 0.0, 1.0, 0.0);
+		}
+		for(int x=0; x<4; x++){
+			configParam(VEL_X_PARAM + x, -3.0, 3.0, 0.25);
+		}
+		for(int x=0; x<4; x++){
+			configParam(VEL_Y_PARAM + x, -3.0, 3.0, 0.5);
+		}
+		for(int x=0; x<4; x++){
+			configParam(SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0);
+		}
+		configParam(PAD_ON_PARAM, 0.0, 1.0, 0.0);
+		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5);
+		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5);
+		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0);
+		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0);
+
 		balls[0].color = nvgRGB(255, 151, 9);//orange
 		balls[1].color = nvgRGB(255, 243, 9);//yellow
 		balls[2].color = nvgRGB(144, 26, 252);//purple
@@ -101,7 +123,7 @@ struct BouncyBalls : Module {
 		delete [] balls;
 	}
 
-	void step() override;
+	void process(const ProcessArgs &args) override;
 	void onReset() override {
 		resetBalls();
 		paddle.locked = true;
@@ -110,7 +132,7 @@ struct BouncyBalls : Module {
 	}
 
 	void onSampleRateChange() override {
-		rate = 1.0 / engineGetSampleRate();
+		rate = 1.0 / APP->engine->getSampleRate();
 	}
 
 	json_t *dataToJson() override {
@@ -151,18 +173,18 @@ struct BouncyBalls : Module {
 	}
 };
 
-void BouncyBalls::step() {	
+void BouncyBalls::process(const ProcessArgs &args) {	
 	for(int i=0; i<4; i++){
 		Ball &b = balls[i];
-		Vec velocity = Vec(params[VEL_X_PARAM + i].value + inputs[VEL_X_INPUT + i].value, 
-						   params[VEL_Y_PARAM + i].value + inputs[VEL_Y_INPUT + i].value);
+		Vec velocity = Vec(params[VEL_X_PARAM + i].getValue() + inputs[VEL_X_INPUT + i].getVoltage(), 
+						   params[VEL_Y_PARAM + i].getValue() + inputs[VEL_Y_INPUT + i].getVoltage());
 
-		if (b.resetTrigger.process(inputs[RESET_INPUT + i].value + params[RESET_PARAM + i].value)) {
+		if (b.resetTrigger.process(inputs[RESET_INPUT + i].getVoltage() + params[RESET_PARAM + i].getValue())) {
 			resetBallAtIdx(i);
 			b.vel = Vec(velocity.mult(velScale));
 		}
 
-		if (b.bumpTrigger.process(inputs[TRIG_INPUT + i].value + params[TRIG_BTN_PARAM + i].value)) {
+		if (b.bumpTrigger.process(inputs[TRIG_INPUT + i].getVoltage() + params[TRIG_BTN_PARAM + i].getValue())) {
 			b.vel = b.vel.plus(velocity.mult(velScale));
 		}
 
@@ -206,23 +228,23 @@ void BouncyBalls::step() {
 			hitEdge = true;
 		}
 
-		if(paddle.visible && inputs[PAD_POS_X_INPUT].active){
-			paddle.box.pos.x = -50 + clampfjw(rescalefjw(inputs[PAD_POS_X_INPUT].value, -5, 5, 50, displayWidth - 50), 50, displayWidth - 50);
+		if(paddle.visible && inputs[PAD_POS_X_INPUT].isConnected()){
+			paddle.box.pos.x = -50 + clampfjw(rescalefjw(inputs[PAD_POS_X_INPUT].getVoltage(), -5, 5, 50, displayWidth - 50), 50, displayWidth - 50);
 		}
-		if(paddle.visible && inputs[PAD_POS_Y_INPUT].active){
-			paddle.box.pos.y = clampfjw(rescalefjw(inputs[PAD_POS_Y_INPUT].value, -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
+		if(paddle.visible && inputs[PAD_POS_Y_INPUT].isConnected()){
+			paddle.box.pos.y = clampfjw(rescalefjw(inputs[PAD_POS_Y_INPUT].getVoltage(), -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
 		}
 
-		if(outputs[X_OUTPUT + i].active)outputs[X_OUTPUT + i].value = (rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].value) * params[SCALE_X_PARAM].value;
-		if(outputs[Y_OUTPUT + i].active)outputs[Y_OUTPUT + i].value = (rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].value) * params[SCALE_Y_PARAM].value;//y is inverted because gui coords
-		if(outputs[N_OUTPUT + i].active)outputs[N_OUTPUT + i].value = b.northPulse.process(rate) ? 10.0 : 0.0;
-		if(outputs[E_OUTPUT + i].active)outputs[E_OUTPUT + i].value = b.eastPulse.process(rate) ? 10.0 : 0.0;
-		if(outputs[S_OUTPUT + i].active)outputs[S_OUTPUT + i].value = b.southPulse.process(rate) ? 10.0 : 0.0;
-		if(outputs[W_OUTPUT + i].active)outputs[W_OUTPUT + i].value = b.westPulse.process(rate) ? 10.0 : 0.0;
-		if(outputs[EDGE_HIT_OUTPUT + i].active)outputs[EDGE_HIT_OUTPUT + i].value = hitEdge ? 10.0 : 0.0;
-		if(outputs[PAD_TRIG_OUTPUT + i].active)outputs[PAD_TRIG_OUTPUT + i].value = b.paddlePulse.process(rate) ? 10.0 : 0.0;
+		if(outputs[X_OUTPUT + i].isConnected())outputs[X_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].getValue()) * params[SCALE_X_PARAM].getValue());
+		if(outputs[Y_OUTPUT + i].isConnected())outputs[Y_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].getValue()) * params[SCALE_Y_PARAM].getValue());//y is inverted because gui coords
+		if(outputs[N_OUTPUT + i].isConnected())outputs[N_OUTPUT + i].setVoltage(b.northPulse.process(rate) ? 10.0 : 0.0);
+		if(outputs[E_OUTPUT + i].isConnected())outputs[E_OUTPUT + i].setVoltage(b.eastPulse.process(rate) ? 10.0 : 0.0);
+		if(outputs[S_OUTPUT + i].isConnected())outputs[S_OUTPUT + i].setVoltage(b.southPulse.process(rate) ? 10.0 : 0.0);
+		if(outputs[W_OUTPUT + i].isConnected())outputs[W_OUTPUT + i].setVoltage(b.westPulse.process(rate) ? 10.0 : 0.0);
+		if(outputs[EDGE_HIT_OUTPUT + i].isConnected())outputs[EDGE_HIT_OUTPUT + i].setVoltage(hitEdge ? 10.0 : 0.0);
+		if(outputs[PAD_TRIG_OUTPUT + i].isConnected())outputs[PAD_TRIG_OUTPUT + i].setVoltage(b.paddlePulse.process(rate) ? 10.0 : 0.0);
 
-		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].value + inputs[SPEED_MULT_INPUT + i].value));
+		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].getValue() + inputs[SPEED_MULT_INPUT + i].getVoltage()));
 		b.setPosition(
 			clampfjw(newPos.x, 0, displayWidth), 
 			clampfjw(newPos.y, 0, displayHeight)
@@ -237,10 +259,10 @@ struct BouncyBallDisplay : Widget {
 	void onHover(const event::Hover &e) override {
 		Widget::onHover(e);
 		if(module){
-			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_X_INPUT].active){
+			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_X_INPUT].isConnected()){
 				module->paddle.box.pos.x = -50 + clampfjw(e.pos.x, 50, box.size.x - 50);
 			}
-			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_Y_INPUT].active){
+			if(!module->paddle.locked && !module->inputs[BouncyBalls::PAD_POS_Y_INPUT].isConnected()){
 				module->paddle.box.pos.y = clampfjw(e.pos.y, 0, box.size.y - 10);
 			}
 		}
@@ -255,31 +277,31 @@ struct BouncyBallDisplay : Widget {
 		}
 	}
 
-	void draw(NVGcontext *vg) override {
+	void draw(const DrawArgs &args) override {
 		//background
-		nvgFillColor(vg, nvgRGB(20, 30, 33));
-		nvgBeginPath(vg);
-		nvgRect(vg, 0, 0, box.size.x, box.size.y);
-		nvgFill(vg);
+		nvgFillColor(args.vg, nvgRGB(20, 30, 33));
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+		nvgFill(args.vg);
 		
 		if(module != NULL){
 			//paddle
 			if(module->paddle.visible){
-				nvgFillColor(vg, nvgRGB(255, 255, 255));
-				nvgBeginPath(vg);
-				nvgRect(vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
-				nvgFill(vg);
+				nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgRect(args.vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
+				nvgFill(args.vg);
 			}
 			//balls
 			for(int i=0; i<4; i++){
-				nvgFillColor(vg, module->balls[i].color);
-				nvgStrokeColor(vg, module->balls[i].color);
-				nvgStrokeWidth(vg, 2);
-				nvgBeginPath(vg);
+				nvgFillColor(args.vg, module->balls[i].color);
+				nvgStrokeColor(args.vg, module->balls[i].color);
+				nvgStrokeWidth(args.vg, 2);
+				nvgBeginPath(args.vg);
 				Vec ctr = module->balls[i].box.getCenter();
-				nvgCircle(vg, ctr.x, ctr.y, module->ballRadius);
-				nvgFill(vg);
-				nvgStroke(vg);
+				nvgCircle(args.vg, ctr.x, ctr.y, module->ballRadius);
+				nvgFill(args.vg);
+				nvgStroke(args.vg);
 			}
 		} else {
 			//TODO maybe draw some balls and a paddle in preview
@@ -307,12 +329,13 @@ struct PaddleVisibleButton : TinyButton {
 	}
 };
 
-BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module) {
+BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) {
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
-	panel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/BouncyBalls.svg")));
+	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/BouncyBalls.svg")));
 	addChild(panel);
 
 	BouncyBallDisplay *display = new BouncyBallDisplay();
@@ -344,17 +367,17 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_X_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_X_PARAM + x, -3.0, 3.0, 0.25));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_X_PARAM + x));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::VEL_Y_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_Y_PARAM + x, -3.0, 3.0, 0.5));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::VEL_Y_PARAM + x));
 	}
 	topY+=yAdder;
 	for(int x=0; x<4; x++){
 		addColoredPort(x, Vec(leftX + x * xMult, topY), BouncyBalls::SPEED_MULT_INPUT + x, true);
-		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0));
+		addParam(createParam<SmallWhiteKnob>(Vec(leftX + knobDist + x * xMult, topY-5), module, BouncyBalls::SPEED_MULT_PARAM + x));
 	}
 	
 	/////////////////////// OUTPUTS ///////////////////////
@@ -398,41 +421,41 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) : ModuleWidget(module)
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 220), BouncyBalls::PAD_POS_X_INPUT, true);
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 245), BouncyBalls::PAD_POS_Y_INPUT, true);
 
-	addParam(createParam<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(38+3.75, 270+3.75), module, BouncyBalls::PAD_ON_LIGHT));
 
 	//scale and offset
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBalls::SCALE_X_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 242), module, BouncyBalls::SCALE_Y_PARAM, 0.01, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 290), module, BouncyBalls::OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(222, 338), module, BouncyBalls::OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 200), module, BouncyBalls::SCALE_X_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 242), module, BouncyBalls::SCALE_Y_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 290), module, BouncyBalls::OFFSET_X_VOLTS_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(222, 338), module, BouncyBalls::OFFSET_Y_VOLTS_PARAM));
 }
 
 void BouncyBallsWidget::addButton(Vec pos, int param) {
-	addParam(createParam<SmallButton>(pos, module, param, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallButton>(pos, module, param));
 }
 
 void BouncyBallsWidget::addColoredPort(int color, Vec pos, int param, bool input) {
 	switch(color){
 		case ORANGE_INPUT_COLOR:
-			if(input) { addInput(createPort<Orange_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
-			else { addOutput(createPort<Orange_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
+			if(input) { addInput(createInput<Orange_TinyPJ301MPort>(pos, module, param)); } 
+			else { addOutput(createOutput<Orange_TinyPJ301MPort>(pos, module, param));	}
 			break;
 		case YELLOW_INPUT_COLOR:
-			if(input) { addInput(createPort<Yellow_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
-			else { addOutput(createPort<Yellow_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
+			if(input) { addInput(createInput<Yellow_TinyPJ301MPort>(pos, module, param)); } 
+			else { addOutput(createOutput<Yellow_TinyPJ301MPort>(pos, module, param));	}
 			break;
 		case PURPLE_INPUT_COLOR:
-			if(input) { addInput(createPort<Purple_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
-			else { addOutput(createPort<Purple_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
+			if(input) { addInput(createInput<Purple_TinyPJ301MPort>(pos, module, param)); } 
+			else { addOutput(createOutput<Purple_TinyPJ301MPort>(pos, module, param));	}
 			break;
 		case BLUE_INPUT_COLOR:
-			if(input) { addInput(createPort<Blue_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
-			else { addOutput(createPort<Blue_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
+			if(input) { addInput(createInput<Blue_TinyPJ301MPort>(pos, module, param)); } 
+			else { addOutput(createOutput<Blue_TinyPJ301MPort>(pos, module, param));	}
 			break;
 		case WHITE_INPUT_COLOR:
-			if(input) { addInput(createPort<White_TinyPJ301MPort>(pos, PortWidget::INPUT, module, param)); } 
-			else { addOutput(createPort<White_TinyPJ301MPort>(pos, PortWidget::OUTPUT, module, param));	}
+			if(input) { addInput(createInput<White_TinyPJ301MPort>(pos, module, param)); } 
+			else { addOutput(createOutput<White_TinyPJ301MPort>(pos, module, param));	}
 			break;
 	}
 }
