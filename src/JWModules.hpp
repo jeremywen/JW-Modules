@@ -211,6 +211,7 @@ struct MyRedValueLight : ModuleLightWidget {
 
 struct RightMoveButton : SVGSwitch {
 	RightMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RightButtonDown.svg")));
 	}
@@ -218,6 +219,7 @@ struct RightMoveButton : SVGSwitch {
 
 struct LeftMoveButton : SVGSwitch {
 	LeftMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/LeftButtonDown.svg")));
 	}
@@ -225,6 +227,7 @@ struct LeftMoveButton : SVGSwitch {
 
 struct DownMoveButton : SVGSwitch {
 	DownMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DownButtonDown.svg")));
 	}
@@ -232,6 +235,7 @@ struct DownMoveButton : SVGSwitch {
 
 struct UpMoveButton : SVGSwitch {
 	UpMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UpButtonDown.svg")));
 	}
@@ -239,6 +243,7 @@ struct UpMoveButton : SVGSwitch {
 
 struct RndMoveButton : SVGSwitch {
 	RndMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RndButtonDown.svg")));
 	}
@@ -246,6 +251,7 @@ struct RndMoveButton : SVGSwitch {
 
 struct RepMoveButton : SVGSwitch {
 	RepMoveButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButton.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/RepButtonDown.svg")));
 	}
@@ -253,6 +259,7 @@ struct RepMoveButton : SVGSwitch {
 
 struct TinyButton : SVGSwitch {
 	TinyButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyButtonUp.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyButtonDown.svg")));
 	}
@@ -260,6 +267,7 @@ struct TinyButton : SVGSwitch {
 
 struct SmallButton : SVGSwitch {
 	SmallButton() {
+		momentary = true;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallButtonUp.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallButtonDown.svg")));
 	}
