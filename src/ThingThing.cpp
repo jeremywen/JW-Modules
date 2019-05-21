@@ -73,7 +73,7 @@ struct ThingThingDisplay : Widget {
 
 		float zoom = module->params[ThingThing::ZOOM_MULT_PARAM].getValue();
 		if(module->inputs[ThingThing::ZOOM_MULT_INPUT].isConnected()){
-			ballRadius += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].getVoltage(), -5.0, 5.0, 1.0, 50.0);
+			zoom += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].getVoltage(), -5.0, 5.0, 1.0, 50.0);
 		}
 
       float x[5];
@@ -125,7 +125,7 @@ struct ThingThingWidget : ModuleWidget {
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
