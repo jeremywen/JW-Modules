@@ -3,7 +3,7 @@
 
 using namespace rack;
 
-struct JWModuleResizeHandle : Widget {
+struct JWModuleResizeHandle : OpaqueWidget {
 	bool right = false;
 	Vec dragPos;
 	Rect originalBox;
@@ -13,7 +13,6 @@ struct JWModuleResizeHandle : Widget {
 	}
 
 	void onDragStart(const event::DragStart &e) override {
-printf("onDragStart\n");
 		if (e.button != GLFW_MOUSE_BUTTON_LEFT)
 			return;
 
@@ -24,7 +23,6 @@ printf("onDragStart\n");
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-printf("onDragMove\n");
 		ModuleWidget *mw = getAncestorOfType<ModuleWidget>();
 		assert(mw);
 
