@@ -53,12 +53,12 @@
         {
 			"slug": "NoteSeq",
 			"name": "NoteSeq",
-			"tags": ["Sequencer"]
+			"tags": ["Sequencer", "Poly"]
 		},
 		{
 			"slug": "Quantizer",
 			"name": "Quantizer",
-			"tags": ["Quantizer"]
+			"tags": ["Quantizer", "Poly"]
 		},
         {
 			"slug": "SimpleClock",

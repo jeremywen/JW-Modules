@@ -40,7 +40,12 @@ struct Quantizer : Module,QuantizeUtils {
 void Quantizer::process(const ProcessArgs &args) {
 	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
 	int scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
-	outputs[VOLT_OUTPUT].setVoltage(closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(), rootNote, scale));
+	int channels = inputs[VOLT_INPUT].getChannels();
+	for (int c = 0; c < channels; c++) {
+		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale);
+		outputs[VOLT_OUTPUT].setVoltage(volts, c);
+	}
+	outputs[VOLT_OUTPUT].setChannels(channels);
 }
 
 struct QuantizerWidget : ModuleWidget { 

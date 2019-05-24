@@ -70,6 +70,8 @@ struct NoteSeq : Module,QuantizeUtils {
 		MAX_GATE_OUTPUT,
 		RND_VOCT_OUTPUT,
 		RND_GATE_OUTPUT,
+		POLY_VOCT_OUTPUT,
+		POLY_GATE_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -229,11 +231,17 @@ struct NoteSeq : Module,QuantizeUtils {
 			bool hasVal = polyYVals[i] > -1;
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
-				outputs[VOCT_MAIN_OUTPUT + i].setVoltage(closestVoltageForRow(polyYVals[i]));
+				float volts = closestVoltageForRow(polyYVals[i]);
+				outputs[VOCT_MAIN_OUTPUT + i].setVoltage(volts);
+				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
 			}
-			outputs[GATE_MAIN_OUTPUT + i].setVoltage(pulse && cellActive ? 10.0 : 0.0);
-			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;
+			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+			outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
+			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
+			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
 		}
+		outputs[POLY_GATE_OUTPUT].setChannels(POLY);
+		outputs[POLY_VOCT_OUTPUT].setChannels(POLY);
 
 		////////////////////////////////////////////// MONO OUTPUTS //////////////////////////////////////////////
 		if(outputs[MIN_VOCT_OUTPUT].isConnected() || outputs[MIN_GATE_OUTPUT].isConnected() || 
@@ -818,6 +826,8 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
+	addOutput(createOutput<TinyPJ301MPort>(Vec(640, 350), module, NoteSeq::POLY_VOCT_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(673, 350), module, NoteSeq::POLY_GATE_OUTPUT));
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq::MIN_VOCT_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq::MIN_GATE_OUTPUT));
@@ -837,20 +847,20 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq::OCTAVE_KNOB_PARAM));
 
 	///// NOTE AND SCALE CONTROLS /////
-	float pitchParamYVal = 320;
-	float labelY = 178;
+	float pitchParamYVal = 276;
+	float labelY = 158;
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(626, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(620, pitchParamYVal), module, NoteSeq::NOTE_KNOB_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(319, labelY);
+	noteLabel->box.pos = Vec(316, labelY);
 	noteLabel->text = "";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(677, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(683, pitchParamYVal), module, NoteSeq::SCALE_KNOB_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(345, labelY);
+	scaleLabel->box.pos = Vec(348, labelY);
 	scaleLabel->text = "";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
