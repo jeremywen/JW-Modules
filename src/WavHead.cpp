@@ -19,7 +19,8 @@ struct WavHead : Module {
 	bool neg5ToPos5 = false;
 	bool snowMode = false;
 	WavHead() {
-		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);}
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	}
 	
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();

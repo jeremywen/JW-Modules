@@ -3,23 +3,23 @@
 struct QuantizeUtils {
 
 	//copied & fixed these scales http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
-	int SCALE_AEOLIAN        [7] = {0, 2, 3, 5, 7, 8, 10};
-	int SCALE_BLUES          [6] = {0, 3, 5, 6, 7, 10}; //FIXED!
-	int SCALE_CHROMATIC      [12]= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-	int SCALE_DIATONIC_MINOR [7] = {0, 2, 3, 5, 7, 8, 10};
-	int SCALE_DORIAN         [7] = {0, 2, 3, 5, 7, 9, 10};
-	int SCALE_HARMONIC_MINOR [7] = {0, 2, 3, 5, 7, 8, 11};
-	int SCALE_INDIAN         [7] = {0, 1, 1, 4, 5, 8, 10};
-	int SCALE_LOCRIAN        [7] = {0, 1, 3, 5, 6, 8, 10};
-	int SCALE_LYDIAN         [7] = {0, 2, 4, 6, 7, 9, 10};
-	int SCALE_MAJOR          [7] = {0, 2, 4, 5, 7, 9, 11};
-	int SCALE_MELODIC_MINOR  [9] = {0, 2, 3, 5, 7, 8, 9, 10, 11};
-	int SCALE_MINOR          [7] = {0, 2, 3, 5, 7, 8, 10};
-	int SCALE_MIXOLYDIAN     [7] = {0, 2, 4, 5, 7, 9, 10};
-	int SCALE_NATURAL_MINOR  [7] = {0, 2, 3, 5, 7, 8, 10};
-	int SCALE_PENTATONIC     [5] = {0, 2, 4, 7, 9};
-	int SCALE_PHRYGIAN       [7] = {0, 1, 3, 5, 7, 8, 10};
-	int SCALE_TURKISH        [7] = {0, 1, 3, 5, 7, 10, 11};
+	int SCALE_AEOLIAN        [8] = {0, 2, 3, 5, 7, 8, 10, 12};
+	int SCALE_BLUES          [7] = {0, 3, 5, 6, 7, 10, 12}; //FIXED!
+	int SCALE_CHROMATIC      [13]= {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+	int SCALE_DIATONIC_MINOR [8] = {0, 2, 3, 5, 7, 8, 10, 12};
+	int SCALE_DORIAN         [8] = {0, 2, 3, 5, 7, 9, 10, 12};
+	int SCALE_HARMONIC_MINOR [8] = {0, 2, 3, 5, 7, 8, 11, 12};
+	int SCALE_INDIAN         [8] = {0, 1, 1, 4, 5, 8, 10, 12};
+	int SCALE_LOCRIAN        [8] = {0, 1, 3, 5, 6, 8, 10, 12};
+	int SCALE_LYDIAN         [8] = {0, 2, 4, 6, 7, 9, 10, 12};
+	int SCALE_MAJOR          [8] = {0, 2, 4, 5, 7, 9, 11, 12};
+	int SCALE_MELODIC_MINOR  [10] = {0, 2, 3, 5, 7, 8, 9, 10, 11, 12};
+	int SCALE_MINOR          [8] = {0, 2, 3, 5, 7, 8, 10, 12};
+	int SCALE_MIXOLYDIAN     [8] = {0, 2, 4, 5, 7, 9, 10, 12};
+	int SCALE_NATURAL_MINOR  [8] = {0, 2, 3, 5, 7, 8, 10, 12};
+	int SCALE_PENTATONIC     [6] = {0, 2, 4, 7, 9, 12};
+	int SCALE_PHRYGIAN       [8] = {0, 1, 3, 5, 7, 8, 10, 12};
+	int SCALE_TURKISH        [8] = {0, 1, 3, 5, 7, 10, 11, 12};
 
 	enum NoteEnum {
 		NOTE_C, 
@@ -92,7 +92,6 @@ struct QuantizeUtils {
 		float distAway = 0;
 		int octaveInVolts = int(floorf(voltsIn));
 		float voltMinusOct = voltsIn - octaveInVolts;
-		// int nextOctaveInVolts = (octaveInVolts + 1) * inverseMult; // If I decide to round to the next octave.
 		for (int i=0; i < notesInScale; i++) {
 			scaleNoteInVolts = curScaleArr[i] / 12.0;
 			distAway = fabs(voltMinusOct - scaleNoteInVolts);
@@ -100,13 +99,6 @@ struct QuantizeUtils {
 				closestVal = scaleNoteInVolts;
 				closestDist = distAway;
 			}
-
-			// If I decide to round to the next octave.  (Ableton does NOT do this in their scale midi effect)
-			// float distToNextOct = fabs(nextOctaveInVolts - voltsIn);
-			// if(distToNextOct < closestDist){
-			// 	closestVal = nextOctaveInVolts;
-			// 	closestDist = distToNextOct;
-			// }
 
 			// if(printIter%100000==0){
 			// 	printf("i:%i, rootNote:%i, voltsIn:%f, octaveInVolts:%i, closestVal:%f, closestDist:%f\n", 
