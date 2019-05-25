@@ -46,7 +46,7 @@ struct WavHead : Module {
 struct WavHeadWidget : ModuleWidget {
 	WavHeadWidget(WavHead *module);
 	void step() override;
-	Widget* widgetToMove;
+	Widget* widgetToMove[16];
 	Widget* snowflakesArr[10];
 	void appendContextMenu(Menu *menu) override;
 };
@@ -57,10 +57,22 @@ void WavHeadWidget::step() {
 		WavHead *wavHead = dynamic_cast<WavHead*>(module);
 		float minVolts = wavHead->neg5ToPos5 ? -5 : 0;
 		float maxVolts = minVolts + 10;
-		float clamped = clampfjw(module->inputs[WavHead::VOLT_INPUT].getVoltage(), minVolts, maxVolts);
 		float minY = wavHead->invert ? 250 : 15;
 		float maxY = wavHead->invert ? 15 : 250;
-		widgetToMove->box.pos.y = rescalefjw(clamped, minVolts, maxVolts, minY, maxY);
+
+		for(int i=0; i<16; i++){
+			widgetToMove[i]->visible = false;
+		}
+
+		int channels = module->inputs[WavHead::VOLT_INPUT].getChannels();
+		if(!module->inputs[WavHead::VOLT_INPUT].isConnected() || channels == 0){
+			widgetToMove[0]->visible = true;
+		}
+		for(int c=0; c<channels; c++){
+			float clamped = clampfjw(module->inputs[WavHead::VOLT_INPUT].getVoltage(c), minVolts, maxVolts);
+			widgetToMove[c]->box.pos.y = rescalefjw(clamped, minVolts, maxVolts, minY, maxY);
+			widgetToMove[c]->visible = true;
+		}
 
 		if(wavHead->snowMode){
 			for(int i=0; i<10; i++){
@@ -86,8 +98,10 @@ WavHeadWidget::WavHeadWidget(WavHead *module) {
 	panel->box.size = box.size;
 	addChild(panel);
 
-	widgetToMove = createWidget<WavHeadLogo>(Vec(5, 250));
-	addChild(widgetToMove);
+	for(int i=0; i<16; i++){
+		widgetToMove[i] = createWidget<WavHeadLogo>(Vec(5, 250));
+		addChild(widgetToMove[i]);
+	}
 	addChild(createWidget<Screw_J>(Vec(16, 1)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
