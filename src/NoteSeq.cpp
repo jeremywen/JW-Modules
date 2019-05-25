@@ -142,7 +142,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0);
 		configParam(LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0);
 		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0);
-		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 2.0);
+		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0);
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
 		resetSeq();
