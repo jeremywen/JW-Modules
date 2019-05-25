@@ -107,7 +107,13 @@ struct QuantizeUtils {
 			// }
 		}
 		// printIter++;
-		return octaveInVolts + rootNote/12.0 + closestVal;
+		float voltsOut = octaveInVolts + rootNote/12.0 + closestVal;
+		// if(printIter%100000==0){
+		// 	printf("voltsIn:%f, voltsOut:%f, closestVal:%f\n", 
+		// 			voltsIn,    voltsOut,    closestVal);
+		// 	printIter = 0;
+		// }
+		return voltsOut;
 	}
 
 	std::string noteName(int note) {
