@@ -52,6 +52,6 @@ BlankPanelLargeWidget::BlankPanelLargeWidget(Module *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 }
 
-Model *modelBlankPanelSmall = createModel<BlankPanel, BlankPanelSmallWidget>("BlankPanel_SM");
-Model *modelBlankPanelMedium = createModel<BlankPanel, BlankPanelMediumWidget>("BlankPanel_MD");
-Model *modelBlankPanelLarge = createModel<BlankPanel, BlankPanelLargeWidget>("BlankPanel_LG");
+Model *modelBlankPanelSmall = createModel<Module, BlankPanelSmallWidget>("BlankPanel_SM");
+Model *modelBlankPanelMedium = createModel<Module, BlankPanelMediumWidget>("BlankPanel_MD");
+Model *modelBlankPanelLarge = createModel<Module, BlankPanelLargeWidget>("BlankPanel_LG");
