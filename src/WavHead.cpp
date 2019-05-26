@@ -91,7 +91,7 @@ void WavHeadWidget::step() {
 };
 
 WavHeadWidget::WavHeadWidget(WavHead *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230));
@@ -121,7 +121,8 @@ struct InvertMenuItem : MenuItem {
 		wavHead->invert = !wavHead->invert;
 	}
 	void step() override {
-		rightText = wavHead->invert ? "✔" : "";
+		rightText = (wavHead->invert) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -131,7 +132,8 @@ struct Neg5MenuItem : MenuItem {
 		wavHead->neg5ToPos5 = !wavHead->neg5ToPos5;
 	}
 	void step() override {
-		rightText = wavHead->neg5ToPos5 ? "✔" : "";
+		rightText = (wavHead->neg5ToPos5) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -141,7 +143,8 @@ struct SnowModeMenuItem : MenuItem {
 		wavHead->snowMode = !wavHead->snowMode;
 	}
 	void step() override {
-		rightText = wavHead->snowMode ? "✔" : "";
+		rightText = (wavHead->snowMode) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -165,6 +168,7 @@ void WavHeadWidget::appendContextMenu(Menu *menu) {
 	snowModeMenuItem->text = "Snow Mode";
 	snowModeMenuItem->wavHead = wavHead;
 	menu->addChild(snowModeMenuItem);
+
 }
 
 Model *modelWavHead = createModel<WavHead, WavHeadWidget>("WavHead");

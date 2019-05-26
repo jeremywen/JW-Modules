@@ -1,12 +1,16 @@
 #include "JWModules.hpp"
 
-struct BlankPanel : Module {BlankPanel() : Module(0, 0, 0, 0) {}};
+struct BlankPanel : Module {
+	BlankPanel(){
+		config(0, 0, 0, 0);
+	}
+};
 struct BlankPanelSmallWidget : ModuleWidget { BlankPanelSmallWidget(BlankPanel *module); };
 struct BlankPanelMediumWidget : ModuleWidget { BlankPanelMediumWidget(BlankPanel *module); };
 struct BlankPanelLargeWidget : ModuleWidget { BlankPanelLargeWidget(BlankPanel *module); };
 
 BlankPanelSmallWidget::BlankPanelSmallWidget(BlankPanel *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(15*3, 380);
 
 	SVGPanel *panel = new SVGPanel();
@@ -19,7 +23,7 @@ BlankPanelSmallWidget::BlankPanelSmallWidget(BlankPanel *module) {
 }
 
 BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(15*6, 380);
 
 	SVGPanel *panel = new SVGPanel();
@@ -34,7 +38,7 @@ BlankPanelMediumWidget::BlankPanelMediumWidget(BlankPanel *module) {
 }
 
 BlankPanelLargeWidget::BlankPanelLargeWidget(BlankPanel *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(15*12, 380);
 
 	SVGPanel *panel = new SVGPanel();

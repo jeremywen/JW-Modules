@@ -429,6 +429,7 @@ struct GridSeqPitchMenuItem : MenuItem {
 	}
 	void step() override {
 		rightText = (gridSeq->ignoreGateOnPitchOut) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -440,6 +441,7 @@ struct GridSeqGateModeItem : MenuItem {
 	}
 	void step() override {
 		rightText = (gridSeq->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 

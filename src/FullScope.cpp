@@ -348,6 +348,7 @@ struct FullScopeLissajousModeMenuItem : MenuItem {
 	}
 	void step() override {
 		rightText = (fullScope->lissajous) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 

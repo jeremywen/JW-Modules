@@ -670,6 +670,7 @@ struct PlayModeItem : MenuItem {
 	}
 	void step() override {
 		rightText = (xyPad->curPlayMode == mode) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
