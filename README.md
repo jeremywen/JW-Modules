@@ -259,6 +259,10 @@ Move WavHead up and down based on voltage in.
 
 ![WaveHead](./doc/WavHead-img2.png)
 
+Works with polyphonic signals.
+
+"This is absolutely the best use of poly cables ever." - Andrew Belt
+
 Right click to:
 
 * invert direction 
