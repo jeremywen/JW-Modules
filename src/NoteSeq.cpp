@@ -346,7 +346,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void clockStep(){
-		gatePulse.trigger(1e-3);
+		gatePulse.trigger(1e-1);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
 
