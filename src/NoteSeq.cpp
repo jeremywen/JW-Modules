@@ -329,12 +329,12 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	int getFinalHighestNote1to32(){
-		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)) : 0;
+		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -17, 17)) : 0;
 		return clampijw(params[HIGHEST_NOTE_PARAM].getValue() + inputOffset, 1, 32);
 	}
 
 	int getFinalLowestNote1to32(){
-		int inputOffset = inputs[LOWEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[LOWEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)) : 0;
+		int inputOffset = inputs[LOWEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[LOWEST_NOTE_INPUT].getVoltage(), -5, 5, -17, 17)) : 0;
 		return clampijw(params[LOWEST_NOTE_PARAM].getValue() + inputOffset, 1, 32);
 	}
 
