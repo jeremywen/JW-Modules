@@ -329,13 +329,13 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	int getFinalHighestNote1to32(){
-		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? clampijw(int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)), 1, 32) : 0;
-		return params[HIGHEST_NOTE_PARAM].getValue() + inputOffset;
+		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)) : 0;
+		return clampijw(params[HIGHEST_NOTE_PARAM].getValue() + inputOffset, 1, 32);
 	}
 
 	int getFinalLowestNote1to32(){
-		int inputOffset = inputs[LOWEST_NOTE_INPUT].isConnected() ? clampijw(int(rescalefjw(inputs[LOWEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)), 1, 32) : 0;
-		return params[LOWEST_NOTE_PARAM].getValue() + inputOffset;
+		int inputOffset = inputs[LOWEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[LOWEST_NOTE_INPUT].getVoltage(), -5, 5, -16, 16)) : 0;
+		return clampijw(params[LOWEST_NOTE_PARAM].getValue() + inputOffset, 1, 32);
 	}
 
 	float closestVoltageForRow(int cellYFromBottom){
