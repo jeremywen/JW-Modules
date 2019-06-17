@@ -249,7 +249,7 @@ void GridSeq::process(const ProcessArgs &args) {
 	if (nextStep) {
 		index = posX + (posY * 4);
 		lights[STEPS_LIGHT + index].value = 1.0;
-		gatePulse.trigger(1e-3);
+		gatePulse.trigger(1e-1);
 	}
 
 	lights[RESET_LIGHT].value -= lights[RESET_LIGHT].value / lightLambda / args.sampleRate;
