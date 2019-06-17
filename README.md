@@ -271,6 +271,17 @@ Right click to:
 
 ![WaveHead Menu](./doc/WavHead-menu-img2.png)
 
+## Change your Cable Colors in V1
+```
+  "cableColors": [
+    "#ff9709",
+    "#fff309",
+    "#901afc",
+    "#1996fc"
+  ]
+
+```
+
 ## Other goofy crap
 
 ![goofy](https://user-images.githubusercontent.com/408586/34752974-6934555a-f583-11e7-8fd1-bc378e455839.gif)
