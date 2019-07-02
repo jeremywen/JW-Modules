@@ -138,7 +138,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(FLIP_VERT_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0);
-		configParam(LIFE_SPEED_KNOB_PARAM, 16.0, 1.0, 4.0);
+		configParam(LIFE_SPEED_KNOB_PARAM, 1.0, 16.0, 12.0);
 		configParam(HIGHEST_NOTE_PARAM, 1.0, 32.0, 32.0);
 		configParam(LOWEST_NOTE_PARAM, 1.0, 32.0, 1.0);
 		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0);
@@ -197,7 +197,7 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	void process(const ProcessArgs &args) override {
 		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
-			if(lifeCounter % int(params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
+			if(lifeCounter % int(16.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
 				stepLife();
 				lifeCounter = 1;
 			}
