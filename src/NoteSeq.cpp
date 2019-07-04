@@ -197,7 +197,7 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	void process(const ProcessArgs &args) override {
 		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
-			if(lifeCounter % int(16.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
+			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
 				stepLife();
 				lifeCounter = 1;
 			}
