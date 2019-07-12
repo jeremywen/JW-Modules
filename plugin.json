@@ -56,6 +56,11 @@
 			"name": "NoteSeq",
 			"tags": ["Sequencer", "Poly"]
 		},
+        {
+			"slug": "NoteSeq16",
+			"name": "NoteSeq16",
+			"tags": ["Sequencer", "Poly"]
+		},
 		{
 			"slug": "Quantizer",
 			"name": "Quantizer",

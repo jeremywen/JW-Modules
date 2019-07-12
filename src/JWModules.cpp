@@ -11,6 +11,7 @@ void init(rack::Plugin *p)
 	p->addModel(modelGridSeq);
 	p->addModel(modelMinMax);
 	p->addModel(modelNoteSeq);
+	p->addModel(modelNoteSeq16);
 	p->addModel(modelQuantizer);
 	p->addModel(modelSimpleClock);
 	p->addModel(modelThingThing);

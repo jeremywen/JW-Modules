@@ -330,6 +330,7 @@ extern Model *modelSimpleClock;
 extern Model *modelMinMax;
 extern Model *modelQuantizer;
 extern Model *modelNoteSeq;
+extern Model *modelNoteSeq16;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelFullScope;
