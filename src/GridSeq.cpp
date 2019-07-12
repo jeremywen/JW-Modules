@@ -67,6 +67,7 @@ struct GridSeq : Module,QuantizeUtils {
 	bool gateState[16] = {};
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
+	bool resetMode = false;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -197,12 +198,7 @@ void GridSeq::process(const ProcessArgs &args) {
 	
 	bool nextStep = false;
 	if (resetTrigger.process(params[RESET_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
-		phase = 0.0;
-		posX = 0;
-		posY = 0;
-		index = 0;
-		nextStep = true;
-		lights[RESET_LIGHT].value =  1.0;
+		resetMode = true;
 	}
 
 	if(running){
@@ -247,6 +243,14 @@ void GridSeq::process(const ProcessArgs &args) {
 	}
 	
 	if (nextStep) {
+		if(resetMode){
+			resetMode = false;
+			phase = 0.0;
+			posX = 0;
+			posY = 0;
+			index = 0;
+			lights[RESET_LIGHT].value =  1.0;
+		}
 		index = posX + (posY * 4);
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
