@@ -113,6 +113,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	int seqPos = 0;
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
+	bool resetMode = false;
 	bool *cells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
@@ -216,10 +217,14 @@ struct NoteSeq : Module,QuantizeUtils {
 		if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].getValue() + inputs[SHIFT_DOWN_INPUT].getVoltage())) { shiftCells(DIR_DOWN); }
 
 		if (resetTrig.process(params[RESET_BTN_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
-			resetSeq();
+			resetMode = true;
 		}
 
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {
+			if(resetMode){
+				resetMode = false;
+				resetSeq();
+			}
 			clockStep();
 		}
 
@@ -383,9 +388,9 @@ struct NoteSeq : Module,QuantizeUtils {
 	void resetSeq(){
 		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = 0;
-		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			seqPos = int(params[NoteSeq::LENGTH_KNOB_PARAM].getValue()) - 1;
+		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
+			seqPos = 0;
 		}
 	}
 
