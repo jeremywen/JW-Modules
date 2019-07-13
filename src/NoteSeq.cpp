@@ -146,7 +146,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0);
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
-		resetSeq();
+		// resetSeq();
 		clearCells();
 	}
 
@@ -161,7 +161,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
-		resetSeq();
+		// resetSeq();
 		clearCells();
 	}
 

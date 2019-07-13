@@ -146,7 +146,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0);
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
-		resetSeq();
+		// resetSeq();
 		clearCells();
 	}
 
@@ -161,7 +161,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
-		resetSeq();
+		// resetSeq();
 		clearCells();
 	}
 
@@ -197,25 +197,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	//TODO maybe add start pos knob and input
 
 	void process(const ProcessArgs &args) override {
-		// if(params[LIFE_ON_SWITCH_PARAM].getValue()){
-		// 	if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
-		// 		stepLife();
-		// 		lifeCounter = 1;
-		// 	}
-		// }
-
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
-
-		// if (rotateRightTrig.process(params[ROT_RIGHT_BTN_PARAM].getValue() + inputs[ROT_RIGHT_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
-		// if (rotateLeftTrig.process(params[ROT_LEFT_BTN_PARAM].getValue() + inputs[ROT_LEFT_INPUT].getVoltage())) { rotateCells(DIR_LEFT); }
-
-		// if (flipHorizTrig.process(params[FLIP_HORIZ_BTN_PARAM].getValue() + inputs[FLIP_HORIZ_INPUT].getVoltage())) { flipCells(DIR_HORIZ); }
-		// if (flipVertTrig.process(params[FLIP_VERT_BTN_PARAM].getValue() + inputs[FLIP_VERT_INPUT].getVoltage())) { flipCells(DIR_VERT); }
-
-		// if (shiftUpTrig.process(params[SHIFT_UP_BTN_PARAM].getValue() + inputs[SHIFT_UP_INPUT].getVoltage())) { shiftCells(DIR_UP); }
-		// if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].getValue() + inputs[SHIFT_DOWN_INPUT].getVoltage())) { shiftCells(DIR_DOWN); }
-
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
@@ -794,7 +777,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	//row 3
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, NoteSeq16::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(25, 296), module, NoteSeq16::RND_TRIG_BTN_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(50, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
