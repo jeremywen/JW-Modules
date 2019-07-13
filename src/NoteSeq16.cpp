@@ -23,7 +23,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		PLAY_MODE_KNOB_PARAM,
 		// RESET_BTN_PARAM,
 		CLEAR_BTN_PARAM,
-		RND_MODE_KNOB_PARAM,
+		// RND_MODE_KNOB_PARAM,
 		RND_TRIG_BTN_PARAM,
 		RND_AMT_KNOB_PARAM,
 		// ROT_RIGHT_BTN_PARAM,
@@ -46,7 +46,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
-		CLEAR_INPUT,
+		// CLEAR_INPUT,
 		RND_TRIG_INPUT,
 		// RND_AMT_INPUT,
 		// ROT_RIGHT_INPUT,
@@ -129,7 +129,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0);
 		// configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0);
+		// configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0);
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1);
 		// configParam(SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0);
@@ -204,7 +204,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		// 	}
 		// }
 
-		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue() + inputs[CLEAR_INPUT].getVoltage())) { clearCells(); }
+		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 
 		// if (rotateRightTrig.process(params[ROT_RIGHT_BTN_PARAM].getValue() + inputs[ROT_RIGHT_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
@@ -463,7 +463,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	void randomizeCells() {
 		clearCells();
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
-		switch(int(params[RND_MODE_KNOB_PARAM].getValue())){
+		switch(0){
+		// switch(int(params[RND_MODE_KNOB_PARAM].getValue())){
 			case RND_BASIC:{
 				for(int i=0;i<CELLS;i++){
 					setCellOn(xFromI(i), yFromI(i), random::uniform() < rndAmt);
@@ -698,7 +699,8 @@ struct NoteSeq16Display : Widget {
 
 		//seq length line
 		float colLimitX = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue() * HW;
-		nvgStrokeColor(args.vg, nvgRGB(144, 26, 252));//purple
+		// nvgStrokeColor(args.vg, nvgRGB(144, 26, 252));//purple
+		nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
 		nvgBeginPath(args.vg);
 		nvgMoveTo(args.vg, colLimitX, 0);
 		nvgLineTo(args.vg, colLimitX, box.size.y);
@@ -749,7 +751,7 @@ struct NoteSeq16Widget : ModuleWidget {
 
 NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*13, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
@@ -758,7 +760,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 
 	NoteSeq16Display *display = new NoteSeq16Display();
 	display->module = module;
-	display->box.pos = Vec(80, 80);
+	display->box.pos = Vec(3, 75);
 	display->box.size = Vec(188, 188);
 	addChild(display);
 	if(module != NULL){
@@ -774,101 +776,49 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 40), module, NoteSeq16::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(55, 40), module, NoteSeq16::RESET_INPUT));
-	// addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeq16::STEP_BTN_PARAM));
-	addParam(createParam<JwSmallSnapKnob>(Vec(92, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(22, 40), module, NoteSeq16::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, NoteSeq16::RESET_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(87, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(126, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(120, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(69.5, 35);
+	playModeLabel->box.pos = Vec(66.5, 35);
 	playModeLabel->text = "";
 	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
-	//row 2
-	// addParam(createParam<SmallButton>(Vec(30, 87), module, NoteSeq16::RESET_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 92), module, NoteSeq16::CLEAR_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 87), module, NoteSeq16::CLEAR_BTN_PARAM));
+	addParam(createParam<SmallButton>(Vec(156, 36), module, NoteSeq16::CLEAR_BTN_PARAM));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 87), module, NoteSeq16::RND_MODE_KNOB_PARAM));
-	CenteredLabel* const rndModeLabel = new CenteredLabel;
-	rndModeLabel->box.pos = Vec(67, 61);
-	rndModeLabel->text = "";
-	rndModeKnob->connectLabel(rndModeLabel, module);
-	addChild(rndModeLabel);
-	addParam(rndModeKnob);
 
 	//row 3
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 150), module, NoteSeq16::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeq16::RND_TRIG_BTN_PARAM));
-	// addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeq16::RND_AMT_INPUT));
-	addParam(createParam<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq16::RND_AMT_KNOB_PARAM));
-
-	// addInput(createInput<TinyPJ301MPort>(Vec(60, 201), module, NoteSeq16::SHIFT_UP_INPUT));
-	// addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq16::SHIFT_UP_BTN_PARAM));
-	// addInput(createInput<TinyPJ301MPort>(Vec(118, 201), module, NoteSeq16::SHIFT_DOWN_INPUT));
-	// addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq16::SHIFT_DOWN_BTN_PARAM));
-
-	// addInput(createInput<TinyPJ301MPort>(Vec(60, 252), module, NoteSeq16::ROT_RIGHT_INPUT));
-	// addParam(createParam<SmallButton>(Vec(80, 247), module, NoteSeq16::ROT_RIGHT_BTN_PARAM));
-	// addInput(createInput<TinyPJ301MPort>(Vec(118, 252), module, NoteSeq16::ROT_LEFT_INPUT));
-	// addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeq16::ROT_LEFT_BTN_PARAM));
-
-	// addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeq16::FLIP_HORIZ_INPUT));
-	// addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq16::FLIP_HORIZ_BTN_PARAM));
-	// addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeq16::FLIP_VERT_INPUT));
-	// addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq16::FLIP_VERT_BTN_PARAM));
-
-	// addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq16::LIFE_ON_SWITCH_PARAM));
-	// addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq16::LIFE_SPEED_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, NoteSeq16::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(25, 296), module, NoteSeq16::RND_TRIG_BTN_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(50, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
-	float outputRowTop = 35.0;
-	float outputRowDist = 21.0;
-	// for(int i=0;i<POLY;i++){
-	// 	int paramIdx = POLY - i - 1;
-	// 	addOutput(createOutput<TinyPJ301MPort>(Vec(559.081, outputRowTop + i * outputRowDist), module, NoteSeq16::VOCT_MAIN_OUTPUT + paramIdx)); //param # from bottom up
-	// 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq16::GATES_LIGHT + paramIdx));
-	// 	addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq16::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
-	// }
 	addOutput(createOutput<TinyPJ301MPort>(Vec(120, 350), module, NoteSeq16::POLY_VOCT_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(153, 350), module, NoteSeq16::POLY_GATE_OUTPUT));
-
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq16::MIN_VOCT_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq16::MIN_GATE_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + outputRowDist), module, NoteSeq16::MID_VOCT_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + outputRowDist), module, NoteSeq16::MID_GATE_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 2*outputRowDist), module, NoteSeq16::MAX_VOCT_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 2*outputRowDist), module, NoteSeq16::MAX_GATE_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop + 3*outputRowDist), module, NoteSeq16::RND_VOCT_OUTPUT));
-	// addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop + 3*outputRowDist), module, NoteSeq16::RND_GATE_OUTPUT));
-
-	// addInput(createInput<TinyPJ301MPort>(Vec(643, 152), module, NoteSeq16::HIGHEST_NOTE_INPUT));
-	// addParam(createParam<JwSmallSnapKnob>(Vec(663, 147), module, NoteSeq16::HIGHEST_NOTE_PARAM));
-	// addInput(createInput<TinyPJ301MPort>(Vec(643, 195), module, NoteSeq16::LOWEST_NOTE_INPUT));
-	// addParam(createParam<JwSmallSnapKnob>(Vec(663, 190), module, NoteSeq16::LOWEST_NOTE_PARAM));
-
-	addParam(createParam<JwHorizontalSwitch>(Vec(654, 236), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
-	addParam(createParam<JwSmallSnapKnob>(Vec(652, 276), module, NoteSeq16::OCTAVE_KNOB_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(65, 345), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
 
 	///// NOTE AND SCALE CONTROLS /////
-	float pitchParamYVal = 276;
-	float labelY = 158;
+	float pitchParamYVal = 280;
+	float labelY = 160;
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(620, pitchParamYVal), module, NoteSeq16::NOTE_KNOB_PARAM));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(93, pitchParamYVal), module, NoteSeq16::NOTE_KNOB_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(316, labelY);
+	noteLabel->box.pos = Vec(53, labelY);
 	noteLabel->text = "";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(683, pitchParamYVal), module, NoteSeq16::SCALE_KNOB_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(125, pitchParamYVal), module, NoteSeq16::OCTAVE_KNOB_PARAM));
+
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(156, pitchParamYVal), module, NoteSeq16::SCALE_KNOB_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(348, labelY);
+	scaleLabel->box.pos = Vec(84, labelY);
 	scaleLabel->text = "";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
