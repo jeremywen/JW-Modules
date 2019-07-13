@@ -146,7 +146,8 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0);
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
-		// resetSeq();
+		resetSeq();
+		resetMode = true;
 		clearCells();
 	}
 
@@ -161,7 +162,8 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
-		// resetSeq();
+		resetSeq();
+		resetMode = true;
 		clearCells();
 	}
 
@@ -223,7 +225,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {
 			if(resetMode){
 				resetMode = false;
-				resetSeq();
+				resetSeqToEnd();
 			}
 			clockStep();
 		}
@@ -386,6 +388,15 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void resetSeq(){
+		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
+		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
+			seqPos = 0;
+		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
+			seqPos = int(params[NoteSeq::LENGTH_KNOB_PARAM].getValue()) - 1;
+		}
+	}
+
+	void resetSeqToEnd(){
 		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 			seqPos = int(params[NoteSeq::LENGTH_KNOB_PARAM].getValue()) - 1;
