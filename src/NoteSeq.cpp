@@ -240,18 +240,28 @@ struct NoteSeq : Module,QuantizeUtils {
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
 		
 		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue());
-		for(int i=0;i<channels;i++){ //param # starts from bottom
+		//OLD POLY OUTPUTS
+		for(int i=0;i<POLY;i++){ //param # starts from bottom
 			bool hasVal = polyYVals[i] > -1;
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
 				float volts = closestVoltageForRow(polyYVals[i]);
 				outputs[VOCT_MAIN_OUTPUT + i].setVoltage(volts);
-				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
 			}
 			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
 			outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
-			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
 			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
+		}
+		//ONLY NEW MAIN POLY OUTPUT
+		for(int i=0;i<channels;i++){
+			bool hasVal = polyYVals[i] > -1;
+			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
+			if(cellActive){ 
+				float volts = closestVoltageForRow(polyYVals[i]);
+				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
+			}
+			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
 		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
