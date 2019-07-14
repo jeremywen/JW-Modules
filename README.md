@@ -69,6 +69,7 @@ output row up and they will work more like a midi sequencer. When 'Include Inact
 #### Basics
 
 * You can click and drag cells in the grid to toggle them on and off.
+* You can right+click the module to select the number of polyphonic channels.
 
 #### Top
 
