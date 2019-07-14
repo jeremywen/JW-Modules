@@ -87,7 +87,7 @@ output row up and they will work more like a midi sequencer. When 'Include Inact
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 *  **All Rows Switch:** When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
-output row up and they will work more like a midi sequencer. When 'Include Inactive' is switched to the left it grabs the 16 lowest notes which are 'active'.
+output row up and they will work more like a midi sequencer. When 'All Rows' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Poly Outputs:** Send out the lowest 16 active notes up from the 'Lowest Note' OR send out the lowest 16 rows up from the 'Lowest Note'.  This is based on the 'Include Inactive Switch' (See Below).  The lights indicate which outputs are sending out values.
 *  **Mono Outputs:** can be used to select one note from a column of many notes.
 
