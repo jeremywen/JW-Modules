@@ -64,7 +64,7 @@ output row up and they will work more like a midi sequencer. When 'Include Inact
 
 ## NoteSeq16
 
-![NoteSeq16](./doc/NoteSeq16-img2.png)
+![NoteSeq16](./doc/NoteSeq16-img3.png)
 
 #### Basics
 
