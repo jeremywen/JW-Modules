@@ -62,6 +62,35 @@ output row up and they will work more like a midi sequencer. When 'Include Inact
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 
+## NoteSeq16
+
+![NoteSeq16](./doc/NoteSeq16-img1.png)
+
+#### Basics
+
+* You can click and drag cells in the grid to toggle them on and off.
+
+#### Top
+
+*  **Clock Input:** when source sends a trigger, the sequence moves to the next step
+*  **Reset Input:** resets to first step in sequence (based on the play mode)
+*  **Length Knob:** the sequence length indicated by the vertical purple line
+*  **Mode:** the play mode changes how it moved through a sequence
+*  **Clear Button:** clears the grid
+
+#### Bottom
+
+*  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
+*  **Random Amount Knob:** determines how full the grid will be when generating random notes
+*  **Octave Knob:** octave for the lowest note in the grid
+*  **Note Knob:** root note if scaling pitch sent to "OUT"
+*  **Scale Knob:** current musical scale or none if turned up all the way to the last value
+*  **All Rows Switch:** When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
+So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
+output row up and they will work more like a midi sequencer. When 'Include Inactive' is switched to the left it grabs the 16 lowest notes which are 'active'.
+*  **Poly Outputs:** Send out the lowest 16 active notes up from the 'Lowest Note' OR send out the lowest 16 rows up from the 'Lowest Note'.  This is based on the 'Include Inactive Switch' (See Below).  The lights indicate which outputs are sending out values.
+*  **Mono Outputs:** can be used to select one note from a column of many notes.
+
 ## Bouncy Balls
 
 ![Bouncy Balls](./doc/bouncy-balls-img3.png)
