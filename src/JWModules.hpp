@@ -1,6 +1,7 @@
 #pragma once
 #include "rack.hpp"
 #include "QuantizeUtils.cpp"
+#define RIGHT_ARROW "▸"
 
 using namespace rack;
 extern Plugin *pluginInstance;

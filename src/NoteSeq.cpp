@@ -111,6 +111,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	float lifeRate = 0.5 * APP->engine->getSampleRate();
 	long lifeCounter = 0;
 	int seqPos = 0;
+	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
 	bool resetMode = false;
@@ -234,7 +235,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
 		
 		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue());
-		for(int i=0;i<POLY;i++){ //param # starts from bottom
+		for(int i=0;i<channels;i++){ //param # starts from bottom
 			bool hasVal = polyYVals[i] > -1;
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
@@ -247,8 +248,8 @@ struct NoteSeq : Module,QuantizeUtils {
 			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
 			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
 		}
-		outputs[POLY_GATE_OUTPUT].setChannels(POLY);
-		outputs[POLY_VOCT_OUTPUT].setChannels(POLY);
+		outputs[POLY_GATE_OUTPUT].setChannels(channels);
+		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
 
 		////////////////////////////////////////////// MONO OUTPUTS //////////////////////////////////////////////
 		if(outputs[MIN_VOCT_OUTPUT].isConnected() || outputs[MIN_GATE_OUTPUT].isConnected() || 
@@ -753,10 +754,38 @@ struct RndModeKnob : JwSmallSnapKnob {
 
 struct NoteSeqWidget : ModuleWidget { 
 	NoteSeqWidget(NoteSeq *module); 
+	void appendContextMenu(Menu *menu) override;
+};
+
+struct NSChannelValueItem : MenuItem {
+	NoteSeq *module;
+	int channels;
+	void onAction(const event::Action &e) override {
+		module->channels = channels;
+	}
+};
+
+struct NSChannelItem : MenuItem {
+	NoteSeq *module;
+	Menu *createChildMenu() override {
+		Menu *menu = new Menu;
+		for (int channels = 1; channels <= 16; channels++) {
+			NSChannelValueItem *item = new NSChannelValueItem;
+			if (channels == 1)
+				item->text = "Monophonic";
+			else
+				item->text = string::f("%d", channels);
+			item->rightText = CHECKMARK(module->channels == channels);
+			item->module = module;
+			item->channels = channels;
+			menu->addChild(item);
+		}
+		return menu;
+	}
 };
 
 NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
@@ -881,6 +910,18 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
+}
+
+void NoteSeqWidget::appendContextMenu(Menu *menu) {
+	NoteSeq *noteSeq = dynamic_cast<NoteSeq*>(module);
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->addChild(spacerLabel);
+
+	NSChannelItem *channelItem = new NSChannelItem;
+	channelItem->text = "Polyphony channels";
+	channelItem->rightText = string::f("%d", noteSeq->channels) + " " +RIGHT_ARROW;
+	channelItem->module = noteSeq;
+	menu->addChild(channelItem);
 }
 
 Model *modelNoteSeq = createModel<NoteSeq, NoteSeqWidget>("NoteSeq");
