@@ -174,6 +174,7 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "channels", json_integer(channels));
 		
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
@@ -186,6 +187,10 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void dataFromJson(json_t *rootJ) override {
+		json_t *channelsJ = json_object_get(rootJ, "channels");
+		if (channelsJ)
+			channels = json_integer_value(channelsJ);
+
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ) {
 			for (int i = 0; i < CELLS; i++) {

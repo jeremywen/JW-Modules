@@ -18,65 +18,31 @@ struct ColNotes {
 
 struct NoteSeq16 : Module,QuantizeUtils {
 	enum ParamIds {
-		// STEP_BTN_PARAM,
 		LENGTH_KNOB_PARAM,
 		PLAY_MODE_KNOB_PARAM,
-		// RESET_BTN_PARAM,
 		CLEAR_BTN_PARAM,
-		// RND_MODE_KNOB_PARAM,
 		RND_TRIG_BTN_PARAM,
 		RND_AMT_KNOB_PARAM,
-		// ROT_RIGHT_BTN_PARAM,
-		// ROT_LEFT_BTN_PARAM,
-		// FLIP_HORIZ_BTN_PARAM,
-		// FLIP_VERT_BTN_PARAM,
-		// SHIFT_UP_BTN_PARAM,
-		// SHIFT_DOWN_BTN_PARAM,
-		// LIFE_ON_SWITCH_PARAM,
-		// LIFE_SPEED_KNOB_PARAM,
 		SCALE_KNOB_PARAM,
 		NOTE_KNOB_PARAM,
 		OCTAVE_KNOB_PARAM,
 		LOW_HIGH_SWITCH_PARAM,
-		// HIGHEST_NOTE_PARAM,
-		// LOWEST_NOTE_PARAM,
 		INCLUDE_INACTIVE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
-		// CLEAR_INPUT,
 		RND_TRIG_INPUT,
-		// RND_AMT_INPUT,
-		// ROT_RIGHT_INPUT,
-		// ROT_LEFT_INPUT,
-		// FLIP_HORIZ_INPUT,
-		// FLIP_VERT_INPUT,
-		// SHIFT_UP_INPUT,
-		// SHIFT_DOWN_INPUT,
-		// HIGHEST_NOTE_INPUT,
-		// LOWEST_NOTE_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		// VOCT_MAIN_OUTPUT,
-		// GATE_MAIN_OUTPUT,// = VOCT_MAIN_OUTPUT + POLY,
-		// MIN_VOCT_OUTPUT = GATE_MAIN_OUTPUT + POLY,
-		// MIN_GATE_OUTPUT,
-		// MID_VOCT_OUTPUT,
-		// MID_GATE_OUTPUT,
-		// MAX_VOCT_OUTPUT,
-		// MAX_GATE_OUTPUT,
-		// RND_VOCT_OUTPUT,
-		// RND_GATE_OUTPUT,
 		POLY_VOCT_OUTPUT,
 		POLY_GATE_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		// GATES_LIGHT,
-		NUM_LIGHTS// = GATES_LIGHT + POLY,
+		NUM_LIGHTS
 	};
 	enum PlayMode {
 		PM_FWD_LOOP,
@@ -161,6 +127,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "channels", json_integer(channels));
 		
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
@@ -173,6 +140,10 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	void dataFromJson(json_t *rootJ) override {
+		json_t *channelsJ = json_object_get(rootJ, "channels");
+		if (channelsJ)
+			channels = json_integer_value(channelsJ);
+
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ) {
 			for (int i = 0; i < CELLS; i++) {
