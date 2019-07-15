@@ -27,6 +27,11 @@
 			"tags": ["Visual"]
 		},
 		{
+			"slug": "CoolBreeze",
+			"name": "Cool Breeze",
+			"tags": ["Visual"]
+		},
+		{
 			"slug": "BouncyBalls",
 			"name": "Bouncy Balls",
 			"tags": ["Sequencer", "Visual"]

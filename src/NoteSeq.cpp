@@ -188,8 +188,11 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	void dataFromJson(json_t *rootJ) override {
 		json_t *channelsJ = json_object_get(rootJ, "channels");
-		if (channelsJ)
+		if (channelsJ){
 			channels = json_integer_value(channelsJ);
+		} else {
+			channels = 4;//hopefully this works for old patches
+		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ) {
