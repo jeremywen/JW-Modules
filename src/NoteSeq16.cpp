@@ -155,6 +155,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+		gridChanged();
 	}
 
 	//TODO maybe add length input
