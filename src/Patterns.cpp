@@ -153,6 +153,7 @@ struct Patterns : Module,QuantizeUtils {
 					outputs[POLY_GATE_OUTPUT].setVoltage(pulse ? 10 : 0, y);
 					firingInRow++;
 				}
+				//TODO fix for last row
 				if(lastY != y){//end of row
 // if(printCounter==1000 && lastY==0){printf("firingInRow=%d\n", firingInRow);printCounter=0;}
 					if(firingInRow == 1){
