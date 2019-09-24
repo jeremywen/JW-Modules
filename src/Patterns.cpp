@@ -31,6 +31,8 @@ struct Patterns : Module,QuantizeUtils {
 	};
 	enum OutputIds {
 		POLY_GATE_OUTPUT,
+		OR_MAIN_OUTPUT = POLY_GATE_OUTPUT + POLY,
+		XOR_MAIN_OUTPUT = OR_MAIN_OUTPUT + POLY,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -50,8 +52,6 @@ struct Patterns : Module,QuantizeUtils {
 	bool resetMode = false;
 	bool *cells = new bool[CELLS];
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	ColNotes *colNotesCache = new ColNotes[COLS];
-	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig;
 	dsp::PulseGenerator gatePulse;
@@ -68,8 +68,6 @@ struct Patterns : Module,QuantizeUtils {
 
 	~Patterns() {
 		delete [] cells;
-		delete [] colNotesCache;
-		delete [] colNotesCache2;
 	}
 
 	void onRandomize() override {
@@ -156,10 +154,6 @@ struct Patterns : Module,QuantizeUtils {
 	}
 
 	void gridChanged(){
-		for(int x=0; x < COLS; x++){
-			colNotesCache[x].valid = false;
-			colNotesCache2[x].valid = false;
-		}
 	}
 
 	void resetSeq(){
@@ -191,8 +185,6 @@ struct Patterns : Module,QuantizeUtils {
 		if(cellX >= 0 && cellX < COLS && 
 		   cellY >=0 && cellY < ROWS){
 			cells[iFromXY(cellX, cellY)] = on;
-			colNotesCache[cellX].valid = false;
-			colNotesCache2[cellX].valid = false;
 		}
 	}
 
@@ -325,7 +317,7 @@ struct PattChannelItem : MenuItem {
 
 PatternsWidget::PatternsWidget(Patterns *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*13, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
@@ -349,20 +341,25 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
-	//row 1
 	addInput(createInput<TinyPJ301MPort>(Vec(22, 40), module, Patterns::CLOCK_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, Patterns::RESET_INPUT));
 	addParam(createParam<SmallButton>(Vec(156, 36), module, Patterns::CLEAR_BTN_PARAM));
 
-
-	//row 3
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, Patterns::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(25, 296), module, Patterns::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, Patterns::RND_AMT_KNOB_PARAM));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(55, 350), module, Patterns::POLY_GATE_OUTPUT));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(55, 350), module, Patterns::POLY_GATE_OUTPUT));
+	float outputRowTop = 35.0;
+	float outputRowDist = 21.0;
+	for(int i=0;i<POLY;i++){
+		int paramIdx = POLY - i - 1;
+		addOutput(createOutput<TinyPJ301MPort>(Vec(220.081, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(240.858, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+	}
 }
 
 void PatternsWidget::appendContextMenu(Menu *menu) {
