@@ -146,6 +146,8 @@ struct Patterns : Module,QuantizeUtils {
 				int x = xFromI(i);//x determines clock division
 				int y = yFromI(i);//y determines the row/channel
 				if(counters[x] % (x+1) == 0){
+					outputs[OR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
+					// outputs[XOR_MAIN_OUTPUT].setVoltage(pulse ? 10 : 0);
 					outputs[POLY_GATE_OUTPUT].setVoltage(pulse ? 10 : 0, y);
 				}
 			}
@@ -356,9 +358,9 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	float outputRowDist = 21.0;
 	for(int i=0;i<POLY;i++){
 		int paramIdx = POLY - i - 1;
-		addOutput(createOutput<TinyPJ301MPort>(Vec(220.081, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(210.081, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(240.858, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(230.858, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 }
 
