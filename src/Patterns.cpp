@@ -30,8 +30,9 @@ struct Patterns : Module,QuantizeUtils {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		POLY_GATE_OUTPUT,
-		OR_MAIN_OUTPUT = POLY_GATE_OUTPUT + POLY,
+		POLY_OR_OUTPUT,
+		POLY_XOR_OUTPUT,
+		OR_MAIN_OUTPUT = POLY_XOR_OUTPUT + POLY,
 		XOR_MAIN_OUTPUT = OR_MAIN_OUTPUT + POLY,
 		NUM_OUTPUTS
 	};
@@ -116,7 +117,7 @@ struct Patterns : Module,QuantizeUtils {
 		}
 		gridChanged();
 	}
-// int printCounter = 0;
+
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
@@ -139,32 +140,29 @@ struct Patterns : Module,QuantizeUtils {
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
-		int lastY = 0;
 		int firingInRow = 0;
-// printCounter++;//TODO REMOVE
 		for(int i=0;i<CELLS;i++){			
-			//TODO make it work like an "XOR" so only fire if one out of the many would fire
 			//below works as an "OR" if multiple divisions
+			int x = xFromI(i);//x determines clock division
+			int y = yFromI(i);//y determines the row/channel
 			if(cells[i]){
-				int x = xFromI(i);//x determines clock division
-				int y = yFromI(i);//y determines the row/channel
 				if(counters[x] % (x+1) == 0){
 					outputs[OR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
-					outputs[POLY_GATE_OUTPUT].setVoltage(pulse ? 10 : 0, y);
+					outputs[POLY_OR_OUTPUT].setVoltage(pulse ? 10 : 0, y);
 					firingInRow++;
 				}
-				//TODO fix for last row
-				if(lastY != y){//end of row
-// if(printCounter==1000 && lastY==0){printf("firingInRow=%d\n", firingInRow);printCounter=0;}
-					if(firingInRow == 1){
-						outputs[XOR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
-					}
-					firingInRow = 0;
+			}
+			if(x == COLS - 1){//end of row
+				//works like an "XOR" so only fire if one out of the many would fire
+				if(firingInRow == 1){
+					outputs[XOR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
+					outputs[POLY_XOR_OUTPUT].setVoltage(pulse ? 10 : 0, y);
 				}
-				lastY = y;
+				firingInRow = 0;
 			}
 		}
-		outputs[POLY_GATE_OUTPUT].setChannels(channels);
+		outputs[POLY_OR_OUTPUT].setChannels(channels);
+		outputs[POLY_XOR_OUTPUT].setChannels(channels);
 	}
 
 	void gridChanged(){
@@ -362,7 +360,9 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, Patterns::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(25, 296), module, Patterns::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, Patterns::RND_AMT_KNOB_PARAM));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(55, 350), module, Patterns::POLY_GATE_OUTPUT));
+	
+	addOutput(createOutput<TinyPJ301MPort>(Vec(103, 300), module, Patterns::POLY_OR_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(143, 300), module, Patterns::POLY_XOR_OUTPUT));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
