@@ -332,6 +332,7 @@ extern Model *modelMinMax;
 extern Model *modelQuantizer;
 extern Model *modelNoteSeq;
 extern Model *modelNoteSeq16;
+extern Model *modelPatterns;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelFullScope;

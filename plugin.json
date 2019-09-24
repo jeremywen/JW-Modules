@@ -66,6 +66,11 @@
 			"name": "NoteSeq16",
 			"tags": ["Sequencer", "Poly"]
 		},
+        {
+			"slug": "Patterns",
+			"name": "Patterns",
+			"tags": ["Sequencer", "Clock Modulator"]
+		},
 		{
 			"slug": "Quantizer",
 			"name": "Quantizer",
