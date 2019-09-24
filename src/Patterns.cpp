@@ -116,7 +116,7 @@ struct Patterns : Module,QuantizeUtils {
 		}
 		gridChanged();
 	}
-
+// int printCounter = 0;
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
@@ -139,6 +139,9 @@ struct Patterns : Module,QuantizeUtils {
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
+		int lastY = 0;
+		int firingInRow = 0;
+// printCounter++;//TODO REMOVE
 		for(int i=0;i<CELLS;i++){			
 			//TODO make it work like an "XOR" so only fire if one out of the many would fire
 			//below works as an "OR" if multiple divisions
@@ -147,9 +150,17 @@ struct Patterns : Module,QuantizeUtils {
 				int y = yFromI(i);//y determines the row/channel
 				if(counters[x] % (x+1) == 0){
 					outputs[OR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
-					// outputs[XOR_MAIN_OUTPUT].setVoltage(pulse ? 10 : 0);
 					outputs[POLY_GATE_OUTPUT].setVoltage(pulse ? 10 : 0, y);
+					firingInRow++;
 				}
+				if(lastY != y){//end of row
+// if(printCounter==1000 && lastY==0){printf("firingInRow=%d\n", firingInRow);printCounter=0;}
+					if(firingInRow == 1){
+						outputs[XOR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
+					}
+					firingInRow = 0;
+				}
+				lastY = y;
 			}
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
@@ -319,7 +330,7 @@ struct PattChannelItem : MenuItem {
 
 PatternsWidget::PatternsWidget(Patterns *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*16, RACK_GRID_HEIGHT);
 
 	SVGPanel *panel = new SVGPanel();
 	panel->box.size = box.size;
@@ -355,12 +366,12 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
 	float outputRowTop = 35.0;
-	float outputRowDist = 21.0;
+	float outputRowDist = 20.0;
 	for(int i=0;i<POLY;i++){
 		int paramIdx = POLY - i - 1;
-		addOutput(createOutput<TinyPJ301MPort>(Vec(210.081, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(195, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(230.858, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(215, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 }
 
