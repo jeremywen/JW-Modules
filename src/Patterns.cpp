@@ -2,11 +2,11 @@
 #include <algorithm>
 #include "JWModules.hpp"
 
-#define ROWS 16
-#define COLS 16
-#define CELLS 1024
-#define POLY 16
-#define HW 11.75 //cell height and width
+#define P_ROWS 16
+#define P_COLS 16
+#define P_CELLS 256
+#define P_POLY 16
+#define P_HW 11.75 //cell height and width
 
 struct Patterns : Module {
 	enum ParamIds {
@@ -19,6 +19,8 @@ struct Patterns : Module {
 		CLOCK_INPUT,
 		RESET_INPUT,
 		RND_TRIG_INPUT,
+		ROTATE_INPUT,
+		SHIFT_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -31,22 +33,34 @@ struct Patterns : Module {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-	enum RndMode { //TODO REMOVE?
+	enum RndMode {
 		RND_BASIC,
 		RND_EUCLID,
 		RND_SIN_WAVE,
 		RND_LIFE_GLIDERS,
 		NUM_RND_MODES
 	};
+	enum ShiftDirection {
+		DIR_UP,
+		DIR_DOWN
+	};
+	enum RotateDirection {
+		DIR_LEFT,
+		DIR_RIGHT
+	};
+	enum FlipDirection {
+		DIR_HORIZ,
+		DIR_VERT
+	};
 
 	float displayWidth = 0, displayHeight = 0;
 	float rate = 1.0 / APP->engine->getSampleRate();
 	int channels = 1;
 	bool resetMode = false;
-	bool *cells = new bool[CELLS];
+	bool *cells = new bool[P_CELLS];
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
-	dsp::SchmittTrigger rndTrig;
+	dsp::SchmittTrigger rndTrig, rotateTrig, shiftTrig;
 	dsp::PulseGenerator gatePulse;
 
 	Patterns() {
@@ -82,7 +96,7 @@ struct Patterns : Module {
 		json_object_set_new(rootJ, "channels", json_integer(channels));
 		
 		json_t *cellsJ = json_array();
-		for (int i = 0; i < CELLS; i++) {
+		for (int i = 0; i < P_CELLS; i++) {
 			json_t *cellJ = json_integer((int) cells[i]);
 			json_array_append_new(cellsJ, cellJ);
 		}
@@ -101,7 +115,7 @@ struct Patterns : Module {
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ) {
-			for (int i = 0; i < CELLS; i++) {
+			for (int i = 0; i < P_CELLS; i++) {
 				json_t *cellJ = json_array_get(cellsJ, i);
 				if (cellJ)
 					cells[i] = json_integer_value(cellJ);
@@ -113,9 +127,9 @@ struct Patterns : Module {
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
-		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
-			resetMode = true;
-		}
+		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) { resetMode = true; }
+		if (rotateTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
+		if (shiftTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
 			if(resetMode){
@@ -123,7 +137,7 @@ struct Patterns : Module {
 				resetSeq();
 			}
 			gatePulse.trigger(1e-1);
-			for(int i=0;i<COLS;i++){
+			for(int i=0;i<P_COLS;i++){
 				counters[i]++;
 				if(counters[i] > i){
 					counters[i] = 0;
@@ -133,11 +147,11 @@ struct Patterns : Module {
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		int firingInRow = 0;
-		for(int i=0;i<CELLS;i++){			
+		for(int i=0;i<P_CELLS;i++){			
 			//below works as an "OR" if multiple divisions
 			int x = xFromI(i);//x determines clock division
 			int y = yFromI(i);//y determines the row/channel
-			int yInv = POLY - y - 1;
+			int yInv = P_POLY - y - 1;
 			float voltage = pulse ? 10 : 0;
 			if(cells[i]){
 				if(counters[x] % (x+1) == 0){
@@ -146,7 +160,7 @@ struct Patterns : Module {
 					firingInRow++;
 				}
 			}
-			if(x == COLS - 1){//end of row
+			if(x == P_COLS - 1){//end of row
 				//works like an "XOR" so only fire if one out of the many would fire
 				if(firingInRow == 1){
 					outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
@@ -163,13 +177,13 @@ struct Patterns : Module {
 	}
 
 	void resetSeq(){
-		for(int i=0;i<COLS;i++){
+		for(int i=0;i<P_COLS;i++){
 			counters[i] = 0;
 		}
 	}
 
 	void clearCells() {
-		for(int i=0;i<CELLS;i++){
+		for(int i=0;i<P_CELLS;i++){
 			cells[i] = false;
 		}
 		gridChanged();
@@ -178,24 +192,80 @@ struct Patterns : Module {
 	void randomizeCells() {
 		clearCells();
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
-		for(int i=0;i<CELLS;i++){
+		for(int i=0;i<P_CELLS;i++){
 			setCellOn(xFromI(i), yFromI(i), random::uniform() < rndAmt);
 		}
 	}
   
+	void rotateCells(RotateDirection dir){
+		bool *newCells = new bool[P_CELLS];
+		for(int x=0; x < P_COLS; x++){
+			for(int y=0; y < P_ROWS; y++){
+				switch(dir){
+					case DIR_RIGHT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(y, P_COLS - x - 1)];
+						break;
+					case DIR_LEFT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(P_COLS - y - 1, x)];
+						break;
+				}
+
+			}
+		}
+		cells = newCells;
+		gridChanged();
+	}
+
+	void flipCells(FlipDirection dir){
+		bool *newCells = new bool[P_CELLS];
+		for(int x=0; x < P_COLS; x++){
+			for(int y=0; y < P_ROWS; y++){
+				switch(dir){
+					case DIR_HORIZ:
+						newCells[iFromXY(x, y)] = cells[iFromXY(P_COLS - 1 - x, y)];
+						break;
+					case DIR_VERT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, P_ROWS - 1 - y)];
+						break;
+				}
+
+			}
+		}
+		cells = newCells;
+		gridChanged();
+	}
+
+	void shiftCells(ShiftDirection dir){
+		bool *newCells = new bool[P_CELLS];
+		for(int x=0; x < P_COLS; x++){
+			for(int y=0; y < P_ROWS; y++){
+				switch(dir){
+					case DIR_UP:
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, y==P_ROWS-1 ? 0 : y + 1)];
+						break;
+					case DIR_DOWN:
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, y==0 ? P_ROWS-1 : y - 1)];
+						break;
+				}
+
+			}
+		}
+		cells = newCells;
+		gridChanged();
+	}
 	void setCellOnByDisplayPos(float displayX, float displayY, bool on){
-		setCellOn(int(displayX / HW), int(displayY / HW), on);
+		setCellOn(int(displayX / P_HW), int(displayY / P_HW), on);
 	}
 
 	void setCellOn(int cellX, int cellY, bool on){
-		if(cellX >= 0 && cellX < COLS && 
-		   cellY >=0 && cellY < ROWS){
+		if(cellX >= 0 && cellX < P_COLS && 
+		   cellY >=0 && cellY < P_ROWS){
 			cells[iFromXY(cellX, cellY)] = on;
 		}
 	}
 
 	bool isCellOnByDisplayPos(float displayX, float displayY){
-		return isCellOn(int(displayX / HW), int(displayY / HW));
+		return isCellOn(int(displayX / P_HW), int(displayY / P_HW));
 	}
 
 	bool isCellOn(int cellX, int cellY){
@@ -203,15 +273,15 @@ struct Patterns : Module {
 	}
 
 	int iFromXY(int cellX, int cellY){
-		return cellX + cellY * ROWS;
+		return cellX + cellY * P_ROWS;
 	}
 
 	int xFromI(int cellI){
-		return cellI % COLS;
+		return cellI % P_COLS;
 	}
 
 	int yFromI(int cellI){
-		return cellI / COLS;
+		return cellI / P_COLS;
 	}
 };
 
@@ -255,18 +325,18 @@ struct PatternsDisplay : Widget {
 
 		//grid
 		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<COLS;i++){
+		for(int i=1;i<P_COLS;i++){
 			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * HW, 0);
-			nvgLineTo(args.vg, i * HW, box.size.y);
+			nvgMoveTo(args.vg, i * P_HW, 0);
+			nvgLineTo(args.vg, i * P_HW, box.size.y);
 			nvgStroke(args.vg);
 		}
-		for(int i=1;i<ROWS;i++){
+		for(int i=1;i<P_ROWS;i++){
 			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * HW);
-			nvgLineTo(args.vg, box.size.x, i * HW);
+			nvgMoveTo(args.vg, 0, i * P_HW);
+			nvgLineTo(args.vg, box.size.x, i * P_HW);
 			nvgStroke(args.vg);
 		}
 
@@ -274,12 +344,12 @@ struct PatternsDisplay : Widget {
 
 		//cells
 		nvgFillColor(args.vg, nvgRGB(255, 243, 9));
-		for(int i=0;i<CELLS;i++){
+		for(int i=0;i<P_CELLS;i++){
 			if(module->cells[i]){
-				int y = i / ROWS;
-				int x = i % COLS;
+				int x = module->xFromI(i);
+				int y = module->yFromI(i);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW, y * HW, HW, HW);
+				nvgRect(args.vg, x * P_HW, y * P_HW, P_HW, P_HW);
 				nvgFill(args.vg);
 			}
 		}
@@ -347,8 +417,10 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
-	addInput(createInput<TinyPJ301MPort>(Vec(22, 40), module, Patterns::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, Patterns::RESET_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 40), module, Patterns::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(46, 40), module, Patterns::RESET_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(85, 40), module, Patterns::ROTATE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(122, 40), module, Patterns::SHIFT_INPUT));
 	addParam(createParam<SmallButton>(Vec(156, 36), module, Patterns::CLEAR_BTN_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, Patterns::RND_TRIG_INPUT));
@@ -362,10 +434,10 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 
 	float outputRowTop = 35.0;
 	float outputRowDist = 20.0;
-	for(int i=0;i<POLY;i++){
-		int paramIdx = POLY - i - 1;
-		addOutput(createOutput<TinyPJ301MPort>(Vec(195, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
-		addOutput(createOutput<TinyPJ301MPort>(Vec(215, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+	for(int i=0;i<P_POLY;i++){
+		int paramIdx = P_POLY - i - 1;
+		addOutput(createOutput<TinyPJ301MPort>(Vec(200, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
+		addOutput(createOutput<TinyPJ301MPort>(Vec(220, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 }
 

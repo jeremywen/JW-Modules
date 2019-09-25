@@ -4,7 +4,7 @@
 
 #define ROWS 16
 #define COLS 16
-#define CELLS 1024
+#define CELLS 256
 #define POLY 16
 #define HW 11.75 //cell height and width
 
@@ -495,8 +495,8 @@ struct NoteSeq16Display : Widget {
 		nvgFillColor(args.vg, nvgRGB(255, 151, 9));//orange
 		for(int i=0;i<CELLS;i++){
 			if(module->cells[i]){
-				int y = i / ROWS;
-				int x = i % COLS;
+				int x = module->xFromI(i);
+				int y = module->yFromI(i);
 				nvgBeginPath(args.vg);
 				nvgRect(args.vg, x * HW, y * HW, HW, HW);
 				nvgFill(args.vg);

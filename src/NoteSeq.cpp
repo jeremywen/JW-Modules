@@ -698,8 +698,8 @@ struct NoteSeqDisplay : Widget {
 		nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
 		for(int i=0;i<CELLS;i++){
 			if(module->cells[i]){
-				int y = i / ROWS;
-				int x = i % COLS;
+				int x = module->xFromI(i);
+				int y = module->yFromI(i);
 				nvgBeginPath(args.vg);
 				nvgRect(args.vg, x * HW, y * HW, HW, HW);
 				nvgFill(args.vg);
