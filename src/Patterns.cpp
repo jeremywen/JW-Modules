@@ -8,15 +8,7 @@
 #define POLY 16
 #define HW 11.75 //cell height and width
 
-struct ColNotes {
-	int *vals = new int[16];
-	bool includeInactive;
-	bool valid;
-	int finalHigh;
-	int finalLow;
-};
-
-struct Patterns : Module,QuantizeUtils {
+struct Patterns : Module {
 	enum ParamIds {
 		CLEAR_BTN_PARAM,
 		RND_TRIG_BTN_PARAM,
@@ -30,10 +22,10 @@ struct Patterns : Module,QuantizeUtils {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		POLY_OR_OUTPUT,
+		OR_MAIN_OUTPUT,
+		XOR_MAIN_OUTPUT = OR_MAIN_OUTPUT + 16,
+		POLY_OR_OUTPUT = XOR_MAIN_OUTPUT + 16,
 		POLY_XOR_OUTPUT,
-		OR_MAIN_OUTPUT = POLY_XOR_OUTPUT + POLY,
-		XOR_MAIN_OUTPUT = OR_MAIN_OUTPUT + POLY,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -145,18 +137,20 @@ struct Patterns : Module,QuantizeUtils {
 			//below works as an "OR" if multiple divisions
 			int x = xFromI(i);//x determines clock division
 			int y = yFromI(i);//y determines the row/channel
+			int yInv = POLY - y - 1;
+			float voltage = pulse ? 10 : 0;
 			if(cells[i]){
 				if(counters[x] % (x+1) == 0){
-					outputs[OR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
-					outputs[POLY_OR_OUTPUT].setVoltage(pulse ? 10 : 0, y);
+					outputs[OR_MAIN_OUTPUT + yInv].setVoltage(voltage);
+					outputs[POLY_OR_OUTPUT].setVoltage(voltage, yInv);
 					firingInRow++;
 				}
 			}
 			if(x == COLS - 1){//end of row
 				//works like an "XOR" so only fire if one out of the many would fire
 				if(firingInRow == 1){
-					outputs[XOR_MAIN_OUTPUT+(15 - y)].setVoltage(pulse ? 10 : 0);
-					outputs[POLY_XOR_OUTPUT].setVoltage(pulse ? 10 : 0, y);
+					outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
+					outputs[POLY_XOR_OUTPUT].setVoltage(voltage, yInv);
 				}
 				firingInRow = 0;
 			}
@@ -371,7 +365,6 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	for(int i=0;i<POLY;i++){
 		int paramIdx = POLY - i - 1;
 		addOutput(createOutput<TinyPJ301MPort>(Vec(195, outputRowTop + i * outputRowDist), module, Patterns::OR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
-		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(215, outputRowTop + i * outputRowDist), module, Patterns::XOR_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
 }
