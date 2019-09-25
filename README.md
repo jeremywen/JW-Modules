@@ -55,9 +55,9 @@ Donations: [Paypal](https://www.paypal.me/jeremywen)
 *  **Mono Outputs:** can be used to select one note from a column of many notes.
 *  **Highest Note Knob:** will set the orange line right above the highest note sent out the poly outputs.
 *  **Lowest Note Knob:** will set the yellow line right below the lowest note sent out the poly outputs.
-*  **Include Inactive Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
+*  **Drum Mode Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
-output row up and they will work more like a midi sequencer. When 'Include Inactive' is switched to the left it grabs the 16 lowest notes which are 'active'.
+output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Octave Knob:** octave for the lowest note in the grid
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
@@ -86,10 +86,37 @@ output row up and they will work more like a midi sequencer. When 'Include Inact
 *  **Octave Knob:** octave for the lowest note in the grid
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
-*  **All Rows Switch:** When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
+*  **Drum Mode Switch:** When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
-output row up and they will work more like a midi sequencer. When 'All Rows' is switched to the left it grabs the 16 lowest notes which are 'active'.
-*  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'All Rows' switch. 
+output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
+*  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
+
+## Patterns
+
+![Patterns](./doc/Patterns-img1.png)
+
+#### Basics
+
+* Each row is a clock divider.  Each cell is a division 1 to 16, left to right.
+* Each row has and 'or' output and an 'xor' output.
+* The 'or' output will send a trigger if it hit any of the divisions.
+* The 'xor' output will send a trigger if it hit exactly one of the divisions.
+* You can click and drag cells in the grid to toggle them on and off.
+* You can right+click the module to select the number of polyphonic channels.
+
+#### Top
+
+*  **Clock Input:** when source sends a trigger, the sequence moves to the next step
+*  **Reset Input:** resets to first step in sequence (based on the play mode)
+*  **Rotate Button:** rotates the grid to the right
+*  **Shift Button:** shifts the grid up
+*  **Clear Button:** clears the grid
+
+#### Bottom
+
+*  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
+*  **Random Amount Knob:** determines how full the grid will be when generating random notes
+*  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
 
 ## Bouncy Balls
 
