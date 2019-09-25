@@ -106,8 +106,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 #### Top
 
-*  **Clock Input:** when source sends a trigger, the sequence moves to the next step
-*  **Reset Input:** resets to first step in sequence (based on the play mode)
+*  **Clock Input:** when source sends a trigger, advances the clock one step
+*  **Reset Input:** resets to first step 
 *  **Rotate Button:** rotates the grid to the right
 *  **Shift Button:** shifts the grid up
 *  **Clear Button:** clears the grid
@@ -116,7 +116,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 *  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
 *  **Random Amount Knob:** determines how full the grid will be when generating random notes
-*  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
+*  **Poly Outs:** Send out 'or' outputs or send out 'xor' outputs. 
 
 ## Bouncy Balls
 
