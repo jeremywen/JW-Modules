@@ -25,7 +25,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -43,7 +43,7 @@
      id="namedview30"
      showgrid="false"
      inkscape:zoom="1.2727922"
-     inkscape:cx="188.41693"
+     inkscape:cx="43.067202"
      inkscape:cy="148.41755"
      inkscape:window-x="457"
      inkscape:window-y="220"
@@ -72,7 +72,7 @@
      d="M 0,0 H 240 V 379.45 H 0 Z" />
   <g
      id="layer1-2"
-     transform="matrix(1.9299995,0,0,1.9299995,25.048713,-312.07931)">
+     transform="matrix(1.9299995,0,0,1.9299995,33.048713,-312.07931)">
     <rect
        style="fill:#ffffff"
        id="rect9"
@@ -813,7 +813,8 @@
   <g
      aria-label="Patterns"
      style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:12.501688px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke:none;stroke-width:1"
-     id="text668">
+     id="text668"
+     transform="translate(18)">
     <path
        d="m 72.245028,8.2366486 v 2.6737004 h 0.738626 q 0.885129,0 1.239181,-0.299112 0.360156,-0.299113 0.360156,-1.037738 0,-0.7386251 -0.360156,-1.0377378 -0.354052,-0.2991126 -1.239181,-0.2991126 z m -1.80078,-1.5138763 h 2.472258 q 1.886241,0 2.710327,0.6714774 0.83019,0.6714773 0.83019,2.1792493 0,1.507772 -0.83019,2.179249 -0.824086,0.671478 -2.710327,0.671478 h -0.671478 v 3.412326 h -1.80078 z"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:12.501688px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:1"
