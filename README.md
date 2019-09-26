@@ -114,8 +114,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 #### Bottom
 
-*  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
-*  **Random Amount Knob:** determines how full the grid will be when generating random notes
+*  **Random Trig Input and Button:** clears the grid and generates random cells (based on the rnd mode)
+*  **Random Amount Knob:** determines how full the grid will be when generating random cells
 *  **Poly Outs:** Send out 'or' outputs or send out 'xor' outputs. 
 
 ## Bouncy Balls
