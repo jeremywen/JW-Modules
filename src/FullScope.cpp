@@ -203,7 +203,7 @@ struct FullScopeDisplay : TransparentWidget {
 		nvgRestore(args.vg);
 	}
 
-	void draw(const DrawArgs &args) {
+	void draw(const DrawArgs &args) override {
 		if(module == NULL) return;
 
 		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));

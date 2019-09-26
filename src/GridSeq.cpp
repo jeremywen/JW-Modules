@@ -405,10 +405,10 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 			}
 
 			//maybe someday put note labels in each cell
-			float noteParamMax = 0;
-			if(module != NULL){
-				noteParamMax = module->noteParamMax;
-			}
+			// float noteParamMax = 0;
+			// if(module != NULL){
+			// 	noteParamMax = module->noteParamMax;
+			// }
 			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);
