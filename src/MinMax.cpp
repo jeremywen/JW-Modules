@@ -142,22 +142,22 @@ struct MinMaxDisplay : TransparentWidget {
 		nvgText(args.vg, pos.x + 10, pos.y + 78, text, NULL);
 	}
 
-	void draw(const DrawArgs &args) {
-		float gainX = 1;
-		float gainY = 1;
-		float offsetX = 0;
-		float offsetY = 0;
+	void draw(const DrawArgs &args) override {
+		// float gainX = 1;
+		// float gainY = 1;
+		// float offsetX = 0;
+		// float offsetY = 0;
 
-		float valuesX[BUFFER_SIZE];
-		float valuesY[BUFFER_SIZE];
-		for (int i = 0; i < BUFFER_SIZE; i++) {
-			int j = i;
-			// Lock display to buffer if buffer update deltaTime <= 2^-11
-			if (module->lissajous)
-				j = (i + module->bufferIndex) % BUFFER_SIZE;
-			valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
-			valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
-		}
+		//	float valuesX[BUFFER_SIZE];
+		//	float valuesY[BUFFER_SIZE];
+		// for (int i = 0; i < BUFFER_SIZE; i++) {
+		// 	int j = i;
+		// 	// Lock display to buffer if buffer update deltaTime <= 2^-11
+		// 	if (module->lissajous)
+		// 		j = (i + module->bufferIndex) % BUFFER_SIZE;
+		// 	valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
+		// 	valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
+		// }
 
 		// Calculate and draw stats
 		if (++frame >= 4) {
