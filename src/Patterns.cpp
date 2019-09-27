@@ -33,13 +33,6 @@ struct Patterns : Module {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-	enum RndMode {
-		RND_BASIC,
-		RND_EUCLID,
-		RND_SIN_WAVE,
-		RND_LIFE_GLIDERS,
-		NUM_RND_MODES
-	};
 	enum ShiftDirection {
 		DIR_UP,
 		DIR_DOWN
@@ -54,14 +47,13 @@ struct Patterns : Module {
 	};
 
 	float displayWidth = 0, displayHeight = 0;
-	float rate = 1.0 / APP->engine->getSampleRate();
 	int channels = 1;
 	bool resetMode = false;
 	bool *cells = new bool[P_CELLS];
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	int currentY = 0;
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, rotateTrig, shiftTrig;
-	dsp::PulseGenerator gatePulse;
 
 	Patterns() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -88,7 +80,6 @@ struct Patterns : Module {
 	}
 
 	void onSampleRateChange() override {
-		rate = 1.0 / APP->engine->getSampleRate();
 	}
 
 	json_t *dataToJson() override {
@@ -136,7 +127,6 @@ struct Patterns : Module {
 				resetMode = false;
 				resetSeq();
 			}
-			gatePulse.trigger(1e-1);
 			for(int i=0;i<P_COLS;i++){
 				counters[i]++;
 				if(counters[i] > i){
@@ -145,29 +135,34 @@ struct Patterns : Module {
 			}
 		}
 
-		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		int firingInRow = 0;
 		for(int i=0;i<P_CELLS;i++){			
-			//below works as an "OR" if multiple divisions
-			int x = xFromI(i);//x determines clock division
 			int y = yFromI(i);//y determines the row/channel
-			int yInv = P_POLY - y - 1;
-			float voltage = pulse ? 10 : 0;
-			if(cells[i]){
-				if(counters[x] % (x+1) == 0){
-					outputs[OR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-					outputs[POLY_OR_OUTPUT].setVoltage(voltage, yInv);
-					firingInRow++;
+			if(y == currentY){
+				int x = xFromI(i);//x determines clock division
+				int yInv = P_POLY - y - 1;
+				float voltage = inputs[CLOCK_INPUT].getVoltage();
+				if(cells[i]){
+					//below works as an "OR" if multiple divisions
+					if(counters[x] % (x+1) == 0){
+						outputs[OR_MAIN_OUTPUT + yInv].setVoltage(voltage);
+						outputs[POLY_OR_OUTPUT].setVoltage(voltage, yInv);
+						firingInRow++;
+					}
+				}
+				if(x == P_COLS - 1){//end of row
+					//works like an "XOR" so only fire if one out of the many would fire
+					if(firingInRow == 1){
+						outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
+						outputs[POLY_XOR_OUTPUT].setVoltage(voltage, yInv);
+					}
+					firingInRow = 0;
 				}
 			}
-			if(x == P_COLS - 1){//end of row
-				//works like an "XOR" so only fire if one out of the many would fire
-				if(firingInRow == 1){
-					outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-					outputs[POLY_XOR_OUTPUT].setVoltage(voltage, yInv);
-				}
-				firingInRow = 0;
-			}
+		}
+		currentY++;
+		if(currentY == P_ROWS){
+			currentY = 0;
 		}
 		outputs[POLY_OR_OUTPUT].setChannels(channels);
 		outputs[POLY_XOR_OUTPUT].setChannels(channels);
