@@ -1,6 +1,6 @@
 # TODO
 
-  * i think modulating the lowest/highest note in noteseq is wrong
+  * clock and reset for each row of Patterns
         
 
 
