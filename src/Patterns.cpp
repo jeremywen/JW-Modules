@@ -50,6 +50,7 @@ struct Patterns : Module {
 	int channels = 1;
 	bool resetMode = false;
 	bool *cells = new bool[P_CELLS];
+	bool *newCells = new bool[P_CELLS];
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	int currentY = 0;
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
@@ -67,6 +68,7 @@ struct Patterns : Module {
 
 	~Patterns() {
 		delete [] cells;
+		delete [] newCells;
 	}
 
 	void onRandomize() override {
@@ -171,6 +173,15 @@ struct Patterns : Module {
 	void gridChanged(){
 	}
 
+	void swapCells() {
+		std::swap(cells, newCells);
+		gridChanged();
+
+		for(int i=0;i<P_CELLS;i++){
+			newCells[i] = false;
+		}
+	}
+
 	void resetSeq(){
 		for(int i=0;i<P_COLS;i++){
 			counters[i] = 0;
@@ -193,7 +204,6 @@ struct Patterns : Module {
 	}
   
 	void rotateCells(RotateDirection dir){
-		bool *newCells = new bool[P_CELLS];
 		for(int x=0; x < P_COLS; x++){
 			for(int y=0; y < P_ROWS; y++){
 				switch(dir){
@@ -207,12 +217,10 @@ struct Patterns : Module {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 
 	void flipCells(FlipDirection dir){
-		bool *newCells = new bool[P_CELLS];
 		for(int x=0; x < P_COLS; x++){
 			for(int y=0; y < P_ROWS; y++){
 				switch(dir){
@@ -226,12 +234,10 @@ struct Patterns : Module {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 
 	void shiftCells(ShiftDirection dir){
-		bool *newCells = new bool[P_CELLS];
 		for(int x=0; x < P_COLS; x++){
 			for(int y=0; y < P_ROWS; y++){
 				switch(dir){
@@ -245,8 +251,7 @@ struct Patterns : Module {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 	void setCellOnByDisplayPos(float displayX, float displayY, bool on){
 		setCellOn(int(displayX / P_HW), int(displayY / P_HW), on);

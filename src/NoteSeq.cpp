@@ -116,6 +116,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	bool goingForward = true;
 	bool resetMode = false;
 	bool *cells = new bool[CELLS];
+	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
@@ -154,6 +155,7 @@ struct NoteSeq : Module,QuantizeUtils {
 
 	~NoteSeq() {
 		delete [] cells;
+		delete [] newCells;
 		delete [] colNotesCache;
 		delete [] colNotesCache2;
 	}
@@ -355,6 +357,15 @@ struct NoteSeq : Module,QuantizeUtils {
 		}
 	}
 
+	void swapCells() {
+		std::swap(cells, newCells);
+		gridChanged();
+
+		for(int i=0;i<CELLS;i++){
+			newCells[i] = false;
+		}
+	}
+
 	int getFinalHighestNote1to32(){
 		int inputOffset = inputs[HIGHEST_NOTE_INPUT].isConnected() ? int(rescalefjw(inputs[HIGHEST_NOTE_INPUT].getVoltage(), -5, 5, -17, 17)) : 0;
 		return clampijw(params[HIGHEST_NOTE_PARAM].getValue() + inputOffset, 1, 32);
@@ -426,7 +437,6 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void rotateCells(RotateDirection dir){
-		bool *newCells = new bool[CELLS];
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
 				switch(dir){
@@ -440,12 +450,10 @@ struct NoteSeq : Module,QuantizeUtils {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 
 	void flipCells(FlipDirection dir){
-		bool *newCells = new bool[CELLS];
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
 				switch(dir){
@@ -459,12 +467,10 @@ struct NoteSeq : Module,QuantizeUtils {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 
 	void shiftCells(ShiftDirection dir){
-		bool *newCells = new bool[CELLS];
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
 				switch(dir){
@@ -478,13 +484,13 @@ struct NoteSeq : Module,QuantizeUtils {
 
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 
 	void clearCells() {
 		for(int i=0;i<CELLS;i++){
 			cells[i] = false;
+			newCells[i] = false;
 		}
 		gridChanged();
 	}
@@ -572,7 +578,6 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void stepLife(){
-		bool *newCells = new bool[CELLS];
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
 				int cellIdx = iFromXY(x, y);
@@ -585,8 +590,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				}
 			}
 		}
-		cells = newCells;
-		gridChanged();
+		swapCells();
 	}
 	
 	int getNeighborCount(int x, int y){
