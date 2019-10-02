@@ -14,6 +14,10 @@ struct ColNotes {
 	bool valid;
 	int finalHigh;
 	int finalLow;
+
+	~ColNotes() {
+		delete [] vals;
+	}
 };
 
 struct NoteSeq : Module,QuantizeUtils {
