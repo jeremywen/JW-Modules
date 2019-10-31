@@ -127,10 +127,10 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 * The top section contains all the inputs.
 * The bottom sections contains all the outputs.
 * The colors of the inputs/outputs correspond to the ball colors.
-* The top two rows have buttons next to the inputs to for manually triggering.
+* The top two rows have buttons next to the inputs for manually triggering.
 * The next three rows have knobs next to the inputs for manually controlling the values.
 * Click in the dark area to lock/unlock the paddle.
-* Click the 'ON' button to toggle the paddle visibilty.
+* Click the 'ON' button to toggle the paddle visibility.
 
 #### Inputs
 
@@ -242,7 +242,7 @@ Draw your own LFO.  The recorded path is saved and opened.
 
 #### Right Click Context Menu
 
-Change the playback mode by right clicking the module and selecting of of the playback options:
+Change the playback mode by right clicking the module and selecting the playback options:
 
 ![Menu](./doc/XYPad-Menu-img4.png)
 
@@ -277,7 +277,7 @@ _Outputs 1/4 notes because this was like vcv rack standard er something at first
 
 ## FullScope
 
-Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modied that code slightly.
+Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modified that code slightly.
 
 ![FullScope](./doc/FullScope-img2.png)
 
@@ -305,7 +305,7 @@ Change to the normal scope by unchecking lissajous mode.
 
 ## MinMax
 
-Created to show minumum and maximum voltages in a larger font than the Fundamental Scope 
+Created to show minimum and maximum voltages in a larger font than the Fundamental Scope 
 
 ![MinMax](./doc/MinMax-img1.png)
 
