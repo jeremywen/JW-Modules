@@ -328,6 +328,7 @@ struct HairballScrew : SVGScrew {
 
 extern Model *modelBouncyBalls;
 extern Model *modelSimpleClock;
+extern Model *modelStr1ker;
 extern Model *modelMinMax;
 extern Model *modelQuantizer;
 extern Model *modelNoteSeq;

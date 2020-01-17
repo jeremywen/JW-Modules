@@ -1,18 +1,29 @@
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 RACK_DIR ?= ../..
 
-# FLAGS will be passed to both the C and C++ compiler
-FLAGS += -Wno-deprecated-declarations
-CFLAGS +=
-CXXFLAGS +=
+SHELL:=/bin/bash -O extglob
 
-# Careful about linking to libraries, since you can't assume much about the user's environment and library search path.
-# Static libraries are fine.
-LDFLAGS +=
+FLAGS = \
+    -Wno-deprecated-declarations \
+	-O0 \
+	-Werror=implicit-function-declaration \
+	-Isrc \
+	-Ilib/oscpack \
 
-# Add .cpp and .c files to the build
-SOURCES = $(wildcard src/*.cpp)
+SOURCES = \
+	$(wildcard lib/oscpack/ip/*.cpp) \
+	$(wildcard lib/oscpack/osc/*.cpp) \
+	$(wildcard src/*.cpp) \
 
+include ../../arch.mk
 
-# Must include the VCV plugin Makefile framework
+ifeq ($(ARCH), win)
+	SOURCES += $(wildcard lib/oscpack/ip/win32/*.cpp) 
+	LDFLAGS += -lws2_32 -lwinmm
+else
+	SOURCES += $(wildcard lib/oscpack/ip/posix/*.cpp) 
+endif
+
+FLAGS := $(filter-out -MMD,$(FLAGS))
+
 include $(RACK_DIR)/plugin.mk

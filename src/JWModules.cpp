@@ -15,6 +15,7 @@ void init(rack::Plugin *p)
 	p->addModel(modelPatterns);
 	p->addModel(modelQuantizer);
 	p->addModel(modelSimpleClock);
+	p->addModel(modelStr1ker);
 	p->addModel(modelThingThing);
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);

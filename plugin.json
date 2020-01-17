@@ -82,6 +82,12 @@
 			"tags": ["Clock", "Random"]
 		},
 		{
+			"slug": "Str1ker",
+			"name": "Str1ker",
+			"description": "Clock",
+			"tags": ["Clock"]
+		},
+  	    {
 			"slug": "ThingThing",
 			"name": "Thing Thing",
 			"tags": ["Visual"]
