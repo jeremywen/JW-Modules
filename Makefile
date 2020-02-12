@@ -15,9 +15,8 @@ SOURCES = \
 	$(wildcard lib/oscpack/osc/*.cpp) \
 	$(wildcard src/*.cpp) \
 
-include ../../arch.mk
-
-ifeq ($(ARCH), win)
+MACHINE = $(shell $(CC) -dumpmachine)
+ifneq (, $(findstring mingw, $(MACHINE)))
 	SOURCES += $(wildcard lib/oscpack/ip/win32/*.cpp) 
 	LDFLAGS += -lws2_32 -lwinmm
 else
