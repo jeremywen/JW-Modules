@@ -276,7 +276,7 @@ _Outputs 1/16 notes by default - See right click menu to change the rate..._
 
 _Max For Live Device for setting lives BPM to the same value as Str1ker_
 
-[Str1kerBridge.amxd](./Str1kerBridge.amxd)
+[Str1kerBridge.amxd](./res/Str1kerBridge.amxd)
 
 #### Controls
 
