@@ -77,7 +77,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 35);
-	noteLabel->text = "note here";
+	noteLabel->text = "C";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
@@ -86,7 +86,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 90);
-	scaleLabel->text = "scale here";
+	scaleLabel->text = "Minor";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
