@@ -312,6 +312,14 @@ _Max For Live Device for setting lives BPM to the same value as Str1ker_
   *  **OSC Port 9013:** sets the osc port to 9013
   *  **OSC Port 10013:** sets the osc port to 10013
 
+## D1v1de
+
+TODO
+
+## Pres1t
+
+TODO
+
 ## Quantizer
 
 ![Quantizer](./doc/Quantizer-img1.png)

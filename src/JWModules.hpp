@@ -194,6 +194,13 @@ struct MyBlueValueLight : ModuleLightWidget {
 	}
 };
 
+struct MyOrangeValueLight : ModuleLightWidget {
+	MyOrangeValueLight() {
+		firstLightId = 1;
+		addBaseColor(nvgRGB(255, 151, 9));
+	}
+};
+
 struct MyGreenValueLight : ModuleLightWidget {
 	MyGreenValueLight() {
 		firstLightId = 1;
@@ -329,6 +336,8 @@ struct HairballScrew : SVGScrew {
 extern Model *modelBouncyBalls;
 extern Model *modelSimpleClock;
 extern Model *modelStr1ker;
+extern Model *modelD1v1de;
+extern Model *modelPres1t;
 extern Model *modelMinMax;
 extern Model *modelQuantizer;
 extern Model *modelNoteSeq;
