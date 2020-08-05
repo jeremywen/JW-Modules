@@ -39,6 +39,8 @@ struct GridSeq : Module,QuantizeUtils {
 	enum OutputIds {
 		GATES_OUTPUT,
 		CELL_OUTPUT,
+		GATES_YX_OUTPUT,
+		CELL_YX_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -64,6 +66,7 @@ struct GridSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger gateTriggers[16];
 
 	int index = 0;
+	int indexYX = 0;
 	int posX = 0;
 	int posY = 0;
 	float phase = 0.0;
@@ -261,9 +264,11 @@ void GridSeq::process(const ProcessArgs &args) {
 			posX = 0;
 			posY = 0;
 			index = 0;
+			indexYX = 0;
 			lights[RESET_LIGHT].value =  1.0;
 		}
 		index = posX + (posY * 4);
+		indexYX = posY + (posX * 4);
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
 	}
@@ -271,16 +276,18 @@ void GridSeq::process(const ProcessArgs &args) {
 	lights[RESET_LIGHT].value -= lights[RESET_LIGHT].value / lightLambda / args.sampleRate;
 	bool pulse = gatePulse.process(1.0 / args.sampleRate);
 
+	//////////////////////////////////////////////////////////////////////////////////////////	
+	// MAIN XY OUT
+	//////////////////////////////////////////////////////////////////////////////////////////	
+
 	// Gate buttons
 	for (int i = 0; i < 16; i++) {
 		if (gateTriggers[i].process(params[CELL_GATE_PARAM + i].getValue())) {
 			gateState[i] = !gateState[i];
 		}
 		bool gateOn = (running && i == index && gateState[i]);
-		if (gateMode == TRIGGER)
-			gateOn = gateOn && pulse;
-		else if (gateMode == RETRIGGER)
-			gateOn = gateOn && !pulse;
+		if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+		else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
 
 		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
 		lights[GATES_LIGHT + i].value = gateState[i] ? 1.0 - lights[STEPS_LIGHT + i].value : lights[STEPS_LIGHT + i].value;
@@ -288,16 +295,25 @@ void GridSeq::process(const ProcessArgs &args) {
 
 	// Cells
 	bool gatesOn = (running && gateState[index]);
-	if (gateMode == TRIGGER)
-		gatesOn = gatesOn && pulse;
-	else if (gateMode == RETRIGGER)
-		gatesOn = gatesOn && !pulse;
+	if (gateMode == TRIGGER) gatesOn = gatesOn && pulse;
+	else if (gateMode == RETRIGGER) gatesOn = gatesOn && !pulse;
 
 	// Outputs
 	if(gatesOn || ignoreGateOnPitchOut)	{
 		outputs[CELL_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
+
+	//////////////////////////////////////////////////////////////////////////////////////////	
+	// INVERTED YX OUT
+	//////////////////////////////////////////////////////////////////////////////////////////	
+	bool gatesOnYX = (running && gateState[indexYX]);
+	if (gateMode == TRIGGER) gatesOnYX = gatesOnYX && pulse;
+	else if (gateMode == RETRIGGER) gatesOnYX = gatesOnYX && !pulse;
+	if(gatesOnYX || ignoreGateOnPitchOut)	{
+		outputs[CELL_YX_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + indexYX].getValue()));
+	}
+	outputs[GATES_YX_OUTPUT].setVoltage(gatesOnYX ? 10.0 : 0.0);
 }
 
 struct GridSeqWidget : ModuleWidget {
@@ -441,8 +457,11 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	}
 
 	///// OUTPUTS /////
-	addOutput(createOutput<PJ301MPort>(Vec(22, 233), module, GridSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(22, 295), module, GridSeq::CELL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(10, 233), module, GridSeq::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(10, 295), module, GridSeq::CELL_OUTPUT));
+
+	addOutput(createOutput<TinyPJ301MPort>(Vec(40, 241), module, GridSeq::GATES_YX_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(40, 303), module, GridSeq::CELL_YX_OUTPUT));
 }
 
 struct GridSeqPitchMenuItem : MenuItem {
