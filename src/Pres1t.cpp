@@ -157,6 +157,10 @@ struct Pres1tDisplay : Widget {
 			e.consume(this);
 			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, true, true);
 		}
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
+			e.consume(this);
+			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, true, false);
+		}
 	}
 
 	void draw(const DrawArgs &args) override {
