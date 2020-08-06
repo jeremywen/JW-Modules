@@ -118,9 +118,7 @@ struct D1v1deDisplay : Widget {
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		if(!module){ return; }
-
-		int divInt = module->getDivInt();
+		int divInt = module ? module->getDivInt() : 4;
 		float rowHeight = box.size.y / divInt;
 
 		//grid
@@ -132,6 +130,8 @@ struct D1v1deDisplay : Widget {
 			nvgLineTo(args.vg, box.size.x, i * rowHeight);
 			nvgStroke(args.vg);
 		}
+
+		if(!module){ return; }
 
 		//offset
 		if(module->params[D1v1de::OFFSET_PARAM].getValue() > 0){

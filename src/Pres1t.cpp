@@ -14,8 +14,10 @@ struct Pres1t : Module {
 	};
 	enum InputIds {
 		BPM_INPUT,
-		X_INPUT,
-		Y_INPUT,
+		X_WRITE_INPUT,
+		Y_WRITE_INPUT,
+		X_READ_INPUT,
+		Y_READ_INPUT,
 		SAVE_INPUT,
 		LOAD_INPUT,
 		NUM_INPUTS
@@ -30,7 +32,9 @@ struct Pres1t : Module {
 
     float smpRate = APP->engine->getSampleRate();
 	float *cells = new float[CELLS];
-	int selectedCellIdx = 0;
+	float EMPTY_CELL_VAL = 99999;
+	int selectedWriteCellIdx = 0;
+	int selectedReadCellIdx = 0;
 	dsp::SchmittTrigger saveTrigger;
 	dsp::SchmittTrigger loadTrigger;
 
@@ -81,40 +85,52 @@ struct Pres1t : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		if(inputs[X_INPUT].isConnected()){
-			setCellOn(int(rescalefjw(inputs[X_INPUT].getVoltage(), 0, 10, 0, COLS)), yFromI(selectedCellIdx), true);
+		if(inputs[X_WRITE_INPUT].isConnected()){
+			setCellOn(int(rescalefjw(inputs[X_WRITE_INPUT].getVoltage(), 0, 10, 0, COLS)), yFromI(selectedWriteCellIdx), true, true);
 		}
 
-		if(inputs[Y_INPUT].isConnected()){
-			setCellOn(xFromI(selectedCellIdx), int(rescalefjw(inputs[Y_INPUT].getVoltage(), 0, 10, 0, ROWS)), true);
+		if(inputs[Y_WRITE_INPUT].isConnected()){
+			setCellOn(xFromI(selectedWriteCellIdx), int(rescalefjw(inputs[Y_WRITE_INPUT].getVoltage(), 0, 10, 0, ROWS)), true, true);
+		}
+
+		if(inputs[X_READ_INPUT].isConnected()){
+			setCellOn(int(rescalefjw(inputs[X_READ_INPUT].getVoltage(), 0, 10, 0, COLS)), yFromI(selectedReadCellIdx), true, false);
+		}
+
+		if(inputs[Y_READ_INPUT].isConnected()){
+			setCellOn(xFromI(selectedReadCellIdx), int(rescalefjw(inputs[Y_READ_INPUT].getVoltage(), 0, 10, 0, ROWS)), true, false);
 		}
 
 		if(inputs[BPM_INPUT].isConnected() && saveTrigger.process(params[SAVE_PARAM].getValue() + inputs[SAVE_INPUT].getVoltage())){
-			cells[selectedCellIdx] = inputs[BPM_INPUT].getVoltage();
+			cells[selectedWriteCellIdx] = inputs[BPM_INPUT].getVoltage();
 		}
 
 		// This loadTrigger won't work for some reason
 		// if(outputs[BPM_OUTPUT].isConnected() && loadTrigger.process(params[LOAD_PARAM].getValue() + inputs[LOAD_INPUT].getVoltage()) && cells[selectedCellIdx] != 0){
-		if(outputs[BPM_OUTPUT].isConnected() && (params[LOAD_PARAM].getValue() + inputs[LOAD_INPUT].getVoltage() >= 1) && cells[selectedCellIdx] != 0){
-			outputs[BPM_OUTPUT].setVoltage(cells[selectedCellIdx]);
+		if(outputs[BPM_OUTPUT].isConnected() && (params[LOAD_PARAM].getValue() + inputs[LOAD_INPUT].getVoltage() >= 1) && cells[selectedReadCellIdx] != EMPTY_CELL_VAL){
+			outputs[BPM_OUTPUT].setVoltage(cells[selectedReadCellIdx]);
 		}
 	}
 
 	void clearCells() {
 		for(int i=0;i<CELLS;i++){
-			cells[i] = 0;
+			cells[i] = EMPTY_CELL_VAL;
 		}
 	}
 
-	void setCellOnByDisplayPos(float displayX, float displayY, bool on){
-		setCellOn(int(displayX / HW), int(displayY / HW), on);
+	void setCellOnByDisplayPos(float displayX, float displayY, bool on, bool write){
+		setCellOn(int(displayX / HW), int(displayY / HW), on, write);
 	}
 
-	void setCellOn(int cellX, int cellY, bool on){
+	void setCellOn(int cellX, int cellY, bool on, bool write){
 		if(cellX >= 0 && cellX < COLS && 
 		   cellY >=0 && cellY < ROWS){
 			if(on){
-				selectedCellIdx = iFromXY(cellX, cellY);
+				if(write){
+					selectedWriteCellIdx = iFromXY(cellX, cellY);
+				} else {
+					selectedReadCellIdx = iFromXY(cellX, cellY);
+				}
 			}
 		}
 	}
@@ -139,7 +155,7 @@ struct Pres1tDisplay : Widget {
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
-			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, true);
+			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, true, true);
 		}
 	}
 
@@ -173,7 +189,7 @@ struct Pres1tDisplay : Widget {
 		for(int i=0;i<CELLS;i++){
 			int y = i / COLS;
 			int x = i % COLS;
-			if(module->selectedCellIdx == i){
+			if(module->selectedWriteCellIdx == i){
 				nvgStrokeColor(args.vg, nvgRGB(25, 150, 252)); //blue
 				nvgStrokeWidth(args.vg, 2);
 				nvgBeginPath(args.vg);
@@ -181,10 +197,20 @@ struct Pres1tDisplay : Widget {
 				nvgStroke(args.vg);
 			}
 			
-			if(module->cells[i] != 0){
-				nvgFillColor(args.vg, nvgRGB(255, 243, 9)); //yellow
+			if(module->selectedReadCellIdx == i){
+				nvgStrokeColor(args.vg, nvgRGB(255, 243, 9)); //yellow
+				nvgStrokeWidth(args.vg, 2);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW+2, y * HW+2, HW-4, HW-4);
+				nvgRect(args.vg, x * HW, y * HW, HW, HW);
+				nvgStroke(args.vg);
+			}
+			
+			if(module->cells[i] != module->EMPTY_CELL_VAL){
+				float yPos = rescalefjw(module->cells[i], -10, 10, 2, HW-4);
+				nvgFillColor(args.vg, nvgRGB(60, 70, 73));
+				nvgBeginPath(args.vg);
+				float topOfCell = y * HW+2;
+				nvgRect(args.vg, x * HW+2, topOfCell + HW - 4 - yPos, HW-4, yPos);
 				nvgFill(args.vg);
 			}
 		}
@@ -222,8 +248,10 @@ Pres1tWidget::Pres1tWidget(Pres1t *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(12, 307), module, Pres1t::SAVE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(95, 307), module, Pres1t::LOAD_INPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(57, 286), module, Pres1t::X_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(57, 307), module, Pres1t::Y_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 286), module, Pres1t::X_WRITE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 307), module, Pres1t::Y_WRITE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(65, 286), module, Pres1t::X_READ_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(65, 307), module, Pres1t::Y_READ_INPUT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(18, 340), module, Pres1t::BPM_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(85, 340), module, Pres1t::BPM_OUTPUT));

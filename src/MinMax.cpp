@@ -108,7 +108,7 @@ struct MinMaxDisplay : TransparentWidget {
 	std::shared_ptr<Font> font;
 
 	struct Stats {
-		float vrms, vpp, vmin, vmax;
+		float vrms, vpp, vmin = 0, vmax = 0;
 		void calculate(float *values) {
 			vrms = 0.0;
 			vmax = -INFINITY;
