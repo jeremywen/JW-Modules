@@ -45,6 +45,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		HIGHEST_NOTE_PARAM,
 		LOWEST_NOTE_PARAM,
 		INCLUDE_INACTIVE_PARAM,
+		SHIFT_AMT_KNOB_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -66,6 +67,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		SCALE_INPUT,
 		LENGTH_INPUT,
 		MODE_INPUT,
+		SHIFT_AMT_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -145,6 +147,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1);
 		configParam(SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0);
+		configParam(SHIFT_AMT_KNOB_PARAM, -32, 32.0, 1.0);
 		configParam(ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0);
 		configParam(FLIP_HORIZ_BTN_PARAM, 0.0, 1.0, 0.0);
@@ -504,14 +507,26 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void shiftCells(ShiftDirection dir){
+		int inputOffset = inputs[SHIFT_AMT_INPUT].isConnected() ? rescalefjw(inputs[SHIFT_AMT_INPUT].getVoltage(), -5, 5, -32, 32) : 0;
+		int amount = clampijw(params[SHIFT_AMT_KNOB_PARAM].getValue() + inputOffset, -32, 32);
+// DEBUG("shiftCells %d", amount);
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
+				int newY = 0;
 				switch(dir){
 					case DIR_UP:
-						newCells[iFromXY(x, y)] = cells[iFromXY(x, y==ROWS-1 ? 0 : y + 1)];
+						//if at top, start from bottom up
+						newY = (y + amount) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+// DEBUG("DIR_UP newY %d", newY);
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
 						break;
 					case DIR_DOWN:
-						newCells[iFromXY(x, y)] = cells[iFromXY(x, y==0 ? ROWS-1 : y - 1)];
+						//if at bottom, start from top down
+						newY = (y - amount) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+// DEBUG("DIR_DOWN newY %d", newY);
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
 						break;
 				}
 
@@ -901,23 +916,26 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeq::RND_AMT_INPUT));
 	addParam(createParam<SmallWhiteKnob>(Vec(138, 145), module, NoteSeq::RND_AMT_KNOB_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 201), module, NoteSeq::SHIFT_UP_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq::SHIFT_UP_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 201), module, NoteSeq::SHIFT_DOWN_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq::SHIFT_DOWN_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 201), module, NoteSeq::FLIP_HORIZ_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 196), module, NoteSeq::FLIP_HORIZ_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 201), module, NoteSeq::FLIP_VERT_INPUT));
+	addParam(createParam<SmallButton>(Vec(138, 196), module, NoteSeq::FLIP_VERT_BTN_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(60, 252), module, NoteSeq::ROT_RIGHT_INPUT));
 	addParam(createParam<SmallButton>(Vec(80, 247), module, NoteSeq::ROT_RIGHT_BTN_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(118, 252), module, NoteSeq::ROT_LEFT_INPUT));
 	addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeq::ROT_LEFT_BTN_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeq::FLIP_HORIZ_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq::FLIP_HORIZ_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeq::FLIP_VERT_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::FLIP_VERT_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeq::SHIFT_UP_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeq::SHIFT_UP_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeq::SHIFT_DOWN_INPUT));
+	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeq::SHIFT_DOWN_BTN_PARAM));
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(68, 345), module, NoteSeq::LIFE_ON_SWITCH_PARAM));
-	addParam(createParam<JwSmallSnapKnob>(Vec(125, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(30, 350), module, NoteSeq::SHIFT_AMT_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(50, 345), module, NoteSeq::SHIFT_AMT_KNOB_PARAM));
+
+	addParam(createParam<JwHorizontalSwitch>(Vec(102, 350), module, NoteSeq::LIFE_ON_SWITCH_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(138, 345), module, NoteSeq::LIFE_SPEED_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
