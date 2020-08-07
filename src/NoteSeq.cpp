@@ -102,6 +102,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		RND_EUCLID,
 		RND_SIN_WAVE,
 		RND_LIFE_GLIDERS,
+		RND_CHORD_LIKE,
 		NUM_RND_MODES
 	};
 	enum ShiftDirection {
@@ -509,7 +510,6 @@ struct NoteSeq : Module,QuantizeUtils {
 	void shiftCells(ShiftDirection dir){
 		int inputOffset = inputs[SHIFT_AMT_INPUT].isConnected() ? rescalefjw(inputs[SHIFT_AMT_INPUT].getVoltage(), -5, 5, -32, 32) : 0;
 		int amount = clampijw(params[SHIFT_AMT_KNOB_PARAM].getValue() + inputOffset, -32, 32);
-// DEBUG("shiftCells %d", amount);
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
 				int newY = 0;
@@ -518,14 +518,12 @@ struct NoteSeq : Module,QuantizeUtils {
 						//if at top, start from bottom up
 						newY = (y + amount) % ROWS;
 						if(newY < 0) newY = ROWS + newY;
-// DEBUG("DIR_UP newY %d", newY);
 						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
 						break;
 					case DIR_DOWN:
 						//if at bottom, start from top down
 						newY = (y - amount) % ROWS;
 						if(newY < 0) newY = ROWS + newY;
-// DEBUG("DIR_DOWN newY %d", newY);
 						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
 						break;
 				}
@@ -618,6 +616,20 @@ struct NoteSeq : Module,QuantizeUtils {
 							setCellOn(x, y-2, true);
 							setCellOn(x-1, y-2, true);
 						}
+					}
+				}
+				break;
+			}
+			case RND_CHORD_LIKE:{
+				// int chordCount = int(rndAmt * 20);
+				for(int x=0;x<COLS;x++){
+					if(random::uniform() < rndAmt){
+						int y = 20 - int(random::uniform() * 8);
+						int dist1 = 2 + int(random::uniform() * 8);
+						int dist2 = 2 + int(random::uniform() * 8);
+						setCellOn(x, y, true);
+						setCellOn(x, y-dist1, true);
+						setCellOn(x, y+dist2, true);
 					}
 				}
 				break;
@@ -817,6 +829,7 @@ struct RndModeKnob : JwSmallSnapKnob {
 				case NoteSeq::RND_EUCLID:return "Euclid";
 				case NoteSeq::RND_SIN_WAVE:return "Sine";
 				case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
+				case NoteSeq::RND_CHORD_LIKE:return "Chord-Like";
 			}
 		}
 		return "";

@@ -39,7 +39,7 @@ struct Str1ker : Module {
 
 	bool running = true;
 	bool lastStepWasRunning = false;
-	bool oscOn = true;
+	bool oscOn = false;
 	float phase = 0.0;
 	float smpRate = APP->engine->getSampleRate();	
 	float oneOverRate = 1.0 / smpRate;	
@@ -96,11 +96,13 @@ struct Str1ker : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "clockMult", json_integer(clockMult));
+		json_object_set_new(rootJ, "faderVal", json_real(faderVal));
 		return rootJ;
 	}
 
 	void dataFromJson(json_t *rootJ) override {
 		clockMult = json_integer_value(json_object_get(rootJ, "clockMult"));
+		faderVal = json_real_value(json_object_get(rootJ, "faderVal"));
 	}
 
 	void onReset() override {
