@@ -88,12 +88,12 @@ struct D1v1de : Module {
 			ticks++;
 			if(ticks == offsetInt){
 				pulseOut = true;
-				gatePulse.trigger(1e-2);
+				gatePulse.trigger(1e-3);
 			}
 			if(ticks == divInt){
 				if(!pulseOut){
 					pulseOut = true;
-					gatePulse.trigger(1e-2);
+					gatePulse.trigger(1e-3);
 				}
 			}
 			outputs[POS_OUTPUT].setVoltage(rescalefjw(ticks, 0.0, divInt, 0.0, 10.0));

@@ -252,10 +252,10 @@ Pres1tWidget::Pres1tWidget(Pres1t *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(12, 307), module, Pres1t::SAVE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(95, 307), module, Pres1t::LOAD_INPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(45, 286), module, Pres1t::X_WRITE_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(45, 307), module, Pres1t::Y_WRITE_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(65, 286), module, Pres1t::X_READ_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(65, 307), module, Pres1t::Y_READ_INPUT));
+	addInput(createInput<Blue_TinyPJ301MPort>(Vec(45, 286), module, Pres1t::X_WRITE_INPUT));
+	addInput(createInput<Blue_TinyPJ301MPort>(Vec(45, 307), module, Pres1t::Y_WRITE_INPUT));
+	addInput(createInput<Yellow_TinyPJ301MPort>(Vec(65, 286), module, Pres1t::X_READ_INPUT));
+	addInput(createInput<Yellow_TinyPJ301MPort>(Vec(65, 307), module, Pres1t::Y_READ_INPUT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(18, 340), module, Pres1t::BPM_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(85, 340), module, Pres1t::BPM_OUTPUT));

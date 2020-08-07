@@ -11,7 +11,12 @@
 	"donateUrl": "https://www.paypal.me/jeremywen",
 	"version": "1.0.12",
 	"modules": [
-                {
+		{
+			"slug": "BlankPanel_1HP",
+			"name": "Blank Panel (1HP)",
+			"tags": ["Visual"]
+		},
+		{
 			"slug": "BlankPanel_SM",
 			"name": "Blank Panel (Small)",
 			"tags": ["Visual"]

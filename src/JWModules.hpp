@@ -142,6 +142,7 @@ struct JwVerticalSwitch : SVGSwitch {
 
 struct BowlSwitch : SVGSwitch {
 	BowlSwitch() {
+		shadow->opacity = 0;
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Bowl-no-food.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Bowl-food.svg")));
 	}
@@ -349,6 +350,7 @@ extern Model *modelFullScope;
 extern Model *modelGridSeq;
 extern Model *modelThingThing;
 extern Model *modelCat;
+extern Model *modelBlankPanel1hp;
 extern Model *modelBlankPanelSmall;
 extern Model *modelBlankPanelMedium;
 extern Model *modelBlankPanelLarge;
