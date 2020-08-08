@@ -143,22 +143,6 @@ struct MinMaxDisplay : TransparentWidget {
 	}
 
 	void draw(const DrawArgs &args) override {
-		// float gainX = 1;
-		// float gainY = 1;
-		// float offsetX = 0;
-		// float offsetY = 0;
-
-		//	float valuesX[BUFFER_SIZE];
-		//	float valuesY[BUFFER_SIZE];
-		// for (int i = 0; i < BUFFER_SIZE; i++) {
-		// 	int j = i;
-		// 	// Lock display to buffer if buffer update deltaTime <= 2^-11
-		// 	if (module->lissajous)
-		// 		j = (i + module->bufferIndex) % BUFFER_SIZE;
-		// 	valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
-		// 	valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
-		// }
-
 		// Calculate and draw stats
 		if (++frame >= 4) {
 			frame = 0;
@@ -185,9 +169,9 @@ MinMaxWidget::MinMaxWidget(MinMax *module) {
 		addChild(panel);
 	}
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	CenteredLabel* const titleLabel = new CenteredLabel(16);

@@ -103,6 +103,8 @@ struct NoteSeq : Module,QuantizeUtils {
 		RND_SIN_WAVE,
 		RND_LIFE_GLIDERS,
 		RND_CHORD_LIKE,
+		RND_MIRROR_X,
+		RND_MIRROR_Y,
 		NUM_RND_MODES
 	};
 	enum ShiftDirection {
@@ -317,7 +319,7 @@ struct NoteSeq : Module,QuantizeUtils {
 			}
 
 			if(outputs[RND_VOCT_OUTPUT].isConnected() && atLeastOne){
-				int maxPos = findYValIdx(monoYVals, -1) - 1;
+				int maxPos = findYValIdx(monoYVals, -1);// - 1;
 				outputs[RND_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * maxPos)]));
 			}
 			if(outputs[RND_GATE_OUTPUT].isConnected()){
@@ -634,6 +636,30 @@ struct NoteSeq : Module,QuantizeUtils {
 				}
 				break;
 			}
+			case RND_MIRROR_X:{
+				for(int y=0; y < ROWS; y++){
+					for(int i=0; i < 3; i++){
+						if(random::uniform() < rndAmt){
+							int xLeft = int(random::uniform() * 16);
+							setCellOn(xLeft, y, true);
+							setCellOn(COLS-xLeft-1, y, true);
+						}
+					}
+				}
+				break;
+			}
+			case RND_MIRROR_Y:{
+				for(int x=0; x < COLS; x++){
+					for(int i=0; i < 2; i++){
+						if(random::uniform() < rndAmt){
+							int yTop = int(random::uniform() * 16);
+							setCellOn(x, yTop, true);
+							setCellOn(x, ROWS-yTop-1, true);
+						}
+					}
+				}
+				break;
+			}
 		}
 	}
 
@@ -830,6 +856,8 @@ struct RndModeKnob : JwSmallSnapKnob {
 				case NoteSeq::RND_SIN_WAVE:return "Sine";
 				case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
 				case NoteSeq::RND_CHORD_LIKE:return "Chord-Like";
+				case NoteSeq::RND_MIRROR_X:return "Mirror X";
+				case NoteSeq::RND_MIRROR_Y:return "Mirror Y";
 			}
 		}
 		return "";
@@ -887,9 +915,9 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 		module->displayHeight = display->box.size.y;
 	}
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
@@ -960,8 +988,8 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
-	addOutput(createOutput<TinyPJ301MPort>(Vec(640, 350), module, NoteSeq::POLY_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(673, 350), module, NoteSeq::POLY_GATE_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(630, 350), module, NoteSeq::POLY_VOCT_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(663, 350), module, NoteSeq::POLY_GATE_OUTPUT));
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq::MIN_VOCT_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq::MIN_GATE_OUTPUT));

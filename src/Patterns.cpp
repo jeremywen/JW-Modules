@@ -148,7 +148,7 @@ struct Patterns : Module {
 					//below works as an "OR" if multiple divisions
 					if(counters[x] % (x+1) == 0){
 						outputs[OR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-						outputs[POLY_OR_OUTPUT].setVoltage(voltage, yInv);
+						outputs[POLY_OR_OUTPUT].setVoltage(voltage, 15-yInv);
 						firingInRow++;
 					}
 				}
@@ -156,7 +156,7 @@ struct Patterns : Module {
 					//works like an "XOR" so only fire if one out of the many would fire
 					if(firingInRow == 1){
 						outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-						outputs[POLY_XOR_OUTPUT].setVoltage(voltage, yInv);
+						outputs[POLY_XOR_OUTPUT].setVoltage(voltage, 15-yInv);
 					}
 					firingInRow = 0;
 				}
@@ -324,7 +324,7 @@ struct PatternsDisplay : Widget {
 		nvgFill(args.vg);
 
 		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73)); //gray
 		for(int i=1;i<P_COLS;i++){
 			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 			nvgBeginPath(args.vg);
@@ -410,9 +410,9 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 		module->displayHeight = display->box.size.y;
 	}
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
@@ -427,8 +427,8 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	addParam(createParam<SmallButton>(Vec(25, 296), module, Patterns::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, Patterns::RND_AMT_KNOB_PARAM));
 	
-	addOutput(createOutput<TinyPJ301MPort>(Vec(103, 300), module, Patterns::POLY_OR_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(143, 300), module, Patterns::POLY_XOR_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(116, 315), module, Patterns::POLY_OR_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(151, 315), module, Patterns::POLY_XOR_OUTPUT));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 

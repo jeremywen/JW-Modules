@@ -194,9 +194,9 @@ D1v1deWidget::D1v1deWidget(D1v1de *module) {
 	display->box.size = Vec(box.size.x, 250);
 	addChild(display);
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	divKnob = dynamic_cast<JwSmallSnapKnob*>(createParam<JwSmallSnapKnob>(Vec(35, 278), module, D1v1de::DIV_PARAM));

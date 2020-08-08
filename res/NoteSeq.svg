@@ -38,15 +38,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1473"
-     inkscape:window-height="1101"
+     inkscape:window-width="1131"
+     inkscape:window-height="857"
      id="namedview30"
      showgrid="false"
      inkscape:zoom="1.8"
-     inkscape:cx="184.1974"
+     inkscape:cx="627.96892"
      inkscape:cy="139.96248"
-     inkscape:window-x="694"
-     inkscape:window-y="89"
+     inkscape:window-x="1214"
+     inkscape:window-y="81"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg28"
      showguides="false"
@@ -1506,11 +1506,18 @@
        id="path1310"
        inkscape:connector-curvature="0" />
   </g>
+  <rect
+     style="fill:#dbdbdb;fill-opacity:1;stroke:none;stroke-width:0.99999994;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     id="rect3625"
+     width="59.229855"
+     height="44.430077"
+     x="622.92328"
+     y="325.53036" />
   <g
      aria-label="POLY OUT"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333302px;line-height:1.25;font-family:monospace;-inkscape-font-specification:monospace;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
      id="text1520"
-     transform="translate(0,-2)">
+     transform="translate(-10,-2)">
     <path
        d="m 642.1378,332.00805 v 2.55664 h 1.0664 q 0.63802,0 0.99349,-0.33724 0.36003,-0.33724 0.36003,-0.94336 0,-0.60612 -0.35547,-0.9388 -0.35547,-0.33724 -0.99805,-0.33724 z m -0.92058,-0.75651 h 1.98698 q 1.13933,0 1.72722,0.51953 0.58789,0.51497 0.58789,1.51302 0,1.00716 -0.58789,1.52213 -0.58334,0.51498 -1.72722,0.51498 h -1.0664 v 2.73437 h -0.92058 z"
        id="path1522"
@@ -1541,7 +1548,7 @@
        inkscape:connector-curvature="0" />
   </g>
   <g
-     transform="translate(79.722223,318.11111)"
+     transform="translate(69.722223,318.11111)"
      id="g1577"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.66666651px;line-height:1.25;font-family:monospace;-inkscape-font-specification:monospace;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
      aria-label="V/OCT">
@@ -1567,7 +1574,7 @@
        d="m 573.11308,21.751083 h 3.70768 v 0.553385 h -1.52018 v 4.306641 h -0.66081 v -4.306641 h -1.52669 z" />
   </g>
   <g
-     transform="translate(81.722223,318.11111)"
+     transform="translate(71.722223,318.11111)"
      id="g1587"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333302px;line-height:1.25;font-family:monospace;-inkscape-font-specification:monospace;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
      aria-label="GATE">

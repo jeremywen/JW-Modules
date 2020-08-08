@@ -241,9 +241,9 @@ Pres1tWidget::Pres1tWidget(Pres1t *module) {
 	display->box.size = Vec(box.size.x, 250);
 	addChild(display);
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	addParam(createParam<SmallButton>(Vec(7, 280), module, Pres1t::SAVE_PARAM));

@@ -38,6 +38,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		CLOCK_INPUT,
 		RESET_INPUT,
 		RND_TRIG_INPUT,
+		ROTATE_INPUT,
+		FLIP_INPUT,
+		SHIFT_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -86,6 +89,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	bool goingForward = true;
 	bool resetMode = false;
 	bool *cells = new bool[CELLS];
+	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
@@ -111,6 +115,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	~NoteSeq16() {
 		delete [] cells;
+		delete [] newCells;
 		delete [] colNotesCache;
 		delete [] colNotesCache2;
 	}
@@ -168,6 +173,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
+		if (rotateRightTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
+		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
+		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
@@ -320,6 +328,73 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		gridChanged();
 	}
 
+	void rotateCells(RotateDirection dir){
+		for(int x=0; x < COLS; x++){
+			for(int y=0; y < ROWS; y++){
+				switch(dir){
+					case DIR_RIGHT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(y, COLS - x - 1)];
+						break;
+					case DIR_LEFT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(COLS - y - 1, x)];
+						break;
+				}
+
+			}
+		}
+		swapCells();
+	}
+
+	void flipCells(FlipDirection dir){
+		for(int x=0; x < COLS; x++){
+			for(int y=0; y < ROWS; y++){
+				switch(dir){
+					case DIR_HORIZ:
+						newCells[iFromXY(x, y)] = cells[iFromXY(COLS - 1 - x, y)];
+						break;
+					case DIR_VERT:
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, ROWS - 1 - y)];
+						break;
+				}
+
+			}
+		}
+		swapCells();
+	}
+
+	void shiftCells(ShiftDirection dir){
+		int amount = 1;
+		for(int x=0; x < COLS; x++){
+			for(int y=0; y < ROWS; y++){
+				int newY = 0;
+				switch(dir){
+					case DIR_UP:
+						//if at top, start from bottom up
+						newY = (y + amount) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
+						break;
+					case DIR_DOWN:
+						//if at bottom, start from top down
+						newY = (y - amount) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
+						break;
+				}
+
+			}
+		}
+		swapCells();
+	}
+
+	void swapCells() {
+		std::swap(cells, newCells);
+		gridChanged();
+
+		for(int i=0;i<CELLS;i++){
+			newCells[i] = false;
+		}
+	}
 	void randomizeCells() {
 		clearCells();
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
@@ -609,9 +684,9 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 		module->displayHeight = display->box.size.y;
 	}
 
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
@@ -637,11 +712,16 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(createParam<SmallButton>(Vec(25, 296), module, NoteSeq16::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
+	float bottomInpY = 338;
+	addInput(createInput<TinyPJ301MPort>(Vec(38, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(68, bottomInpY), module, NoteSeq16::FLIP_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(96, bottomInpY), module, NoteSeq16::SHIFT_INPUT));
+
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(120, 350), module, NoteSeq16::POLY_VOCT_OUTPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(153, 350), module, NoteSeq16::POLY_GATE_OUTPUT));
-	addParam(createParam<JwHorizontalSwitch>(Vec(65, 345), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(139, bottomInpY), module, NoteSeq16::POLY_VOCT_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
+	addParam(createParam<JwHorizontalSwitch>(Vec(140, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float pitchParamYVal = 280;

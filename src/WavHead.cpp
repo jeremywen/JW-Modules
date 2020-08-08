@@ -102,9 +102,9 @@ WavHeadWidget::WavHeadWidget(WavHead *module) {
 		widgetToMove[i] = createWidget<WavHeadLogo>(Vec(5, 250));
 		addChild(widgetToMove[i]);
 	}
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	for(int i=0; i<10; i++){

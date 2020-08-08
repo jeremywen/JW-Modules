@@ -71,9 +71,9 @@ CatWidget::CatWidget(Cat *module) {
 
 	widgetToMove = createWidget<CatScrew>(Vec(5, 250));
 	addChild(widgetToMove);
-	addChild(createWidget<Screw_J>(Vec(16, 1)));
+	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
-	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 1)));
+	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	addParam(createParam<BowlSwitch>(Vec(5, 300), module, Cat::BOWL_PARAM));
