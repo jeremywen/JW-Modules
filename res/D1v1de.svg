@@ -82,8 +82,8 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4142136"
-     inkscape:cx="-44.433705"
+     inkscape:zoom="2.0000001"
+     inkscape:cx="57.904574"
      inkscape:cy="216.72187"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -95,8 +95,8 @@
      units="px"
      inkscape:window-width="1125"
      inkscape:window-height="994"
-     inkscape:window-x="24"
-     inkscape:window-y="0"
+     inkscape:window-x="768"
+     inkscape:window-y="113"
      inkscape:window-maximized="0"
      inkscape:snap-global="false"
      inkscape:pagecheckerboard="false"
@@ -662,13 +662,6 @@
            d="m 48.945349,68.936851 v 10.37646 h -0.916083 v -10.37646 z" />
       </g>
     </g>
-    <rect
-       y="242.591"
-       x="36.430298"
-       height="4.0787458"
-       width="5.4837885"
-       id="rect2094"
-       style="fill:#141e21;fill-opacity:1;stroke:#1996fc;stroke-width:0.19443431;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <g
        id="layer2-7"
        inkscape:label="invis"
@@ -896,13 +889,6 @@
            d="m 48.945349,68.936851 v 10.37646 h -0.916083 v -10.37646 z" />
       </g>
     </g>
-    <rect
-       style="fill:#141e21;fill-opacity:1;stroke:#1996fc;stroke-width:0.19443431;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="rect232"
-       width="5.4837885"
-       height="4.0787458"
-       x="50.649036"
-       y="242.591" />
     <g
        aria-label="RESET"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.11666656px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"

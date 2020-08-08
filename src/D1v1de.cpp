@@ -208,7 +208,7 @@ D1v1deWidget::D1v1deWidget(D1v1de *module) {
 	addParam(divKnob);
 
 	SmallWhiteKnob *offsetKnob = dynamic_cast<SmallWhiteKnob*>(createParam<SmallWhiteKnob>(Vec(88, 278), module, D1v1de::OFFSET_PARAM));
-	CenteredLabel* const offsetLabel = new CenteredLabel(10);
+	CenteredLabel* const offsetLabel = new CenteredLabel(12);
 	offsetLabel->box.pos = Vec(51, 159);
 	offsetLabel->text = "";
 	addChild(offsetLabel);

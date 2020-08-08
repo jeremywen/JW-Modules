@@ -50,6 +50,9 @@ struct Pres1t : Module {
 	}
 
 	void onRandomize() override {
+		for(int i=0;i<CELLS;i++){
+			cells[i] = random::uniform() * 20 - 10;
+		}
 	}
 
 	void onReset() override {
