@@ -148,7 +148,7 @@ struct Patterns : Module {
 					//below works as an "OR" if multiple divisions
 					if(counters[x] % (x+1) == 0){
 						outputs[OR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-						outputs[POLY_OR_OUTPUT].setVoltage(voltage, 15-yInv);
+						outputs[POLY_OR_OUTPUT].setVoltage(voltage, yInv);
 						firingInRow++;
 					}
 				}
@@ -156,7 +156,7 @@ struct Patterns : Module {
 					//works like an "XOR" so only fire if one out of the many would fire
 					if(firingInRow == 1){
 						outputs[XOR_MAIN_OUTPUT + yInv].setVoltage(voltage);
-						outputs[POLY_XOR_OUTPUT].setVoltage(voltage, 15-yInv);
+						outputs[POLY_XOR_OUTPUT].setVoltage(voltage, yInv);
 					}
 					firingInRow = 0;
 				}
