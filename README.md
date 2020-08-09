@@ -40,8 +40,9 @@ Donations: [Paypal](https://www.paypal.me/jeremywen)
 *  **RND Mode:** changes what happens when you trigger the random input or button 
 *  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
 *  **Random Amount Input and Knob:** determines how full the grid will be when generating random notes
-*  **Shift Up Trig Input and Button:** moves the cells in the grid up one row (notes wrap around to the bottom)
-*  **Shift Down Trig Input and Button:** moves the cells in the grid down one row (notes wrap around to the top)
+*  **Shift Up Trig Input and Button:** moves the cells in the grid the number of rows set by the amount knob (notes wrap around to the bottom)
+*  **Shift Down Trig Input and Button:** moves the cells in the grid down the number of rows set by the amount knob (notes wrap around to the top)
+*  **Shift Amount Knob:** determines how much to shift the cells
 *  **Rotate Right Input and Button:** rotates the cells in the grid clockwise 90 degrees
 *  **Rotate Left Input and Button:** rotates the cells in the grid counter-clockwise 90 degrees
 *  **Flip Horiz Input and Button:** flips the cells in the grid right to left
@@ -83,6 +84,9 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 *  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
 *  **Random Amount Knob:** determines how full the grid will be when generating random notes
+*  **Rotate:** rotates gride clockwise
+*  **Flip:** flips grid vertically
+*  **Shift:** shifts grid up 1 row
 *  **Octave Knob:** octave for the lowest note in the grid
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
@@ -103,6 +107,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 * The 'xor' output will send a trigger if it hit exactly one of the divisions.
 * You can click and drag cells in the grid to toggle them on and off.
 * You can right+click the module to select the number of polyphonic channels.
+* Ever four rows there is a thicker lines in the grid which correspond to the lines in the outputs every four rows.
 
 #### Top
 
@@ -187,7 +192,9 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **RESET Button:** move to top left cell on click
   *  **RESET Input:** move to top left cell on trigger
   *  **GATE OUT:** sends out gate if current cell gate is on and sequencer is running
+  *  **GATE OUT YX:** instead of using the gate of the current cell it uses the gate of the cell at the inverted position (so if top right is current, bottom left is used)
   *  **OUT:** sends out the current value (pitch knob) for the current cell if the gate is on and sequencer is running
+  *  **OUT YX:** instead of using the value of the current cell it uses the value of the cell at the inverted position (so if top right is current, bottom left is used)
 
 #### Bottom
 
@@ -314,11 +321,50 @@ _Max For Live Device for setting lives BPM to the same value as Str1ker_
 
 ## D1v1de
 
-TODO
+![D1v1de](./doc/D1v1de-img1.png)
+
+#### Controls
+  
+  * **D1v1de Knob:** the clock division
+  * **Offset Knob:** offset from clock division to also send a trigger out
+
+#### Inputs
+
+  *  **Reset In:** Resets counter to beginning
+  *  **D1v1de In:** cv control of division
+  *  **In:** clock in
+
+#### Outputs
+
+  *  **Pos:** cv out of counter value 
+  *  **Out:** division and offset trigger out
+
+#### Right Click Context Menu
+
+Change colors in this menu
 
 ## Pres1t
 
-TODO
+![Pres1t](./doc/Pres1t-img1.png)
+
+#### Controls
+  
+  * **Save Button:** saves voltage at 'IN' to cell with the blue square
+  * **Load Button:** sets voltage at 'OUT' from cell with the yellow square
+
+#### Inputs
+
+  * **IN:** the voltage to store
+  * **Save:** trigger to save
+  * **Load:** trigger to load
+  * **X (blue):** send 0-10v to position blue square
+  * **Y (blue):** send 0-10v to position blue square
+  * **X (yellow):** send 0-10v to position yellow square
+  * **Y (yellow):** send 0-10v to position yellow square
+
+#### Outputs
+
+  *  **Out:** the current loaded value
 
 ## Quantizer
 
