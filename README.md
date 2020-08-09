@@ -321,7 +321,7 @@ _Max For Live Device for setting lives BPM to the same value as Str1ker_
 
 ## D1v1de
 
-![D1v1de](./doc/D1v1de-img1.png)
+![D1v1de](./doc/D1v1de-img2.png)
 
 #### Controls
   
@@ -345,7 +345,7 @@ Change colors in this menu
 
 ## Pres1t
 
-![Pres1t](./doc/Pres1t-img1.png)
+![Pres1t](./doc/Pres1t-img2.png)
 
 #### Controls
   
