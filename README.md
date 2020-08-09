@@ -279,6 +279,8 @@ _Outputs 1/4 notes because this was like vcv rack standard er something at first
 
 ![Str1ker](./doc/Str1ker-img1.png)
 
+SEE ALSO: [Str1ke Tempo Management System Documentation](./Str1ke%20Tempo%20Management%20System.md)
+
 _Outputs 1/16 notes by default - See right click menu to change the rate..._
 
 _Max For Live Device for setting lives BPM to the same value as Str1ker_
@@ -323,6 +325,8 @@ _Max For Live Device for setting lives BPM to the same value as Str1ker_
 
 ![D1v1de](./doc/D1v1de-img2.png)
 
+SEE ALSO: [Str1ke Tempo Management System Documentation](./Str1ke%20Tempo%20Management%20System.md)
+
 #### Controls
   
   * **D1v1de Knob:** the clock division
@@ -346,6 +350,8 @@ Change colors in this menu
 ## Pres1t
 
 ![Pres1t](./doc/Pres1t-img2.png)
+
+SEE ALSO: [Str1ke Tempo Management System Documentation](./Str1ke%20Tempo%20Management%20System.md)
 
 _left click grid to select blue save cell_
 
