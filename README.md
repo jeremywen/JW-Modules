@@ -2,11 +2,14 @@
 
 `	           d(-_-)b        Useful, Musical, and Fun     ¯\_(ツ)_/¯`
 
-Modules for [VCV Rack](https://vcvrack.com/) by Jeremy Wentworth (http://jeremywentworth.com)
+Modules for [VCV Rack](https://vcvrack.com/) by Jeremy Wentworth
 
-Add JW-Modules through [the plugin manager](https://vcvrack.com/plugins.html) or download latest [release from here](https://github.com/jeremywen/JW-Modules/releases) and manually install it.  You can see these modules used in [my youtube videos here](https://www.youtube.com/user/jeremywen/videos).
+Add JW-Modules through [the vcv library](https://library.vcvrack.com/).
 
-Donations: [Paypal](https://www.paypal.me/jeremywen)
+Support me on [Patreon](https://www.patreon.com/jeremywen)
+Or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
+
+[Find me on all social networks](https://linktr.ee/jeremyw)
 
 ![All](./doc/all-img10.gif)
 
