@@ -348,6 +348,7 @@ Change colors in this menu
 ![Pres1t](./doc/Pres1t-img2.png)
 
 _left click grid to select blue save cell_
+
 _right click grid select yellow load cell_
 
 #### Controls
