@@ -347,6 +347,9 @@ Change colors in this menu
 
 ![Pres1t](./doc/Pres1t-img2.png)
 
+_left click grid to select blue save cell_
+_right click grid select yellow load cell_
+
 #### Controls
   
   * **Save Button:** saves voltage at 'IN' to cell with the blue square
@@ -357,10 +360,10 @@ Change colors in this menu
   * **IN:** the voltage to store
   * **Save:** trigger to save
   * **Load:** trigger to load
-  * **X (blue):** send 0-10v to position blue square
-  * **Y (blue):** send 0-10v to position blue square
-  * **X (yellow):** send 0-10v to position yellow square
-  * **Y (yellow):** send 0-10v to position yellow square
+  * **X (blue):** send 0-10v to set position of blue square
+  * **Y (blue):** send 0-10v to set position of blue square
+  * **X (yellow):** send 0-10v to set position of yellow square
+  * **Y (yellow):** send 0-10v to set position of yellow square
 
 #### Outputs
 
