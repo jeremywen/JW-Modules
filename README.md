@@ -2,14 +2,11 @@
 
 `	           d(-_-)b        Useful, Musical, and Fun     ¯\_(ツ)_/¯`
 
-Modules for [VCV Rack](https://vcvrack.com/) by Jeremy Wentworth
+Modules for [VCV Rack](https://vcvrack.com/) by [Jeremy Wentworth](https://linktr.ee/jeremyw)
 
-Add JW-Modules through [the vcv library](https://library.vcvrack.com/).
+Add JW-Modules through [the vcv library](https://library.vcvrack.com/?query=&brand=JW-Modules&tag=&license=).
 
-Support me on [Patreon](https://www.patreon.com/jeremywen)
-Or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
-
-[Find me on all social networks](https://linktr.ee/jeremyw)
+Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
 
 ![All](./doc/all-img10.gif)
 
