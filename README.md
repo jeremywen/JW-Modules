@@ -8,7 +8,7 @@ Add JW-Modules through [the vcv library](https://library.vcvrack.com/?query=&bra
 
 Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
 
-![All](./doc/all-img10.gif)
+![All](./doc/all-img11.gif)
 
 ## Thing Thing
 ![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
