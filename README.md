@@ -10,6 +10,28 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ![All](./doc/all-img11.gif)
 
+----
+## Table of Contents:
+
+* [Thing Thing](#thing-thing)
+* [NoteSeq](#noteSeq)
+* [NoteSeq16](#noteSeq16)
+* [Patterns](#patterns)
+* [Bouncy Balls](#bouncy-balls)
+* [GridSeq](#gridseq)
+* [XY-Pad](#xy-pad)
+* [SimpleClock](#simpleclock)
+* [Str1ker](#str1ker)
+* [D1v1de](#d1v1de)
+* [Pres1t](#pres1t)
+* [Quantizer](#quantizer)
+* [FullScope](#fullscope)
+* [MinMax](#minmax)
+* [WavHead](#wavhead)
+
+----
+
+
 ## Thing Thing
 ![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
 
@@ -417,11 +439,11 @@ Created to show minimum and maximum voltages in a larger font than the Fundament
 
 ![MinMax](./doc/MinMax-img1.png)
 
-## WaveHead
+## WavHead
 
 Move WavHead up and down based on voltage in.  
 
-![WaveHead](./doc/WavHead-img2.png)
+![WavHead](./doc/WavHead-img2.png)
 
 Works with polyphonic signals.
 
