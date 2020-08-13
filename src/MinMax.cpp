@@ -143,6 +143,7 @@ struct MinMaxDisplay : TransparentWidget {
 	}
 
 	void draw(const DrawArgs &args) override {
+		if(module == NULL) return;
 		// Calculate and draw stats
 		if (++frame >= 4) {
 			frame = 0;

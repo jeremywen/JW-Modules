@@ -348,8 +348,11 @@ struct RandomizeGatesOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 			for (int i = 0; i < 16; i++) {
-				gsw->gateButtons[i]->paramQuantity->setValue(random::uniform() > 0.5);
+				bool active = random::uniform() > 0.5;
+				gsw->gateButtons[i]->paramQuantity->setValue(active);
+				gs->gateState[i] = active;
 			}
 		}
 	}
