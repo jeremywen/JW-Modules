@@ -351,7 +351,6 @@ struct RandomizeGatesOnlyButton : TinyButton {
 			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 			for (int i = 0; i < 16; i++) {
 				bool active = random::uniform() > 0.5;
-				gsw->gateButtons[i]->paramQuantity->setValue(active);
 				gs->gateState[i] = active;
 			}
 		}
