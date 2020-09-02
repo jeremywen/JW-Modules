@@ -74,7 +74,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 #### Right
 
-*  **Poly Outputs:** Send out the lowest 16 active notes up from the 'Lowest Note' OR send out the lowest 16 rows up from the 'Lowest Note'.  This is based on the 'Include Inactive Switch' (See Below).  The lights indicate which outputs are sending out values.
+*  **Individual Poly Outputs:** Send out the lowest 16 active notes up from the 'Lowest Note' OR send out the lowest 16 rows up from the 'Lowest Note'.  This is based on the 'Drum Mode Switch' (See Below).  The lights indicate which outputs are sending out values.
 *  **Mono Outputs:** can be used to select one note from a column of many notes.
 *  **Highest Note Knob:** will set the orange line right above the highest note sent out the poly outputs.
 *  **Lowest Note Knob:** will set the yellow line right below the lowest note sent out the poly outputs.
@@ -84,6 +84,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Octave Knob:** octave for the lowest note in the grid
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
+*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **Poly Outputs:** v/oct and gate as a polyphonic signal
 
 ## NoteSeq16
 

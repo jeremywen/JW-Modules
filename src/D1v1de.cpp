@@ -25,6 +25,7 @@ struct D1v1de : Module {
 	int ticks = 0;
 	float smpRate = APP->engine->getSampleRate();	
 	float oneOverRate = 1.0 / smpRate;	
+	bool resetMode = false;
 	dsp::SchmittTrigger resetTrig;
 	dsp::SchmittTrigger clockTrig;
 	dsp::PulseGenerator gatePulse;
@@ -80,9 +81,13 @@ struct D1v1de : Module {
 	void process(const ProcessArgs &args) override {
 		bool pulseOut = false;
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
-			resetSeq();
+			resetMode = true;
 		}
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
+			if(resetMode){
+				resetMode = false;
+				ticks = -1;
+			}
 			int divInt = getDivInt();
 			int offsetInt = getOffsetInt();
 			ticks++;

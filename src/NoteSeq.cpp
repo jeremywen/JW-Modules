@@ -83,6 +83,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		RND_GATE_OUTPUT,
 		POLY_VOCT_OUTPUT,
 		POLY_GATE_OUTPUT,
+		EOC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -128,6 +129,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
+	bool eocOn = false; 
 	bool resetMode = false;
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
@@ -136,7 +138,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
-	dsp::PulseGenerator gatePulse;
+	dsp::PulseGenerator gatePulse, eocPulse;
 
 	NoteSeq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -326,6 +328,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				outputs[RND_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
 			}
 		}
+		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
 	int * getYValsFromBottomAtSeqPos(bool includeInactive){
@@ -412,6 +415,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		//iterate seq pos
 		int curPlayMode = getPlayMode();
 		int seqLen = getSeqLen();
+		eocOn = false;
 
 		// i dono if i need this - somehow it stays past the end sometimes
 		if(seqPos > seqLen){
@@ -421,9 +425,15 @@ struct NoteSeq : Module,QuantizeUtils {
 		if(curPlayMode == PM_FWD_LOOP){
 			seqPos = (seqPos + 1) % seqLen;
 			goingForward = true;
+			if(seqPos == 0){
+				eocOn = true;
+			}
 		} else if(curPlayMode == PM_BWD_LOOP){
 			seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
 			goingForward = false;
+			if(seqPos == seqLen - 1){
+				eocOn = true;
+			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			if(goingForward){
 				if(seqPos < seqLen - 1){
@@ -431,6 +441,7 @@ struct NoteSeq : Module,QuantizeUtils {
 				} else {
 					seqPos--;
 					goingForward = false;
+					eocOn = true;
 				}
 			} else {
 				if(seqPos > 0){
@@ -438,11 +449,13 @@ struct NoteSeq : Module,QuantizeUtils {
 				} else {
 					seqPos++;
 					goingForward = true;
+					eocOn = true;
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
 			seqPos = int(random::uniform() * seqLen);
 		}
+
 	}
 
 	void resetSeq(){
@@ -988,8 +1001,6 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(580, (outputRowTop+3) + i * outputRowDist), module, NoteSeq::GATES_LIGHT + paramIdx));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(591.858, outputRowTop + i * outputRowDist), module, NoteSeq::GATE_MAIN_OUTPUT + paramIdx)); //param # from bottom up
 	}
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(630, 350), module, NoteSeq::POLY_VOCT_OUTPUT));
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(663, 350), module, NoteSeq::POLY_GATE_OUTPUT));
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(656.303, outputRowTop), module, NoteSeq::MIN_VOCT_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(689.081, outputRowTop), module, NoteSeq::MIN_GATE_OUTPUT));
@@ -1034,6 +1045,9 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(656, quantInpY), module, NoteSeq::OCTAVE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(690, quantInpY), module, NoteSeq::SCALE_INPUT));
 
+	addOutput(createOutput<TinyPJ301MPort>(Vec(623, 345), module, NoteSeq::EOC_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(656, 345), module, NoteSeq::POLY_VOCT_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(690, 345), module, NoteSeq::POLY_GATE_OUTPUT));
 }
 
 void NoteSeqWidget::appendContextMenu(Menu *menu) {
