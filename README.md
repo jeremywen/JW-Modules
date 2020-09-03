@@ -123,6 +123,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 ![Patterns](./doc/Patterns-img1.png)
 
+Here is the [post by chaircrusher that inspired Patterns](https://community.vcvrack.com/t/using-xors-with-clocks-for-rhythmic-variations/5293)
+
 #### Basics
 
 * Each row is a clock divider.  Each cell is a division 1 to 16, left to right.
