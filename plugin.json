@@ -15,108 +15,129 @@
 		{
 			"slug": "BlankPanel_1HP",
 			"name": "Blank Panel (1HP)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "BlankPanel_SM",
 			"name": "Blank Panel (Small)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "BlankPanel_MD",
 			"name": "Blank Panel (Medium)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "BlankPanel_LG",
 			"name": "Blank Panel (Large)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "CoolBreeze",
 			"name": "Cool Breeze",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "BouncyBalls",
 			"name": "Bouncy Balls",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#bouncy-balls",
 			"tags": ["Sequencer", "Visual"]
 		},
         {
 			"slug": "0Cat",
 			"name": "0Cat",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "FullScope",
 			"name": "Full Scope",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#fullscope",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "GridSeq",
 			"name": "GridSeq",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#gridseq",
 			"tags": ["Sequencer"]
 		},
 		{
 			"slug": "MinMax",
 			"name": "Min Max",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#minmax",
 			"tags": ["Utility"]
 		},
         {
 			"slug": "NoteSeq",
 			"name": "NoteSeq",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#noteSeq",
 			"tags": ["Sequencer", "Poly"]
 		},
         {
 			"slug": "NoteSeq16",
 			"name": "NoteSeq16",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#noteSeq16",
 			"tags": ["Sequencer", "Poly"]
 		},
         {
 			"slug": "Patterns",
 			"name": "Patterns",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#patterns",
 			"tags": ["Sequencer", "Clock Modulator"]
 		},
 		{
 			"slug": "Quantizer",
 			"name": "Quantizer",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#quantizer",
 			"tags": ["Quantizer", "Poly"]
 		},
         {
 			"slug": "SimpleClock",
 			"name": "Simple Clock",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#simpleclock",
 			"tags": ["Clock", "Random"]
 		},
 		{
 			"slug": "Str1ker",
 			"name": "Str1ker",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#str1ker",
 			"tags": ["Clock"]
 		},
 		{
 			"slug": "D1v1de",
 			"name": "D1v1de",
 			"description": "Clock Divider",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#d1v1de",
 			"tags": ["Clock modulator", "Visual"]
 		},
 		{
 			"slug": "Pres1t",
 			"name": "Pres1t",
 			"description": "Voltage Storage",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#pres1t",
 			"tags": ["Utility"]
 		},
 		{
 			"slug": "ThingThing",
 			"name": "Thing Thing",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#thing-thing",
 			"tags": ["Visual"]
 		},
 		{
 			"slug": "WavHead",
 			"name": "Wav Head",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#wavhead",
 			"tags": ["Visual", "Poly"]
 		},
 		{
 			"slug": "XYPad",
 			"name": "XY Pad",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#xy-pad",
 			"tags": ["LFO", "Random"]
 		}
 	]
