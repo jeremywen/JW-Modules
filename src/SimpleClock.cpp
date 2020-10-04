@@ -121,7 +121,7 @@ struct BPMKnob : SmallWhiteKnob {
 	BPMKnob(){ paramQuantity = NULL; }
 	std::string formatCurrentValue() override {
 		if(paramQuantity != NULL){
-			return std::to_string(static_cast<unsigned int>(powf(2.0, paramQuantity->getValue())*60.0)) + " BPM";
+			return std::to_string(static_cast<unsigned int>(round(powf(2.0, paramQuantity->getValue())*60.0))) + " BPM";
 		}
 		return "";
 	}
