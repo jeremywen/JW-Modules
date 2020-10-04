@@ -1,14 +1,5 @@
 #include "JWModules.hpp"
 
-// struct BpmParamQuant : ParamQuantity {
-// 	float getDisplayValue() override {
-// 			return powf(2.0, getValue()) * 60.0;
-// 	}
-// 	void setDisplayValue(float displayValue) override {
-// 		ParamQuantity::setDisplayValue(displayValue / 60);
-// 	}
-// };
-
 struct SimpleClock : Module {
 	enum ParamIds {
 		CLOCK_PARAM,
