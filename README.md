@@ -118,6 +118,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
 output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
+*  **EOC Output:** at the end of the loop it will send out a trigger
 
 ## Patterns
 
@@ -285,7 +286,8 @@ Change the playback mode by right clicking the module and selecting the playback
 
 [Video](https://www.youtube.com/watch?v=DCustAy7xVc)
 
-_Outputs 1/4 notes because this was like vcv rack standard er something at first but I don't agree.  Working on a module with optional note divisions..._
+_Outputs 1/4 notes by default because of legacy issues - See right click menu to change the rate..._
+
 
 #### Knobs 
 
