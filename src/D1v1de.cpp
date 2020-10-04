@@ -32,8 +32,8 @@ struct D1v1de : Module {
 
 	D1v1de() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(DIV_PARAM, 1, 64, 4, "");
-		configParam(OFFSET_PARAM, 0, 63, 0, "");
+		configParam(DIV_PARAM, 1, 64, 4, "Division");
+		configParam(OFFSET_PARAM, 0, 63, 0, "Offset");
 	}
 
 	void onSampleRateChange() override {

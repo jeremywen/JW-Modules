@@ -87,25 +87,25 @@ struct BouncyBalls : Module {
 	BouncyBalls() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		for(int x=0; x<4; x++){
-			configParam(RESET_PARAM + x, 0.0, 1.0, 0.0);
+			configParam(RESET_PARAM + x, 0.0, 1.0, 0.0, "Reset");
 		}
 		for(int x=0; x<4; x++){
-			configParam(TRIG_BTN_PARAM + x, 0.0, 1.0, 0.0);
+			configParam(TRIG_BTN_PARAM + x, 0.0, 1.0, 0.0, "Trigger");
 		}
 		for(int x=0; x<4; x++){
-			configParam(VEL_X_PARAM + x, -3.0, 3.0, 0.25);
+			configParam(VEL_X_PARAM + x, -3.0, 3.0, 0.25, "Velocity X");
 		}
 		for(int x=0; x<4; x++){
-			configParam(VEL_Y_PARAM + x, -3.0, 3.0, 0.5);
+			configParam(VEL_Y_PARAM + x, -3.0, 3.0, 0.5, "Velocity Y");
 		}
 		for(int x=0; x<4; x++){
-			configParam(SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0);
+			configParam(SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0, "Speed");
 		}
-		configParam(PAD_ON_PARAM, 0.0, 1.0, 0.0);
-		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5);
-		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5);
-		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0);
-		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0);
+		configParam(PAD_ON_PARAM, 0.0, 1.0, 0.0, "Pad On");
+		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5, "Scale X");
+		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5, "Scale Y");
+		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0, "Offset X");
+		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0, "Offset Y");
 
 		balls[0].color = nvgRGB(255, 151, 9);//orange
 		balls[1].color = nvgRGB(255, 243, 9);//yellow

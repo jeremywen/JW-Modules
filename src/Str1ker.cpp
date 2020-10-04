@@ -56,13 +56,13 @@ struct Str1ker : Module {
 
 	Str1ker() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(CLOCK_100s_PARAM, 0.0, 10.0, 1.0, "");
-		configParam(CLOCK_10s_PARAM, 0.0, 10.0, 2.0, "");
-		configParam(CLOCK_1s_PARAM, 0.0, 10.0, 0.0, "");
-		configParam(CLOCK_DOT_100s_PARAM, 0, 128.0, 64.0, "");
-		configParam(ON_OFF_SWITCH, 0.0, 1.0, 1.0, "");
-		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "");
-		configParam(FADER_RANGE_PARAM, 1, 50, 1, "");
+		configParam(CLOCK_100s_PARAM, 0.0, 10.0, 1.0, "100's Value");
+		configParam(CLOCK_10s_PARAM, 0.0, 10.0, 2.0, "10's Value");
+		configParam(CLOCK_1s_PARAM, 0.0, 10.0, 0.0, "1's Value");
+		configParam(CLOCK_DOT_100s_PARAM, 0, 128.0, 64.0, ".00's Value");
+		configParam(ON_OFF_SWITCH, 0.0, 1.0, 1.0, "On/Off");
+		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
+		configParam(FADER_RANGE_PARAM, 1, 50, 1, "Fader Range");
 		transmitSocket.SetAllowReuse(true);
 	}
 

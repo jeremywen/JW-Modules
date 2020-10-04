@@ -43,12 +43,12 @@ struct FullScope : Module {
 	dsp::SchmittTrigger resetTrigger;
 
 	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
-		configParam(X_POS_PARAM, -10.0, 10.0, 0.0);
-		configParam(Y_POS_PARAM, -10.0, 10.0, 0.0);
-		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0);
-		configParam(Y_SCALE_PARAM, -2.0, 8.0, 1.0);
-		configParam(ROTATION_PARAM, -10.0, 10.0, 0);
-		configParam(TIME_PARAM, -6.0, -16.0, -14.0);		
+		configParam(X_POS_PARAM, -10.0, 10.0, 0.0, "X Offset");
+		configParam(Y_POS_PARAM, -10.0, 10.0, 0.0, "Y Offset");
+		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0, "X Scale");
+		configParam(Y_SCALE_PARAM, -2.0, 8.0, 1.0, "Y Scale");
+		configParam(ROTATION_PARAM, -10.0, 10.0, 0, "Rotation");
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Speed");		
 	}
 	void process(const ProcessArgs &args) override;
 

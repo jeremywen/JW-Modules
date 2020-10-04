@@ -20,7 +20,7 @@ struct Cat : Module {
 
 	Cat() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(BOWL_PARAM, 0.0, 1.0, 0.0);
+		configParam(BOWL_PARAM, 0.0, 1.0, 0.0, "CLICK BOWL TO FEED THE CAT!");
 	}
 	
 };

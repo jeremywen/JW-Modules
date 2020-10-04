@@ -82,25 +82,25 @@ struct GridSeq : Module,QuantizeUtils {
 
 	GridSeq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RUN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RESET_PARAM, 0.0, 1.0, 0.0);
-		configParam(RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(LEFT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(DOWN_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(UP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
-		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
-		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0);
-		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 3.0);
-		configParam(OCTAVE_PARAM, -5.0, 7.0, 0.0);
+		configParam(RUN_PARAM, 0.0, 1.0, 0.0, "Run");
+		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
+		configParam(RIGHT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Move Right");
+		configParam(LEFT_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Move Left");
+		configParam(DOWN_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Move Down");
+		configParam(UP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Move Up");
+		configParam(RND_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Move Random");
+		configParam(REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Repeat");
+		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
+		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes");
+		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 3.0, "Range");
+		configParam(OCTAVE_PARAM, -5.0, 7.0, 0.0, "Octave");
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 4; x++) {
 				int idx = (x+(y*4));
-				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0);
-				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0);
+				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
+				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
 			}
 		}
 	}

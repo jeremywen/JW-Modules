@@ -83,15 +83,15 @@ struct XYPad : Module {
 
 	XYPad() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RND_SHAPES_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_VARIATION_PARAM, 0.0, 1.0, 0.0);
-		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5);
-		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5);
-		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0);
-		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0);
-		configParam(AUTO_PLAY_PARAM, 0.0, 1.0, 0.0);
-		configParam(PLAY_SPEED_PARAM, 0.0, 10.0, 1.0);
-		configParam(SPEED_MULT_PARAM, 1.0, 100.0, 1.0);
+		configParam(RND_SHAPES_PARAM, 0.0, 1.0, 0.0, "Random Shapes");
+		configParam(RND_VARIATION_PARAM, 0.0, 1.0, 0.0, "Random Variation");
+		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5, "Scale X");
+		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5, "Scale Y");
+		configParam(OFFSET_X_VOLTS_PARAM, -5.0, 5.0, 5.0, "Offset X");
+		configParam(OFFSET_Y_VOLTS_PARAM, -5.0, 5.0, 5.0, "Offset Y");
+		configParam(AUTO_PLAY_PARAM, 0.0, 1.0, 0.0, "Auto Play");
+		configParam(PLAY_SPEED_PARAM, 0.0, 10.0, 1.0, "Play Speed");
+		configParam(SPEED_MULT_PARAM, 1.0, 100.0, 1.0, "Speed Multiplier");
 	}
 
 	void process(const ProcessArgs &args) override;

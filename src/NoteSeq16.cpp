@@ -46,6 +46,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	enum OutputIds {
 		POLY_VOCT_OUTPUT,
 		POLY_GATE_OUTPUT,
+		EOC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -88,6 +89,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
 	bool resetMode = false;
+	bool eocOn = false; 
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
@@ -99,15 +101,15 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	NoteSeq16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0);
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0);
-		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1);
-		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0);
-		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0);
-		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C);
-		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR);
+		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0, "Length");
+		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
+		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
+		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
+		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0, "Drum Mode");
+		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
+		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
+		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -207,6 +209,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
 		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
+		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
 	int * getYValsFromBottomAtSeqPos(bool includeInactive){
@@ -268,20 +271,33 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
+
 	void clockStep(){
 		gatePulse.trigger(1e-1);
-		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
 
 		//iterate seq pos
 		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
 		int seqLen = int(params[NoteSeq16::LENGTH_KNOB_PARAM].getValue());
+		eocOn = false;
+
+		// i dono if i need this - somehow it stays past the end sometimes
+		if(seqPos > seqLen){
+			seqPos = seqLen - 1;
+		}
+
 		if(curPlayMode == PM_FWD_LOOP){
 			seqPos = (seqPos + 1) % seqLen;
 			goingForward = true;
+			if(seqPos == 0){
+				eocOn = true;
+			}
 		} else if(curPlayMode == PM_BWD_LOOP){
 			seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
 			goingForward = false;
+			if(seqPos == seqLen - 1){
+				eocOn = true;
+			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			if(goingForward){
 				if(seqPos < seqLen - 1){
@@ -289,6 +305,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				} else {
 					seqPos--;
 					goingForward = false;
+					eocOn = true;
 				}
 			} else {
 				if(seqPos > 0){
@@ -296,6 +313,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				} else {
 					seqPos++;
 					goingForward = true;
+					eocOn = true;
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
@@ -721,7 +739,8 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(139, bottomInpY), module, NoteSeq16::POLY_VOCT_OUTPUT));
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
-	addParam(createParam<JwHorizontalSwitch>(Vec(140, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, NoteSeq16::EOC_OUTPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float pitchParamYVal = 280;

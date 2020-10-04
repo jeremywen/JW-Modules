@@ -40,8 +40,8 @@ struct Pres1t : Module {
 
 	Pres1t() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(SAVE_PARAM, 0.0, 1.0, 0.0, "");
-		configParam(LOAD_PARAM, 0.0, 1.0, 0.0, "");
+		configParam(SAVE_PARAM, 0.0, 1.0, 0.0, "Save");
+		configParam(LOAD_PARAM, 0.0, 1.0, 0.0, "Load");
 		onReset();
 	}
 

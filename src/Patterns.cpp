@@ -58,9 +58,9 @@ struct Patterns : Module {
 
 	Patterns() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0);
-		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1);
+		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
+		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
+		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
 		resetSeq();
 		resetMode = true;
 		clearCells();

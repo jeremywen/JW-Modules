@@ -1,5 +1,14 @@
 #include "JWModules.hpp"
 
+// struct BpmParamQuant : ParamQuantity {
+// 	float getDisplayValue() override {
+// 			return powf(2.0, getValue()) * 60.0;
+// 	}
+// 	void setDisplayValue(float displayValue) override {
+// 		ParamQuantity::setDisplayValue(displayValue / 60);
+// 	}
+// };
+
 struct SimpleClock : Module {
 	enum ParamIds {
 		CLOCK_PARAM,
@@ -30,6 +39,7 @@ struct SimpleClock : Module {
 	dsp::SchmittTrigger runningTrigger;
 	dsp::SchmittTrigger resetTrigger;
 	float runningLight = 0.0;
+	int clockMult = 1;
 	float phase = 0.0;
 	dsp::PulseGenerator gatePulse;
 	dsp::PulseGenerator resetPulse;
@@ -38,25 +48,33 @@ struct SimpleClock : Module {
 
 	SimpleClock() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RUN_PARAM, 0.0, 1.0, 0.0);
-		configParam(CLOCK_PARAM, -2.0, 6.0, 1.0);
-		configParam(RESET_PARAM, 0.0, 1.0, 0.0);
-		configParam(PROB_PARAM, -2.0, 6.0, -2);
+		configParam(RUN_PARAM, 0.0, 1.0, 0.0, "Run");
+		configParam(CLOCK_PARAM, -2.0, 6.0, 1.0, "BPM", "", 2.f, 60.f);
+		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
+		configParam(PROB_PARAM, -2.0, 6.0, -2, "Random Reset Probability");
 	}
 
 	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "clockMult", json_integer(clockMult));
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		return rootJ;
 	}
 
 	void dataFromJson(json_t *rootJ) override {
+		clockMult = json_integer_value(json_object_get(rootJ, "clockMult"));
+		if(clockMult < 1) clockMult = 1;//for old files without clockMult property
 		json_t *runningJ = json_object_get(rootJ, "running");
 		if (runningJ){
 			running = json_is_true(runningJ);
 		}
+	}
+
+	void onReset() override {
+		clockMult = 1;
+		resetClock();
 	}
 
 	void resetClock() {
@@ -82,6 +100,7 @@ void SimpleClock::process(const ProcessArgs &args) {
 	bool nextStep = false;
 	if (running) {
 		float clockTime = powf(2.0, params[CLOCK_PARAM].getValue());
+		clockTime = clockTime * clockMult;
 		phase += clockTime / args.sampleRate;
 		if (phase >= 1.0) {
 			phase -= 1.0;
@@ -119,10 +138,11 @@ struct BPMKnob : SmallWhiteKnob {
 
 struct SimpleClockWidget : ModuleWidget { 
 	SimpleClockWidget(SimpleClock *module); 
+	void appendContextMenu(Menu *menu) override;
 };
 
 SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	{
@@ -199,4 +219,57 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
 	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 310), module, SimpleClock::DIV_32_OUTPUT));
 }
 
+struct ClockMultMenuItem : MenuItem {
+	SimpleClock *sClock;
+	int val;
+	void onAction(const event::Action &e) override {
+		sClock->clockMult = val;
+	}
+	void step() override {
+		rightText = (sClock->clockMult == val) ? "✔" : "";
+	}
+};
+
+void SimpleClockWidget::appendContextMenu(Menu *menu) {
+	{	
+		MenuLabel *spacerLabel = new MenuLabel();
+		menu->addChild(spacerLabel);
+	}
+	SimpleClock *sClock = dynamic_cast<SimpleClock*>(module);
+	{
+		ClockMultMenuItem *item = new ClockMultMenuItem();
+		item->text = "1/4 Notes";
+		item->sClock = sClock;
+		item->val = 1;
+		menu->addChild(item);
+	}
+	{
+		ClockMultMenuItem *item = new ClockMultMenuItem();
+		item->text = "1/8 Notes";
+		item->sClock = sClock;
+		item->val = 2;
+		menu->addChild(item);
+	}
+	{
+		ClockMultMenuItem *item = new ClockMultMenuItem();
+		item->text = "1/16 Notes";
+		item->sClock = sClock;
+		item->val = 4;
+		menu->addChild(item);
+	}
+	{
+		ClockMultMenuItem *item = new ClockMultMenuItem();
+		item->text = "1/32 Notes";
+		item->sClock = sClock;
+		item->val = 8;
+		menu->addChild(item);
+	}
+	{
+		ClockMultMenuItem *item = new ClockMultMenuItem();
+		item->text = "1/64 Notes";
+		item->sClock = sClock;
+		item->val = 16;
+		menu->addChild(item);
+	}
+}
 Model *modelSimpleClock = createModel<SimpleClock, SimpleClockWidget>("SimpleClock");

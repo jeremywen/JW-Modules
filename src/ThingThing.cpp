@@ -30,8 +30,8 @@ struct ThingThing : Module {
 
 	ThingThing() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(BALL_RAD_PARAM, 0.0, 30.0, 10.0);
-		configParam(ZOOM_MULT_PARAM, 1.0, 200.0, 20.0);
+		configParam(BALL_RAD_PARAM, 0.0, 30.0, 10.0, "Radius");
+		configParam(ZOOM_MULT_PARAM, 1.0, 200.0, 20.0, "Length");
 		balls[0].color = nvgRGB(255, 255, 255);//white
 		balls[1].color = nvgRGB(255, 151, 9);//orange
 		balls[2].color = nvgRGB(255, 243, 9);//yellow

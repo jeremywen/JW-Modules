@@ -31,7 +31,7 @@ struct MinMax : Module {
 	dsp::SchmittTrigger resetTrigger;
 
 	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
-		configParam(TIME_PARAM, -6.0, -16.0, -14.0);		
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Time");		
 	}
 	void process(const ProcessArgs &args) override;
 
