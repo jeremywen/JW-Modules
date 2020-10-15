@@ -342,6 +342,7 @@ extern Model *modelPres1t;
 extern Model *modelMinMax;
 extern Model *modelQuantizer;
 extern Model *modelNoteSeq;
+extern Model *modelNoteSeqFu;
 extern Model *modelNoteSeq16;
 extern Model *modelPatterns;
 extern Model *modelWavHead;

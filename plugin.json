@@ -79,6 +79,12 @@
 			"tags": ["Sequencer", "Poly"]
 		},
         {
+			"slug": "NoteSeqFu",
+			"name": "NoteSeqFu",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#noteSeqFu",
+			"tags": ["Sequencer", "Poly"]
+		},
+        {
 			"slug": "NoteSeq16",
 			"name": "NoteSeq16",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#noteSeq16",
