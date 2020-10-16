@@ -8,14 +8,6 @@
 #define POLY 16
 #define HW 11.75 //cell height and width
 
-//////////////////////////////////////////////////////
-//  TODO Questions
-//    Do I need a combined output?
-//////////////////////////////////////////////////////
-//  For each play head:
-//        Start, PlayMode, Division, Octave, Pitch
-//        EOC, voct, gate
-//////////////////////////////////////////////////////
 struct ColNotes {
 	int *vals = new int[32];
 	bool includeInactive;
@@ -29,6 +21,7 @@ struct ColNotes {
 };
 
 struct PlayHead {
+	dsp::PulseGenerator gatePulse;
 	int seqPos = 0;
 	int ticksSinceDivision = 0;
 	bool goingForward = true;
@@ -139,7 +132,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
-	dsp::PulseGenerator gatePulse, eocPulse;
 
 	NoteSeqFu() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -163,7 +155,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		for(int i=0;i<4;i++){
-			configParam(START_KNOB_PARAM + i, 0.0, 31.0, 0.0, "Start Offset");
+			configParam(START_KNOB_PARAM + i, 0.0, 31.0, i, "Start Offset");
 			configParam(PLAY_MODE_KNOB_PARAM + i, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 			configParam(OCTAVE_KNOB_PARAM + i, -5.0, 7.0, 0.0, "Octave");
 			configParam(SEMI_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
@@ -261,9 +253,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			clockStep();
 		}
 
-		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
 		for(int p=0;p<4;p++){
+			bool pulse = playHeads[p].gatePulse.process(1.0 / args.sampleRate);
 			int seqPos = playHeads[p].seqPos;
 			int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue(), seqPos);
 			for(int i=0;i<channels;i++){
@@ -357,7 +349,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	}
 
 	void clockStep(){
-		gatePulse.trigger(1e-1);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
 		for(int i=0;i<4;i++){
@@ -369,6 +360,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 			playHeads[i].ticksSinceDivision++;
 			if(playHeads[i].ticksSinceDivision % int(params[DIVISION_KNOB_PARAM + i].getValue()) == 0){
+				playHeads[i].gatePulse.trigger(1e-1);
 
 				// i dono if i need this - somehow it stays past the end sometimes
 				if(seqPos > seqLen){
@@ -418,14 +410,11 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	void resetSeq(){
 		for(int i=0;i<4;i++){
 			int curPlayMode = getPlayMode(i);
+			int startOffset = int(params[START_KNOB_PARAM + i].getValue());
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-//TODO revert to commented out code below!!!!
-				// playHeads[i].seqPos = 0;
-				playHeads[i].seqPos = i;//TODO REMOVE THIS LINE
+				playHeads[i].seqPos = startOffset;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-//TODO revert to commented out code below!!!!
-				// playHeads[i].seqPos = getSeqLen() - 1;
-				playHeads[i].seqPos = getSeqLen() - 1 - i;//TODO REMOVE THIS LINE
+				playHeads[i].seqPos = getSeqLen() - 1 - startOffset;
 			}
 		}
 	}
@@ -433,14 +422,11 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	void resetSeqToEnd(){
 		for(int i=0;i<4;i++){
 			int curPlayMode = getPlayMode(i);
+			int startOffset = int(params[START_KNOB_PARAM + i].getValue());
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-//TODO revert to commented out code below!!!!
-				// playHeads[i].seqPos = getSeqLen() - 1;
-				playHeads[i].seqPos = getSeqLen() - 1 - i;//TODO REMOVE THIS LINE
+				playHeads[i].seqPos = getSeqLen() - 1 - startOffset;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-//TODO revert to commented out code below!!!!
-				// playHeads[i].seqPos = 0;
-				playHeads[i].seqPos = i;//TODO REMOVE THIS LINE
+				playHeads[i].seqPos = startOffset;
 			}
 		}
 	}
