@@ -41,10 +41,10 @@
      id="namedview30"
      showgrid="false"
      inkscape:zoom="2.5455844"
-     inkscape:cx="190.53003"
+     inkscape:cx="529.46997"
      inkscape:cy="145.61119"
      inkscape:window-x="210"
-     inkscape:window-y="71"
+     inkscape:window-y="49"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg28"
      showguides="false"
@@ -1373,4 +1373,15 @@
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.3333px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#1996fc;fill-opacity:1"
        id="path892" />
   </g>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:9.33333px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none"
+     x="576.29199"
+     y="54.997196"
+     id="text265"><tspan
+       sodipodi:role="line"
+       id="tspan263"
+       x="576.29199"
+       y="54.997196"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:9.33333px;font-family:monospace;-inkscape-font-specification:'monospace Bold'">OCT</tspan></text>
 </svg>

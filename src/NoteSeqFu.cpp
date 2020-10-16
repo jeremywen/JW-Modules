@@ -8,6 +8,15 @@
 #define POLY 16
 #define HW 11.75 //cell height and width
 
+//////////////////////////////////////////////////////
+//  TODO Questions
+//    Do I need a start offset for each playhead?
+//    Do I need a combined output?
+//////////////////////////////////////////////////////
+//  For each play head:
+//        Octave, Pitch, PlayMode, Division
+//        EOC, voct, gate
+//////////////////////////////////////////////////////
 struct ColNotes {
 	int *vals = new int[32];
 	bool includeInactive;
@@ -21,7 +30,6 @@ struct ColNotes {
 };
 
 struct PlayHead {
-	//PARAMS: octave, division
 	int seqPos = 0;
 	bool goingForward = true;
 };
@@ -30,7 +38,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	enum ParamIds {
 		STEP_BTN_PARAM,
 		LENGTH_KNOB_PARAM,
-		PLAY_MODE_KNOB_PARAM,
 		RESET_BTN_PARAM,
 		CLEAR_BTN_PARAM,
 		RND_MODE_KNOB_PARAM,
@@ -46,11 +53,16 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		LIFE_SPEED_KNOB_PARAM,
 		SCALE_KNOB_PARAM,
 		NOTE_KNOB_PARAM,
-		OCTAVE_KNOB_PARAM,
 		LOW_HIGH_SWITCH_PARAM,
 		INCLUDE_INACTIVE_PARAM,
 		SHIFT_AMT_KNOB_PARAM,
-		NUM_PARAMS
+
+		PLAY_MODE_KNOB_PARAM, //EACH PLAYHEAD
+		DIVISION_KNOB_PARAM = PLAY_MODE_KNOB_PARAM + 4, //EACH PLAYHEAD
+		OCTAVE_KNOB_PARAM = DIVISION_KNOB_PARAM + 4, //EACH PLAYHEAD
+		PITCH_KNOB_PARAM = OCTAVE_KNOB_PARAM + 4, //EACH PLAYHEAD
+
+		NUM_PARAMS = PITCH_KNOB_PARAM + 4
 	};
 	enum InputIds {
 		CLOCK_INPUT,
@@ -73,10 +85,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		POLY_VOCT_OUTPUT,
-		POLY_GATE_OUTPUT,
-		EOC_OUTPUT,
-		NUM_OUTPUTS
+		POLY_VOCT_OUTPUT, //EACH PLAYHEAD
+		POLY_GATE_OUTPUT = POLY_VOCT_OUTPUT + 4, //EACH PLAYHEAD
+		EOC_OUTPUT = POLY_GATE_OUTPUT + 4, //EACH PLAYHEAD
+		NUM_OUTPUTS = EOC_OUTPUT + 4 //EACH PLAYHEAD
 	};
 	enum LightIds {
 		NUM_LIGHTS
@@ -134,7 +146,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0, "Length");
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0, "Random Mode");
@@ -150,9 +161,14 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configParam(LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0, "Life Switch");
 		configParam(LIFE_SPEED_KNOB_PARAM, 1.0, 16.0, 12.0, "Life Speed");
 		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0, "Drum Mode");
-		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+		for(int i=0;i<4;i++){
+			configParam(PLAY_MODE_KNOB_PARAM + i, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+			configParam(OCTAVE_KNOB_PARAM + i, -5.0, 7.0, 0.0, "Octave");
+			configParam(PITCH_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
+			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 0.0, "Division");
+		}
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -701,7 +717,16 @@ struct NoteSeqFuDisplay : Widget {
 	float initY = 0;
 	float dragX = 0;
 	float dragY = 0;
-	NoteSeqFuDisplay(){}
+	NVGcolor *colors = new NVGcolor[4];
+	NoteSeqFuDisplay(){
+		colors[0] = nvgRGB(255, 151, 9);//orange
+		colors[1] = nvgRGB(255, 243, 9);//yellow
+		colors[2] = nvgRGB(144, 26, 252);//purple
+		colors[3] = nvgRGB(25, 150, 252);//blue
+	}
+	~NoteSeqFuDisplay(){
+		delete [] colors;
+	}
 
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
@@ -791,8 +816,7 @@ struct NoteSeqFuDisplay : Widget {
 
 		//seq pos
 		for(int i=0;i<4;i++){
-//TODO different color playheads
-			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgStrokeColor(args.vg, colors[i]);
 			nvgBeginPath(args.vg);
 			nvgRect(args.vg, module->playHeads[i].seqPos * HW, 0, HW, box.size.y);
 			nvgStroke(args.vg);
