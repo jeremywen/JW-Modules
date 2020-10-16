@@ -414,7 +414,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 				playHeads[i].seqPos = startOffset;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-				playHeads[i].seqPos = getSeqLen() - 1 - startOffset;
+				playHeads[i].seqPos = (getSeqLen() - 1 + startOffset) % 32;
 			}
 		}
 	}
@@ -424,7 +424,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			int curPlayMode = getPlayMode(i);
 			int startOffset = int(params[START_KNOB_PARAM + i].getValue());
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-				playHeads[i].seqPos = getSeqLen() - 1 - startOffset;
+				playHeads[i].seqPos = (getSeqLen() - 1 + startOffset) % 32;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 				playHeads[i].seqPos = startOffset;
 			}
