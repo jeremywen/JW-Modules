@@ -10,11 +10,10 @@
 
 //////////////////////////////////////////////////////
 //  TODO Questions
-//    Do I need a start offset for each playhead?
 //    Do I need a combined output?
 //////////////////////////////////////////////////////
 //  For each play head:
-//        Octave, Pitch, PlayMode, Division
+//        Start, PlayMode, Division, Octave, Pitch
 //        EOC, voct, gate
 //////////////////////////////////////////////////////
 struct ColNotes {
@@ -32,6 +31,7 @@ struct ColNotes {
 struct PlayHead {
 	int seqPos = 0;
 	bool goingForward = true;
+	bool eocOn = false; 
 };
 
 struct NoteSeqFu : Module,QuantizeUtils {
@@ -58,11 +58,12 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		SHIFT_AMT_KNOB_PARAM,
 
 		PLAY_MODE_KNOB_PARAM, //EACH PLAYHEAD
-		DIVISION_KNOB_PARAM = PLAY_MODE_KNOB_PARAM + 4, //EACH PLAYHEAD
+		START_KNOB_PARAM = PLAY_MODE_KNOB_PARAM + 4, //EACH PLAYHEAD
+		DIVISION_KNOB_PARAM = START_KNOB_PARAM + 4, //EACH PLAYHEAD
 		OCTAVE_KNOB_PARAM = DIVISION_KNOB_PARAM + 4, //EACH PLAYHEAD
-		PITCH_KNOB_PARAM = OCTAVE_KNOB_PARAM + 4, //EACH PLAYHEAD
+		SEMI_KNOB_PARAM = OCTAVE_KNOB_PARAM + 4, //EACH PLAYHEAD
 
-		NUM_PARAMS = PITCH_KNOB_PARAM + 4
+		NUM_PARAMS = SEMI_KNOB_PARAM + 4
 	};
 	enum InputIds {
 		CLOCK_INPUT,
@@ -77,10 +78,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		SHIFT_UP_INPUT,
 		SHIFT_DOWN_INPUT,
 		ROOT_INPUT,
-		OCTAVE_INPUT,
 		SCALE_INPUT,
 		LENGTH_INPUT,
-		MODE_INPUT,
 		SHIFT_AMT_INPUT,
 		NUM_INPUTS
 	};
@@ -131,7 +130,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	PlayHead *playHeads = new PlayHead[4];
 	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
-	bool eocOn = false; 
 	bool resetMode = false;
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
@@ -164,9 +162,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		for(int i=0;i<4;i++){
+			configParam(START_KNOB_PARAM + i, 0.0, 31.0, 0.0, "Start Offset");
 			configParam(PLAY_MODE_KNOB_PARAM + i, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 			configParam(OCTAVE_KNOB_PARAM + i, -5.0, 7.0, 0.0, "Octave");
-			configParam(PITCH_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
+			configParam(SEMI_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
 			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 0.0, "Division");
 		}
 		resetSeq();
@@ -229,9 +228,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		gridChanged();
 	}
 
-	//TODO maybe add length input
-	//TODO maybe add start pos knob and input
-
 	void process(const ProcessArgs &args) override {
 		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
 			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
@@ -266,25 +262,23 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
-		
-//TODO FIX!!!!
-int seqPos = playHeads[0].seqPos;
-//TODO FIX!!!!
-		int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue(), seqPos);
-		//ONLY NEW MAIN POLY OUTPUT
-		for(int i=0;i<channels;i++){
-			bool hasVal = polyYVals[i] > -1;
-			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
-			if(cellActive){ 
-				float volts = closestVoltageForRow(polyYVals[i]);
-				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
+		for(int p=0;p<4;p++){
+			int seqPos = playHeads[p].seqPos;
+			int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue(), seqPos);
+			for(int i=0;i<channels;i++){
+				bool hasVal = polyYVals[i] > -1;
+				bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
+				if(cellActive){ 
+					float volts = closestVoltageForRow(polyYVals[i], p);
+					outputs[POLY_VOCT_OUTPUT + p].setVoltage(volts, i);
+				}
+				float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+				outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
 			}
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
+			outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
+			outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
+			outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
 		}
-		outputs[POLY_GATE_OUTPUT].setChannels(channels);
-		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
-		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
 	int * getYValsFromBottomAtSeqPos(bool includeInactive, int seqPos){
@@ -348,9 +342,9 @@ int seqPos = playHeads[0].seqPos;
 		return 1;
 	}
 
-	float closestVoltageForRow(int cellYFromBottom){
-		int octaveInputOffset = inputs[OCTAVE_INPUT].isConnected() ? int(inputs[OCTAVE_INPUT].getVoltage()) : 0;
-		int octave = clampijw(params[OCTAVE_KNOB_PARAM].getValue() + octaveInputOffset, -5.0, 7.0);
+	float closestVoltageForRow(int cellYFromBottom, int playHeadIdx){
+		int octave = clampijw(params[OCTAVE_KNOB_PARAM + playHeadIdx].getValue(), -5.0, 7.0);
+		int semi = clampijw(params[SEMI_KNOB_PARAM + playHeadIdx].getValue(), -11.0, 11.0);
 
 		int rootInputOffset = inputs[ROOT_INPUT].isConnected() ? rescalefjw(inputs[ROOT_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1) : 0;
 		int rootNote = clampijw(params[NOTE_KNOB_PARAM].getValue() + rootInputOffset, 0, QuantizeUtils::NUM_NOTES-1);
@@ -358,19 +352,20 @@ int seqPos = playHeads[0].seqPos;
 		int scaleInputOffset = inputs[SCALE_INPUT].isConnected() ? rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1) : 0;
 		int scale = clampijw(params[SCALE_KNOB_PARAM].getValue() + scaleInputOffset, 0, QuantizeUtils::NUM_SCALES-1);
 
-		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
+		return closestVoltageInScale(octave + (semi * 0.0833) + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
 	void clockStep(){
 		gatePulse.trigger(1e-1);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
+//TODO check the playhead division
 		for(int i=0;i<4;i++){
 			int seqLen = getSeqLen();
 			int curPlayMode = getPlayMode(i);
 			int seqPos = playHeads[i].seqPos;
 			bool goingForward = playHeads[i].goingForward;
-			eocOn = false;
+			bool eocOn = false;
 
 			// i dono if i need this - somehow it stays past the end sometimes
 			if(seqPos > seqLen){
@@ -412,6 +407,7 @@ int seqPos = playHeads[0].seqPos;
 			}
 			playHeads[i].seqPos = seqPos;
 			playHeads[i].goingForward = goingForward;
+			playHeads[i].eocOn = eocOn;
 		}
 	}
 
@@ -452,9 +448,7 @@ int seqPos = playHeads[0].seqPos;
 	}
 
 	int getPlayMode(int playHeadIdx){
-//TODO
-		int inputOffset = int(rescalefjw(inputs[MODE_INPUT].getVoltage(), 0, 10.0, 0.0, NUM_PLAY_MODES - 1));
-		int mode = clampijw(params[PLAY_MODE_KNOB_PARAM].getValue() + inputOffset, 0.0, NUM_PLAY_MODES - 1);
+		int mode = clampijw(params[PLAY_MODE_KNOB_PARAM+playHeadIdx].getValue(), 0.0, NUM_PLAY_MODES - 1);
 		return mode;
 	}
 
@@ -790,25 +784,9 @@ struct NoteSeqFuDisplay : Widget {
 
 		nvgStrokeWidth(args.vg, 2);
 
-		//highest note line
-		float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(255, 151, 9));//orange
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowHighLimitY);
-		nvgLineTo(args.vg, box.size.x, rowHighLimitY);
-		nvgStroke(args.vg);
-
-		//lowest note line
-		float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowLowLimitY);
-		nvgLineTo(args.vg, box.size.x, rowLowLimitY);
-		nvgStroke(args.vg);
-
 		//seq length line
 		float colLimitX = module->getSeqLen() * HW;
-		nvgStrokeColor(args.vg, nvgRGB(144, 26, 252));//purple
+		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
 		nvgBeginPath(args.vg);
 		nvgMoveTo(args.vg, colLimitX, 0);
 		nvgLineTo(args.vg, colLimitX, box.size.y);
@@ -818,7 +796,8 @@ struct NoteSeqFuDisplay : Widget {
 		for(int i=0;i<4;i++){
 			nvgStrokeColor(args.vg, colors[i]);
 			nvgBeginPath(args.vg);
-			nvgRect(args.vg, module->playHeads[i].seqPos * HW, 0, HW, box.size.y);
+			nvgMoveTo(args.vg, module->playHeads[i].seqPos * HW, 0);
+			nvgLineTo(args.vg, module->playHeads[i].seqPos * HW, box.size.y);
 			nvgStroke(args.vg);
 		}
 	}
@@ -917,19 +896,35 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 40), module, NoteSeqFu::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 40), module, NoteSeqFu::CLOCK_INPUT));
 	// addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeqFu::STEP_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, NoteSeqFu::LENGTH_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, NoteSeqFu::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(47, 40), module, NoteSeqFu::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(65, 35), module, NoteSeqFu::LENGTH_KNOB_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 40), module, NoteSeqFu::MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(137, 35), module, NoteSeqFu::PLAY_MODE_KNOB_PARAM));
-	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(75, 35);
-	playModeLabel->text = "";
-	playModeKnob->connectLabel(playModeLabel, module);
-	addChild(playModeLabel);
-	addParam(playModeKnob);
+
+	///// NOTE AND SCALE CONTROLS /////
+	float pitchParamYVal = 35;
+	float labelY = 36;
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(97, pitchParamYVal), module, NoteSeqFu::NOTE_KNOB_PARAM));
+	CenteredLabel* const noteLabel = new CenteredLabel;
+	noteLabel->box.pos = Vec(55, labelY);
+	noteLabel->text = "";
+	noteKnob->connectLabel(noteLabel, module);
+	addChild(noteLabel);
+	addParam(noteKnob);
+
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(135, pitchParamYVal), module, NoteSeqFu::SCALE_KNOB_PARAM));
+	CenteredLabel* const scaleLabel = new CenteredLabel;
+	scaleLabel->box.pos = Vec(73, labelY);
+	scaleLabel->text = "";
+	scaleKnob->connectLabel(scaleLabel, module);
+	addChild(scaleLabel);
+	addParam(scaleKnob);
+
+	// float quantInpY = 300;
+	// addInput(createInput<TinyPJ301MPort>(Vec(623, quantInpY), module, NoteSeqFu::ROOT_INPUT));
+	// addInput(createInput<TinyPJ301MPort>(Vec(656, quantInpY), module, NoteSeqFu::OCTAVE_INPUT));
+	// addInput(createInput<TinyPJ301MPort>(Vec(690, quantInpY), module, NoteSeqFu::SCALE_INPUT));
 
 	//row 2
 	addInput(createInput<TinyPJ301MPort>(Vec(10, 92), module, NoteSeqFu::RESET_INPUT));
@@ -973,38 +968,32 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(138, 345), module, NoteSeqFu::LIFE_SPEED_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
+	
+	float yTop = 31;
+	for(int i=0;i<4;i++){
 
-	float pitchParamYVal = 259;
-	addParam(createParam<JwSmallSnapKnob>(Vec(652, pitchParamYVal), module, NoteSeqFu::OCTAVE_KNOB_PARAM));
+		addParam(createParam<JwSmallSnapKnob>(Vec(555, yTop), module, NoteSeqFu::START_KNOB_PARAM + i));
 
-	///// NOTE AND SCALE CONTROLS /////
-	float labelY = 148;
+		PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(595, yTop), module, NoteSeqFu::PLAY_MODE_KNOB_PARAM + i));
+		CenteredLabel* const playModeLabel = new CenteredLabel;
+		playModeLabel->box.pos = Vec(303.5, 34+(i*42)); 
+		playModeLabel->text = "";
+		playModeKnob->connectLabel(playModeLabel, module);
+		addChild(playModeLabel);
+		addParam(playModeKnob);
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(620, pitchParamYVal), module, NoteSeqFu::NOTE_KNOB_PARAM));
-	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(316, labelY);
-	noteLabel->text = "";
-	noteKnob->connectLabel(noteLabel, module);
-	addChild(noteLabel);
-	addParam(noteKnob);
+		addParam(createParam<JwSmallSnapKnob>(Vec(630, yTop), module, NoteSeqFu::DIVISION_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(660, yTop), module, NoteSeqFu::OCTAVE_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(690, yTop), module, NoteSeqFu::SEMI_KNOB_PARAM + i));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(683, pitchParamYVal), module, NoteSeqFu::SCALE_KNOB_PARAM));
-	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(348, labelY);
-	scaleLabel->text = "";
-	scaleKnob->connectLabel(scaleLabel, module);
-	addChild(scaleLabel);
-	addParam(scaleKnob);
+		addOutput(createOutput<TinyPJ301MPort>(Vec(600, yTop+48), module, NoteSeqFu::EOC_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(630, yTop+48), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(660, yTop+48), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
 
-	float quantInpY = 300;
-	addInput(createInput<TinyPJ301MPort>(Vec(623, quantInpY), module, NoteSeqFu::ROOT_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(656, quantInpY), module, NoteSeqFu::OCTAVE_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(690, quantInpY), module, NoteSeqFu::SCALE_INPUT));
+		yTop+=85.5;
+	}
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(623, 345), module, NoteSeqFu::EOC_OUTPUT));
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(656, 345), module, NoteSeqFu::POLY_VOCT_OUTPUT));
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(690, 345), module, NoteSeqFu::POLY_GATE_OUTPUT));
-	addParam(createParam<JwHorizontalSwitch>(Vec(675, 355), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(645, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
 }
 
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
