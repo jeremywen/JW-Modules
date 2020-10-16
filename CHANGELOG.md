@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.0.16 ~ 10-16-2020
+
+  * New Module: NoteSeqFu
+
 ## v1.0.15 ~ 10-3-2020
 
   * Added EOC (end of cycle) to NoteSeq16

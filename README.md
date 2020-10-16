@@ -15,6 +15,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 * [Thing Thing](#thing-thing)
 * [NoteSeq](#noteSeq)
+* [NoteSeqFu](#noteSeqFu)
 * [NoteSeq16](#noteSeq16)
 * [Patterns](#patterns)
 * [Bouncy Balls](#bouncy-balls)
@@ -86,6 +87,51 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 *  **EOC Output:** at the end of the loop it will send out a trigger
 *  **Poly Outputs:** v/oct and gate as a polyphonic signal
+
+## NoteSeqFu
+
+![NoteSeqFu](./doc/NoteSeqFu-img1.png)
+
+#### Basics
+
+* Left side of module is for sequencer control, generation, and modification.
+* Right side of module is mainly for controlling the play heads and outputs.
+* You can click and drag cells in the grid to toggle them on and off.
+
+#### Left
+
+*  **Clock Input:** when source sends a trigger, the sequence moves to the next step
+*  **Step Button:** when clicked, the sequence moves to the next step
+*  **Length Knob:** the sequence length indicated by the vertical purple line
+*  **Note Knob:** root note if scaling pitch sent to "OUT"
+*  **Scale Knob:** current musical scale or none if turned up all the way to the last value
+*  **Reset Input and Button:** resets to first step in sequence (based on the play mode)
+*  **Clear Input and Button:** clears the grid
+*  **RND Mode:** changes what happens when you trigger the random input or button 
+*  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
+*  **Random Amount Input and Knob:** determines how full the grid will be when generating random notes
+*  **Shift Up Trig Input and Button:** moves the cells in the grid the number of rows set by the amount knob (notes wrap around to the bottom)
+*  **Shift Down Trig Input and Button:** moves the cells in the grid down the number of rows set by the amount knob (notes wrap around to the top)
+*  **Shift Amount Knob:** determines how much to shift the cells
+*  **Rotate Right Input and Button:** rotates the cells in the grid clockwise 90 degrees
+*  **Rotate Left Input and Button:** rotates the cells in the grid counter-clockwise 90 degrees
+*  **Flip Horiz Input and Button:** flips the cells in the grid right to left
+*  **Flip Vert Input and Button:** flips the cells in the grid top to bottom
+*  **Life Switch:** when switched to the right this turns on [conway's game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
+*  **Life Speed Knob:** determines how fast to iterate the game of life (clock divided based on clock input)
+
+#### Right
+
+*  **Start Knob:** the start offset on reset
+*  **Mode Knob:** the play mode changes how it moved through a sequence
+*  **Div Knob:** the clock division to move the play head
+*  **Oct Knob:** octave for the lowest note in the grid
+*  **Semi Knob:** semitone offset of notes at playhead
+*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **Poly Outputs:** v/oct and gate as a polyphonic signal
+*  **Drum Mode Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
+So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
+output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 
 ## NoteSeq16
 
