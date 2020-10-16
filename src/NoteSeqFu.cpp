@@ -30,6 +30,7 @@ struct ColNotes {
 
 struct PlayHead {
 	int seqPos = 0;
+	int ticksSinceDivision = 0;
 	bool goingForward = true;
 	bool eocOn = false; 
 };
@@ -166,7 +167,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			configParam(PLAY_MODE_KNOB_PARAM + i, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 			configParam(OCTAVE_KNOB_PARAM + i, -5.0, 7.0, 0.0, "Octave");
 			configParam(SEMI_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
-			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 0.0, "Division");
+			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 1.0, "Division");
 		}
 		resetSeq();
 		resetMode = true;
@@ -359,7 +360,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		gatePulse.trigger(1e-1);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
-//TODO check the playhead division
 		for(int i=0;i<4;i++){
 			int seqLen = getSeqLen();
 			int curPlayMode = getPlayMode(i);
@@ -367,47 +367,51 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			bool goingForward = playHeads[i].goingForward;
 			bool eocOn = false;
 
-			// i dono if i need this - somehow it stays past the end sometimes
-			if(seqPos > seqLen){
-				seqPos = seqLen - 1;
-			}
+			playHeads[i].ticksSinceDivision++;
+			if(playHeads[i].ticksSinceDivision % int(params[DIVISION_KNOB_PARAM + i].getValue()) == 0){
 
-			if(curPlayMode == PM_FWD_LOOP){
-				seqPos = (seqPos + 1) % seqLen;
-				goingForward = true;
-				if(seqPos == 0){
-					eocOn = true;
+				// i dono if i need this - somehow it stays past the end sometimes
+				if(seqPos > seqLen){
+					seqPos = seqLen - 1;
 				}
-			} else if(curPlayMode == PM_BWD_LOOP){
-				seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
-				goingForward = false;
-				if(seqPos == seqLen - 1){
-					eocOn = true;
-				}
-			} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-				if(goingForward){
-					if(seqPos < seqLen - 1){
-						seqPos++;
-					} else {
-						seqPos--;
-						goingForward = false;
+
+				if(curPlayMode == PM_FWD_LOOP){
+					seqPos = (seqPos + 1) % seqLen;
+					goingForward = true;
+					if(seqPos == 0){
 						eocOn = true;
 					}
-				} else {
-					if(seqPos > 0){
-						seqPos--;
-					} else {
-						seqPos++;
-						goingForward = true;
+				} else if(curPlayMode == PM_BWD_LOOP){
+					seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
+					goingForward = false;
+					if(seqPos == seqLen - 1){
 						eocOn = true;
 					}
+				} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
+					if(goingForward){
+						if(seqPos < seqLen - 1){
+							seqPos++;
+						} else {
+							seqPos--;
+							goingForward = false;
+							eocOn = true;
+						}
+					} else {
+						if(seqPos > 0){
+							seqPos--;
+						} else {
+							seqPos++;
+							goingForward = true;
+							eocOn = true;
+						}
+					}
+				} else if(curPlayMode == PM_RANDOM_POS){
+					seqPos = int(random::uniform() * seqLen);
 				}
-			} else if(curPlayMode == PM_RANDOM_POS){
-				seqPos = int(random::uniform() * seqLen);
+				playHeads[i].seqPos = seqPos;
+				playHeads[i].goingForward = goingForward;
+				playHeads[i].eocOn = eocOn;
 			}
-			playHeads[i].seqPos = seqPos;
-			playHeads[i].goingForward = goingForward;
-			playHeads[i].eocOn = eocOn;
 		}
 	}
 
