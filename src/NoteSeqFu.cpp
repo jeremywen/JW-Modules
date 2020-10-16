@@ -400,7 +400,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 				} else if(curPlayMode == PM_RANDOM_POS){
 					seqPos = int(random::uniform() * seqLen);
 				}
-				playHeads[i].seqPos = seqPos;
+				playHeads[i].seqPos = clampijw(seqPos, 0, 31);
 				playHeads[i].goingForward = goingForward;
 				playHeads[i].eocOn = eocOn;
 			}
