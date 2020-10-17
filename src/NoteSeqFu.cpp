@@ -119,7 +119,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 	float displayWidth = 0, displayHeight = 0;
 	float rate = 1.0 / APP->engine->getSampleRate();
-	float lifeRate = 0.5 * APP->engine->getSampleRate();
 	long lifeCounter = 0;
 	PlayHead *playHeads = new PlayHead[4];
 	int channels = 1;
@@ -225,13 +224,6 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	}
 
 	void process(const ProcessArgs &args) override {
-		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
-			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
-				stepLife();
-				lifeCounter = 1;
-			}
-		}
-
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue() + inputs[CLEAR_INPUT].getVoltage())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 
@@ -254,6 +246,13 @@ struct NoteSeqFu : Module,QuantizeUtils {
 				resetSeqToEnd();
 			}
 			clockStep();
+		}
+
+		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
+			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
+				stepLife();
+				lifeCounter = 1;
+			}
 		}
 
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
