@@ -276,6 +276,14 @@ struct NoteSeqFu : Module,QuantizeUtils {
 				outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
 				outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
 				outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
+			} else {
+				for(int i=0;i<channels;i++){
+					outputs[POLY_VOCT_OUTPUT + p].setVoltage(0, i);
+					outputs[POLY_GATE_OUTPUT + p].setVoltage(0, i);
+				}
+				outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
+				outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
+				outputs[EOC_OUTPUT + p].setVoltage(0.0);
 			}
 		}
 	}
@@ -399,7 +407,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 						if(seqPos > 0){
 							seqPos--;
 						} else {
-							seqPos++;
+							if(seqPos + 1 < seqLen){
+								seqPos++;
+							}
 							goingForward = true;
 							eocOn = true;
 						}

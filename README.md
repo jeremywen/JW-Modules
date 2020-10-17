@@ -129,6 +129,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Semi Knob:** semitone offset of notes at playhead
 *  **EOC Output:** at the end of the loop it will send out a trigger
 *  **Poly Outputs:** v/oct and gate as a polyphonic signal
+*  **Off/On Switch:** will stop playing notes and hide the play head
+*  **Repeats Switch:** (was originally a bug) when playhead is set to a higher division and the clock ticks multiple times while the playhead is still on the note, it would repeat so i made it optional
 *  **Drum Mode Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
 output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
