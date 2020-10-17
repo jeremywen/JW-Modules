@@ -793,17 +793,28 @@ struct NoteSeqFuDisplay : Widget {
 
 		for(int i=0;i<4;i++){
 			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
-				//seq length line
 				float colLimitX = module->getSeqLen(i) * HW;
-				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.125);
-				nvgLineTo(args.vg, colLimitX, box.size.y);
+
+				//seq length line TOP COLOR
 				nvgStroke(args.vg);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, colLimitX, 0);
 				nvgLineTo(args.vg, colLimitX, box.size.y * 0.125);
+				nvgStroke(args.vg);
+
+				//seq length line MIDDLE WHITE
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.125);
+				nvgLineTo(args.vg, colLimitX, box.size.y * 0.875);
+
+				//seq length line BOTTOM COLOR
+				nvgStroke(args.vg);
+				nvgStrokeColor(args.vg, colors[i]);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.875);
+				nvgLineTo(args.vg, colLimitX, box.size.y);
 				nvgStroke(args.vg);
 
 				//seq pos
