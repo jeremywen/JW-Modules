@@ -56,6 +56,7 @@ struct SmallWhiteKnob : RoundKnob {
 	Module* linkedModule = NULL;
 
 	SmallWhiteKnob() {
+		shadow->opacity = 0;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
 	

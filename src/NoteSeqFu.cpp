@@ -911,22 +911,22 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 40), module, NoteSeqFu::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(30, 40), module, NoteSeqFu::CLOCK_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float pitchParamYVal = 35;
 	float labelY = 36;
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(97, pitchParamYVal), module, NoteSeqFu::NOTE_KNOB_PARAM));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(80, pitchParamYVal), module, NoteSeqFu::NOTE_KNOB_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(55, labelY);
+	noteLabel->box.pos = Vec(46.5, labelY);
 	noteLabel->text = "";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(135, pitchParamYVal), module, NoteSeqFu::SCALE_KNOB_PARAM));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(125, pitchParamYVal), module, NoteSeqFu::SCALE_KNOB_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(73, labelY);
+	scaleLabel->box.pos = Vec(70, labelY);
 	scaleLabel->text = "";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
@@ -982,26 +982,26 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	
 	float yTop = 31;
 	for(int i=0;i<4;i++){
+		float knobX = 556;
+		addParam(createParam<JwSmallSnapKnob>(Vec(knobX, yTop), module, NoteSeqFu::START_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(knobX+=33, yTop), module, NoteSeqFu::LENGTH_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(knobX+=33, yTop), module, NoteSeqFu::DIVISION_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(knobX+=33, yTop), module, NoteSeqFu::OCTAVE_KNOB_PARAM + i));
+		addParam(createParam<JwSmallSnapKnob>(Vec(knobX+=33, yTop), module, NoteSeqFu::SEMI_KNOB_PARAM + i));
 
-		addParam(createParam<JwSmallSnapKnob>(Vec(555, yTop), module, NoteSeqFu::START_KNOB_PARAM + i));
-		addParam(createParam<JwSmallSnapKnob>(Vec(595, yTop), module, NoteSeqFu::LENGTH_KNOB_PARAM + i));
-		addParam(createParam<JwSmallSnapKnob>(Vec(630, yTop), module, NoteSeqFu::DIVISION_KNOB_PARAM + i));
-		addParam(createParam<JwSmallSnapKnob>(Vec(660, yTop), module, NoteSeqFu::OCTAVE_KNOB_PARAM + i));
-		addParam(createParam<JwSmallSnapKnob>(Vec(690, yTop), module, NoteSeqFu::SEMI_KNOB_PARAM + i));
+		addParam(createParam<JwHorizontalSwitch>(Vec(560, yTop+43), module, NoteSeqFu::PLAYHEAD_ON_PARAM + i));
 
-		addParam(createParam<JwHorizontalSwitch>(Vec(566, yTop+48), module, NoteSeqFu::PLAYHEAD_ON_PARAM + i));
-
-		PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(595, yTop+40), module, NoteSeqFu::PLAY_MODE_KNOB_PARAM + i));
+		PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(589, yTop+38), module, NoteSeqFu::PLAY_MODE_KNOB_PARAM + i));
 		CenteredLabel* const playModeLabel = new CenteredLabel;
-		playModeLabel->box.pos = Vec(303.5, 52+(i*42)); 
+		playModeLabel->box.pos = Vec(301.25, 50+(i*43)); 
 		playModeLabel->text = "";
 		playModeKnob->connectLabel(playModeLabel, module);
 		addChild(playModeLabel);
 		addParam(playModeKnob);
 
-		addOutput(createOutput<TinyPJ301MPort>(Vec(620, yTop+48), module, NoteSeqFu::EOC_OUTPUT + i));
-		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(650, yTop+48), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
-		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(680, yTop+48), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(630, yTop+43), module, NoteSeqFu::EOC_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(660, yTop+43), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(690, yTop+43), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
 
 		yTop+=85.5;
 	}
