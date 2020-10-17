@@ -417,7 +417,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 				} else if(curPlayMode == PM_RANDOM_POS){
 					seqPos = int(random::uniform() * seqLen);
 				}
-				playHeads[i].seqPos = clampijw(seqPos, 0, 31);
+				playHeads[i].seqPos = clampijw(seqPos, 0, seqLen - 1);
 				playHeads[i].goingForward = goingForward;
 				playHeads[i].eocOn = eocOn;
 			}
@@ -427,11 +427,12 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	void resetSeq(){
 		for(int i=0;i<4;i++){
 			int curPlayMode = getPlayMode(i);
+			int seqLen = getSeqLen(i);
 			int startOffset = int(params[START_KNOB_PARAM + i].getValue());
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 				playHeads[i].seqPos = startOffset;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-				playHeads[i].seqPos = (getSeqLen(i) - 1 + startOffset) % 32;
+				playHeads[i].seqPos = (seqLen - 1 + startOffset) % seqLen;
 			}
 		}
 	}
@@ -439,9 +440,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	void resetSeqToEnd(){
 		for(int i=0;i<4;i++){
 			int curPlayMode = getPlayMode(i);
+			int seqLen = getSeqLen(i);
 			int startOffset = int(params[START_KNOB_PARAM + i].getValue());
 			if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-				playHeads[i].seqPos = (getSeqLen(i) - 1 + startOffset) % 32;
+				playHeads[i].seqPos = (seqLen - 1 + startOffset) % seqLen;
 			} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 				playHeads[i].seqPos = startOffset;
 			}
@@ -982,7 +984,6 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	for(int i=0;i<4;i++){
 
 		addParam(createParam<JwSmallSnapKnob>(Vec(555, yTop), module, NoteSeqFu::START_KNOB_PARAM + i));
-//TODO FIX LABELS
 		addParam(createParam<JwSmallSnapKnob>(Vec(595, yTop), module, NoteSeqFu::LENGTH_KNOB_PARAM + i));
 		addParam(createParam<JwSmallSnapKnob>(Vec(630, yTop), module, NoteSeqFu::DIVISION_KNOB_PARAM + i));
 		addParam(createParam<JwSmallSnapKnob>(Vec(660, yTop), module, NoteSeqFu::OCTAVE_KNOB_PARAM + i));
