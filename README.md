@@ -94,6 +94,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 #### Basics
 
+* basic idea inspired by the iOS app [Fugue Machine](https://alexandernaut.com/fuguemachine/)
 * Left side of module is for sequencer control, generation, and modification.
 * Right side of module is mainly for controlling the play heads and outputs.
 * You can click and drag cells in the grid to toggle them on and off.
@@ -102,7 +103,6 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 *  **Clock Input:** when source sends a trigger, the sequence moves to the next step
 *  **Step Button:** when clicked, the sequence moves to the next step
-*  **Length Knob:** the sequence length indicated by the vertical purple line
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 *  **Reset Input and Button:** resets to first step in sequence (based on the play mode)
@@ -120,9 +120,10 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Life Switch:** when switched to the right this turns on [conway's game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 *  **Life Speed Knob:** determines how fast to iterate the game of life (clock divided based on clock input)
 
-#### Right
+#### Right (Each Play Head)
 
 *  **Start Knob:** the start offset on reset
+*  **Length Knob:** the sequence length indicated by the vertical white line and color of the play head
 *  **Mode Knob:** the play mode changes how it moved through a sequence
 *  **Div Knob:** the clock division to move the play head
 *  **Oct Knob:** octave for the lowest note in the grid
@@ -130,6 +131,9 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **EOC Output:** at the end of the loop it will send out a trigger
 *  **Poly Outputs:** v/oct and gate as a polyphonic signal
 *  **Off/On Switch:** will stop playing notes and hide the play head
+
+#### Bottom Right
+
 *  **Repeats Switch:** (was originally a bug) when playhead is set to a higher division and the clock ticks multiple times while the playhead is still on the note, it would repeat so i made it optional
 *  **Drum Mode Switch:** [Demo Video](https://www.youtube.com/watch?v=EkFzYxhhn-g) When switched to the right, even if the note isn't 'active'(turned on) then the outputs still directly line up to the 16 lowest notes. 
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
