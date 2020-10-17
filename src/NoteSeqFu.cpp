@@ -50,14 +50,14 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		LOW_HIGH_SWITCH_PARAM,
 		INCLUDE_INACTIVE_PARAM,
 		SHIFT_AMT_KNOB_PARAM,
-
 		PLAY_MODE_KNOB_PARAM, //EACH PLAYHEAD
 		START_KNOB_PARAM = PLAY_MODE_KNOB_PARAM + 4, //EACH PLAYHEAD
 		DIVISION_KNOB_PARAM = START_KNOB_PARAM + 4, //EACH PLAYHEAD
 		OCTAVE_KNOB_PARAM = DIVISION_KNOB_PARAM + 4, //EACH PLAYHEAD
 		SEMI_KNOB_PARAM = OCTAVE_KNOB_PARAM + 4, //EACH PLAYHEAD
-
-		NUM_PARAMS = SEMI_KNOB_PARAM + 4
+		REPEATS_PARAM = SEMI_KNOB_PARAM + 4,
+		PLAYHEAD_ON_PARAM,
+		NUM_PARAMS = PLAYHEAD_ON_PARAM + 4
 	};
 	enum InputIds {
 		CLOCK_INPUT,
@@ -132,6 +132,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
+	dsp::PulseGenerator mainClockPulse;
 
 	NoteSeqFu() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -152,9 +153,11 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configParam(LIFE_ON_SWITCH_PARAM, 0.0, 1.0, 0.0, "Life Switch");
 		configParam(LIFE_SPEED_KNOB_PARAM, 1.0, 16.0, 12.0, "Life Speed");
 		configParam(INCLUDE_INACTIVE_PARAM, 0.0, 1.0, 0.0, "Drum Mode");
+		configParam(REPEATS_PARAM, 0.0, 1.0, 0.0, "Repeats");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		for(int i=0;i<4;i++){
+			configParam(PLAYHEAD_ON_PARAM + i, 0.0, 1.0, 1.0, "Play Head On/Off");
 			configParam(START_KNOB_PARAM + i, 0.0, 31.0, i, "Start Offset");
 			configParam(PLAY_MODE_KNOB_PARAM + i, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 			configParam(OCTAVE_KNOB_PARAM + i, -5.0, 7.0, 0.0, "Octave");
@@ -254,23 +257,26 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		}
 
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
+		bool mainPulse = mainClockPulse.process(1.0 / args.sampleRate);
 		for(int p=0;p<4;p++){
-			bool pulse = playHeads[p].gatePulse.process(1.0 / args.sampleRate);
-			int seqPos = playHeads[p].seqPos;
-			int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue(), seqPos);
-			for(int i=0;i<channels;i++){
-				bool hasVal = polyYVals[i] > -1;
-				bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
-				if(cellActive){ 
-					float volts = closestVoltageForRow(polyYVals[i], p);
-					outputs[POLY_VOCT_OUTPUT + p].setVoltage(volts, i);
+			if(params[PLAYHEAD_ON_PARAM + p].getValue()){
+				bool pulse = (mainPulse && params[REPEATS_PARAM].getValue()) || (playHeads[p].gatePulse.process(1.0 / args.sampleRate));
+				int seqPos = playHeads[p].seqPos;
+				int *polyYVals = getYValsFromBottomAtSeqPos(params[INCLUDE_INACTIVE_PARAM].getValue(), seqPos);
+				for(int i=0;i<channels;i++){
+					bool hasVal = polyYVals[i] > -1;
+					bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
+					if(cellActive){ 
+						float volts = closestVoltageForRow(polyYVals[i], p);
+						outputs[POLY_VOCT_OUTPUT + p].setVoltage(volts, i);
+					}
+					float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+					outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
 				}
-				float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-				outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
+				outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
+				outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
+				outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
 			}
-			outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
-			outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
-			outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
 		}
 	}
 
@@ -349,6 +355,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	}
 
 	void clockStep(){
+		mainClockPulse.trigger(1e-1);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
 		for(int i=0;i<4;i++){
@@ -784,11 +791,13 @@ struct NoteSeqFuDisplay : Widget {
 
 		//seq pos
 		for(int i=0;i<4;i++){
-			nvgStrokeColor(args.vg, colors[i]);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, module->playHeads[i].seqPos * HW, 0);
-			nvgLineTo(args.vg, module->playHeads[i].seqPos * HW, box.size.y);
-			nvgStroke(args.vg);
+			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
+				nvgStrokeColor(args.vg, colors[i]);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, module->playHeads[i].seqPos * HW, 0);
+				nvgLineTo(args.vg, module->playHeads[i].seqPos * HW, box.size.y);
+				nvgStroke(args.vg);
+			}
 		}
 	}
 };
@@ -976,6 +985,7 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 		addParam(createParam<JwSmallSnapKnob>(Vec(660, yTop), module, NoteSeqFu::OCTAVE_KNOB_PARAM + i));
 		addParam(createParam<JwSmallSnapKnob>(Vec(690, yTop), module, NoteSeqFu::SEMI_KNOB_PARAM + i));
 
+		addParam(createParam<JwHorizontalSwitch>(Vec(566, yTop+48), module, NoteSeqFu::PLAYHEAD_ON_PARAM + i));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(600, yTop+48), module, NoteSeqFu::EOC_OUTPUT + i));
 		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(630, yTop+48), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
 		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(660, yTop+48), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
@@ -983,7 +993,8 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 		yTop+=85.5;
 	}
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(645, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(590, 362), module, NoteSeqFu::REPEATS_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(668, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
 }
 
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
