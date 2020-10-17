@@ -49,6 +49,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 * Left side of module is for sequencer control, generation, and modification.
 * Right side of module is mainly for controlling the outputs.
+* You can right+click the module to select the number of polyphonic channels.
 * You can click and drag cells in the grid to toggle them on and off.
 * Here is a video of a [patch from init](https://www.youtube.com/watch?v=P6cNFfb0w1s)
 
@@ -97,6 +98,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 * basic idea inspired by the iOS app [Fugue Machine](https://alexandernaut.com/fuguemachine/)
 * Left side of module is for sequencer control, generation, and modification.
 * Right side of module is mainly for controlling the play heads and outputs.
+* You can right+click the module to select the number of polyphonic channels.
 * You can click and drag cells in the grid to toggle them on and off.
 
 #### Left
@@ -129,7 +131,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Oct Knob:** octave for the lowest note in the grid
 *  **Semi Knob:** semitone offset of notes at playhead
 *  **EOC Output:** at the end of the loop it will send out a trigger
-*  **Poly Outputs:** v/oct and gate as a polyphonic signal
+*  **V/oct Outputs:** volt per octave as a polyphonic signal
+*  **Gate Outputs:** gate as a polyphonic signal
 *  **Off/On Switch:** will stop playing notes and hide the play head
 
 #### Bottom Right
