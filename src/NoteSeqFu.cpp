@@ -926,14 +926,14 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	// addInput(createInput<TinyPJ301MPort>(Vec(690, quantInpY), module, NoteSeqFu::SCALE_INPUT));
 
 	//row 2
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 92), module, NoteSeqFu::RESET_INPUT));
-	addParam(createParam<SmallButton>(Vec(30, 87), module, NoteSeqFu::RESET_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 92), module, NoteSeqFu::CLEAR_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 87), module, NoteSeqFu::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 95), module, NoteSeqFu::RESET_INPUT));
+	addParam(createParam<SmallButton>(Vec(30, 90), module, NoteSeqFu::RESET_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 95), module, NoteSeqFu::CLEAR_INPUT));
+	addParam(createParam<SmallButton>(Vec(80, 90), module, NoteSeqFu::CLEAR_BTN_PARAM));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 87), module, NoteSeqFu::RND_MODE_KNOB_PARAM));
+	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(120, 90), module, NoteSeqFu::RND_MODE_KNOB_PARAM));
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
-	rndModeLabel->box.pos = Vec(67, 61);
+	rndModeLabel->box.pos = Vec(67, 63);
 	rndModeLabel->text = "";
 	rndModeKnob->connectLabel(rndModeLabel, module);
 	addChild(rndModeLabel);
@@ -986,9 +986,9 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 		addParam(createParam<JwSmallSnapKnob>(Vec(690, yTop), module, NoteSeqFu::SEMI_KNOB_PARAM + i));
 
 		addParam(createParam<JwHorizontalSwitch>(Vec(566, yTop+48), module, NoteSeqFu::PLAYHEAD_ON_PARAM + i));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(600, yTop+48), module, NoteSeqFu::EOC_OUTPUT + i));
-		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(630, yTop+48), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
-		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(660, yTop+48), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(620, yTop+48), module, NoteSeqFu::EOC_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(650, yTop+48), module, NoteSeqFu::POLY_VOCT_OUTPUT + i));
+		addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(680, yTop+48), module, NoteSeqFu::POLY_GATE_OUTPUT + i));
 
 		yTop+=85.5;
 	}
