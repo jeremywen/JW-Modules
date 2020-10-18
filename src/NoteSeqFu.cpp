@@ -259,6 +259,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
 		bool mainPulse = mainClockPulse.process(1.0 / args.sampleRate);
+		int maxChannelsPerPlayhead = fminf(4, channels);
 		for(int p=0;p<4;p++){
 			if(params[PLAYHEAD_ON_PARAM + p].getValue()){
 				bool pulse = (mainPulse && params[REPEATS_PARAM].getValue()) || (playHeads[p].gatePulse.process(1.0 / args.sampleRate));
@@ -271,17 +272,17 @@ struct NoteSeqFu : Module,QuantizeUtils {
 						float volts = closestVoltageForRow(polyYVals[i], p);
 						outputs[POLY_VOCT_OUTPUT + p].setVoltage(volts, i);
 						if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
-							outputs[MERGED_VOCT_OUTPUT].setVoltage(volts, i + (p * 4));
+							outputs[MERGED_VOCT_OUTPUT].setVoltage(volts, i + p * maxChannelsPerPlayhead);
 						}
 					}
 					float gateVolts = pulse && cellActive ? 10.0 : 0.0;
 					outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
 					if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
-						outputs[MERGED_GATE_OUTPUT].setVoltage(gateVolts, i + (p * 4));
+						outputs[MERGED_GATE_OUTPUT].setVoltage(gateVolts, i + p * maxChannelsPerPlayhead);
 					}
 				}
-				outputs[MERGED_GATE_OUTPUT].setChannels(16);// 16 because 4 playheads and a max of 4 channels each
-				outputs[MERGED_VOCT_OUTPUT].setChannels(16);// 16 because 4 playheads and a max of 4 channels each
+				outputs[MERGED_GATE_OUTPUT].setChannels(maxChannelsPerPlayhead * 4);
+				outputs[MERGED_VOCT_OUTPUT].setChannels(maxChannelsPerPlayhead * 4);
 				outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
 				outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
 				outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
@@ -806,7 +807,6 @@ struct NoteSeqFuDisplay : Widget {
 				float colLimitX = module->getSeqLen(i) * HW;
 
 				//seq length line TOP COLOR
-				nvgStroke(args.vg);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, colLimitX, 0);
@@ -818,9 +818,9 @@ struct NoteSeqFuDisplay : Widget {
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.125);
 				nvgLineTo(args.vg, colLimitX, box.size.y * 0.875);
+				nvgStroke(args.vg);
 
 				//seq length line BOTTOM COLOR
-				nvgStroke(args.vg);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.875);
