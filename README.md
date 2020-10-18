@@ -91,7 +91,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 ## NoteSeqFu
 
-![NoteSeqFu](./doc/NoteSeqFu-img1.png)
+![NoteSeqFu](./doc/NoteSeqFu-img2.png)
 
 #### Basics
 
