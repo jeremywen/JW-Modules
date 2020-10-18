@@ -40,9 +40,9 @@
      inkscape:window-height="1238"
      id="namedview30"
      showgrid="false"
-     inkscape:zoom="2.5455844"
-     inkscape:cx="671.36076"
-     inkscape:cy="195.03964"
+     inkscape:zoom="14.4"
+     inkscape:cx="577.57825"
+     inkscape:cy="382.02216"
      inkscape:window-x="647"
      inkscape:window-y="127"
      inkscape:window-maximized="0"
@@ -2313,6 +2313,27 @@
        id="path4486"
        d="m 611.78489,326.52147 h 2.88412 v 0.55339 h -2.22657 v 1.4388 h 2.12891 v 0.55339 h -2.12891 v 1.76106 h 2.28842 v 0.55339 h -2.94597 z" />
   </g>
+  <rect
+     style="fill:#bdd6ea;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     id="rect4671"
+     width="7.463901"
+     height="13.664251"
+     x="581.0061"
+     y="2.4796195" />
+  <rect
+     y="2.4796195"
+     x="571.18518"
+     height="13.664251"
+     width="7.463901"
+     id="rect4669"
+     style="fill:#d5beea;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+  <rect
+     style="fill:#ebe8ba;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     id="rect4667"
+     width="7.463901"
+     height="13.664251"
+     x="561.3642"
+     y="2.4796195" />
   <g
      aria-label="MERGED"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333302px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
@@ -2400,4 +2421,11 @@
        id="path4648"
        inkscape:connector-curvature="0" />
   </g>
+  <rect
+     y="2.4796195"
+     x="551.54327"
+     height="13.664251"
+     width="7.463901"
+     id="rect4665"
+     style="fill:#ff9709;fill-opacity:0.19607843;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
 </svg>
