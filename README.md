@@ -56,7 +56,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 #### Left
 
 *  **Clock Input:** when source sends a trigger, the sequence moves to the next step
-*  **Step Button:** when clicked, the sequence moves to the next step
+*  **Length Input:** cv for length
 *  **Length Knob:** the sequence length indicated by the vertical purple line
 *  **Mode:** the play mode changes how it moved through a sequence
 *  **Reset Input and Button:** resets to first step in sequence (based on the play mode)
@@ -105,7 +105,6 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 #### Left
 
 *  **Clock Input:** when source sends a trigger, the sequence moves to the next step
-*  **Step Button:** when clicked, the sequence moves to the next step
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 *  **Reset Input and Button:** resets to first step in sequence (based on the play mode)
