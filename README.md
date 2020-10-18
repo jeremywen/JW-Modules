@@ -126,7 +126,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Merged V/oct Output:** first 4 v/oct channels from each playhead merged into one 16 channel polyphonic signal
 *  **Merged Gate Output:** first 4 v/oct gates from each playhead merged into one 16 channel polyphonic signal
 
-#### Right (Each Play Head)
+#### Right (Each play head is color coded)
 
 *  **Start Knob:** the start offset on reset
 *  **Length Knob:** the sequence length indicated by the vertical white line and color of the play head
