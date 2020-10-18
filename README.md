@@ -100,6 +100,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 * Right side of module is mainly for controlling the play heads and outputs.
 * You can right+click the module to select the number of polyphonic channels.
 * You can click and drag cells in the grid to toggle them on and off.
+* You can merge polyphonic outputs into one polyphonic signal using the PolyMerge module by 23Volts
+* You can put it in drum mode and connect a split module to each gate output
 
 #### Left
 
