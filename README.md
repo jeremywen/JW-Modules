@@ -122,9 +122,11 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Life Switch:** when switched to the right this turns on [conway's game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 *  **Life Speed Knob:** determines how fast to iterate the game of life (clock divided based on clock input)
 
-#### Top Right
-*  **Merged V/oct Output:** first 4 v/oct channels from each playhead merged into one 16 channel polyphonic signal
-*  **Merged Gate Output:** first 4 v/oct gates from each playhead merged into one 16 channel polyphonic signal
+#### Top Right - Merged
+_(if module right click menu set to mono, merged polyphonic output has 4 channels)_
+_(if module right click menu set to 4, merged polyphonic output has 16 channels)_
+*  **Merged V/oct Output:** max of 4 v/oct channels from each playhead merged into one polyphonic signal
+*  **Merged Gate Output:** max of 4 v/oct gates from each playhead merged into one polyphonic signal
 
 #### Right (Each play head is color coded)
 
