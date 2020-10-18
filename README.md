@@ -124,12 +124,12 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 #### Top Right - Merged
 
-_(if module right click menu set to mono, merged polyphonic output has 4 channels)_
-
-_(if module right click menu set to 4, merged polyphonic output has 16 channels)_
-
 *  **Merged V/oct Output:** max of 4 v/oct channels from each playhead merged into one polyphonic signal
 *  **Merged Gate Output:** max of 4 v/oct gates from each playhead merged into one polyphonic signal
+
+_NOTE: if module right click menu set to mono, merged polyphonic output has 4 channels_
+
+_NOTE: if module right click menu set to 4, merged polyphonic output has 16 channels_
 
 #### Right (Each play head is color coded)
 
