@@ -1029,7 +1029,7 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 		yTop+=85.5;
 	}
 
-	addParam(createParam<JwHorizontalSwitch>(Vec(590, 362), module, NoteSeqFu::REPEATS_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(591, 362), module, NoteSeqFu::REPEATS_PARAM));
 	addParam(createParam<JwHorizontalSwitch>(Vec(668, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
 }
 
