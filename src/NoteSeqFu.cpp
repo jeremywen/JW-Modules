@@ -1000,8 +1000,8 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
 
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(623, 2), module, NoteSeqFu::MERGED_VOCT_OUTPUT));
-	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(668, 2), module, NoteSeqFu::MERGED_GATE_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(623, 3), module, NoteSeqFu::MERGED_VOCT_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(668, 3), module, NoteSeqFu::MERGED_GATE_OUTPUT));
 
 	float yTop = 31;
 	for(int i=0;i<4;i++){
