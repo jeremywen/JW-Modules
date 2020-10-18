@@ -124,6 +124,10 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Life Switch:** when switched to the right this turns on [conway's game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 *  **Life Speed Knob:** determines how fast to iterate the game of life (clock divided based on clock input)
 
+#### Top Right
+*  **Merged V/oct Output:** first 4 v/oct channels from each playhead merged into one 16 channel polyphonic signal
+*  **Merged Gate Output:** first 4 v/oct gates from each playhead merged into one 16 channel polyphonic signal
+
 #### Right (Each Play Head)
 
 *  **Start Knob:** the start offset on reset
@@ -133,8 +137,8 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Oct Knob:** octave for the lowest note in the grid
 *  **Semi Knob:** semitone offset of notes at playhead
 *  **EOC Output:** at the end of the loop it will send out a trigger
-*  **V/oct Outputs:** volt per octave as a polyphonic signal
-*  **Gate Outputs:** gate as a polyphonic signal
+*  **V/oct Output:** volt per octave as a polyphonic signal
+*  **Gate Output:** gate as a polyphonic signal
 *  **Off/On Switch:** will stop playing notes and hide the play head
 
 #### Bottom Right

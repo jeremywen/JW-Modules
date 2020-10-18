@@ -81,7 +81,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		POLY_VOCT_OUTPUT, //EACH PLAYHEAD
 		POLY_GATE_OUTPUT = POLY_VOCT_OUTPUT + 4, //EACH PLAYHEAD
 		EOC_OUTPUT = POLY_GATE_OUTPUT + 4, //EACH PLAYHEAD
-		NUM_OUTPUTS = EOC_OUTPUT + 4 //EACH PLAYHEAD
+		MERGED_VOCT_OUTPUT = EOC_OUTPUT + 4,
+		MERGED_GATE_OUTPUT,
+		NUM_OUTPUTS
 	};
 	enum LightIds {
 		NUM_LIGHTS
@@ -268,10 +270,18 @@ struct NoteSeqFu : Module,QuantizeUtils {
 					if(cellActive){ 
 						float volts = closestVoltageForRow(polyYVals[i], p);
 						outputs[POLY_VOCT_OUTPUT + p].setVoltage(volts, i);
+						if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
+							outputs[MERGED_VOCT_OUTPUT].setVoltage(volts, i + (p * 4));
+						}
 					}
 					float gateVolts = pulse && cellActive ? 10.0 : 0.0;
 					outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
+					if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
+						outputs[MERGED_GATE_OUTPUT].setVoltage(gateVolts, i + (p * 4));
+					}
 				}
+				outputs[MERGED_GATE_OUTPUT].setChannels(16);// 16 because 4 playheads and a max of 4 channels each
+				outputs[MERGED_VOCT_OUTPUT].setChannels(16);// 16 because 4 playheads and a max of 4 channels each
 				outputs[POLY_GATE_OUTPUT + p].setChannels(channels);
 				outputs[POLY_VOCT_OUTPUT + p].setChannels(channels);
 				outputs[EOC_OUTPUT + p].setVoltage((pulse && playHeads[p].eocOn) ? 10.0 : 0.0);
@@ -989,7 +999,10 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(138, 345), module, NoteSeqFu::LIFE_SPEED_KNOB_PARAM));
 
 	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
-	
+
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(623, 2), module, NoteSeqFu::MERGED_VOCT_OUTPUT));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(668, 2), module, NoteSeqFu::MERGED_GATE_OUTPUT));
+
 	float yTop = 31;
 	for(int i=0;i<4;i++){
 		float knobX = 556;
