@@ -97,9 +97,9 @@
 			"tags": ["Sequencer", "Clock Modulator"]
 		},
         {
-			"slug": "OnePattern",
-			"name": "One Pattern",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules#onepattern",
+			"slug": "1Pattern",
+			"name": "1Pattern",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#1pattern",
 			"tags": ["Sequencer", "Clock Modulator"]
 		},
 		{

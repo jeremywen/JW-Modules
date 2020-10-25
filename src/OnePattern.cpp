@@ -276,4 +276,4 @@ void OnePatternWidget::appendContextMenu(Menu *menu) {
 }
 
 
-Model *modelOnePattern = createModel<OnePattern, OnePatternWidget>("OnePattern");
+Model *modelOnePattern = createModel<OnePattern, OnePatternWidget>("1Pattern");

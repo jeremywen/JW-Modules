@@ -180,7 +180,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		int seqLen = int(params[LENGTH_KNOB_PARAM].getValue());
 		if(inputs[POS_INPUT].isConnected()){
 			float clampedPos = clampfjw(inputs[POS_INPUT].getVoltage(), 0.0, 10.0);
-			seqPos = int(rescalefjw(clampedPos, 0, 10, 0, seqLen - 1));
+			seqPos = round(rescalefjw(clampedPos, 0, 10, 0, seqLen - 1));
 		}
 
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
