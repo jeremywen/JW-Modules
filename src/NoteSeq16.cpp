@@ -41,6 +41,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		ROTATE_INPUT,
 		FLIP_INPUT,
 		SHIFT_INPUT,
+		POS_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -169,15 +170,19 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		gridChanged();
 	}
 
-	//TODO maybe add length input
-	//TODO maybe add start pos knob and input
-
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 		if (rotateRightTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
 		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
 		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
+
+		int seqLen = int(params[LENGTH_KNOB_PARAM].getValue());
+		if(inputs[POS_INPUT].isConnected()){
+			float clampedPos = clampfjw(inputs[POS_INPUT].getVoltage(), 0.0, 10.0);
+			seqPos = int(rescalefjw(clampedPos, 0, 10, 0, seqLen - 1));
+		}
+
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
@@ -187,7 +192,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				resetMode = false;
 				resetSeqToEnd();
 			}
-			clockStep();
+			clockStep(seqLen);
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
@@ -272,18 +277,21 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 
-	void clockStep(){
+	void clockStep(int seqLen){
 		gatePulse.trigger(1e-1);
 		rndFloat0to1AtClockStep = random::uniform();
 
 		//iterate seq pos
 		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
-		int seqLen = int(params[NoteSeq16::LENGTH_KNOB_PARAM].getValue());
 		eocOn = false;
 
 		// i dono if i need this - somehow it stays past the end sometimes
 		if(seqPos > seqLen){
 			seqPos = seqLen - 1;
+		}
+
+		if(inputs[POS_INPUT].isConnected()){
+			return;
 		}
 
 		if(curPlayMode == PM_FWD_LOOP){
@@ -710,19 +718,20 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(22, 40), module, NoteSeq16::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, NoteSeq16::RESET_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(87, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(12, 40), module, NoteSeq16::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(46, 40), module, NoteSeq16::RESET_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(78, 40), module, NoteSeq16::POS_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(100, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(120, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(128, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(66.5, 35);
+	playModeLabel->box.pos = Vec(70, 35);
 	playModeLabel->text = "";
 	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
-	addParam(createParam<SmallButton>(Vec(156, 36), module, NoteSeq16::CLEAR_BTN_PARAM));
+	addParam(createParam<SmallButton>(Vec(162, 36), module, NoteSeq16::CLEAR_BTN_PARAM));
 
 
 	//row 3

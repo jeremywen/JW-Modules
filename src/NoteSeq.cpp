@@ -68,6 +68,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		LENGTH_INPUT,
 		MODE_INPUT,
 		SHIFT_AMT_INPUT,
+		POS_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -247,6 +248,12 @@ struct NoteSeq : Module,QuantizeUtils {
 		if (shiftUpTrig.process(params[SHIFT_UP_BTN_PARAM].getValue() + inputs[SHIFT_UP_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 		if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].getValue() + inputs[SHIFT_DOWN_INPUT].getVoltage())) { shiftCells(DIR_DOWN); }
 
+		int seqLen = int(params[LENGTH_KNOB_PARAM].getValue());
+		if(inputs[POS_INPUT].isConnected()){
+			float clampedPos = clampfjw(inputs[POS_INPUT].getVoltage(), 0.0, 10.0);
+			seqPos = int(rescalefjw(clampedPos, 0, 10, 0, seqLen - 1));
+		}
+
 		if (resetTrig.process(params[RESET_BTN_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
@@ -420,6 +427,10 @@ struct NoteSeq : Module,QuantizeUtils {
 		// i dono if i need this - somehow it stays past the end sometimes
 		if(seqPos > seqLen){
 			seqPos = seqLen - 1;
+		}
+
+		if(inputs[POS_INPUT].isConnected()){
+			return;
 		}
 
 		if(curPlayMode == PM_FWD_LOOP){
@@ -936,15 +947,15 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 40), module, NoteSeq::CLOCK_INPUT));
-	// addParam(createParam<SmallButton>(Vec(58, 35), module, NoteSeq::STEP_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(56, 40), module, NoteSeq::LENGTH_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, NoteSeq::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(13, 40), module, NoteSeq::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(47, 40), module, NoteSeq::POS_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(73, 40), module, NoteSeq::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(90, 35), module, NoteSeq::LENGTH_KNOB_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 40), module, NoteSeq::MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(137, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(123, 40), module, NoteSeq::MODE_INPUT));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(140, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(75, 35);
+	playModeLabel->box.pos = Vec(76.5, 35);
 	playModeLabel->text = "";
 	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);

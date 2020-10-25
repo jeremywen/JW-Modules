@@ -96,6 +96,12 @@
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#patterns",
 			"tags": ["Sequencer", "Clock Modulator"]
 		},
+        {
+			"slug": "OnePattern",
+			"name": "One Pattern",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#onepattern",
+			"tags": ["Sequencer", "Clock Modulator"]
+		},
 		{
 			"slug": "Quantizer",
 			"name": "Quantizer",

@@ -345,6 +345,7 @@ extern Model *modelQuantizer;
 extern Model *modelNoteSeq;
 extern Model *modelNoteSeqFu;
 extern Model *modelNoteSeq16;
+extern Model *modelOnePattern;
 extern Model *modelPatterns;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
