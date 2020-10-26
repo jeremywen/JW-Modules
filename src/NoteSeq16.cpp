@@ -323,14 +323,14 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 			seqPos = getSeqStart();
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = getSeqLen() - 1;
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 15);
 		}
 	}
 
 	void resetSeqToEnd(){
 		int curPlayMode = getPlayMode();
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = getSeqLen() - 1;
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 15);
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			seqPos = getSeqStart();
 		}
