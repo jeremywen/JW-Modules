@@ -830,7 +830,7 @@ struct NoteSeqFuDisplay : Widget {
 					nvgStroke(args.vg);
 				}
 				//seq pos
-				int pos = (module->resetMode ? 0 : module->playHeads[i].seqPos);
+				int pos = module->resetMode ? module->getSeqStart(i) : module->playHeads[i].seqPos;
 				nvgStrokeWidth(args.vg, 2);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);

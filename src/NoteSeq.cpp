@@ -855,9 +855,10 @@ struct NoteSeqDisplay : Widget {
 		nvgStroke(args.vg);
 
 		//seq pos
+		int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
 		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
 		nvgBeginPath(args.vg);
-		nvgRect(args.vg, (module->resetMode ? 0 : module->seqPos) * HW, 0, HW, box.size.y);
+		nvgRect(args.vg, pos * HW, 0, HW, box.size.y);
 		nvgStroke(args.vg);
 	}
 };
