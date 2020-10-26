@@ -809,9 +809,9 @@ struct NoteSeqFuDisplay : Widget {
 		for(int i=0;i<4;i++){
 			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
 				float startX = module->getSeqStart(i) * HW;
-				float endX = module->getSeqEnd(i) * HW;
+				float endX = (module->getSeqEnd(i) + 1) * HW;
 				float endLines[2] = {startX, endX};
-				nvgStrokeWidth(args.vg, 1);
+				nvgStrokeWidth(args.vg, 2);
 				for(int j=0;j<2;j++){
 					float endLineX = endLines[j];
 					
