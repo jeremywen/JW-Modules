@@ -32,6 +32,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		OCTAVE_KNOB_PARAM,
 		LOW_HIGH_SWITCH_PARAM,
 		INCLUDE_INACTIVE_PARAM,
+		START_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -41,7 +42,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		ROTATE_INPUT,
 		FLIP_INPUT,
 		SHIFT_INPUT,
-		POS_INPUT,
+		LENGTH_INPUT,
+		START_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -83,8 +85,6 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	float displayWidth = 0, displayHeight = 0;
 	float rate = 1.0 / APP->engine->getSampleRate();
-	float lifeRate = 0.5 * APP->engine->getSampleRate();
-	long lifeCounter = 0;
 	int seqPos = 0;
 	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
@@ -102,6 +102,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	NoteSeq16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(START_PARAM, 0.0, 15.0, 0.0, "Start");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0, "Length");
 		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
@@ -177,12 +178,6 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
 		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 
-		int seqLen = int(params[LENGTH_KNOB_PARAM].getValue());
-		if(inputs[POS_INPUT].isConnected()){
-			float clampedPos = clampfjw(inputs[POS_INPUT].getVoltage(), 0.0, 10.0);
-			seqPos = round(rescalefjw(clampedPos, 0, 10, 0, seqLen - 1));
-		}
-
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
@@ -192,7 +187,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				resetMode = false;
 				resetSeqToEnd();
 			}
-			clockStep(seqLen);
+			clockStep();
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
@@ -276,39 +271,32 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
-
-	void clockStep(int seqLen){
+	void clockStep(){
 		gatePulse.trigger(1e-1);
 		rndFloat0to1AtClockStep = random::uniform();
 
-		//iterate seq pos
-		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
+		int curPlayMode = getPlayMode();
+		int seqLen = getSeqLen();
+		int seqStart = getSeqStart();
+		int seqEnd = getSeqEnd();
 		eocOn = false;
 
-		// i dono if i need this - somehow it stays past the end sometimes
-		if(seqPos > seqLen){
-			seqPos = seqLen - 1;
-		}
-
-		if(inputs[POS_INPUT].isConnected()){
-			return;
-		}
-
 		if(curPlayMode == PM_FWD_LOOP){
-			seqPos = (seqPos + 1) % seqLen;
-			goingForward = true;
-			if(seqPos == 0){
+			seqPos++;
+			if(seqPos > seqEnd){ 
+				seqPos = seqStart; 
 				eocOn = true;
 			}
+			goingForward = true;
 		} else if(curPlayMode == PM_BWD_LOOP){
-			seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
+			seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
 			goingForward = false;
-			if(seqPos == seqLen - 1){
+			if(seqPos == seqEnd){
 				eocOn = true;
 			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			if(goingForward){
-				if(seqPos < seqLen - 1){
+				if(seqPos < seqEnd){
 					seqPos++;
 				} else {
 					seqPos--;
@@ -316,7 +304,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 					eocOn = true;
 				}
 			} else {
-				if(seqPos > 0){
+				if(seqPos > seqStart){
 					seqPos--;
 				} else {
 					seqPos++;
@@ -325,26 +313,49 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
-			seqPos = int(random::uniform() * seqLen);
+			seqPos = seqStart + int(random::uniform() * seqLen);
 		}
+		seqPos = clampijw(seqPos, seqStart, seqEnd);
 	}
 
 	void resetSeq(){
-		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
+		int curPlayMode = getPlayMode();
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = 0;
+			seqPos = getSeqStart();
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = int(params[NoteSeq16::LENGTH_KNOB_PARAM].getValue()) - 1;
+			seqPos = getSeqLen() - 1;
 		}
 	}
 
 	void resetSeqToEnd(){
-		int curPlayMode = int(params[PLAY_MODE_KNOB_PARAM].getValue());
+		int curPlayMode = getPlayMode();
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = int(params[NoteSeq16::LENGTH_KNOB_PARAM].getValue()) - 1;
+			seqPos = getSeqLen() - 1;
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = 0;
+			seqPos = getSeqStart();
 		}
+	}
+
+	int getSeqStart(){
+		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
+		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, 15.0);
+		return start;
+	}
+
+	int getSeqLen(){
+		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
+		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
+		return len;
+	}
+
+	int getSeqEnd(){
+		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, 15);
+		return seqEnd;
+	}
+
+	int getPlayMode(){
+		int mode = clampijw(params[PLAY_MODE_KNOB_PARAM].getValue(), 0.0, NUM_PLAY_MODES - 1);
+		return mode;
 	}
 
 	void clearCells() {
@@ -610,13 +621,20 @@ struct NoteSeq16Display : Widget {
 
 		nvgStrokeWidth(args.vg, 2);
 
-		//seq length line
-		float colLimitX = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue() * HW;
-		// nvgStrokeColor(args.vg, nvgRGB(144, 26, 252));//purple
+		//seq start line
+		float startX = module->getSeqStart() * HW;
 		nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
 		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, colLimitX, 0);
-		nvgLineTo(args.vg, colLimitX, box.size.y);
+		nvgMoveTo(args.vg, startX, 0);
+		nvgLineTo(args.vg, startX, box.size.y);
+		nvgStroke(args.vg);
+
+		//seq length line
+		float endX = (module->getSeqEnd() + 1) * HW;
+		nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, endX, 0);
+		nvgLineTo(args.vg, endX, box.size.y);
 		nvgStroke(args.vg);
 
 		//seq pos
@@ -718,23 +736,24 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(12, 40), module, NoteSeq16::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(46, 40), module, NoteSeq16::RESET_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(78, 40), module, NoteSeq16::POS_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(100, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 25), module, NoteSeq16::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 50), module, NoteSeq16::RESET_INPUT));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(58, 40), module, NoteSeq16::START_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, NoteSeq16::START_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(108, 40), module, NoteSeq16::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(125, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(128, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(158, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(70, 35);
+	playModeLabel->box.pos = Vec(85.5, 35);
 	playModeLabel->text = "";
 	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
-	addParam(createParam<SmallButton>(Vec(162, 36), module, NoteSeq16::CLEAR_BTN_PARAM));
-
-
 	//row 3
+	addParam(createParam<TinyButton>(Vec(8, 267), module, NoteSeq16::CLEAR_BTN_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, NoteSeq16::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(25, 296), module, NoteSeq16::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
