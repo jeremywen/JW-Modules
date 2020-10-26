@@ -523,6 +523,10 @@ Change to the normal scope by unchecking lissajous mode.
 
 ![FullScope Menu](./doc/FullScope-Menu-img1.png)
 
+## Add5
+
+Adds 5 volts to a signal.  Goes well with Vult Caudal.
+
 ## MinMax
 
 Created to show minimum and maximum voltages in a larger font than the Fundamental Scope 

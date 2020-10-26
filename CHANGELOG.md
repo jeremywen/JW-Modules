@@ -3,6 +3,7 @@
 ## v1.0.17 ~ 10-26-2020
 
   * New Module: 1Pattern (basically one row of Patterns module)
+  * New Module: Add5 (because Caudal is bipolar (like me))
   * NoteSeqFu 'Start' now effects running sequence
   * Added 'Start' knobs and inputs to NoteSeq and NoteSeq16
   * Added 'Length' inputs to NoteSeq16
