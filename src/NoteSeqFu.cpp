@@ -830,11 +830,12 @@ struct NoteSeqFuDisplay : Widget {
 					nvgStroke(args.vg);
 				}
 				//seq pos
+				int pos = (module->resetMode ? 0 : module->playHeads[i].seqPos);
 				nvgStrokeWidth(args.vg, 2);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, module->playHeads[i].seqPos * HW, 0);
-				nvgLineTo(args.vg, module->playHeads[i].seqPos * HW, box.size.y);
+				nvgMoveTo(args.vg, pos * HW, 0);
+				nvgLineTo(args.vg, pos * HW, box.size.y);
 				nvgStroke(args.vg);
 			}
 		}
