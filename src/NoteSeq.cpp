@@ -955,7 +955,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 40), module, NoteSeq::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(7.5, 40), module, NoteSeq::CLOCK_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(33, 40), module, NoteSeq::START_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(49, 35), module, NoteSeq::START_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(80, 40), module, NoteSeq::LENGTH_INPUT));

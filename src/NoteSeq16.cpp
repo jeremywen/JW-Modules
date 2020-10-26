@@ -736,8 +736,8 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
 
 	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 25), module, NoteSeq16::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 50), module, NoteSeq16::RESET_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(7.5, 40), module, NoteSeq16::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(33, 40), module, NoteSeq16::RESET_INPUT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(58, 40), module, NoteSeq16::START_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, NoteSeq16::START_PARAM));
@@ -753,10 +753,10 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(playModeKnob);
 
 	//row 3
-	addParam(createParam<TinyButton>(Vec(8, 267), module, NoteSeq16::CLEAR_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 301), module, NoteSeq16::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(25, 296), module, NoteSeq16::RND_TRIG_BTN_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(51, 295), module, NoteSeq16::RND_AMT_KNOB_PARAM));
+	addParam(createParam<TinyButton>(Vec(8, 266), module, NoteSeq16::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 302), module, NoteSeq16::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(25, 297), module, NoteSeq16::RND_TRIG_BTN_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(51, 296), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	float bottomInpY = 338;
 	addInput(createInput<TinyPJ301MPort>(Vec(38, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
