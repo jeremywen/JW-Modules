@@ -5,6 +5,7 @@ Plugin *pluginInstance;
 void init(rack::Plugin *p)
 {
 	pluginInstance = p;
+	p->addModel(modelAdd5);
 	p->addModel(modelBouncyBalls);
 	p->addModel(modelCat);
 	p->addModel(modelFullScope);

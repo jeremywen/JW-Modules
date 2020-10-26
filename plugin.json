@@ -43,6 +43,12 @@
 			"tags": ["Visual"]
 		},
 		{
+			"slug": "Add5",
+			"name": "Add5",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Utility"]
+		},
+		{
 			"slug": "BouncyBalls",
 			"name": "Bouncy Balls",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#bouncy-balls",
