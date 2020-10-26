@@ -40,8 +40,8 @@
      inkscape:window-height="1238"
      id="namedview30"
      showgrid="false"
-     inkscape:zoom="2.5455844"
-     inkscape:cx="549.42927"
+     inkscape:zoom="3.6"
+     inkscape:cx="627.04065"
      inkscape:cy="164.69913"
      inkscape:window-x="647"
      inkscape:window-y="127"
@@ -1469,7 +1469,7 @@
      width="166.95576"
      height="83"
      x="549.97192"
-     y="189.92148" />
+     y="191" />
   <g
      aria-label="OCT"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333015px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
@@ -1555,7 +1555,7 @@
        inkscape:connector-curvature="0" />
   </g>
   <rect
-     y="275"
+     y="276"
      x="549.97192"
      height="83"
      width="166.95576"

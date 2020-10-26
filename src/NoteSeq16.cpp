@@ -336,16 +336,16 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		}
 	}
 
-	int getSeqStart(){
-		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
-		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, 15.0);
-		return start;
-	}
-
 	int getSeqLen(){
 		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
 		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
 		return len;
+	}
+
+	int getSeqStart(){
+		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
+		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, 15.0);
+		return start;
 	}
 
 	int getSeqEnd(){

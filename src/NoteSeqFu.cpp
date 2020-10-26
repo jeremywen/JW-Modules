@@ -380,6 +380,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			int seqLen = getSeqLen(i);
 			int curPlayMode = getPlayMode(i);
 			int seqPos = playHeads[i].seqPos;
+			int seqStart = getSeqStart(i);
+			int seqEnd = getSeqEnd(i);
 			bool goingForward = playHeads[i].goingForward;
 			bool eocOn = false;
 
@@ -387,26 +389,22 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			if(playHeads[i].ticksSinceDivision % int(params[DIVISION_KNOB_PARAM + i].getValue()) == 0){
 				playHeads[i].gatePulse.trigger(1e-1);
 
-				// i dono if i need this - somehow it stays past the end sometimes
-				if(seqPos > seqLen){
-					seqPos = seqLen - 1;
-				}
-
 				if(curPlayMode == PM_FWD_LOOP){
-					seqPos = (seqPos + 1) % seqLen;
-					goingForward = true;
-					if(seqPos == 0){
+					seqPos++;
+					if(seqPos > seqEnd){ 
+						seqPos = seqStart; 
 						eocOn = true;
 					}
+					goingForward = true;
 				} else if(curPlayMode == PM_BWD_LOOP){
-					seqPos = seqPos > 0 ? seqPos - 1 : seqLen - 1;
+					seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
 					goingForward = false;
-					if(seqPos == seqLen - 1){
+					if(seqPos == seqEnd){
 						eocOn = true;
 					}
 				} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 					if(goingForward){
-						if(seqPos < seqLen - 1){
+						if(seqPos < seqEnd){
 							seqPos++;
 						} else {
 							seqPos--;
@@ -414,20 +412,18 @@ struct NoteSeqFu : Module,QuantizeUtils {
 							eocOn = true;
 						}
 					} else {
-						if(seqPos > 0){
+						if(seqPos > seqStart){
 							seqPos--;
 						} else {
-							if(seqPos + 1 < seqLen){
-								seqPos++;
-							}
+							seqPos++;
 							goingForward = true;
 							eocOn = true;
 						}
 					}
 				} else if(curPlayMode == PM_RANDOM_POS){
-					seqPos = int(random::uniform() * seqLen);
+					seqPos = seqStart + int(random::uniform() * seqLen);
 				}
-				playHeads[i].seqPos = clampijw(seqPos, 0, seqLen - 1);
+				playHeads[i].seqPos = clampijw(seqPos, seqStart, seqEnd);
 				playHeads[i].goingForward = goingForward;
 				playHeads[i].eocOn = eocOn;
 			}
@@ -458,6 +454,16 @@ struct NoteSeqFu : Module,QuantizeUtils {
 				playHeads[i].seqPos = startOffset;
 			}
 		}
+	}
+
+	int getSeqStart(int playHeadIdx){
+		int start = clampijw(params[START_KNOB_PARAM + playHeadIdx].getValue(), 0.0, 31.0);
+		return start;
+	}
+
+	int getSeqEnd(int playHeadIdx){
+		int seqEnd = clampijw(getSeqStart(playHeadIdx) + getSeqLen(playHeadIdx) - 1, 0, 31);
+		return seqEnd;
 	}
 
 	int getSeqLen(int playHeadIdx){
@@ -800,34 +806,31 @@ struct NoteSeqFuDisplay : Widget {
 			}
 		}
 
-		nvgStrokeWidth(args.vg, 2);
-
 		for(int i=0;i<4;i++){
 			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
-				float colLimitX = module->getSeqLen(i) * HW;
+				float startX = module->getSeqStart(i) * HW;
+				float endX = module->getSeqEnd(i) * HW;
+				float endLines[2] = {startX, endX};
+				nvgStrokeWidth(args.vg, 1);
+				for(int j=0;j<2;j++){
+					float endLineX = endLines[j];
+					
+					//seq length line TOP COLOR
+					nvgStrokeColor(args.vg, colors[i]);
+					nvgBeginPath(args.vg);
+					nvgMoveTo(args.vg, endLineX, 0);
+					nvgLineTo(args.vg, endLineX, HW);
+					nvgStroke(args.vg);
 
-				//seq length line TOP COLOR
-				nvgStrokeColor(args.vg, colors[i]);
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, colLimitX, 0);
-				nvgLineTo(args.vg, colLimitX, box.size.y * 0.125);
-				nvgStroke(args.vg);
-
-				//seq length line MIDDLE WHITE
-				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.125);
-				nvgLineTo(args.vg, colLimitX, box.size.y * 0.875);
-				nvgStroke(args.vg);
-
-				//seq length line BOTTOM COLOR
-				nvgStrokeColor(args.vg, colors[i]);
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, colLimitX, box.size.y * 0.875);
-				nvgLineTo(args.vg, colLimitX, box.size.y);
-				nvgStroke(args.vg);
-
+					//seq length line BOTTOM COLOR
+					nvgStrokeColor(args.vg, colors[i]);
+					nvgBeginPath(args.vg);
+					nvgMoveTo(args.vg, endLineX, box.size.y - HW);
+					nvgLineTo(args.vg, endLineX, box.size.y);
+					nvgStroke(args.vg);
+				}
 				//seq pos
+				nvgStrokeWidth(args.vg, 2);
 				nvgStrokeColor(args.vg, colors[i]);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, module->playHeads[i].seqPos * HW, 0);
@@ -1016,7 +1019,7 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 
 		PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(589, yTop+38), module, NoteSeqFu::PLAY_MODE_KNOB_PARAM + i));
 		CenteredLabel* const playModeLabel = new CenteredLabel;
-		playModeLabel->box.pos = Vec(301.25, 50+(i*43)); 
+		playModeLabel->box.pos = Vec(301.25, 50.5+(i*43)); 
 		playModeLabel->text = "";
 		playModeKnob->connectLabel(playModeLabel, module);
 		addChild(playModeLabel);
