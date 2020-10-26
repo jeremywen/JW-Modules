@@ -44,7 +44,7 @@ struct Add5 : Module {
 
 	void process(const ProcessArgs &args) override {
 		for(int i=0;i<NUM_INPUTS;i++){
-			outputs[i].setVoltage(clampijw(inputs[i].getVoltage() + 5, -10, 10));
+			outputs[i].setVoltage(clampfjw(inputs[i].getVoltage() + 5.0, -10.0, 10.0));
 		}
 	}
 
