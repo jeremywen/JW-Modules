@@ -7,6 +7,7 @@
   * NoteSeqFu 'Start' now effects running sequence
   * Added 'Start' knobs and inputs to NoteSeq and NoteSeq16
   * Added 'Length' inputs to NoteSeq16
+  * Fixed position of playhead on reset in NoteSeq, NoteSeq16, and NoteSeqFu
 
 ## v1.0.16 ~ 10-16-2020
 
