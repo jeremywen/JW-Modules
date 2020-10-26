@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.0.17 ~ 10-26-2020
+
+  * New Module: 1Pattern
+  * Added 'Start' knobs and inputs to NoteSeq and NoteSeq16
+  * Added 'Length' inputs to NoteSeq16
+
 ## v1.0.16 ~ 10-16-2020
 
   * New Module: NoteSeqFu
