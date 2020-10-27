@@ -7,6 +7,8 @@
   * NoteSeqFu 'Start' now effects running sequence
   * Added 'Start' knobs and inputs to NoteSeq and NoteSeq16
   * Added 'Length' inputs to NoteSeq16
+  * Added 'Probability' knobs and randomizer to GridSeq
+  * Can now shift click randomize buttons in GridSeq to init parameters to defaults
   * Fixed position of playhead on reset in NoteSeq, NoteSeq16, and NoteSeqFu
 
 ## v1.0.16 ~ 10-16-2020

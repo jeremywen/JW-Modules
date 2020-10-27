@@ -19,6 +19,8 @@ struct GridSeq : Module,QuantizeUtils {
 		REP_MOVE_BTN_PARAM,
 		VOLT_MAX_PARAM,
 		OCTAVE_PARAM,
+		CELL_PROB_PARAM,
+		RND_PROBS_PARAM = CELL_PROB_PARAM + 16,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -34,6 +36,7 @@ struct GridSeq : Module,QuantizeUtils {
 		ROOT_INPUT,
 		SCALE_INPUT,
 		OCTAVE_INPUT,
+		RND_PROBS_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -63,6 +66,7 @@ struct GridSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger resetTrigger;
 	dsp::SchmittTrigger rndNotesTrigger;
 	dsp::SchmittTrigger rndGatesTrigger;
+	dsp::SchmittTrigger rndProbsTrigger;
 	dsp::SchmittTrigger gateTriggers[16];
 
 	int index = 0;
@@ -75,6 +79,7 @@ struct GridSeq : Module,QuantizeUtils {
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
+	float rndFloat0to1AtClockStep = random::uniform();
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -92,8 +97,9 @@ struct GridSeq : Module,QuantizeUtils {
 		configParam(REP_MOVE_BTN_PARAM, 0.0, 1.0, 0.0, "Click to Repeat");
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
-		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes");
+		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes (Shift + Click to Init Defaults)");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities (Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 3.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, 0.0, "Octave");
 		for (int y = 0; y < 4; y++) {
@@ -101,6 +107,7 @@ struct GridSeq : Module,QuantizeUtils {
 				int idx = (x+(y*4));
 				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
+				configParam(CELL_PROB_PARAM + idx, 0.0, 1.0, 1.0, "Probability");
 			}
 		}
 	}
@@ -179,6 +186,12 @@ struct GridSeq : Module,QuantizeUtils {
 		}
 	}
 
+	void randomizeProbsOnly(){
+		for (int i = 0; i < 16; i++) {
+			params[CELL_PROB_PARAM + i].setValue(random::uniform());
+		}
+	}
+
 	float closestVoltageInScaleWrapper(float voltsIn){
 		int octaveInputOffset = inputs[OCTAVE_INPUT].isConnected() ? int(inputs[OCTAVE_INPUT].getVoltage()) : 0;
 		int octave = clampijw(params[OCTAVE_PARAM].getValue() + octaveInputOffset, -5.0, 7.0);
@@ -226,6 +239,10 @@ void GridSeq::process(const ProcessArgs &args) {
 			randomizeGateStates();
 		}
 
+		if (rndProbsTrigger.process(inputs[RND_PROBS_INPUT].getVoltage())) {
+			randomizeProbsOnly();
+		}
+
 		if (repeatTrigger.process(inputs[REPEAT_INPUT].getVoltage() + params[REP_MOVE_BTN_PARAM].getValue())) {
 			nextStep = true;
 		} 
@@ -256,7 +273,6 @@ void GridSeq::process(const ProcessArgs &args) {
 			handleMoveUp();
 		}
 	}
-	
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
@@ -267,6 +283,7 @@ void GridSeq::process(const ProcessArgs &args) {
 			indexYX = 0;
 			lights[RESET_LIGHT].value =  1.0;
 		}
+		rndFloat0to1AtClockStep = random::uniform();
 		index = posX + (posY * 4);
 		indexYX = posY + (posX * 4);
 		lights[STEPS_LIGHT + index].value = 1.0;
@@ -294,7 +311,8 @@ void GridSeq::process(const ProcessArgs &args) {
 	}
 
 	// Cells
-	bool gatesOn = (running && gateState[index]);
+	bool prob = params[CELL_PROB_PARAM + index].getValue() > rndFloat0to1AtClockStep;
+	bool gatesOn = (running && gateState[index] && prob);
 	if (gateMode == TRIGGER) gatesOn = gatesOn && pulse;
 	else if (gateMode == RETRIGGER) gatesOn = gatesOn && !pulse;
 
@@ -318,10 +336,12 @@ void GridSeq::process(const ProcessArgs &args) {
 
 struct GridSeqWidget : ModuleWidget {
 	std::vector<ParamWidget*> seqKnobs;
+	std::vector<ParamWidget*> probKnobs;
 	std::vector<ParamWidget*> gateButtons;
 	GridSeqWidget(GridSeq *module);
 	~GridSeqWidget(){ 
 		seqKnobs.clear(); 
+		probKnobs.clear(); 
 		gateButtons.clear(); 
 	}
 	void appendContextMenu(Menu *menu) override;
@@ -330,14 +350,32 @@ struct GridSeqWidget : ModuleWidget {
 struct RandomizeNotesOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
-		GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
-		GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
-		for (int i = 0; i < 16; i++) {
-			if(e.action == GLFW_PRESS && e.button == 0){
-				gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
-			} else if(e.action == GLFW_PRESS && e.button == 1){
-				//right click this to update the knobs (if randomized by cv in)
-				gsw->seqKnobs[i]->paramQuantity->setValue(gs->params[GridSeq::CELL_NOTE_PARAM + i].getValue());
+		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
+			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
+			for (int i = 0; i < 16; i++) {
+				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+					gsw->seqKnobs[i]->paramQuantity->setValue(3);
+				} else {
+					gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
+				}
+			}
+		}
+	}
+};
+
+struct RandomizeProbsOnlyButton : TinyButton {
+	void onButton(const event::Button &e) override {
+		TinyButton::onButton(e);
+		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
+			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
+			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
+			for (int i = 0; i < 16; i++) {
+				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+					gsw->probKnobs[i]->paramQuantity->setValue(1);
+				} else {
+					gsw->probKnobs[i]->paramQuantity->setValue(random::uniform());
+				}
 			}
 		}
 	}
@@ -346,12 +384,16 @@ struct RandomizeNotesOnlyButton : TinyButton {
 struct RandomizeGatesOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
 			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 			for (int i = 0; i < 16; i++) {
-				bool active = random::uniform() > 0.5;
-				gs->gateState[i] = active;
+				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+					gs->gateState[i] = true;
+				} else {
+					bool active = random::uniform() > 0.5;
+					gs->gateState[i] = active;
+				}
 			}
 		}
 	}
@@ -401,7 +443,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	float paramY = 313;
 	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(70, paramY), module, GridSeq::ROOT_NOTE_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(41, 176);
+	noteLabel->box.pos = Vec(41, 175);
 	noteLabel->text = "C";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
@@ -413,7 +455,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 
 	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(150, paramY), module, GridSeq::SCALE_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(81, 176);
+	scaleLabel->box.pos = Vec(81, 175);
 	scaleLabel->text = "Minor";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
@@ -421,14 +463,17 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(155, 355), module, GridSeq::SCALE_INPUT));
 
 
-	addParam(createParam<JwSmallSnapKnob>(Vec(191, paramY), module, GridSeq::VOLT_MAX_PARAM));//RANGE
-	addInput(createInput<TinyPJ301MPort>(Vec(196, 345), module, GridSeq::VOLT_MAX_INPUT));//RANGE
+	addParam(createParam<JwSmallSnapKnob>(Vec(189, paramY), module, GridSeq::VOLT_MAX_PARAM));//RANGE
+	addInput(createInput<TinyPJ301MPort>(Vec(194, 345), module, GridSeq::VOLT_MAX_INPUT));//RANGE
 
-	addParam(createParam<RandomizeGatesOnlyButton>(Vec(233, paramY+10), module, GridSeq::RND_GATES_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(233, 345), module, GridSeq::RND_GATES_INPUT));
+	addParam(createParam<RandomizeGatesOnlyButton>(Vec(230, paramY+10), module, GridSeq::RND_GATES_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, GridSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeNotesOnlyButton>(Vec(265, paramY+10), module, GridSeq::RND_NOTES_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(265, 345), module, GridSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(255, paramY+10), module, GridSeq::RND_NOTES_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, GridSeq::RND_NOTES_INPUT));
+
+	addParam(createParam<RandomizeProbsOnlyButton>(Vec(279, paramY+10), module, GridSeq::RND_PROBS_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, GridSeq::RND_PROBS_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;
@@ -446,9 +491,13 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 			// if(module != NULL){
 			// 	noteParamMax = module->noteParamMax;
 			// }
-			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX, knobY), module, GridSeq::CELL_NOTE_PARAM + idx);
+			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX-2, knobY), module, GridSeq::CELL_NOTE_PARAM + idx);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);
+
+			ParamWidget *cellProbKnob = createParam<JwTinyGrayKnob>(Vec(knobX+27, knobY+7), module, GridSeq::CELL_PROB_PARAM + idx);
+			addParam(cellProbKnob);
+			probKnobs.push_back(cellProbKnob);
 
 			ParamWidget *cellGateButton = createParam<LEDButton>(Vec(knobX+22, knobY-15), module, GridSeq::CELL_GATE_PARAM + idx);
 			addParam(cellGateButton);

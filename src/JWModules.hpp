@@ -121,6 +121,12 @@ struct JwTinyKnob : RoundKnob {
 	}
 };
 
+struct JwTinyGrayKnob : RoundKnob {
+	JwTinyGrayKnob() {
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteGrayKnob.svg")));
+	}
+};
+
 struct BPMPartKnob : JwSmallSnapKnob {	
 	BPMPartKnob(){} 
 };
