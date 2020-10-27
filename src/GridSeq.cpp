@@ -307,7 +307,8 @@ void GridSeq::process(const ProcessArgs &args) {
 		else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
 
 		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
-		lights[GATES_LIGHT + i].value = gateState[i] ? 1.0 - lights[STEPS_LIGHT + i].value : lights[STEPS_LIGHT + i].value;
+		float gateOnVal = params[CELL_PROB_PARAM + i].getValue();
+		lights[GATES_LIGHT + i].value = gateState[i] ? gateOnVal : lights[STEPS_LIGHT + i].value;
 	}
 
 	// Cells
@@ -503,6 +504,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 			addParam(cellGateButton);
 			gateButtons.push_back(cellGateButton);
 
+			addChild(createLight<MediumLight<MyOrangeValueLight>>(Vec(knobX+5, knobY-13.6), module, GridSeq::STEPS_LIGHT + idx));
 			addChild(createLight<LargeLight<MyBlueValueLight>>(Vec(knobX+23.5, knobY-13.6), module, GridSeq::GATES_LIGHT + idx));
 		}
 	}
