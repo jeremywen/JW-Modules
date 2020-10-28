@@ -198,6 +198,7 @@ struct White_TinyPJ301MPort : SvgPort {
 struct MyBlueValueLight : ModuleLightWidget {
 	MyBlueValueLight() {
 		firstLightId = 1;
+		this->bgColor = nvgRGB(255, 255, 255);
 		addBaseColor(nvgRGB(25, 150, 252));
 	}
 };
