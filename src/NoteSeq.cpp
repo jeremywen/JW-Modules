@@ -112,7 +112,8 @@ struct NoteSeq : Module,QuantizeUtils {
 	};
 	enum ShiftDirection {
 		DIR_UP,
-		DIR_DOWN
+		DIR_DOWN,
+		DIR_CHAOS
 	};
 	enum RotateDirection {
 		DIR_LEFT,
@@ -538,7 +539,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		int amount = clampijw(params[SHIFT_AMT_KNOB_PARAM].getValue() + inputOffset, -32, 32);
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
-				int newY = 0;
+				int newX = 0, newY = 0;
 				switch(dir){
 					case DIR_UP:
 						//if at top, start from bottom up
@@ -550,6 +551,17 @@ struct NoteSeq : Module,QuantizeUtils {
 						//if at bottom, start from top down
 						newY = (y - amount) % ROWS;
 						if(newY < 0) newY = ROWS + newY;
+						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
+						break;
+					case DIR_CHAOS:
+						bool rndX = random::uniform() < 0.5;
+						newX = (x - amount) % COLS;
+						if(newX < 0) newX = COLS + newX;
+
+						bool rndY = random::uniform() < 0.5;
+						newY = (y - amount) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+
 						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
 						break;
 				}
