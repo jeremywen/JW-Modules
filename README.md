@@ -66,6 +66,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 *  **Random Amount Input and Knob:** determines how full the grid will be when generating random notes
 *  **Shift Up Trig Input and Button:** moves the cells in the grid the number of rows set by the amount knob (notes wrap around to the bottom)
 *  **Shift Down Trig Input and Button:** moves the cells in the grid down the number of rows set by the amount knob (notes wrap around to the top)
+*  **Shift Chaos Trig Input and Button:** moves each cell in a random direction with the distance determined by the amount knob (notes wrap around)
 *  **Shift Amount Knob:** determines how much to shift the cells
 *  **Rotate Right Input and Button:** rotates the cells in the grid clockwise 90 degrees
 *  **Rotate Left Input and Button:** rotates the cells in the grid counter-clockwise 90 degrees
@@ -114,6 +115,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Random Amount Input and Knob:** determines how full the grid will be when generating random notes
 *  **Shift Up Trig Input and Button:** moves the cells in the grid the number of rows set by the amount knob (notes wrap around to the bottom)
 *  **Shift Down Trig Input and Button:** moves the cells in the grid down the number of rows set by the amount knob (notes wrap around to the top)
+*  **Shift Chaos Trig Input and Button:** moves each cell in a random direction with the distance determined by the amount knob (notes wrap around)
 *  **Shift Amount Knob:** determines how much to shift the cells
 *  **Rotate Right Input and Button:** rotates the cells in the grid clockwise 90 degrees
 *  **Rotate Left Input and Button:** rotates the cells in the grid counter-clockwise 90 degrees
@@ -311,10 +313,14 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
 
   *  **ROOT Knob:** root note if scaling pitch sent to "OUT"
   *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
-  *  **RND GATES Button** randomize gate only for each cell
-  *  **RND GATES Input** on trigger randomize gate only for each cell
-  *  **RND NOTES Button** randomize pitch only for each cell
-  *  **RND NOTES Input** on trigger, randomize pitch only for each cell (NOTE: knobs don't update on 'random notes' cv in. If you want knobs to update after cv into 'random notes', right click the random notes button.)
+  *  **RND GATE Button** randomize gate only for each cell
+  *  **RND GATE Input** on trigger randomize gate only for each cell
+  *  **RND NOTE Button** randomize pitch only for each cell
+  *  **RND NOTE Input** on trigger, randomize pitch only for each cell
+  *  **RND PROB Button** randomize probability only for each cell
+  *  **RND PROB Input** on trigger, randomize probability only for each cell
+  
+  If you shift click the random buttons, then the parameters will be set to their default values
 
 #### Right Click Context Menu
 
