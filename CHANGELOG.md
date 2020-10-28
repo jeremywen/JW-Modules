@@ -8,6 +8,7 @@
   * Added 'Start' knobs and inputs to NoteSeq and NoteSeq16
   * Added 'Length' inputs to NoteSeq16
   * Added 'Probability' knobs and randomizer to GridSeq
+  * Added Shift 'Chaos' feature to NoteSeq and NoteSeqFu: shifts each note in a random direction and distance determined by amount
   * Can now shift click randomize buttons in GridSeq to init parameters to defaults
   * Fixed position of playhead on reset in NoteSeq, NoteSeq16, and NoteSeqFu
 

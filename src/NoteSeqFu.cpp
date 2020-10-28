@@ -57,7 +57,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		LENGTH_KNOB_PARAM = SEMI_KNOB_PARAM + 4, //EACH PLAYHEAD
 		REPEATS_PARAM = LENGTH_KNOB_PARAM + 4, //EACH PLAYHEAD
 		PLAYHEAD_ON_PARAM,
-		NUM_PARAMS = PLAYHEAD_ON_PARAM + 4
+		SHIFT_CHAOS_BTN_PARAM = PLAYHEAD_ON_PARAM + 4,
+		NUM_PARAMS
 	};
 	enum InputIds {
 		CLOCK_INPUT,
@@ -75,6 +76,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		SCALE_INPUT,
 		LENGTH_INPUT,
 		SHIFT_AMT_INPUT,
+		SHIFT_CHAOS_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -108,7 +110,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	};
 	enum ShiftDirection {
 		DIR_UP,
-		DIR_DOWN
+		DIR_DOWN,
+		DIR_CHAOS
 	};
 	enum RotateDirection {
 		DIR_LEFT,
@@ -131,7 +134,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
-	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
+	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig, shiftChaosTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator mainClockPulse;
 
@@ -145,6 +148,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
 		configParam(SHIFT_UP_BTN_PARAM, 0.0, 1.0, 0.0, "Shift Up");
 		configParam(SHIFT_DOWN_BTN_PARAM, 0.0, 1.0, 0.0, "Shift Down");
+		configParam(SHIFT_CHAOS_BTN_PARAM, 0.0, 1.0, 0.0, "Shift Chaos");
 		configParam(SHIFT_AMT_KNOB_PARAM, -32, 32.0, 1.0, "Shift Amount");
 		configParam(ROT_RIGHT_BTN_PARAM, 0.0, 1.0, 0.0, "Rotate Right");
 		configParam(ROT_LEFT_BTN_PARAM, 0.0, 1.0, 0.0, "Rotate Left");
@@ -237,6 +241,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 		if (shiftUpTrig.process(params[SHIFT_UP_BTN_PARAM].getValue() + inputs[SHIFT_UP_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 		if (shiftDownTrig.process(params[SHIFT_DOWN_BTN_PARAM].getValue() + inputs[SHIFT_DOWN_INPUT].getVoltage())) { shiftCells(DIR_DOWN); }
+		if (shiftChaosTrig.process(params[SHIFT_CHAOS_BTN_PARAM].getValue() + inputs[SHIFT_CHAOS_INPUT].getVoltage())) { shiftCells(DIR_CHAOS); }
 
 		if (resetTrig.process(params[RESET_BTN_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
@@ -515,7 +520,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		int amount = clampijw(params[SHIFT_AMT_KNOB_PARAM].getValue() + inputOffset, -32, 32);
 		for(int x=0; x < COLS; x++){
 			for(int y=0; y < ROWS; y++){
-				int newY = 0;
+				int newX = 0, newY = 0;
 				switch(dir){
 					case DIR_UP:
 						//if at top, start from bottom up
@@ -528,6 +533,18 @@ struct NoteSeqFu : Module,QuantizeUtils {
 						newY = (y - amount) % ROWS;
 						if(newY < 0) newY = ROWS + newY;
 						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
+						break;
+					case DIR_CHAOS:
+						bool rndX = random::uniform() < 0.5;
+						newX = (x - amount * (rndX?1:-1)) % COLS;
+						if(newX < 0) newX = COLS + newX;
+
+						bool rndY = random::uniform() < 0.5;
+						newY = (y - amount * (rndY?1:-1)) % ROWS;
+						if(newY < 0) newY = ROWS + newY;
+						if(cells[iFromXY(x, y)]){
+							newCells[iFromXY(newX, newY)] = cells[iFromXY(x, y)];
+						}
 						break;
 				}
 
@@ -991,10 +1008,12 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(118, 252), module, NoteSeqFu::ROT_LEFT_INPUT));
 	addParam(createParam<SmallButton>(Vec(138, 247), module, NoteSeqFu::ROT_LEFT_BTN_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 304), module, NoteSeqFu::SHIFT_UP_INPUT));
-	addParam(createParam<SmallButton>(Vec(80, 299), module, NoteSeqFu::SHIFT_UP_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(118, 304), module, NoteSeqFu::SHIFT_DOWN_INPUT));
-	addParam(createParam<SmallButton>(Vec(138, 299), module, NoteSeqFu::SHIFT_DOWN_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(43, 302), module, NoteSeqFu::SHIFT_UP_INPUT));
+	addParam(createParam<TinyButton>(Vec(43+19, 302), module, NoteSeqFu::SHIFT_UP_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(88, 302), module, NoteSeqFu::SHIFT_DOWN_INPUT));
+	addParam(createParam<TinyButton>(Vec(88+19, 302), module, NoteSeqFu::SHIFT_DOWN_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(134, 302), module, NoteSeqFu::SHIFT_CHAOS_INPUT));
+	addParam(createParam<TinyButton>(Vec(134+19, 302), module, NoteSeqFu::SHIFT_CHAOS_BTN_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(30, 350), module, NoteSeqFu::SHIFT_AMT_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(50, 345), module, NoteSeqFu::SHIFT_AMT_KNOB_PARAM));
