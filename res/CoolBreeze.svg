@@ -7,7 +7,6 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="90"
@@ -18,31 +17,7 @@
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
    sodipodi:docname="CoolBreeze.svg">
   <defs
-     id="defs12547">
-    <linearGradient
-       id="linearGradient5317"
-       inkscape:collect="always">
-      <stop
-         id="stop5323"
-         offset="0"
-         style="stop-color:#000000;stop-opacity:1;" />
-      <stop
-         id="stop5325"
-         offset="1"
-         style="stop-color:#000000;stop-opacity:0;" />
-    </linearGradient>
-    <radialGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient5317"
-       id="radialGradient5328"
-       cx="38.449745"
-       cy="211.65016"
-       fx="38.449745"
-       fy="211.65016"
-       r="11.906249"
-       gradientTransform="matrix(3.5873019,1.2222219,-1.359709,3.9908358,188.30153,-680.00498)"
-       gradientUnits="userSpaceOnUse" />
-  </defs>
+     id="defs12547" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -51,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="129.00172"
+     inkscape:cx="-2.4268514"
      inkscape:cy="166.08799"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -94,7 +69,7 @@
        inkscape:connector-curvature="0"
        id="path33453"
        d="m 26.543497,161.45211 h 23.812499 v 100.3961 H 26.543497 Z m 0,0"
-       style="fill:url(#radialGradient5328);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.14416076" />
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.14416076" />
     <path
        inkscape:connector-curvature="0"
        id="path911"
