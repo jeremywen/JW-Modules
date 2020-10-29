@@ -172,7 +172,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 ## NoteSeq16
 
-![NoteSeq16](./doc/noteseq16-img4.png)
+![NoteSeq16](./doc/noteseq16-img5.png)
 
 #### Basics
 
