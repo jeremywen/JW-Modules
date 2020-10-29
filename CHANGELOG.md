@@ -1,6 +1,6 @@
 # Change Log
 
-## v1.0.17 ~ 10-27-2020
+## v1.0.17 ~ 10-28-2020
 
   * New Module: 1Pattern (basically one row of Patterns module)
   * New Module: Add5 (because Caudal is bipolar (like me))
