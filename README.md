@@ -13,21 +13,21 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 ## Table of Contents:
 
-* [Thing Thing](#thing-thing)
+* [SimpleClock](#simpleclock)
 * [NoteSeq](#noteSeq)
 * [NoteSeqFu](#noteSeqFu)
 * [NoteSeq16](#noteSeq16)
 * [Patterns](#patterns)
 * [1Pattern](#1pattern)
-* [Bouncy Balls](#bouncy-balls)
 * [GridSeq](#gridseq)
-* [XY-Pad](#xy-pad)
-* [SimpleClock](#simpleclock)
 * [Str1ker](#str1ker)
 * [D1v1de](#d1v1de)
 * [Pres1t](#pres1t)
 * [Quantizer](#quantizer)
+* [Bouncy Balls](#bouncy-balls)
 * [FullScope](#fullscope)
+* [Thing Thing](#thing-thing)
+* [XY-Pad](#xy-pad)
 * [Add5](#add5)
 * [MinMax](#minmax)
 * [WavHead](#wavhead)
@@ -35,13 +35,28 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 
 
-## Thing Thing
-![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
+## SimpleClock
 
- * inputs 1 through 4 are +/-5v
- * 5th input and knob are the BALL size uh huh huh :)
- * 6th input and knob zoOM in
- * pairs well with the angle outputs on [Vult Modules Caudal](https://modlfo.github.io/VultModules/caudal/)
+![SimpleClock](./doc/SimpleClock-img6.png)
+
+[Video](https://www.youtube.com/watch?v=DCustAy7xVc)
+
+_Outputs 1/4 notes by default because of legacy issues - See right click menu to change the rate..._
+
+
+#### Knobs 
+
+  *  **Clock knob:** determines speed of clock
+  *  **Random Reset knob:** If down all the way, this does nothing.  If turned up, the chances of sending out a reset trigger on a clock step is increased.
+
+#### Outputs
+
+  *  **Clock output:** Clock sends out a trigger at a certain interval based on the clock knob position.
+  *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
+  *  **/4 output:** clock divided by 4 ticks
+  *  **/8 output:** clock divided by 8 ticks
+  *  **/16 output:** clock divided by 16 ticks
+  *  **/32 output:** clock divided by 32 ticks
 
 ## NoteSeq
 
@@ -238,46 +253,6 @@ This module is one row of Patterns (rotated into one column)
 *  **Clear Button:** clears the grid
 *  **Random Trig Input and Button:** clears the grid and generates random cells (based on the rnd mode)
 
-## Bouncy Balls
-
-![Bouncy Balls](./doc/bouncy-balls-img3.png)
-
-#### Basics
-
-* The top section contains all the inputs.
-* The bottom sections contains all the outputs.
-* The colors of the inputs/outputs correspond to the ball colors.
-* The top two rows have buttons next to the inputs for manually triggering.
-* The next three rows have knobs next to the inputs for manually controlling the values.
-* Click in the dark area to lock/unlock the paddle.
-* Click the 'ON' button to toggle the paddle visibility.
-
-#### Inputs
-
-*  **RST:** starts ball back at center with initial velocity
-*  **TRIG:** speeds up ball based on velocity settings
-*  **VELX:** velocity in the x direction, to the right is positive (towards east), to the left is negative (towards west)
-*  **VELY:** velocity in the y direction, to the right is positive (towards south), to the left is negative (towards north)
-*  **MULT:** velocity multiplier
-
-#### Outputs
-
-*  **X:** x position for each ball
-*  **Y:** y position for each ball
-*  **N:** (north) trigger out for each ball that hits the top
-*  **E:** (east) trigger out for each ball that hits the right side
-*  **S:** (south) trigger out for each ball that hits the bottom
-*  **W:** (west) trigger out for each ball that hits the left side
-*  **EDGE:** trigger out for each ball that hits any side
-*  **PAD:** trigger out for each ball that hits the white pad
-
-#### Modifying the Output Signal
-
-*  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
-*  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
-*  **X Offset Knob:** +/- 5v added to X Output
-*  **Y Offset Knob:** +/- 5v added to Y Output
-
 ## GridSeq
 
 ![GridSeq](./doc/gridseq-img10.png)
@@ -336,66 +311,6 @@ This module is one row of Patterns (rotated into one column)
   * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
   'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
 
-
-## XY Pad
-
-![XYPad](./doc/XYPag-img4.png)
-
-[Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
-
-Draw your own LFO.  The recorded path is saved and opened.
-
-#### Top
-  
-  *  **Rnd Left Button:** will cycle through different types of designs and generate random ones
-  *  **Rnd Right Button:** random variation of the last design will be generated (so click the left button until you find one you like, then click the right button to make a variation of that one.)
-  *  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
-  *  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
-  *  **X Offset Knob:** +/- 5v added to X Output
-  *  **Y Offset Knob:** +/- 5v added to Y Output
-
-#### Bottom
-  
-  *  **Gate In:** plays recorded path while gate is high, retriggers on new gate
-  *  **Auto:** loops playback of the recorded path right after releasing the mouse button
-      * Or if you just performed a motion while Auto was off, turning it on will play it back
-      * Or if Auto is on and you want to stop playback, turn Auto off
-  *  **Speed:** plays recorded path from 1x up to 10x faster
-  *  **Mult:** multiplies the current speed by larger amounts
-  *  **X Output:** +/- 5v based on x position
-  *  **Y Output:** +/- 5v based on y position
-  *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
-  *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
-  *  **Gate Out:** 10v gate out while mouse pressed
-
-#### Right Click Context Menu
-
-Change the playback mode by right clicking the module and selecting the playback options:
-
-![Menu](./doc/XYPad-Menu-img4.png)
-
-## SimpleClock
-
-![SimpleClock](./doc/SimpleClock-img6.png)
-
-[Video](https://www.youtube.com/watch?v=DCustAy7xVc)
-
-_Outputs 1/4 notes by default because of legacy issues - See right click menu to change the rate..._
-
-
-#### Knobs 
-
-  *  **Clock knob:** determines speed of clock
-  *  **Random Reset knob:** If down all the way, this does nothing.  If turned up, the chances of sending out a reset trigger on a clock step is increased.
-
-#### Outputs
-
-  *  **Clock output:** Clock sends out a trigger at a certain interval based on the clock knob position.
-  *  **Reset output:** trigger is sent out when the clock is started by clicking 'run' or if random reset knob is turned up
-  *  **/4 output:** clock divided by 4 ticks
-  *  **/8 output:** clock divided by 8 ticks
-  *  **/16 output:** clock divided by 16 ticks
-  *  **/32 output:** clock divided by 32 ticks
 
 ## Str1ker
 
@@ -505,6 +420,46 @@ _right click grid select yellow load cell_
   *  **Root Knob:** root note if scaling pitch sent to "OUT"
   *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
 
+## Bouncy Balls
+
+![Bouncy Balls](./doc/bouncy-balls-img3.png)
+
+#### Basics
+
+* The top section contains all the inputs.
+* The bottom sections contains all the outputs.
+* The colors of the inputs/outputs correspond to the ball colors.
+* The top two rows have buttons next to the inputs for manually triggering.
+* The next three rows have knobs next to the inputs for manually controlling the values.
+* Click in the dark area to lock/unlock the paddle.
+* Click the 'ON' button to toggle the paddle visibility.
+
+#### Inputs
+
+*  **RST:** starts ball back at center with initial velocity
+*  **TRIG:** speeds up ball based on velocity settings
+*  **VELX:** velocity in the x direction, to the right is positive (towards east), to the left is negative (towards west)
+*  **VELY:** velocity in the y direction, to the right is positive (towards south), to the left is negative (towards north)
+*  **MULT:** velocity multiplier
+
+#### Outputs
+
+*  **X:** x position for each ball
+*  **Y:** y position for each ball
+*  **N:** (north) trigger out for each ball that hits the top
+*  **E:** (east) trigger out for each ball that hits the right side
+*  **S:** (south) trigger out for each ball that hits the bottom
+*  **W:** (west) trigger out for each ball that hits the left side
+*  **EDGE:** trigger out for each ball that hits any side
+*  **PAD:** trigger out for each ball that hits the white pad
+
+#### Modifying the Output Signal
+
+*  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
+*  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
+*  **X Offset Knob:** +/- 5v added to X Output
+*  **Y Offset Knob:** +/- 5v added to Y Output
+
 ## FullScope
 
 Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modified that code slightly.
@@ -532,6 +487,51 @@ Drag the right side of the module to resize it!
 Change to the normal scope by unchecking lissajous mode.
 
 ![FullScope Menu](./doc/FullScope-Menu-img1.png)
+
+## Thing Thing
+![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
+
+ * inputs 1 through 4 are +/-5v
+ * 5th input and knob are the BALL size uh huh huh :)
+ * 6th input and knob zoOM in
+ * pairs well with the angle outputs on [Vult Modules Caudal](https://modlfo.github.io/VultModules/caudal/)
+
+## XY Pad
+
+![XYPad](./doc/XYPag-img4.png)
+
+[Video](https://www.youtube.com/watch?v=SF0lwKFIXqo)
+
+Draw your own LFO.  The recorded path is saved and opened.
+
+#### Top
+  
+  *  **Rnd Left Button:** will cycle through different types of designs and generate random ones
+  *  **Rnd Right Button:** random variation of the last design will be generated (so click the left button until you find one you like, then click the right button to make a variation of that one.)
+  *  **X Scale Knob:** multiplies x output by a value between 0.01 and 1.0
+  *  **Y Scale Knob:** multiplies y output by a value between 0.01 and 1.0
+  *  **X Offset Knob:** +/- 5v added to X Output
+  *  **Y Offset Knob:** +/- 5v added to Y Output
+
+#### Bottom
+  
+  *  **Gate In:** plays recorded path while gate is high, retriggers on new gate
+  *  **Auto:** loops playback of the recorded path right after releasing the mouse button
+      * Or if you just performed a motion while Auto was off, turning it on will play it back
+      * Or if Auto is on and you want to stop playback, turn Auto off
+  *  **Speed:** plays recorded path from 1x up to 10x faster
+  *  **Mult:** multiplies the current speed by larger amounts
+  *  **X Output:** +/- 5v based on x position
+  *  **Y Output:** +/- 5v based on y position
+  *  **-X:** +/- 5v based on inverted x position (darker crosshairs)
+  *  **-Y:** +/- 5v based on inverted y position (darker crosshairs)
+  *  **Gate Out:** 10v gate out while mouse pressed
+
+#### Right Click Context Menu
+
+Change the playback mode by right clicking the module and selecting the playback options:
+
+![Menu](./doc/XYPad-Menu-img4.png)
 
 ## Add5
 
