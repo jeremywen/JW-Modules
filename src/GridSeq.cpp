@@ -470,11 +470,11 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	addParam(createParam<RandomizeGatesOnlyButton>(Vec(230, paramY+10), module, GridSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, GridSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeNotesOnlyButton>(Vec(255, paramY+10), module, GridSeq::RND_NOTES_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, GridSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeProbsOnlyButton>(Vec(255, paramY+10), module, GridSeq::RND_PROBS_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, GridSeq::RND_PROBS_INPUT));
 
-	addParam(createParam<RandomizeProbsOnlyButton>(Vec(279, paramY+10), module, GridSeq::RND_PROBS_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, GridSeq::RND_PROBS_INPUT));
+	addParam(createParam<RandomizeNotesOnlyButton>(Vec(279, paramY+10), module, GridSeq::RND_NOTES_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, GridSeq::RND_NOTES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSize = 55;

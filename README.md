@@ -18,6 +18,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [NoteSeqFu](#noteSeqFu)
 * [NoteSeq16](#noteSeq16)
 * [Patterns](#patterns)
+* [1Pattern](#patterns)
 * [Bouncy Balls](#bouncy-balls)
 * [GridSeq](#gridseq)
 * [XY-Pad](#xy-pad)
@@ -27,6 +28,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Pres1t](#pres1t)
 * [Quantizer](#quantizer)
 * [FullScope](#fullscope)
+* [Add5](#add5)
 * [MinMax](#minmax)
 * [WavHead](#wavhead)
 
@@ -218,7 +220,7 @@ Here is the [post by chaircrusher that inspired Patterns](https://community.vcvr
 
 ## 1Pattern
 
-![1Pattern](./doc/1Pattern-img1.png)
+![1Pattern](./doc/1pattern-img1.png)
 
 This module is one row of Patterns (rotated into one column)
 
@@ -278,15 +280,17 @@ This module is one row of Patterns (rotated into one column)
 
 ## GridSeq
 
-![GridSeq](./doc/GridSeq-img9.png)
+![GridSeq](./doc/gridseq-img10.png)
 
 [Video](https://www.youtube.com/watch?v=Bnxzqi5jwcU)
 
 [Example Patch](./doc/gridseq-example-patch-1.png)
 
-#### 16 Step Sequencer
+#### Basics
 
-When a direction input is sent a trigger and a cell is entered, a pitch will be sent to the OUT port if the cell's gate is on.
+  * 16 Step Sequencer
+  * When a direction input is sent a trigger and a cell is entered, a voltage will be sent to the OUT port if the cell's gate is on.
+  * Each cell has a main voltage knob, a smaller probability knob, and a gate button.
 
 #### Top Direction Inputs 
 
@@ -315,10 +319,10 @@ When a direction input is sent a trigger and a cell is entered, a pitch will be 
   *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
   *  **RND GATE Button** randomize gate only for each cell
   *  **RND GATE Input** on trigger randomize gate only for each cell
-  *  **RND NOTE Button** randomize pitch only for each cell
-  *  **RND NOTE Input** on trigger, randomize pitch only for each cell
   *  **RND PROB Button** randomize probability only for each cell
   *  **RND PROB Input** on trigger, randomize probability only for each cell
+  *  **RND NOTE Button** randomize pitch only for each cell
+  *  **RND NOTE Input** on trigger, randomize pitch only for each cell
   
   If you shift click the random buttons, then the parameters will be set to their default values
 
@@ -530,6 +534,8 @@ Change to the normal scope by unchecking lissajous mode.
 ![FullScope Menu](./doc/FullScope-Menu-img1.png)
 
 ## Add5
+
+![Add5](./doc/add5-img1.png)
 
 Adds 5 volts to a signal.  Goes well with Vult Caudal.
 
