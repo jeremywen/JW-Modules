@@ -18,7 +18,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [NoteSeqFu](#noteSeqFu)
 * [NoteSeq16](#noteSeq16)
 * [Patterns](#patterns)
-* [1Pattern](#patterns)
+* [1Pattern](#1pattern)
 * [Bouncy Balls](#bouncy-balls)
 * [GridSeq](#gridseq)
 * [XY-Pad](#xy-pad)
