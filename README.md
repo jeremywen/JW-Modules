@@ -205,7 +205,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 ## Patterns
 
-![Patterns](./doc/Patterns-img1.png)
+![Patterns](./doc/patterns-img2.png)
 
 Here is the [post by chaircrusher that inspired Patterns](https://community.vcvrack.com/t/using-xors-with-clocks-for-rhythmic-variations/5293)
 
