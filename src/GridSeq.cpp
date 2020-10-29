@@ -326,7 +326,8 @@ void GridSeq::process(const ProcessArgs &args) {
 	//////////////////////////////////////////////////////////////////////////////////////////	
 	// INVERTED YX OUT
 	//////////////////////////////////////////////////////////////////////////////////////////	
-	bool gatesOnYX = (running && gateState[indexYX]);
+	bool probYX = params[CELL_PROB_PARAM + indexYX].getValue() > rndFloat0to1AtClockStep;
+	bool gatesOnYX = (running && gateState[indexYX] && probYX);
 	if (gateMode == TRIGGER) gatesOnYX = gatesOnYX && pulse;
 	else if (gateMode == RETRIGGER) gatesOnYX = gatesOnYX && !pulse;
 	if(gatesOnYX || ignoreGateOnPitchOut)	{
@@ -370,7 +371,6 @@ struct RandomizeProbsOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
-			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
 			for (int i = 0; i < 16; i++) {
 				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
 					gsw->probKnobs[i]->paramQuantity->setValue(1);
