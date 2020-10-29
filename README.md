@@ -60,7 +60,7 @@ _Outputs 1/4 notes by default because of legacy issues - See right click menu to
 
 ## NoteSeq
 
-![NoteSeq](./doc/NoteSeq-img1.png)
+![NoteSeq](./doc/noteseq-img2.png)
 
 #### Basics
 
@@ -109,7 +109,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 ## NoteSeqFu
 
-![NoteSeqFu](./doc/NoteSeqFu-img2.png)
+![NoteSeqFu](./doc/noteseqfu-img3.png)
 
 #### Basics
 
