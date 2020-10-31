@@ -368,6 +368,7 @@ extern Model *modelFullScope;
 extern Model *modelGridSeq;
 extern Model *modelThingThing;
 extern Model *modelCat;
+extern Model *modelTree;
 extern Model *modelBlankPanel1hp;
 extern Model *modelBlankPanelSmall;
 extern Model *modelBlankPanelMedium;

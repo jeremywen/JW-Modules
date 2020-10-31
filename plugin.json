@@ -153,6 +153,12 @@
 			"tags": ["Visual", "Poly"]
 		},
 		{
+			"slug": "Tree",
+			"name": "Tree",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#tree",
+			"tags": ["Visual"]
+		},
+		{
 			"slug": "XYPad",
 			"name": "XY Pad",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#xy-pad",

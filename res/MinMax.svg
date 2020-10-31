@@ -15,7 +15,7 @@
    version="1.1"
    id="svg8630"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="RMS.svg">
+   sodipodi:docname="MinMax.svg">
   <defs
      id="defs8624" />
   <sodipodi:namedview
@@ -50,7 +50,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -68,7 +68,7 @@
        inkscape:connector-curvature="0"
        id="path38411"
        d="m 68.280333,137.44038 h -23.8125 V 100.4823 h 23.8125 z m 0,0"
-       style="fill:#1e282b;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.27602378" />
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.27602378" />
     <g
        transform="matrix(0.36394194,0,0,0.36394194,44.405884,87.364657)"
        id="layer1-7"

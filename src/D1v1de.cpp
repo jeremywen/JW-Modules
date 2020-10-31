@@ -118,7 +118,7 @@ struct D1v1deDisplay : Widget {
 
 	void draw(const DrawArgs &args) override {
 		//background
-		nvgFillColor(args.vg, nvgRGB(20, 30, 33));
+		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
