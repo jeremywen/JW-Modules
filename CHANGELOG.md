@@ -1,6 +1,6 @@
 # Change Log
 
-## v1.0.18 ~
+## v1.0.18 ~ 11-2-2020
 
   * NoteSeqFu: added High/Low knobs and inputs to limit the range of notes
   * Graphic dispays in all modules now have a black background
