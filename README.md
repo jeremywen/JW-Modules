@@ -31,6 +31,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Add5](#add5)
 * [MinMax](#minmax)
 * [WavHead](#wavhead)
+* [Tree](#tree)
 
 ----
 
@@ -544,6 +545,21 @@ Adds 5 volts to a signal.  Goes well with Vult Caudal.
 Created to show minimum and maximum voltages in a larger font than the Fundamental Scope 
 
 ![MinMax](./doc/MinMax-img1.png)
+
+## Tree
+
+  *  **Angle Input:** angle to rotate each iteration
+  *  **Angle Knob:** angle to rotate each iteration
+  *  **Length Input:** length of first branch
+  *  **Length Knob:** length of first branch
+  *  **Height Input:** height of trunk
+  *  **Height Knob:** height of trunk
+  *  **Reduce Input:** branch reduction
+  *  **Reduce Knob:** branch reduction
+  *  **Color Input:** changes color
+  *  **Color Knob:** changes color
+  *  **Jitter Input:** triggers random numbers to add to rotation
+  *  **Jitter Button:** triggers random numbers to add to rotation
 
 ## WavHead
 
