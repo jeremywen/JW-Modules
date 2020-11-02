@@ -2,9 +2,9 @@
 
 ## v1.0.18 ~
 
-  * Added High/Low knobs and inputs to limit the range of notes
-  * Made all graphic dispays have a black background
-  * Made graphic displays work with Lights Off module
+  * NoteSeqFu: added High/Low knobs and inputs to limit the range of notes
+  * Graphic dispays in all modules now have a black background
+  * Graphic displays work with Lights Off module
   * Added Tree visual module
 
 ## v1.0.17 ~ 10-28-2020
