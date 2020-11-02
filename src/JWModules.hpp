@@ -32,6 +32,16 @@ struct BGPanel : Widget {
 	}
 };
 
+struct BlackDisplay : LightWidget {
+	BlackDisplay(){}
+	void draw(const DrawArgs &args) override {
+		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+		nvgFill(args.vg);
+	}
+};
+
 ////////////////////////////////////////////// LABELS //////////////////////////////////////////////
 
 struct CenteredLabel : Widget {

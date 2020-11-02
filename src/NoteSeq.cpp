@@ -768,7 +768,7 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 };
 
-struct NoteSeqDisplay : Widget {
+struct NoteSeqDisplay : LightWidget {
 	NoteSeq *module;
 	bool currentlyTurningOn = false;
 	float initX = 0;

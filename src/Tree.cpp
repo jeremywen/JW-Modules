@@ -67,7 +67,7 @@ struct Tree : Module {
 	}
 };
 
-struct TreeDisplay : TransparentWidget {
+struct TreeDisplay : LightWidget {
 	Tree *module;
 	float theta;
 	TreeDisplay(){}

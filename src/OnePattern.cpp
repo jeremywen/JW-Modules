@@ -162,7 +162,7 @@ struct OnePattern : Module {
 
 };
 
-struct OnePatternDisplay : Widget {
+struct OnePatternDisplay : LightWidget {
 	OnePattern *module;
 	bool currentlyTurningOn = false;
 	float initX = 0;

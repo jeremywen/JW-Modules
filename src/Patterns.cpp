@@ -285,7 +285,7 @@ struct Patterns : Module {
 	}
 };
 
-struct PatternsDisplay : Widget {
+struct PatternsDisplay : LightWidget {
 	Patterns *module;
 	bool currentlyTurningOn = false;
 	float initX = 0;

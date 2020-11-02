@@ -102,7 +102,7 @@ void MinMax::process(const ProcessArgs &args) {
 }
 
 
-struct MinMaxDisplay : TransparentWidget {
+struct MinMaxDisplay : LightWidget {
 	MinMax *module;
 	int frame = 0;
 	std::shared_ptr<Font> font;

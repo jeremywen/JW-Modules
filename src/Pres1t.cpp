@@ -151,7 +151,7 @@ struct Pres1t : Module {
 	}
 };
 
-struct Pres1tDisplay : Widget {
+struct Pres1tDisplay : LightWidget {
 	Pres1t *module;
 	Pres1tDisplay(){}
 

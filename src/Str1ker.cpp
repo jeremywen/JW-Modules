@@ -274,7 +274,7 @@ void Str1kerWidget::step() {
 	}
 }
 
-struct FaderDisplay : Widget {
+struct FaderDisplay : LightWidget {
 	Str1ker *module;
 	float initY = 0;
 	float dragY = 0;

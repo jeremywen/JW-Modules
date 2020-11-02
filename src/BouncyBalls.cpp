@@ -252,7 +252,7 @@ void BouncyBalls::process(const ProcessArgs &args) {
 	}
 }
 
-struct BouncyBallDisplay : Widget {
+struct BouncyBallDisplay : LightWidget {
 	BouncyBalls *module;
 	BouncyBallDisplay(){}
 

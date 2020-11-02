@@ -53,7 +53,7 @@ struct ThingThing : Module {
 	void dataFromJson(json_t *rootJ) override {}
 };
 
-struct ThingThingDisplay : Widget {
+struct ThingThingDisplay : LightWidget {
 	ThingThing *module;
 	ThingThingDisplay(){}
 

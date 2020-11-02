@@ -112,7 +112,7 @@ struct D1v1de : Module {
 
 };
 
-struct D1v1deDisplay : Widget {
+struct D1v1deDisplay : LightWidget {
 	D1v1de *module;
 	D1v1deDisplay(){}
 

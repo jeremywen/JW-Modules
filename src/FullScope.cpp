@@ -131,7 +131,7 @@ void FullScope::process(const ProcessArgs &args) {
 	}
 }
 
-struct FullScopeDisplay : TransparentWidget {
+struct FullScopeDisplay : LightWidget {
 	FullScope *module;
 	int frame = 0;
 	float rot = 0;
