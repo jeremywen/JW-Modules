@@ -1,6 +1,7 @@
 #include <string.h>
 #include <algorithm>
 #include "JWModules.hpp"
+#include "JWResizableHandle.hpp"
 
 #define RND_NUMS 25
 struct Tree : Module {
@@ -158,8 +159,13 @@ struct TreeDisplay : LightWidget {
 };
 
 struct TreeWidget : ModuleWidget { 
-	TreeWidget(Tree *module); 
 	TreeDisplay *display;
+	BGPanel *panel;
+	JWModuleResizeHandle *rightHandle;
+	TreeWidget(Tree *module); 
+	void step() override;
+	json_t *toJson() override;
+	void fromJson(json_t *rootJ) override;
 	void appendContextMenu(Menu *menu) override;
 };
 
@@ -177,6 +183,19 @@ struct RandomizeButton : TinyButton {
 TreeWidget::TreeWidget(Tree *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
+
+	{
+		panel = new BGPanel(nvgRGB(0, 0, 0));
+		panel->box.size = box.size;
+		addChild(panel);
+	}
+
+	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
+	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
+	rightHandle->right = true;
+	this->rightHandle = rightHandle;
+	addChild(leftHandle);
+	addChild(rightHandle);
 
 	{
 		TreeDisplay *display = new TreeDisplay();
@@ -208,6 +227,26 @@ TreeWidget::TreeWidget(Tree *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(205, 360), module, Tree::RND_INPUT));
 	addParam(createParam<RandomizeButton>(Vec(220, 360), module, Tree::RND_PARAM));
 
+}
+
+void TreeWidget::step() {
+	panel->box.size = box.size;
+	if (box.size.x < RACK_GRID_WIDTH * 20) box.size.x = RACK_GRID_WIDTH * 20;
+	display->box.size = Vec(box.size.x, box.size.y);
+	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
+	ModuleWidget::step();
+}
+
+json_t *TreeWidget::toJson() {
+	json_t *rootJ = ModuleWidget::toJson();
+	json_object_set_new(rootJ, "width", json_real(box.size.x));
+	return rootJ;
+}
+
+void TreeWidget::fromJson(json_t *rootJ) {
+	ModuleWidget::fromJson(rootJ);
+	json_t *widthJ = json_object_get(rootJ, "width");
+	if (widthJ)	box.size.x = json_number_value(widthJ);
 }
 
 void TreeWidget::appendContextMenu(Menu *menu) {
