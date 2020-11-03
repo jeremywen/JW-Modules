@@ -97,6 +97,12 @@
 			"tags": ["Sequencer", "Poly"]
 		},
         {
+			"slug": "Trigs",
+			"name": "Trigs",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#trigs",
+			"tags": ["Sequencer"]
+		},
+        {
 			"slug": "Patterns",
 			"name": "Patterns",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#patterns",

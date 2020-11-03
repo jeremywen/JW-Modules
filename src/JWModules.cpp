@@ -15,6 +15,7 @@ void init(rack::Plugin *p)
 	p->addModel(modelNoteSeq);
 	p->addModel(modelNoteSeqFu);
 	p->addModel(modelNoteSeq16);
+	p->addModel(modelTrigs);
 	p->addModel(modelOnePattern);
 	p->addModel(modelPatterns);
 	p->addModel(modelQuantizer);
