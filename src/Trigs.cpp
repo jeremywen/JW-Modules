@@ -42,7 +42,11 @@ struct Trigs : Module {
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		EOC_OUTPUT,
+		GATE_OUTPUT,
+		EOC_OUTPUT = GATE_OUTPUT + 4,
+		OR_OUTPUT,
+		XOR_OUTPUT,
+		NOR_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -85,9 +89,6 @@ struct Trigs : Module {
 	bool resetMode = false;
 	bool eocOn = false; 
 	bool *cells = new bool[CELLS];
-	bool *newCells = new bool[CELLS];
-	ColNotes *colNotesCache = new ColNotes[COLS];
-	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
@@ -108,9 +109,6 @@ struct Trigs : Module {
 
 	~Trigs() {
 		delete [] cells;
-		delete [] newCells;
-		delete [] colNotesCache;
-		delete [] colNotesCache2;
 	}
 
 	void onRandomize() override {
@@ -157,20 +155,14 @@ struct Trigs : Module {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
-		gridChanged();
 	}
 
 	void process(const ProcessArgs &args) override {
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
-		if (rotateRightTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
-		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
-		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
-
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
 		}
-
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
 			if(resetMode){
 				resetMode = false;
@@ -180,51 +172,22 @@ struct Trigs : Module {
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
-		// ////////////////////////////////////////////// POLY OUTPUTS //////////////////////////////////////////////
-		
-		int *polyYVals = getYValsFromBottomAtSeqPos(true);
-		for(int i=0;i<channels;i++){ //param # starts from bottom
-			bool hasVal = polyYVals[i] > -1;
-			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			// outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
-			// outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
-			// lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
+		int seqPosX = xFromSeqPos();
+		int trigCount = 0;
+		for(int i=0;i<4;i++){
+			bool cellActive = cells[iFromXY(seqPosX, (seqPos/16) + i*4)];
+			float gateVolts = (pulse && cellActive) ? 10.0 : 0.0;
+			trigCount += (pulse && cellActive);
+			outputs[GATE_OUTPUT + i].setVoltage(gateVolts);
 		}
+		outputs[OR_OUTPUT].setVoltage((pulse && trigCount>0) ? 10.0 : 0.0);
+		outputs[NOR_OUTPUT].setVoltage((pulse && trigCount==0) ? 10.0 : 0.0);
+		outputs[XOR_OUTPUT].setVoltage((pulse && trigCount==1) ? 10.0 : 0.0);
 		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
 	int xFromSeqPos(){
-		seqPos % 16;
-	}
-
-	int * getYValsFromBottomAtSeqPos(bool includeInactive){
-		int finalHigh = getFinalHighestNote1to16();
-		int finalLow = getFinalLowestNote1to16();
-		int seqPosX = xFromSeqPos();
-		ColNotes *cache = includeInactive ? colNotesCache : colNotesCache2;
-		if(cache[seqPosX].valid && cache[seqPosX].finalHigh == finalHigh && cache[seqPosX].finalLow == finalLow){
-			return cache[seqPosX].vals;
-		}
-		
-		cache[seqPosX].valid = true;
-		cache[seqPosX].finalHigh = finalHigh;
-		cache[seqPosX].finalLow = finalLow;
-		cache[seqPosX].includeInactive = includeInactive;
-		for(int i=0;i<COLS;i++){ cache[seqPosX].vals[i] = -1; }
-
-		int valIdx = 0;
-		for(int i=CELLS-1;i>=0;i--){
-			int x = xFromI(i);
-			if(x == seqPosX && (cells[i] || includeInactive)){
-				int y = yFromI(i);
-				int yFromBottom = ROWS - 1 - y;
-				if(yFromBottom <= finalHigh-1 && yFromBottom >= finalLow-1){
-					cache[seqPosX].vals[valIdx++] = yFromBottom;
-				}
-			}
-		}
-		return cache[seqPosX].vals;
+		return seqPos % 16;
 	}
 
 	int findYValIdx(int arr[], int valToFind){
@@ -234,13 +197,6 @@ struct Trigs : Module {
 			}
 		}		
 		return -1;
-	}
-
-	void gridChanged(){
-		for(int x=0; x < COLS; x++){
-			colNotesCache[x].valid = false;
-			colNotesCache2[x].valid = false;
-		}
 	}
 
 	int getFinalHighestNote1to16(){
@@ -342,81 +298,12 @@ struct Trigs : Module {
 		for(int i=0;i<CELLS;i++){
 			cells[i] = false;
 		}
-		gridChanged();
 	}
 
-	void rotateCells(RotateDirection dir){
-		for(int x=0; x < COLS; x++){
-			for(int y=0; y < ROWS; y++){
-				switch(dir){
-					case DIR_RIGHT:
-						newCells[iFromXY(x, y)] = cells[iFromXY(y, COLS - x - 1)];
-						break;
-					case DIR_LEFT:
-						newCells[iFromXY(x, y)] = cells[iFromXY(COLS - y - 1, x)];
-						break;
-				}
-
-			}
-		}
-		swapCells();
-	}
-
-	void flipCells(FlipDirection dir){
-		for(int x=0; x < COLS; x++){
-			for(int y=0; y < ROWS; y++){
-				switch(dir){
-					case DIR_HORIZ:
-						newCells[iFromXY(x, y)] = cells[iFromXY(COLS - 1 - x, y)];
-						break;
-					case DIR_VERT:
-						newCells[iFromXY(x, y)] = cells[iFromXY(x, ROWS - 1 - y)];
-						break;
-				}
-
-			}
-		}
-		swapCells();
-	}
-
-	void shiftCells(ShiftDirection dir){
-		int amount = 1;
-		for(int x=0; x < COLS; x++){
-			for(int y=0; y < ROWS; y++){
-				int newY = 0;
-				switch(dir){
-					case DIR_UP:
-						//if at top, start from bottom up
-						newY = (y + amount) % ROWS;
-						if(newY < 0) newY = ROWS + newY;
-						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
-						break;
-					case DIR_DOWN:
-						//if at bottom, start from top down
-						newY = (y - amount) % ROWS;
-						if(newY < 0) newY = ROWS + newY;
-						newCells[iFromXY(x, y)] = cells[iFromXY(x, newY)];
-						break;
-				}
-
-			}
-		}
-		swapCells();
-	}
-
-	void swapCells() {
-		std::swap(cells, newCells);
-		gridChanged();
-
-		for(int i=0;i<CELLS;i++){
-			newCells[i] = false;
-		}
-	}
 	void randomizeCells() {
 		clearCells();
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
 		switch(0){
-		// switch(int(params[RND_MODE_KNOB_PARAM].getValue())){
 			case RND_BASIC:{
 				for(int i=0;i<CELLS;i++){
 					setCellOn(xFromI(i), yFromI(i), random::uniform() < rndAmt);
@@ -503,8 +390,6 @@ struct Trigs : Module {
 		if(cellX >= 0 && cellX < COLS && 
 		   cellY >=0 && cellY < ROWS){
 			cells[iFromXY(cellX, cellY)] = on;
-			colNotesCache[cellX].valid = false;
-			colNotesCache2[cellX].valid = false;
 		}
 	}
 
@@ -536,7 +421,13 @@ struct TrigsDisplay : LightWidget {
 	float initY = 0;
 	float dragX = 0;
 	float dragY = 0;
-	TrigsDisplay(){}
+	NVGcolor *colors = new NVGcolor[4];
+	TrigsDisplay(){
+		colors[0] = nvgRGB(255, 151, 9);//orange
+		colors[1] = nvgRGB(255, 243, 9);//yellow
+		colors[2] = nvgRGB(144, 26, 252);//purple
+		colors[3] = nvgRGB(25, 150, 252);//blue
+	}
 
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
@@ -587,10 +478,9 @@ struct TrigsDisplay : LightWidget {
 		if(module == NULL) return;
 
 		//cells
-		// nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
-		nvgFillColor(args.vg, nvgRGB(255, 151, 9));//orange
 		for(int i=0;i<CELLS;i++){
 			if(module->cells[i]){
+				nvgFillColor(args.vg, colors[i/64]);
 				int x = module->xFromI(i);
 				int y = module->yFromI(i);
 				nvgBeginPath(args.vg);
@@ -600,31 +490,12 @@ struct TrigsDisplay : LightWidget {
 		}
 
 		nvgStrokeWidth(args.vg, 2);
-//TODO FIX
-		// //seq start line
-		// float startX = module->getSeqStart() * HW;
-		// nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
-		// nvgBeginPath(args.vg);
-		// nvgMoveTo(args.vg, startX, 0);
-		// nvgLineTo(args.vg, startX, box.size.y);
-		// nvgStroke(args.vg);
-
-		// //seq length line
-		// float endX = (module->getSeqEnd() + 1) * HW;
-		// nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
-		// nvgBeginPath(args.vg);
-		// nvgMoveTo(args.vg, endX, 0);
-		// nvgLineTo(args.vg, endX, box.size.y);
-		// nvgStroke(args.vg);
 
 		//seq pos
 		int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
 		for(int i=0;i<4;i++){
-			//pos 20, x 4, y 2
-			//pos 70, x 6, y 5
 			int posX = pos % 16;
 			int posY = (pos/16) + i*4;
-// DEBUG("pos=%d, posX=%d, posY=%d", pos, posX, posY);
 			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
 			nvgBeginPath(args.vg);
 			nvgRect(args.vg, posX * HW, posY * HW, HW, HW);
@@ -721,12 +592,8 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
-
-	//row 1
 	addInput(createInput<TinyPJ301MPort>(Vec(7.5, 40), module, Trigs::CLOCK_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(33, 40), module, Trigs::RESET_INPUT));
-
 	addInput(createInput<TinyPJ301MPort>(Vec(58, 40), module, Trigs::START_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, Trigs::START_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(108, 40), module, Trigs::LENGTH_INPUT));
@@ -740,24 +607,20 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
-	//row 3
-	addParam(createParam<TinyButton>(Vec(8, 266), module, Trigs::CLEAR_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 302), module, Trigs::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(25, 297), module, Trigs::RND_TRIG_BTN_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(51, 296), module, Trigs::RND_AMT_KNOB_PARAM));
+	addParam(createParam<SmallButton>(Vec(33, 282), module, Trigs::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 330), module, Trigs::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(25, 327), module, Trigs::RND_TRIG_BTN_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(51, 327), module, Trigs::RND_AMT_KNOB_PARAM));
 
-	float bottomInpY = 338;
-	// addInput(createInput<TinyPJ301MPort>(Vec(38, bottomInpY), module, Trigs::ROTATE_INPUT));
-	// addInput(createInput<TinyPJ301MPort>(Vec(68, bottomInpY), module, Trigs::FLIP_INPUT));
-	// addInput(createInput<TinyPJ301MPort>(Vec(96, bottomInpY), module, Trigs::SHIFT_INPUT));
+	addOutput(createOutput<Orange_TinyPJ301MPort>(Vec(95, 285), module, Trigs::GATE_OUTPUT));
+	addOutput(createOutput<Yellow_TinyPJ301MPort>(Vec(120, 285), module, Trigs::GATE_OUTPUT+1));
+	addOutput(createOutput<Purple_TinyPJ301MPort>(Vec(145, 285), module, Trigs::GATE_OUTPUT+2));
+	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(170, 285), module, Trigs::GATE_OUTPUT+3));
 
-	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
-
-	// addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(139, bottomInpY), module, Trigs::POLY_VOCT_OUTPUT));
-	// addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, Trigs::POLY_GATE_OUTPUT));
-	// addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, Trigs::INCLUDE_INACTIVE_PARAM));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, Trigs::EOC_OUTPUT));
-
+	addOutput(createOutput<TinyPJ301MPort>(Vec(95, 325), module, Trigs::OR_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(120, 325), module, Trigs::XOR_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(145, 325), module, Trigs::NOR_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(170, 325), module, Trigs::EOC_OUTPUT));
 }
 
 void TrigsWidget::appendContextMenu(Menu *menu) {
