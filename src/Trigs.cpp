@@ -494,6 +494,25 @@ struct TrigsDisplay : LightWidget {
 		//seq pos
 		int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
 		for(int i=0;i<4;i++){
+			//seq start line
+			float startX = (module->getSeqStart()%16) * HW;
+			float startY = ((module->getSeqStart()/16) + i*4) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, startX, startY);
+			nvgLineTo(args.vg, startX, startY+HW);
+			nvgStroke(args.vg);
+
+			//seq length line
+			float endX = ((module->getSeqEnd() + 1)%16) * HW;
+			float endY = ((module->getSeqEnd()/16) + i*4) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, endX, endY);
+			nvgLineTo(args.vg, endX, endY+HW);
+			nvgStroke(args.vg);
+
+			//seq position
 			int posX = pos % 16;
 			int posY = (pos/16) + i*4;
 			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
