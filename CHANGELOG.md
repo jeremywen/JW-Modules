@@ -3,6 +3,7 @@
 ## v1.0.19 ~ 11-5-2020
 
   * New Module: Trigs
+  * Tree module now resizable (Thanks to SteveRussell33)
 
 ## v1.0.18 ~ 11-2-2020
 
