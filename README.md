@@ -153,7 +153,7 @@ _NOTE: if module right click menu set to 4, merged polyphonic output has 16 chan
 
 #### Right (Each play head is color coded)
 
-*  **Start Knob:** the start offset on reset
+*  **Start Knob:** the start offset
 *  **Length Knob:** the sequence length indicated by the vertical white line and color of the play head
 *  **Mode Knob:** the play mode changes how it moved through a sequence
 *  **Div Knob:** the clock division to move the play head
@@ -184,12 +184,15 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 
 *  **Clock Input:** when source sends a trigger, the sequence moves to the next step
 *  **Reset Input:** resets to first step in sequence (based on the play mode)
+*  **Start Input:** cv for start
+*  **Start Knob:** the start offset
+*  **Length Input:** cv for length
 *  **Length Knob:** the sequence length indicated by the vertical purple line
 *  **Mode:** the play mode changes how it moved through a sequence
-*  **Clear Button:** clears the grid
 
 #### Bottom
 
+*  **Clear Button:** clears the grid
 *  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
 *  **Random Amount Knob:** determines how full the grid will be when generating random notes
 *  **Rotate:** rotates gride clockwise
@@ -203,6 +206,37 @@ So for example, you can program a drum beat with a kick at the lowest note and a
 output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
 *  **EOC Output:** at the end of the loop it will send out a trigger
+
+## Trigs
+
+![Trigs](./doc/trigs-img1.png)
+
+#### Basics
+
+* You can click and drag cells in the grid to toggle them on and off.
+* Each track is four rows and has a color which matches it's output
+
+#### Top
+
+*  **Clock Input:** when source sends a trigger, the sequence moves to the next step
+*  **Reset Input:** resets to first step in sequence (based on the play mode)
+*  **Start Input:** cv for start
+*  **Start Knob:** the start offset
+*  **Length Input:** cv for length
+*  **Length Knob:** the sequence length indicated by the vertical purple line
+*  **Mode:** the play mode changes how it moved through a sequence
+
+#### Bottom
+
+*  **Clear Button:** clears the grid
+*  **Random Trig Input and Button:** clears the grid and generates random notes (based on the rnd mode)
+*  **Random Amount Knob:** determines how full the grid will be when generating random notes
+*  **Triggers Outputs:** triggers will fire if track with same color has cell turned on
+*  **OR Output:** fires if any track will fire
+*  **XOR Output:** fires if only one track will fire
+*  **NOR Output:** fires if no tracks will fire
+*  **EOC Output:** at the end of the loop it will send out a trigger
+
 
 ## Patterns
 

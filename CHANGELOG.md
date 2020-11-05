@@ -1,11 +1,15 @@
 # Change Log
 
+## v1.0.19 ~ 11-5-2020
+
+  * New Module: Trigs
+
 ## v1.0.18 ~ 11-2-2020
 
   * NoteSeqFu: added High/Low knobs and inputs to limit the range of notes
   * Graphic dispays in all modules now have a black background
   * Graphic displays work with Lights Off module
-  * Added Tree visual module
+  * New Module: Tree visual module
 
 ## v1.0.17 ~ 10-28-2020
 
