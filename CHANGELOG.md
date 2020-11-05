@@ -4,6 +4,7 @@
 
   * New Module: Trigs
   * Tree module now resizable (Thanks to SteveRussell33)
+  * ThingThing module now resizable (Thanks to me)
 
 ## v1.0.18 ~ 11-2-2020
 

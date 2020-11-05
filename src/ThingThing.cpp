@@ -1,5 +1,6 @@
 #include <string.h>
 #include "JWModules.hpp"
+#include "JWResizableHandle.hpp"
 
 struct ThingThingBall {
 	NVGcolor color;
@@ -122,18 +123,32 @@ struct ThingThingDisplay : LightWidget {
 
 struct ThingThingWidget : ModuleWidget {
 	ThingThingWidget(ThingThing *module);
+	ThingThingDisplay *display;
+	BGPanel *panel;
+	JWModuleResizeHandle *rightHandle;
+	void step() override;
+	json_t *toJson() override;
+	void fromJson(json_t *rootJ) override;
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/ThingThing.svg")));
-	addChild(panel);
+	{
+		panel = new BGPanel(nvgRGB(0, 0, 0));
+		panel->box.size = box.size;
+		addChild(panel);
+	}
 
-	ThingThingDisplay *display = new ThingThingDisplay();
+	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
+	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
+	rightHandle->right = true;
+	this->rightHandle = rightHandle;
+	addChild(leftHandle);
+	addChild(rightHandle);
+
+	display = new ThingThingDisplay();
 	display->module = module;
 	display->box.pos = Vec(0, 0);
 	display->box.size = Vec(box.size.x, RACK_GRID_HEIGHT);
@@ -152,5 +167,23 @@ ThingThingWidget::ThingThingWidget(ThingThing *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(190, 360), module, ThingThing::ZOOM_MULT_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM));
 }
+void ThingThingWidget::step() {
+	panel->box.size = box.size;
+	if (box.size.x < RACK_GRID_WIDTH * 20) box.size.x = RACK_GRID_WIDTH * 20;
+	display->box.size = Vec(box.size.x, box.size.y);
+	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
+	ModuleWidget::step();
+}
 
+json_t *ThingThingWidget::toJson() {
+	json_t *rootJ = ModuleWidget::toJson();
+	json_object_set_new(rootJ, "width", json_real(box.size.x));
+	return rootJ;
+}
+
+void ThingThingWidget::fromJson(json_t *rootJ) {
+	ModuleWidget::fromJson(rootJ);
+	json_t *widthJ = json_object_get(rootJ, "width");
+	if (widthJ)	box.size.x = json_number_value(widthJ);
+}
 Model *modelThingThing = createModel<ThingThing, ThingThingWidget>("ThingThing");
