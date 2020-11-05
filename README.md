@@ -17,6 +17,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [NoteSeq](#noteSeq)
 * [NoteSeqFu](#noteSeqFu)
 * [NoteSeq16](#noteSeq16)
+* [Trigs](#trigs)
 * [Patterns](#patterns)
 * [1Pattern](#1pattern)
 * [GridSeq](#gridseq)
