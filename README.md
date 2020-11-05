@@ -498,11 +498,13 @@ _right click grid select yellow load cell_
 
 ## FullScope
 
-Scope in lissajous mode which takes up the full width and height of the module.  Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modified that code slightly.
+Scope in lissajous mode which takes up the full width and height of the module.  
+
+Credit goes to Andrew Belt for the [Fundamental:Scope](https://github.com/VCVRack/Fundamental/blob/v0.4.0/src/Scope.cpp) code.  I just modified that code slightly.
 
 ![FullScope](./doc/FullScope-img2.png)
 
-Drag the right side of the module to resize it!
+_Drag the right side of the module to resize it!_
 
   * Inputs in bottom left corner
     * X input (same as Fundamental Scope)
@@ -525,7 +527,10 @@ Change to the normal scope by unchecking lissajous mode.
 ![FullScope Menu](./doc/FullScope-Menu-img1.png)
 
 ## Thing Thing
+
 ![thingthing](https://user-images.githubusercontent.com/408586/34801602-8f2ba8e4-f637-11e7-9948-ccb6fdbec6c5.gif)
+
+_Drag the right side of the module to resize it!_
 
  * inputs 1 through 4 are +/-5v
  * 5th input and knob are the BALL size uh huh huh :)
@@ -585,7 +590,7 @@ Created to show minimum and maximum voltages in a larger font than the Fundament
 
 ![Tree](./doc/tree-img2.png)
 
-Drag the right side of the module to resize it!
+_Drag the right side of the module to resize it!_
 
   *  **Angle Input:** angle to rotate each iteration
   *  **Angle Knob:** angle to rotate each iteration
