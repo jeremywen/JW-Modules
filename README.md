@@ -585,6 +585,8 @@ Created to show minimum and maximum voltages in a larger font than the Fundament
 
 ![Tree](./doc/tree-img2.png)
 
+Drag the right side of the module to resize it!
+
   *  **Angle Input:** angle to rotate each iteration
   *  **Angle Knob:** angle to rotate each iteration
   *  **Length Input:** length of first branch
