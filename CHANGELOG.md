@@ -5,7 +5,6 @@
   * New Module: Trigs
   * Tree module now resizable (Thanks to SteveRussell33)
   * ThingThing module now resizable (Thanks to me)
-  * Bouncy Balls multiplier lower limit now less than 1 so you can slow down the ball and move it with cv.
 
 ## v1.0.18 ~ 11-2-2020
 
