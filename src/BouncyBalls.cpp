@@ -99,7 +99,7 @@ struct BouncyBalls : Module {
 			configParam(VEL_Y_PARAM + x, -3.0, 3.0, 0.5, "Velocity Y");
 		}
 		for(int x=0; x<4; x++){
-			configParam(SPEED_MULT_PARAM + x, 1.0, 20.0, 1.0, "Speed");
+			configParam(SPEED_MULT_PARAM + x, 0.00001, 20.0, 1.0, "Speed");
 		}
 		configParam(PAD_ON_PARAM, 0.0, 1.0, 0.0, "Pad On");
 		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5, "Scale X");
