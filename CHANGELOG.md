@@ -5,6 +5,7 @@
   * New Module: Trigs
   * Tree module now resizable (Thanks to SteveRussell33)
   * ThingThing module now resizable (Thanks to me)
+  * Fixed: Tree and ThingThing no longer draw outside of bounds when LightOff Active\
 
 ## v1.0.18 ~ 11-2-2020
 
