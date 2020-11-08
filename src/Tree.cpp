@@ -74,6 +74,8 @@ struct TreeDisplay : LightWidget {
 	TreeDisplay(){}
 
 	void draw(const DrawArgs &args) override {
+		nvgScissor(args.vg, RECT_ARGS(box));
+		
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
@@ -122,6 +124,7 @@ struct TreeDisplay : LightWidget {
 		nvgTranslate(args.vg, 0, -height);
 
 		branch(args, length, reduce, 1, strokeW, hue);
+		nvgResetScissor(args.vg);
 	}
 
 	void branch(const DrawArgs &args, float dist, float reduce, int count, int strokeW, float hue){

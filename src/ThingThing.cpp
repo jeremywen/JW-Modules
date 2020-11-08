@@ -59,6 +59,8 @@ struct ThingThingDisplay : LightWidget {
 	ThingThingDisplay(){}
 
 	void draw(const DrawArgs &args) override {
+		nvgScissor(args.vg, RECT_ARGS(box));
+
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
@@ -117,6 +119,7 @@ struct ThingThingDisplay : LightWidget {
 			nvgStroke(args.vg);
 		}
 		nvgRestore(args.vg);
+		nvgResetScissor(args.vg);
 	}
 };
 
