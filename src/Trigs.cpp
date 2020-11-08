@@ -208,7 +208,7 @@ struct Trigs : Module {
 	} 
 
 	void clockStep(){
-		gatePulse.trigger(1e-1);
+		gatePulse.trigger(1e-3);
 		rndFloat0to1AtClockStep = random::uniform();
 
 		int curPlayMode = getPlayMode();

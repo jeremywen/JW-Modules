@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.0.20 ~ 11-8-2020
+
+  * Shortened trigger pulse to match my other module triggers.
+
 ## v1.0.19 ~ 11-7-2020
 
   * New Module: Trigs
