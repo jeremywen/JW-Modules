@@ -3,6 +3,7 @@
 ## v1.0.20 ~ 11-8-2020
 
   * Shortened trigger pulse to match my other module triggers.
+  * Fixed Lydian scale.
 
 ## v1.0.19 ~ 11-7-2020
 
