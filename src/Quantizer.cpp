@@ -4,12 +4,14 @@ struct Quantizer : Module,QuantizeUtils {
 	enum ParamIds {
 		ROOT_NOTE_PARAM,
 		SCALE_PARAM,
+		OCTAVE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		NOTE_INPUT,
 		SCALE_INPUT,
 		VOLT_INPUT,
+		OCTAVE_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -24,6 +26,7 @@ struct Quantizer : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+		configParam(OCTAVE_PARAM, -5, 7 , 0, "Octave Shift");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -40,10 +43,11 @@ struct Quantizer : Module,QuantizeUtils {
 void Quantizer::process(const ProcessArgs &args) {
 	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
 	int scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	int octaveShift = params[OCTAVE_PARAM].getValue() + rescalefjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5, -5, 7);
 	int channels = inputs[VOLT_INPUT].getChannels();
 	for (int c = 0; c < channels; c++) {
 		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale);
-		outputs[VOLT_OUTPUT].setVoltage(volts, c);
+		outputs[VOLT_OUTPUT].setVoltage(volts + octaveShift, c);
 	}
 	outputs[VOLT_OUTPUT].setChannels(channels);
 }
@@ -74,23 +78,26 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 78), module, Quantizer::ROOT_NOTE_PARAM));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 60), module, Quantizer::ROOT_NOTE_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
-	noteLabel->box.pos = Vec(15, 35);
+	noteLabel->box.pos = Vec(15, 29);
 	noteLabel->text = "C";
 	noteKnob->connectLabel(noteLabel, module);
 	addChild(noteLabel);
 	addParam(noteKnob);
-	addInput(createInput<TinyPJ301MPort>(Vec(23, 110), module, Quantizer::NOTE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 90), module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 188), module, Quantizer::SCALE_PARAM));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 133), module, Quantizer::SCALE_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
-	scaleLabel->box.pos = Vec(15, 90);
+	scaleLabel->box.pos = Vec(15, 65);
 	scaleLabel->text = "Minor";
 	scaleKnob->connectLabel(scaleLabel, module);
 	addChild(scaleLabel);
 	addParam(scaleKnob);
-	addInput(createInput<TinyPJ301MPort>(Vec(23, 220), module, Quantizer::SCALE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 163), module, Quantizer::SCALE_INPUT));
+
+	addParam(createParam<JwSmallSnapKnob>(Vec(17, 205), module, Quantizer::OCTAVE_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(23, 235), module, Quantizer::OCTAVE_INPUT));
 
 
 	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
