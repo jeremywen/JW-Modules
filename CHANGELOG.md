@@ -2,12 +2,13 @@
 
 ## v1.0.21 ~ 12-30-20
 
+  * Quantizer: Added Octave Shift knob and input to go up or down octaves after quantizing.
   * Fixed Pos output in D1v1de
 
 ## v1.0.20 ~ 11-8-2020
 
-  * Shortened trigger pulse to match my other module triggers.
-  * Fixed Lydian scale.
+  * Trigs: Shortened trigger pulse to match my other module triggers.
+  * Fixed Lydian scale in all quantizers.
 
 ## v1.0.19 ~ 11-7-2020
 
