@@ -26,7 +26,7 @@ struct Quantizer : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
-		configParam(OCTAVE_PARAM, -5, 7 , 0, "Octave Shift");
+		configParam(OCTAVE_PARAM, -5, 5 , 0, "Octave Shift");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -43,7 +43,7 @@ struct Quantizer : Module,QuantizeUtils {
 void Quantizer::process(const ProcessArgs &args) {
 	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
 	int scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
-	int octaveShift = params[OCTAVE_PARAM].getValue() + rescalefjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5, -5, 7);
+	int octaveShift = params[OCTAVE_PARAM].getValue() + clampfjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5);
 	int channels = inputs[VOLT_INPUT].getChannels();
 	for (int c = 0; c < channels; c++) {
 		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale);
@@ -103,18 +103,23 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 290), module, Quantizer::VOLT_OUTPUT));
 
+	CenteredLabel* const octLabel = new CenteredLabel;
+	octLabel->box.pos = Vec(15, 101.5);
+	octLabel->text = "Oct Shift";
+	addChild(octLabel);
+
 	CenteredLabel* const voctLabel = new CenteredLabel;
-	voctLabel->box.pos = Vec(15, 140);
-	voctLabel->text = "V/OCT";
+	voctLabel->box.pos = Vec(15, 142);
+	voctLabel->text = "V/Oct";
 	addChild(voctLabel);
 
 	CenteredLabel* const inLabel = new CenteredLabel;
-	inLabel->box.pos = Vec(8, 160);
+	inLabel->box.pos = Vec(8, 159);
 	inLabel->text = "In";
 	addChild(inLabel);
 
 	CenteredLabel* const outLabel = new CenteredLabel;
-	outLabel->box.pos = Vec(22, 160);
+	outLabel->box.pos = Vec(22, 159);
 	outLabel->text = "Out";
 	addChild(outLabel);
 }
