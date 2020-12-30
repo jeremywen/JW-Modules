@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.0.21 ~ 12-30-20
+
+  * Fixed Pos output in D1v1de
+
 ## v1.0.20 ~ 11-8-2020
 
   * Shortened trigger pulse to match my other module triggers.

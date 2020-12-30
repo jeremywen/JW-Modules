@@ -101,10 +101,10 @@ struct D1v1de : Module {
 					gatePulse.trigger(1e-3);
 				}
 			}
-			outputs[POS_OUTPUT].setVoltage(rescalefjw(ticks, 0.0, divInt, 0.0, 10.0));
 			if(ticks >= divInt){
 				resetSeq();
 			}
+			outputs[POS_OUTPUT].setVoltage(rescalefjw(ticks, 0.0, divInt-1, 0.0, 10.0));
 		}
 		bool pulse = gatePulse.process(oneOverRate);
 		outputs[CLOCK_OUTPUT].setVoltage(pulse ? 10.0 : 0.0);
