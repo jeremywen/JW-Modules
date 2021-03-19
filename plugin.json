@@ -73,6 +73,12 @@
 			"tags": ["Sequencer"]
 		},
 		{
+			"slug": "EightSeq",
+			"name": "EightSeq",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#eightSeq",
+			"tags": ["Sequencer"]
+		},
+		{
 			"slug": "MinMax",
 			"name": "Min Max",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#minmax",

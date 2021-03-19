@@ -21,6 +21,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Patterns](#patterns)
 * [1Pattern](#1pattern)
 * [GridSeq](#gridseq)
+* [8Seq](#8seq)
 * [Str1ker](#str1ker)
 * [D1v1de](#d1v1de)
 * [Pres1t](#pres1t)
@@ -347,6 +348,9 @@ This module is one row of Patterns (rotated into one column)
   * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
   'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
 
+## 8Seq
+
+It's like gridseq but simipler and you can use the probability as cv instead of not probabability.
 
 ## Str1ker
 

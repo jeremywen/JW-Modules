@@ -376,6 +376,7 @@ extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelFullScope;
 extern Model *modelGridSeq;
+extern Model *modelEightSeq;
 extern Model *modelThingThing;
 extern Model *modelCat;
 extern Model *modelTree;
