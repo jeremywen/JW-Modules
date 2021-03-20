@@ -14,6 +14,7 @@ struct EightSeq : Module,QuantizeUtils {
 		CELL_PROB_PARAM,
 		RND_PROBS_PARAM = CELL_PROB_PARAM + 16,
 		PROB_ON_SWITCH_PARAM,
+		LENGTH_KNOB_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -28,6 +29,7 @@ struct EightSeq : Module,QuantizeUtils {
 		SCALE_INPUT,
 		OCTAVE_INPUT,
 		RND_PROBS_INPUT,
+		LENGTH_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -71,6 +73,7 @@ struct EightSeq : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+		configParam(LENGTH_KNOB_PARAM, 1.0, 8.0, 8.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
 		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes (Shift + Click to Init Defaults)");
 		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities (Shift + Click to Init Defaults)");
@@ -216,6 +219,8 @@ void EightSeq::process(const ProcessArgs &args) {
 			handleMoveRight();
 		} 
 	}
+	int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
+	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
@@ -226,8 +231,7 @@ void EightSeq::process(const ProcessArgs &args) {
 			indexYX = 0;
 		}
 		rndFloat0to1AtClockStep = random::uniform();
-		index = posX + (posY * 8);
-		indexYX = posY + (posX * 8);
+		index = (posX + (posY * 8)) % len;
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
 	}
@@ -239,7 +243,7 @@ void EightSeq::process(const ProcessArgs &args) {
 	//////////////////////////////////////////////////////////////////////////////////////////	
 
 	// Gate buttons
-	for (int i = 0; i < 16; i++) {
+	for (int i = 0; i < 8; i++) {
 		if (gateTriggers[i].process(params[CELL_GATE_PARAM + i].getValue())) {
 			gateState[i] = !gateState[i];
 		}
@@ -351,11 +355,14 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	///// RESET /////
-	addInput(createInput<PJ301MPort>(Vec(190, 43), module, EightSeq::RESET_INPUT));
-
 	///// CLOCK /////
-	addInput(createInput<PJ301MPort>(Vec(82, 43), module, EightSeq::RIGHT_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(73, 43), module, EightSeq::RIGHT_INPUT));
+
+	addParam(createParam<JwSmallSnapKnob>(Vec(128, 45), module, EightSeq::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(157, 50), module, EightSeq::LENGTH_INPUT));
+
+	///// RESET /////
+	addInput(createInput<PJ301MPort>(Vec(200, 43), module, EightSeq::RESET_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float paramY = 313;
