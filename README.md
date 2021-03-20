@@ -351,7 +351,7 @@ This module is one row of Patterns (rotated into one column)
 
 ## 8Seq
 
-![8Seq](./doc/8seq-img1.png)
+![8Seq](./doc/8seq-img2.png)
 
 #### Basics
 
