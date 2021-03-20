@@ -32,4 +32,5 @@ void init(rack::Plugin *p)
 	p->addModel(modelBlankPanelMedium);
 	p->addModel(modelBlankPanelLarge);
 	p->addModel(modelCoolBreeze);
+	p->addModel(modelPete);
 }
