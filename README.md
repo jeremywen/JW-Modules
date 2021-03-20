@@ -696,3 +696,5 @@ To make plugin zip:
 	make dist
 
 SEE ALSO [Dev FAQ for VCV Rack](https://github.com/jeremywen/JW-Modules/wiki/Dev-FAQ-for-VCV-Rack)
+
+Library Update ticket https://github.com/VCVRack/library/issues/467
