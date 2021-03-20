@@ -348,9 +348,33 @@ This module is one row of Patterns (rotated into one column)
   * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
   'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
 
+
 ## 8Seq
 
-It's like gridseq but simipler and you can use the probability as cv instead of not probabability.
+![8Seq](./doc/8seq-img1.png)
+
+#### Basics
+
+It's like gridseq but simpler (no step direction handling) and you can use the probability as cv instead of not probabability.
+
+#### Controls
+
+  *  **Length Knob:** length of sequence
+  *  **Prob Switch:** If on(up), then probability is used to decide if a gate is sent out. If off(down), then probability is NOT used to decide if a gate is sent out. (this way you can just use the probability as cv and not related to the gates)
+
+#### Inputs
+
+  *  **Clock Input:** clock to move the steps along in a standard pattern
+  *  **Length Input:** length of sequence
+  *  **Reset Input:** rest back to beginning
+
+#### Outputs
+
+  *  **Gate Out:** Sends out gates debepending on probobility
+  *  **V/oct Out:** Sends out pitch
+  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop
+  *  **Prob Out:** Sends out voltage of current probability knob value
+
 
 ## Str1ker
 
