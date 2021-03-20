@@ -504,4 +504,4 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(pitchMenuItem);
 }
 
-Model *modelEightSeq = createModel<EightSeq, EightSeqWidget>("EightSeq");
+Model *modelEightSeq = createModel<EightSeq, EightSeqWidget>("8Seq");

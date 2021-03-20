@@ -73,8 +73,8 @@
 			"tags": ["Sequencer"]
 		},
 		{
-			"slug": "EightSeq",
-			"name": "EightSeq",
+			"slug": "8Seq",
+			"name": "8Seq",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#eightSeq",
 			"tags": ["Sequencer"]
 		},
