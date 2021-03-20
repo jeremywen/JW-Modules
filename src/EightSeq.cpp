@@ -272,7 +272,7 @@ void EightSeq::process(const ProcessArgs &args) {
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[PROB_OUTPUT].setVoltage(rescalefjw(params[CELL_PROB_PARAM + index].getValue(), 0.0, 1.0, 1.0, 10.0));
-	outputs[EOC_OUTPUT].setVoltage((pulse && index==7) ? 10.0 : 0.0);
+	outputs[EOC_OUTPUT].setVoltage((pulse && index == len-1) ? 10.0 : 0.0);
 }
 
 struct EightSeqWidget : ModuleWidget {
