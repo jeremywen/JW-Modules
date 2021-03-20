@@ -328,6 +328,7 @@ This module is one row of Patterns (rotated into one column)
 #### Bottom
 
   *  **ROOT Knob:** root note if scaling pitch sent to "OUT"
+  *  **OCTAVE Knob:** current musical octave
   *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
   *  **RND GATE Button** randomize gate only for each cell
   *  **RND GATE Input** on trigger randomize gate only for each cell
@@ -374,6 +375,20 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
   *  **V/oct Out:** Sends out pitch
   *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop
   *  **Prob Out:** Sends out voltage of current probability knob value
+
+#### Bottom
+
+  *  **ROOT Knob:** root note if scaling pitch sent to "OUT"
+  *  **OCTAVE Knob:** current musical octave
+  *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
+  *  **RND GATE Button** randomize gate only for each cell
+  *  **RND GATE Input** on trigger randomize gate only for each cell
+  *  **RND PROB Button** randomize probability only for each cell
+  *  **RND PROB Input** on trigger, randomize probability only for each cell
+  *  **RND NOTE Button** randomize pitch only for each cell
+  *  **RND NOTE Input** on trigger, randomize pitch only for each cell
+  
+  If you shift click the random buttons, then the parameters will be set to their default values
 
 
 ## Str1ker
