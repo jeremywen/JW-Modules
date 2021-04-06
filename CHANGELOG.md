@@ -1,5 +1,13 @@
 # Change Log
 
+## v1.0.25 ~
+
+  * 8seq length issue fixed
+
+## v1.0.24 ~ 3-29-21
+  
+  * New Module: 8Seq
+
 ## v1.0.21 ~ 12-30-20
 
   * Quantizer: Added Octave Shift knob and input to go up or down octaves after quantizing.

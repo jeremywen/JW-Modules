@@ -54,9 +54,6 @@ struct EightSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger gateTriggers[16];
 
 	int index = 0;
-	int indexYX = 0;
-	int posX = 0;
-	int posY = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
 	bool gateState[16] = {};
@@ -184,8 +181,6 @@ struct EightSeq : Module,QuantizeUtils {
 		float voltsScaled = rescalefjw(voltsIn, 0, noteParamMax, 0, totalMax);
 		return closestVoltageInScale(octave + voltsScaled, rootNote, scale);
 	}
-
-	void handleMoveRight(){ posX = posX == 7 ? 0 : posX + 1; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,6 +195,8 @@ void EightSeq::process(const ProcessArgs &args) {
 		resetMode = true;
 	}
 
+	int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
+	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
 	if(running){
 
 		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
@@ -216,22 +213,16 @@ void EightSeq::process(const ProcessArgs &args) {
 
 		if (rightTrigger.process(inputs[RIGHT_INPUT].getVoltage())) {
 			nextStep = true;
-			handleMoveRight();
+			index = (index + 1) % len; 
 		} 
 	}
-	int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
-	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
 			phase = 0.0;
-			posX = 0;
-			posY = 0;
 			index = 0;
-			indexYX = 0;
 		}
 		rndFloat0to1AtClockStep = random::uniform();
-		index = (posX + (posY * 8)) % len;
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
 	}
