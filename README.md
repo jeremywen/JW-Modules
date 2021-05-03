@@ -405,6 +405,8 @@ Inspired by the [PX-18](https://maxforlive.com/library/device/235/px-18)
 
 16 step sequencer where each step can have a division to play.  So if a step division (small knob) is 3 then that step would play every 3 steps.
 
+NOTE: You may want to trigger a reset after changing division knobs.  This will reset all counters.
+
 #### Controls
 
   *  **Length Knob:** length of sequence
