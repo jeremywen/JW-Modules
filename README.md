@@ -399,6 +399,8 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
 
 ![DivSeq](./doc/divseq-img2.png)
 
+Inspired by the [PX-18](https://maxforlive.com/library/device/235/px-18)
+
 #### Basics
 
 16 step sequencer where each step can have a division to play.  So if a step division (small knob) is 3 then that step would play every 3 steps.
