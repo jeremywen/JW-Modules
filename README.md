@@ -397,7 +397,7 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
 
 ## DivSeq
 
-![DivSeq](./doc/divseq-img1.png)
+![DivSeq](./doc/divseq-img2.png)
 
 #### Basics
 
