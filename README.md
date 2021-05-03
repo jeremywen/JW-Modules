@@ -22,6 +22,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [1Pattern](#1pattern)
 * [GridSeq](#gridseq)
 * [8Seq](#8seq)
+* [DivSeq](#divseq)
 * [Str1ker](#str1ker)
 * [D1v1de](#d1v1de)
 * [Pres1t](#pres1t)
@@ -339,6 +340,8 @@ This module is one row of Patterns (rotated into one column)
   
   If you shift click the random buttons, then the parameters will be set to their default values
 
+  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+
 #### Right Click Context Menu
 
   ![Menu](./doc/GridSeq-Menu-img2.png)
@@ -367,7 +370,7 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
 
   *  **Clock Input:** clock to move the steps along in a standard pattern
   *  **Length Input:** length of sequence
-  *  **Reset Input:** rest back to beginning
+  *  **Reset Input:** reset back to beginning
 
 #### Outputs
 
@@ -390,6 +393,47 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
   
   If you shift click the random buttons, then the parameters will be set to their default values
 
+  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+
+## DivSeq
+
+![DivSeq](./doc/divseq-img1.png)
+
+#### Basics
+
+16 step sequencer where each step can have a division to play.  So if a step division (small knob) is 3 then that step would play every 3 steps.
+
+#### Controls
+
+  *  **Length Knob:** length of sequence
+
+#### Inputs
+
+  *  **Clock Input:** clock to move the steps along in a standard pattern
+  *  **Length Input:** length of sequence
+  *  **Reset Input:** reset back to beginning
+
+#### Outputs
+
+  *  **Gate Out:** Sends out gates debepending on probobility
+  *  **V/oct Out:** Sends out pitch
+  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop
+
+#### Bottom
+
+  *  **ROOT Knob:** root note if scaling pitch sent to "OUT"
+  *  **OCTAVE Knob:** current musical octave
+  *  **SCALE Knob:** current musical scale or none if turned up all the way to the last value
+  *  **RND GATE Button** randomize gate only for each cell
+  *  **RND GATE Input** on trigger randomize gate only for each cell
+  *  **RND DIV Button** randomize divisions only for each cell
+  *  **RND DIV Input** on trigger, randomize divisions only for each cell
+  *  **RND NOTE Button** randomize pitch only for each cell
+  *  **RND NOTE Input** on trigger, randomize pitch only for each cell
+  
+  If you shift click the random buttons, parameters will be set to their default values
+
+  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
 
 ## Str1ker
 

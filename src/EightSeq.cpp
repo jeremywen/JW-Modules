@@ -41,7 +41,7 @@ struct EightSeq : Module,QuantizeUtils {
 	};
 	enum LightIds {
 		GATES_LIGHT,
-		STEPS_LIGHT = GATES_LIGHT+ 16,
+		STEPS_LIGHT = GATES_LIGHT + 16,
 		NUM_LIGHTS = STEPS_LIGHT + 16
 	};
 
@@ -51,12 +51,12 @@ struct EightSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger rndNotesTrigger;
 	dsp::SchmittTrigger rndGatesTrigger;
 	dsp::SchmittTrigger rndProbsTrigger;
-	dsp::SchmittTrigger gateTriggers[16];
+	dsp::SchmittTrigger gateTriggers[8];
 
 	int index = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
-	bool gateState[16] = {};
+	bool gateState[8] = {};
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
@@ -72,8 +72,8 @@ struct EightSeq : Module,QuantizeUtils {
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 8.0, 8.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes (Shift + Click to Init Defaults)");
-		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities (Shift + Click to Init Defaults)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		configParam(PROB_ON_SWITCH_PARAM, 0.0, 1.0, 1.0, "Probability Switch");
@@ -97,7 +97,7 @@ struct EightSeq : Module,QuantizeUtils {
 
 		// gates
 		json_t *gatesJ = json_array();
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
 			json_t *gateJ = json_integer((int) gateState[i]);
 			json_array_append_new(gatesJ, gateJ);
 		}
@@ -122,7 +122,7 @@ struct EightSeq : Module,QuantizeUtils {
 		// gates
 		json_t *gatesJ = json_object_get(rootJ, "gates");
 		if (gatesJ) {
-			for (int i = 0; i < 16; i++) {
+			for (int i = 0; i < 8; i++) {
 				json_t *gateJ = json_array_get(gatesJ, i);
 				if (gateJ)
 					gateState[i] = !!json_integer_value(gateJ);
@@ -136,7 +136,7 @@ struct EightSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
 			gateState[i] = true;
 		}
 	}
@@ -146,7 +146,7 @@ struct EightSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeGateStates() {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
 			gateState[i] = (random::uniform() > 0.50);
 		}
 	}
@@ -156,13 +156,13 @@ struct EightSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
 			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
 		}
 	}
 
 	void randomizeProbsOnly(){
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
 			params[CELL_PROB_PARAM + i].setValue(random::uniform());
 		}
 	}
@@ -195,8 +195,8 @@ void EightSeq::process(const ProcessArgs &args) {
 		resetMode = true;
 	}
 
-	int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
-	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
+	int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 7.0));
+	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 8.0);
 	if(running){
 
 		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
@@ -285,9 +285,14 @@ struct RandomizeNotes8SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
 			EightSeq *gs = dynamic_cast<EightSeq*>(gsw->module);
+			float firstKnobVal = gsw->seqKnobs[0]->paramQuantity->getValue();
 			for (int i = 0; i < 8; i++) {
 				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
 					gsw->seqKnobs[i]->paramQuantity->setValue(3);
+				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+					if(i != 0){
+						gsw->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+					}
 				} else {
 					gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
 				}
@@ -301,9 +306,14 @@ struct RandomizeProbs8SeqOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
+			float firstKnobVal = gsw->probKnobs[0]->paramQuantity->getValue();
 			for (int i = 0; i < 8; i++) {
 				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
 					gsw->probKnobs[i]->paramQuantity->setValue(1);
+				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+					if(i != 0){
+						gsw->probKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+					}
 				} else {
 					gsw->probKnobs[i]->paramQuantity->setValue(random::uniform());
 				}

@@ -12,6 +12,7 @@ void init(rack::Plugin *p)
 	p->addModel(modelFullScope);
 	p->addModel(modelGridSeq);
 	p->addModel(modelEightSeq);
+	p->addModel(modelDivSeq);
 	p->addModel(modelMinMax);
 	p->addModel(modelNoteSeq);
 	p->addModel(modelNoteSeqFu);

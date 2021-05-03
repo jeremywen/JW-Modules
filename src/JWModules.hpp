@@ -137,6 +137,12 @@ struct JwTinyGrayKnob : RoundKnob {
 	}
 };
 
+struct JwTinyGraySnapKnob : JwTinyGrayKnob {
+	JwTinyGraySnapKnob() {
+		snap = true;
+	}
+};
+
 struct BPMPartKnob : JwSmallSnapKnob {	
 	BPMPartKnob(){} 
 };
@@ -377,6 +383,7 @@ extern Model *modelXYPad;
 extern Model *modelFullScope;
 extern Model *modelGridSeq;
 extern Model *modelEightSeq;
+extern Model *modelDivSeq;
 extern Model *modelThingThing;
 extern Model *modelCat;
 extern Model *modelTree;
