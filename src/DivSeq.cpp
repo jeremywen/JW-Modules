@@ -359,8 +359,8 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 	///// CLOCK /////
 	addInput(createInput<PJ301MPort>(Vec(102, 26), module, DivSeq::RIGHT_INPUT));
 
-	addParam(createParam<JwSmallSnapKnob>(Vec(156, 26), module, DivSeq::LENGTH_KNOB_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(185, 31), module, DivSeq::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(159, 26), module, DivSeq::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(188, 31), module, DivSeq::LENGTH_INPUT));
 
 	///// RESET /////
 	addInput(createInput<PJ301MPort>(Vec(228, 26), module, DivSeq::RESET_INPUT));
