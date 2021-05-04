@@ -338,9 +338,11 @@ This module is one row of Patterns (rotated into one column)
   *  **RND NOTE Button** randomize pitch only for each cell
   *  **RND NOTE Input** on trigger, randomize pitch only for each cell
   
-  If you shift click the random buttons, then the parameters will be set to their default values
+  If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+
+  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
 
 #### Right Click Context Menu
 
@@ -391,9 +393,11 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
   *  **RND NOTE Button** randomize pitch only for each cell
   *  **RND NOTE Input** on trigger, randomize pitch only for each cell
   
-  If you shift click the random buttons, then the parameters will be set to their default values
+  If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+
+  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
 
 ## DivSeq
 
@@ -436,9 +440,11 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
   *  **RND NOTE Button** randomize pitch only for each cell
   *  **RND NOTE Input** on trigger, randomize pitch only for each cell
   
-  If you shift click the random buttons, parameters will be set to their default values
+  If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+
+  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
 
 ## Str1ker
 
