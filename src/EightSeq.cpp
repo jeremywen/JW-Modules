@@ -288,12 +288,12 @@ struct RandomizeNotes8SeqOnlyButton : TinyButton {
 			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
+			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
 			// DEBUG("shiftDown:%d",shiftDown);
 			// DEBUG("altDown:%d",altDown);
 			// DEBUG("superDown:%d",superDown);
 			for (int i = 0; i < 8; i++) {
-				if (superDown) {
+				if (altAndShift) {
 					if(i != 0){
 						wid->seqKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
@@ -320,9 +320,9 @@ struct RandomizeProbs8SeqOnlyButton : TinyButton {
 			float firstKnobMaxVal = 1.0;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
+			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
 			for (int i = 0; i < 8; i++) {
-				if (superDown) {
+				if (altAndShift) {
 					if(i != 0){
 						wid->probKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
