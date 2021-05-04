@@ -3,7 +3,7 @@
 ## v1.0.26 ~ 5-3-21
 
   * New Module: DivSeq
-  * 8Seq, GridSeq, DivSeq: can now Alt + click randomize notes, divs, probability - this will set the max to the top left knob corresponding to the parameter being randomized
+  * 8Seq, GridSeq, DivSeq: see readme and tooltips for randomize buttons
 
 ## v1.0.25 ~ 4-6-21
 
