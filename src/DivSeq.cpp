@@ -52,6 +52,7 @@ struct DivSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger gateTriggers[16];
 
 	int index = 0;
+	bool playDiv = false;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
 	bool gateState[16] = {};
@@ -223,8 +224,14 @@ void DivSeq::process(const ProcessArgs &args) {
 		}
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
-		counters[index]++;
 		gatePulse.trigger(1e-1);
+
+		counters[index]++;
+		int playDivInt = params[CELL_DIV_PARAM + index].getValue();
+		playDiv = counters[index] == playDivInt;
+		if(counters[index] >= playDivInt){
+			counters[index] = 0;
+		}
 	}
 
 	bool pulse = gatePulse.process(1.0 / args.sampleRate);
@@ -238,19 +245,10 @@ void DivSeq::process(const ProcessArgs &args) {
 		if (gateTriggers[i].process(params[CELL_GATE_PARAM + i].getValue())) {
 			gateState[i] = !gateState[i];
 		}
-		bool gateOn = (running && i == index && gateState[i]);
-		if (gateMode == TRIGGER) gateOn = gateOn && pulse;
-		else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
 
 		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
 		float gateOnVal = counters[i] / params[CELL_DIV_PARAM + i].getValue();
 		lights[GATES_LIGHT + i].value = gateState[i] ? gateOnVal : lights[STEPS_LIGHT + i].value;
-	}
-
-	int playDivInt = params[CELL_DIV_PARAM + index].getValue();
-	bool playDiv = counters[index] == playDivInt;
-	if(counters[index] >= playDivInt){
-		counters[index] = 0;
 	}
 
 	bool gatesOn = (running && gateState[index] && playDiv);

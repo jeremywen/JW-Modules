@@ -238,9 +238,6 @@ void EightSeq::process(const ProcessArgs &args) {
 		if (gateTriggers[i].process(params[CELL_GATE_PARAM + i].getValue())) {
 			gateState[i] = !gateState[i];
 		}
-		bool gateOn = (running && i == index && gateState[i]);
-		if (gateMode == TRIGGER) gateOn = gateOn && pulse;
-		else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
 
 		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
 		float gateOnVal = params[CELL_PROB_PARAM + i].getValue();
