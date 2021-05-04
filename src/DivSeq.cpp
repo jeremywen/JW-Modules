@@ -425,7 +425,7 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 
 	//// MAIN SEQUENCER KNOBS ////
 	int boxSizeX = 60;
-	int boxSizeY = 60;
+	int boxSizeY = 61;
 	for (int y = 0; y < 4; y++) {
 		for (int x = 0; x < 4; x++) {
 			int knobX = x * boxSizeX + 60;
