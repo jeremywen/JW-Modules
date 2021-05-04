@@ -410,12 +410,13 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
 #### Controls
 
   *  **Length Knob:** length of sequence
+  *  **Reset Button:** this resets to the beginning of the sequence and resets all step counters.
 
 #### Inputs
 
   *  **Clock Input:** clock to move the steps along in a standard pattern
   *  **Length Input:** length of sequence
-  *  **Reset Input:** reset back to beginning
+  *  **Reset Input:** this resets to the beginning of the sequence and resets all step counters.
 
 #### Outputs
 
