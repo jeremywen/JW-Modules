@@ -40,7 +40,8 @@ struct DivSeq : Module,QuantizeUtils {
 	enum LightIds {
 		GATES_LIGHT,
 		STEPS_LIGHT = GATES_LIGHT + 16,
-		NUM_LIGHTS = STEPS_LIGHT + 16
+		DIV_LIGHT = STEPS_LIGHT + 16,
+		NUM_LIGHTS = DIV_LIGHT + 16
 	};
 
 	dsp::SchmittTrigger rightTrigger;
@@ -246,9 +247,11 @@ void DivSeq::process(const ProcessArgs &args) {
 			gateState[i] = !gateState[i];
 		}
 
-		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
-		float gateOnVal = counters[i] / params[CELL_DIV_PARAM + i].getValue();
-		lights[GATES_LIGHT + i].value = gateState[i] ? gateOnVal : lights[STEPS_LIGHT + i].value;
+		if(lights[STEPS_LIGHT + i].value > 0){ 
+			lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; 
+		}
+		lights[DIV_LIGHT + i].value = counters[i] / params[CELL_DIV_PARAM + i].getValue();
+		lights[GATES_LIGHT + i].value = (int)gateState[i];
 	}
 
 	bool gatesOn = (running && gateState[index] && playDiv);
@@ -430,6 +433,7 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 
 			addChild(createLight<MediumLight<MyYellowValueLight>>(Vec(knobX+5, knobY-13.6), module, DivSeq::STEPS_LIGHT + idx));
 			addChild(createLight<LargeLight<MyBlueValueLight>>(Vec(knobX+23.5, knobY-13.6), module, DivSeq::GATES_LIGHT + idx));
+			addChild(createLight<MediumLight<MyBlueValueLight>>(Vec(knobX+26.5, knobY-10.5), module, DivSeq::DIV_LIGHT + idx));
 		}
 	}
 

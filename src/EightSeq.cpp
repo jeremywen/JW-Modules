@@ -239,7 +239,9 @@ void EightSeq::process(const ProcessArgs &args) {
 			gateState[i] = !gateState[i];
 		}
 
-		if(lights[STEPS_LIGHT + i].value > 0){ lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; }
+		if(lights[STEPS_LIGHT + i].value > 0){ 
+			lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; 
+		}
 		float gateOnVal = params[CELL_PROB_PARAM + i].getValue();
 		lights[GATES_LIGHT + i].value = gateState[i] ? gateOnVal : lights[STEPS_LIGHT + i].value;
 	}
