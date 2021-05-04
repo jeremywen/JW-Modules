@@ -72,8 +72,8 @@ struct EightSeq : Module,QuantizeUtils {
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 8.0, 8.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
-		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Cmd/Win + Click to use first knob as min)");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Cmd/Win + Click to use first knob as min)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		configParam(PROB_ON_SWITCH_PARAM, 0.0, 1.0, 1.0, "Probability Switch");
@@ -282,18 +282,29 @@ struct RandomizeNotes8SeqOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
-			EightSeq *gs = dynamic_cast<EightSeq*>(gsw->module);
-			float firstKnobVal = gsw->seqKnobs[0]->paramQuantity->getValue();
+			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
+			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
+			float firstKnobVal = wid->seqKnobs[0]->paramQuantity->getValue();
+			float firstKnobMaxVal = mod->noteParamMax;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
+			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
+			// DEBUG("shiftDown:%d",shiftDown);
+			// DEBUG("altDown:%d",altDown);
+			// DEBUG("superDown:%d",superDown);
 			for (int i = 0; i < 8; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gsw->seqKnobs[i]->paramQuantity->setValue(3);
-				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+				if (superDown) {
 					if(i != 0){
-						gsw->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+						wid->seqKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+					}
+				} else if (shiftDown) {
+					wid->seqKnobs[i]->paramQuantity->setValue(3);
+				} else if (altDown) {
+					if(i != 0){
+						wid->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
 					}
 				} else {
-					gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
+					wid->seqKnobs[i]->paramQuantity->setValue(mod->getOneRandomNote());
 				}
 			}
 		}
@@ -304,17 +315,25 @@ struct RandomizeProbs8SeqOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
-			float firstKnobVal = gsw->probKnobs[0]->paramQuantity->getValue();
+			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
+			float firstKnobVal = wid->probKnobs[0]->paramQuantity->getValue();
+			float firstKnobMaxVal = 1.0;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
+			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
 			for (int i = 0; i < 8; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gsw->probKnobs[i]->paramQuantity->setValue(1);
-				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+				if (superDown) {
 					if(i != 0){
-						gsw->probKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+						wid->probKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+					}
+				} else if (shiftDown) {
+					wid->probKnobs[i]->paramQuantity->setValue(1);
+				} else if (altDown) {
+					if(i != 0){
+						wid->probKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
 					}
 				} else {
-					gsw->probKnobs[i]->paramQuantity->setValue(random::uniform());
+					wid->probKnobs[i]->paramQuantity->setValue(random::uniform());
 				}
 			}
 		}

@@ -62,6 +62,7 @@ struct DivSeq : Module,QuantizeUtils {
 	bool resetMode = false;
 	float rndFloat0to1AtClockStep = random::uniform();
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	int divMax = 64;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -73,8 +74,8 @@ struct DivSeq : Module,QuantizeUtils {
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
-		configParam(RND_DIVS_PARAM, 0.0, 1.0, 0.0, "Random Divisions\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Cmd/Win + Click to use first knob as min)");
+		configParam(RND_DIVS_PARAM, 0.0, 1.0, 0.0, "Random Divisions\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Cmd/Win + Click to use first knob as min)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		for (int y = 0; y < 4; y++) {
@@ -82,7 +83,7 @@ struct DivSeq : Module,QuantizeUtils {
 				int idx = (x+(y*4));
 				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
-				configParam(CELL_DIV_PARAM + idx, 1.0, 64.0, 1.0, "Division");
+				configParam(CELL_DIV_PARAM + idx, 1.0, divMax, 1.0, "Division");
 			}
 		}
 	}
@@ -283,18 +284,29 @@ struct RandomizeNotes16SeqOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			DivSeqWidget *gsw = this->getAncestorOfType<DivSeqWidget>();
-			DivSeq *gs = dynamic_cast<DivSeq*>(gsw->module);
-			float firstKnobVal = gsw->seqKnobs[0]->paramQuantity->getValue();
+			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
+			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
+			float firstKnobVal = wid->seqKnobs[0]->paramQuantity->getValue();
+			float firstKnobMaxVal = mod->noteParamMax;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
+			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
+			// DEBUG("shiftDown:%d",shiftDown);
+			// DEBUG("altDown:%d",altDown);
+			// DEBUG("superDown:%d",superDown);
 			for (int i = 0; i < 16; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gsw->seqKnobs[i]->paramQuantity->setValue(3);
-				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+				if (superDown) {
 					if(i != 0){
-						gsw->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+						wid->seqKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+					}
+				} else if (shiftDown) {
+					wid->seqKnobs[i]->paramQuantity->setValue(3);
+				} else if (altDown) {
+					if(i != 0){
+						wid->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
 					}
 				} else {
-					gsw->seqKnobs[i]->paramQuantity->setValue(gs->getOneRandomNote());
+					wid->seqKnobs[i]->paramQuantity->setValue(mod->getOneRandomNote());
 				}
 			}
 		}
@@ -305,17 +317,26 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			DivSeqWidget *gsw = this->getAncestorOfType<DivSeqWidget>();
-			int firstKnobVal = gsw->divKnobs[0]->paramQuantity->getValue();
+			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
+			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
+			int firstKnobVal = wid->divKnobs[0]->paramQuantity->getValue();
+			float firstKnobMaxVal = mod->divMax;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
+			bool superDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SUPER;
 			for (int i = 0; i < 16; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gsw->divKnobs[i]->paramQuantity->setValue(1);
-				} else if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT) {
+				if (superDown) {
 					if(i != 0){
-						gsw->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*firstKnobVal+1));
+						wid->divKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+					}
+				} else if (shiftDown) {
+					wid->divKnobs[i]->paramQuantity->setValue(1);
+				} else if (altDown) {
+					if(i != 0){
+						wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*firstKnobVal+1));
 					}
 				} else {
-					gsw->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*64+1));
+					wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*64+1));
 				}
 			}
 		}
