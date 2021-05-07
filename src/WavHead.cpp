@@ -51,6 +51,55 @@ struct WavHeadWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct SvgLightWidget : LightWidget {
+	std::shared_ptr<Svg> svg;
+
+	/** Sets the box size to the svg image size */
+	void wrap();
+
+	/** Sets and wraps the SVG */
+	void setSvg(std::shared_ptr<Svg> svg);
+	DEPRECATED void setSVG(std::shared_ptr<Svg> svg) {
+		setSvg(svg);
+	}
+
+	void draw(const DrawArgs& args) override;
+};
+void SvgLightWidget::wrap() {
+	if (svg && svg->handle) {
+		box.size = math::Vec(svg->handle->width, svg->handle->height);
+	}
+	else {
+		box.size = math::Vec();
+	}
+}
+
+void SvgLightWidget::setSvg(std::shared_ptr<Svg> svg) {
+	this->svg = svg;
+	wrap();
+}
+
+void SvgLightWidget::draw(const DrawArgs& args) {
+	if (svg && svg->handle) {
+		svgDraw(args.vg, svg->handle);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct Snowflake : SvgLightWidget {
+	Snowflake() {
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SnowFlake.svg")));
+		// box.size = sw->box.size;
+	}
+};
+
+struct WavHeadLogo : SvgLightWidget {
+	WavHeadLogo() {
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadSmall.svg")));
+		// box.size = sw->box.size;
+	}
+};
+
 void WavHeadWidget::step() {
 	if(module != NULL){
 		ModuleWidget::step();

@@ -321,20 +321,6 @@ struct SmallButton : SVGSwitch {
 
 ////////////////////////////////////////////// SCREWS //////////////////////////////////////////////
 
-struct Snowflake : SVGScrew {
-	Snowflake() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SnowFlake.svg")));
-		box.size = sw->box.size;
-	}
-};
-
-struct WavHeadLogo : SVGScrew {
-	WavHeadLogo() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadSmall.svg")));
-		box.size = sw->box.size;
-	}
-};
-
 struct Screw_J : SVGScrew {
 	Screw_J() {
 		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Screw_J.svg")));
