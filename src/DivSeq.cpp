@@ -137,6 +137,9 @@ struct DivSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
+		for (int i = 0; i < 16; i++) {
+			gateState[i] = true;
+		}
 	}
 
 	void onRandomize() override {
