@@ -1,6 +1,10 @@
 # Change Log
 
-## v1.0.26 ~ 5-3-21
+## v1.0.28 ~ 5-8-21
+
+  * Fixed all gates on aftre reset
+
+## v1.0.27 ~ 5-3-21
 
   * New Module: DivSeq
   * 8Seq, GridSeq, DivSeq: see readme and tooltips for randomize buttons

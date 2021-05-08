@@ -220,7 +220,6 @@ void DivSeq::process(const ProcessArgs &args) {
 			phase = 0.0;
 			index = 0;
 			for (int i = 0; i < 16; i++) {
-				gateState[i] = true;
 				counters[i] = 0;
 			}
 		}
