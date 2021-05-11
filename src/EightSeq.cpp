@@ -61,6 +61,7 @@ struct EightSeq : Module,QuantizeUtils {
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
 	float rndFloat0to1AtClockStep = random::uniform();
+	bool hitEnd = false;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -136,6 +137,8 @@ struct EightSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
+		index = 0;
+		resetMode = true;
 		for (int i = 0; i < 8; i++) {
 			gateState[i] = true;
 		}
@@ -219,6 +222,7 @@ void EightSeq::process(const ProcessArgs &args) {
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
+			hitEnd = false;
 			phase = 0.0;
 			index = 0;
 		}
@@ -262,7 +266,10 @@ void EightSeq::process(const ProcessArgs &args) {
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[PROB_OUTPUT].setVoltage(rescalefjw(params[CELL_PROB_PARAM + index].getValue(), 0.0, 1.0, 1.0, 10.0));
-	outputs[EOC_OUTPUT].setVoltage((pulse && index == len-1) ? 10.0 : 0.0);
+	outputs[EOC_OUTPUT].setVoltage((pulse && hitEnd && index == 0) ? 10.0 : 0.0);
+	if(index == len-1){
+		hitEnd = true;
+	}
 }
 
 struct EightSeqWidget : ModuleWidget {

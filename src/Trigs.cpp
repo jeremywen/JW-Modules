@@ -88,6 +88,7 @@ struct Trigs : Module {
 	bool goingForward = true;
 	bool resetMode = false;
 	bool eocOn = false; 
+	bool hitEnd = false;
 	bool *cells = new bool[CELLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
@@ -166,6 +167,7 @@ struct Trigs : Module {
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
 			if(resetMode){
 				resetMode = false;
+				hitEnd = false;
 				resetSeqToEnd();
 			}
 			clockStep();
@@ -221,14 +223,16 @@ struct Trigs : Module {
 			seqPos++;
 			if(seqPos > seqEnd){ 
 				seqPos = seqStart; 
-				eocOn = true;
+				if(hitEnd){eocOn = true;}
+				hitEnd = true;
 			}
 			goingForward = true;
 		} else if(curPlayMode == PM_BWD_LOOP){
 			seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
 			goingForward = false;
 			if(seqPos == seqEnd){
-				eocOn = true;
+				if(hitEnd){eocOn = true;}
+				hitEnd = true;
 			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			if(goingForward){
@@ -237,7 +241,8 @@ struct Trigs : Module {
 				} else {
 					seqPos--;
 					goingForward = false;
-					eocOn = true;
+					if(hitEnd){eocOn = true;}
+					hitEnd = true;
 				}
 			} else {
 				if(seqPos > seqStart){
@@ -245,7 +250,8 @@ struct Trigs : Module {
 				} else {
 					seqPos++;
 					goingForward = true;
-					eocOn = true;
+					if(hitEnd){eocOn = true;}
+					hitEnd = true;
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){

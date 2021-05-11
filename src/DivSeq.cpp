@@ -63,6 +63,7 @@ struct DivSeq : Module,QuantizeUtils {
 	float rndFloat0to1AtClockStep = random::uniform();
 	int counters[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	int divMax = 64;
+	bool hitEnd = false;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -137,6 +138,8 @@ struct DivSeq : Module,QuantizeUtils {
 	}
 
 	void onReset() override {
+		index = 0;
+		resetMode = true;
 		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
@@ -220,6 +223,7 @@ void DivSeq::process(const ProcessArgs &args) {
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
+			hitEnd = false;
 			phase = 0.0;
 			index = 0;
 			for (int i = 0; i < 16; i++) {
@@ -266,7 +270,10 @@ void DivSeq::process(const ProcessArgs &args) {
 		outputs[CELL_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
-	outputs[EOC_OUTPUT].setVoltage((pulse && index == len-1) ? 10.0 : 0.0);
+	outputs[EOC_OUTPUT].setVoltage((pulse && hitEnd && index == 0) ? 10.0 : 0.0);
+	if(index == len-1){
+		hitEnd = true;
+	}
 }
 
 struct DivSeqWidget : ModuleWidget {

@@ -91,6 +91,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	bool goingForward = true;
 	bool resetMode = false;
 	bool eocOn = false; 
+	bool hitEnd = false;
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
@@ -185,6 +186,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
 			if(resetMode){
 				resetMode = false;
+				hitEnd = false;
 				resetSeqToEnd();
 			}
 			clockStep();
@@ -285,14 +287,16 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			seqPos++;
 			if(seqPos > seqEnd){ 
 				seqPos = seqStart; 
-				eocOn = true;
+				if(hitEnd){eocOn = true;}
+				hitEnd = true;
 			}
 			goingForward = true;
 		} else if(curPlayMode == PM_BWD_LOOP){
 			seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
 			goingForward = false;
 			if(seqPos == seqEnd){
-				eocOn = true;
+				if(hitEnd){eocOn = true;}
+				hitEnd = true;
 			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			if(goingForward){
@@ -301,7 +305,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				} else {
 					seqPos--;
 					goingForward = false;
-					eocOn = true;
+					if(hitEnd){eocOn = true;}
+					hitEnd = true;
 				}
 			} else {
 				if(seqPos > seqStart){
@@ -309,7 +314,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 				} else {
 					seqPos++;
 					goingForward = true;
-					eocOn = true;
+					if(hitEnd){eocOn = true;}
+					hitEnd = true;
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){

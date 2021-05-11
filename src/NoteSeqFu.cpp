@@ -133,6 +133,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool resetMode = false;
+	bool *hitEnd = new bool[4];
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
@@ -256,6 +257,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {
 			if(resetMode){
 				resetMode = false;
+				for(int i=0;i<4;i++){
+					hitEnd[i] = false;
+				}
 				resetSeqToEnd();
 			}
 			clockStep();
@@ -406,14 +410,16 @@ struct NoteSeqFu : Module,QuantizeUtils {
 					seqPos++;
 					if(seqPos > seqEnd){ 
 						seqPos = seqStart; 
-						eocOn = true;
+						if(hitEnd[i]){eocOn = true;}
+						hitEnd[i] = true;
 					}
 					goingForward = true;
 				} else if(curPlayMode == PM_BWD_LOOP){
 					seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
 					goingForward = false;
 					if(seqPos == seqEnd){
-						eocOn = true;
+						if(hitEnd[i]){eocOn = true;}
+						hitEnd[i] = true;
 					}
 				} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 					if(goingForward){
@@ -422,7 +428,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 						} else {
 							seqPos--;
 							goingForward = false;
-							eocOn = true;
+							if(hitEnd[i]){eocOn = true;}
+							hitEnd[i] = true;
 						}
 					} else {
 						if(seqPos > seqStart){
@@ -430,7 +437,8 @@ struct NoteSeqFu : Module,QuantizeUtils {
 						} else {
 							seqPos++;
 							goingForward = true;
-							eocOn = true;
+							if(hitEnd[i]){eocOn = true;}
+							hitEnd[i] = true;
 						}
 					}
 				} else if(curPlayMode == PM_RANDOM_POS){
