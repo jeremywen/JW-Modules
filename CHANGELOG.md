@@ -1,8 +1,12 @@
 # Change Log
 
+## v1.0.29 ~ 5-11-21
+
+  * Fixed EOC on sequencers
+
 ## v1.0.28 ~ 5-8-21
 
-  * Fixed all gates on aftre reset
+  * Fixed all gates on after reset
 
 ## v1.0.27 ~ 5-3-21
 
