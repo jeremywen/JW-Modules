@@ -2,7 +2,7 @@
 
 ## v1.0.29 ~ 5-11-21
 
-  * Fixed EOC on sequencers
+  * Fixed EOC on all sequencers
 
 ## v1.0.28 ~ 5-8-21
 

@@ -108,7 +108,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Octave Knob:** octave for the lowest note in the grid
 *  **Note Knob:** root note if scaling pitch sent to "OUT"
 *  **Scale Knob:** current musical scale or none if turned up all the way to the last value
-*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 *  **Poly Outputs:** v/oct and gate as a polyphonic signal
 
 ## NoteSeqFu
@@ -162,7 +162,7 @@ _NOTE: if module right click menu set to 4, merged polyphonic output has 16 chan
 *  **Div Knob:** the clock division to move the play head
 *  **Oct Knob:** octave for the lowest note in the grid
 *  **Semi Knob:** semitone offset of notes at playhead
-*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 *  **V/oct Output:** volt per octave as a polyphonic signal
 *  **Gate Output:** gate as a polyphonic signal
 *  **Off/On Switch:** will stop playing notes and hide the play head
@@ -208,7 +208,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
 output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 *  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
-*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 
 ## Trigs
 
@@ -238,7 +238,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **OR Output:** fires if any track will fire
 *  **XOR Output:** fires if only one track will fire
 *  **NOR Output:** fires if no tracks will fire
-*  **EOC Output:** at the end of the loop it will send out a trigger
+*  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 
 
 ## Patterns
@@ -378,7 +378,7 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
 
   *  **Gate Out:** Sends out gates debepending on probobility
   *  **V/oct Out:** Sends out pitch
-  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop
+  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop (first clock tick after last tick in loop)
   *  **Prob Out:** Sends out voltage of current probability knob value
 
 #### Bottom
@@ -426,7 +426,7 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
 
   *  **Gate Out:** Sends out gates debepending on probobility
   *  **V/oct Out:** Sends out pitch
-  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop
+  *  **EOC Out:** Sends out end of cycle triggeer at the end of the length of the loop (first clock tick after last tick in loop)
 
 #### Bottom
 
