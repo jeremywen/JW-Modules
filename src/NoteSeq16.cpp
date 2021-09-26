@@ -576,13 +576,13 @@ struct NoteSeq16Display : LightWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.y;
+		dragX = APP->scene->mousePos.x;
+		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->rack->mousePos.x;
-		float newDragY = APP->scene->rack->mousePos.y;
+		float newDragX = APP->scene->mousePos.x;
+		float newDragY = APP->scene->mousePos.y;
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
@@ -655,8 +655,8 @@ struct NoteSeq16Display : LightWidget {
 struct PlayModeKnob : JwSmallSnapKnob {
 	PlayModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getValue())){
 				case NoteSeq16::PM_FWD_LOOP:return "→";
 				case NoteSeq16::PM_BWD_LOOP:return "←";
 				case NoteSeq16::PM_FWD_BWD_LOOP:return "→←";
@@ -671,8 +671,8 @@ struct PlayModeKnob : JwSmallSnapKnob {
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getValue())){
 				case NoteSeq16::RND_BASIC:return "Basic";
 				case NoteSeq16::RND_EUCLID:return "Euclid";
 				case NoteSeq16::RND_SIN_WAVE:return "Sine";

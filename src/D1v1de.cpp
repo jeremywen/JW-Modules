@@ -177,7 +177,7 @@ void D1v1deWidget::step() {
 	ModuleWidget::step();
 	D1v1de *d1v = dynamic_cast<D1v1de*>(module);
 	if(d1v && d1v->inputs[D1v1de::DIV_INPUT].isConnected()){
-		divKnob->paramQuantity->setValue(d1v->getDivInt());
+		divKnob->getParamQuantity()->setValue(d1v->getDivInt());
 		divKnob->step();
 	}
 }

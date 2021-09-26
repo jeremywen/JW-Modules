@@ -86,8 +86,8 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 
 	virtual std::string formatCurrentValue() {
-		if(paramQuantity != NULL){
-			return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return std::to_string(static_cast<unsigned int>(getParamQuantity()->getValue()));
 		}
 		return "";
 	}
@@ -99,8 +99,8 @@ struct NoteKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			return quantizeUtils->noteName(int(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return quantizeUtils->noteName(int(getParamQuantity()->getValue()));
 		}
 		return "";
 	}
@@ -112,8 +112,8 @@ struct ScaleKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			return quantizeUtils->scaleName(int(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return quantizeUtils->scaleName(int(getParamQuantity()->getValue()));
 		}
 		return "";
 	}

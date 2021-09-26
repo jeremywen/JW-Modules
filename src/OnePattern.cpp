@@ -183,13 +183,13 @@ struct OnePatternDisplay : LightWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.y;
+		dragX = APP->scene->mousePos.x;
+		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->rack->mousePos.x;
-		float newDragY = APP->scene->rack->mousePos.y;
+		float newDragX = APP->scene->mousePos.x;
+		float newDragY = APP->scene->mousePos.y;
 		module->setCellOnByDisplayPos(initY+(newDragY-dragY), currentlyTurningOn);
 	}
 

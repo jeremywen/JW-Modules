@@ -259,12 +259,12 @@ void Str1kerWidget::step() {
 		for(int i=0;i<4;i++){
 			if(str1ker->useBpmIn()){
 				//update knobs
-				knobs[i]->paramQuantity->setValue(str1ker->params[Str1ker::CLOCK_100s_INPUT + i].getValue());
+				knobs[i]->getParamQuantity()->setValue(str1ker->params[Str1ker::CLOCK_100s_INPUT + i].getValue());
 				// knobs[i]->dirty = true;//TODO FIX?
 				knobs[i]->step();
 			} else if(str1ker->inputs[Str1ker::CLOCK_100s_INPUT + i].isConnected()){
 				//move the knob based on input val
-				knobs[i]->paramQuantity->setValue(str1ker->getKnobValForInput(Str1ker::CLOCK_100s_INPUT + i));
+				knobs[i]->getParamQuantity()->setValue(str1ker->getKnobValForInput(Str1ker::CLOCK_100s_INPUT + i));
 				// knobs[i]->dirty = true;//TODO FIX?
 				knobs[i]->step();
 			}
@@ -297,13 +297,13 @@ struct FaderDisplay : LightWidget {
 	
 	void onDragStart(const event::DragStart &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			dragY = APP->scene->rack->mousePos.y;
+			dragY = APP->scene->mousePos.y;
 		}
 	}
 
 	void onDragMove(const event::DragMove &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			float newDragY = APP->scene->rack->mousePos.y;
+			float newDragY = APP->scene->mousePos.y;
 			module->faderVal = 0.5 - (clampfjw(initY + (newDragY - dragY) - 30.0, 0.0, 180.0) / 180.0);
 		}
 	}

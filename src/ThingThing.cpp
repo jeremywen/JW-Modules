@@ -130,8 +130,8 @@ struct ThingThingWidget : ModuleWidget {
 	BGPanel *panel;
 	JWModuleResizeHandle *rightHandle;
 	void step() override;
-	json_t *toJson() override;
-	void fromJson(json_t *rootJ) override;
+	json_t *toJson();
+	void fromJson(json_t *rootJ);
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) {

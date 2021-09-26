@@ -167,8 +167,8 @@ struct TreeWidget : ModuleWidget {
 	JWModuleResizeHandle *rightHandle;
 	TreeWidget(Tree *module); 
 	void step() override;
-	json_t *toJson() override;
-	void fromJson(json_t *rootJ) override;
+	json_t *toJson();
+	void fromJson(json_t *rootJ);
 	void appendContextMenu(Menu *menu) override;
 };
 

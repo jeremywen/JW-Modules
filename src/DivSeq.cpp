@@ -295,7 +295,7 @@ struct RandomizeNotes16SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
 			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->paramQuantity->getValue();
+			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getValue();
 			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
@@ -306,16 +306,16 @@ struct RandomizeNotes16SeqOnlyButton : TinyButton {
 			for (int i = 0; i < 16; i++) {
 				if (altAndShift) {
 					if(i != 0){
-						wid->seqKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
-					wid->seqKnobs[i]->paramQuantity->setValue(3);
+					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
 				} else if (altDown) {
 					if(i != 0){
-						wid->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
 				} else {
-					wid->seqKnobs[i]->paramQuantity->setValue(mod->getOneRandomNote());
+					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
 				}
 			}
 		}
@@ -328,7 +328,7 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
 			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			int firstKnobVal = wid->divKnobs[0]->paramQuantity->getValue();
+			int firstKnobVal = wid->divKnobs[0]->getParamQuantity()->getValue();
 			float firstKnobMaxVal = mod->divMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
@@ -336,16 +336,16 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 			for (int i = 0; i < 16; i++) {
 				if (altAndShift) {
 					if(i != 0){
-						wid->divKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+						wid->divKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
-					wid->divKnobs[i]->paramQuantity->setValue(1);
+					wid->divKnobs[i]->getParamQuantity()->setValue(1);
 				} else if (altDown) {
 					if(i != 0){
-						wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*firstKnobVal+1));
+						wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*firstKnobVal+1));
 					}
 				} else {
-					wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*64+1));
+					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*64+1));
 				}
 			}
 		}
