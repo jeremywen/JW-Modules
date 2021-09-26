@@ -61,11 +61,13 @@ struct CenteredLabel : Widget {
 
 ////////////////////////////////////////////// KNOBS //////////////////////////////////////////////
 
-struct SmallWhiteKnob : RoundKnob {
+struct SmallWhiteKnob : SvgKnob {
 	CenteredLabel* linkedLabel = NULL;
 	Module* linkedModule = NULL;
 
 	SmallWhiteKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		shadow->opacity = 0;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
@@ -79,7 +81,7 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 
 	void onChange(const event::Change &e) override {
-		RoundKnob::onChange(e);
+		SvgKnob::onChange(e);
 		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
@@ -125,14 +127,18 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 	}
 };
 
-struct JwTinyKnob : RoundKnob {
+struct JwTinyKnob : SvgKnob {
 	JwTinyKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteKnob.svg")));
 	}
 };
 
-struct JwTinyGrayKnob : RoundKnob {
+struct JwTinyGrayKnob : SvgKnob {
 	JwTinyGrayKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteGrayKnob.svg")));
 	}
 };

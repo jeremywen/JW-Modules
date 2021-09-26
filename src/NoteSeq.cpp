@@ -232,9 +232,6 @@ struct NoteSeq : Module,QuantizeUtils {
 		gridChanged();
 	}
 
-	//TODO maybe add length input
-	//TODO maybe add start pos knob and input
-
 	void process(const ProcessArgs &args) override {
 		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
 			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
