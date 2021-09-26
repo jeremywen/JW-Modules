@@ -219,36 +219,35 @@ struct White_TinyPJ301MPort : SvgPort {
 
 struct MyBlueValueLight : ModuleLightWidget {
 	MyBlueValueLight() {
-		firstLightId = 1;
-		this->bgColor = nvgRGB(255, 255, 255);
-		addBaseColor(nvgRGB(25, 150, 252));
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
+		this->addBaseColor(nvgRGB(25, 150, 252));
 	}
 };
 
 struct MyYellowValueLight : ModuleLightWidget {
 	MyYellowValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(255, 243, 9));
 	}
 };
 
 struct MyOrangeValueLight : ModuleLightWidget {
 	MyOrangeValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(255, 151, 9));
 	}
 };
 
 struct MyGreenValueLight : ModuleLightWidget {
 	MyGreenValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(0, 200, 0));
 	}
 };
 
 struct MyRedValueLight : ModuleLightWidget {
 	MyRedValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(200, 0, 0));
 	}
 };
