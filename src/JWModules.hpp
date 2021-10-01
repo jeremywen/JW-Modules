@@ -89,7 +89,7 @@ struct SmallWhiteKnob : SvgKnob {
 
 	virtual std::string formatCurrentValue() {
 		if(getParamQuantity() != NULL){
-			return std::to_string(static_cast<unsigned int>(getParamQuantity()->getValue()));
+			return std::to_string(static_cast<unsigned int>(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}
@@ -102,7 +102,8 @@ struct NoteKnob : SmallWhiteKnob {
 	}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
-			return quantizeUtils->noteName(int(getParamQuantity()->getValue()));
+// DEBUG("getParamQuantity()->getDisplayValue()=%f", getParamQuantity()->getDisplayValue());
+			return quantizeUtils->noteName(int(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}
@@ -115,7 +116,7 @@ struct ScaleKnob : SmallWhiteKnob {
 	}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
-			return quantizeUtils->scaleName(int(getParamQuantity()->getValue()));
+			return quantizeUtils->scaleName(int(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}

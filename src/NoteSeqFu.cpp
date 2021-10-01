@@ -897,7 +897,7 @@ struct PlayModeKnob : JwSmallSnapKnob {
 	PlayModeKnob(){}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getValue())){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeqFu::PM_FWD_LOOP:return "→";
 				case NoteSeqFu::PM_BWD_LOOP:return "←";
 				case NoteSeqFu::PM_FWD_BWD_LOOP:return "→←";
@@ -913,7 +913,7 @@ struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getValue())){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeqFu::RND_BASIC:return "Basic";
 				case NoteSeqFu::RND_EUCLID:return "Euclid";
 				case NoteSeqFu::RND_SIN_WAVE:return "Sine";

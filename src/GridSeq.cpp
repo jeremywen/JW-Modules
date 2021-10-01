@@ -83,6 +83,10 @@ struct GridSeq : Module,QuantizeUtils {
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
+
+	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
+	RandomMode randomMode = RANDOM;
+
 	dsp::PulseGenerator gatePulse;
 
 	GridSeq() {
@@ -98,8 +102,8 @@ struct GridSeq : Module,QuantizeUtils {
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
-		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		for (int y = 0; y < 4; y++) {
@@ -132,6 +136,10 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
+		// randomMode
+		json_t *randomModeJ = json_integer((int) randomMode);
+		json_object_set_new(rootJ, "randomMode", randomModeJ);
+
 		return rootJ;
 	}
 
@@ -158,6 +166,11 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
+
+		// randomMode
+		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
+		if (randomModeJ)
+			randomMode = (RandomMode)json_integer_value(randomModeJ);
 	}
 
 	void onReset() override {
@@ -357,22 +370,17 @@ struct RandomizeNotesOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
 			GridSeq *mod = dynamic_cast<GridSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getValue();
+			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
-			// DEBUG("shiftDown:%d",shiftDown);
-			// DEBUG("altDown:%d",altDown);
-			// DEBUG("altAndShift:%d",altAndShift);
 			for (int i = 0; i < 16; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == GridSeq::FIRST_MIN) {
 					if(i != 0){
 						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else if (altDown) {
+				} else if (mod->randomMode == GridSeq::FIRST_MAX) {
 					if(i != 0){
 						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
@@ -389,19 +397,18 @@ struct RandomizeProbsOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
-			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getValue();
+			GridSeq *mod = dynamic_cast<GridSeq*>(wid->module);
+			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = 1.0;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
 			for (int i = 0; i < 16; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == GridSeq::FIRST_MIN) {
 					if(i != 0){
 						wid->probKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
 					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else if (altDown) {
+				} else if (mod->randomMode == GridSeq::FIRST_MAX) {
 					if(i != 0){
 						wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
@@ -571,6 +578,18 @@ struct GridSeqGateModeItem : MenuItem {
 	}
 };
 
+struct GridSeqRandomModeItem : MenuItem {
+	GridSeq *gridSeq;
+	GridSeq::RandomMode randomMode;
+	void onAction(const event::Action &e) override {
+		gridSeq->randomMode = randomMode;
+	}
+	void step() override {
+		rightText = (gridSeq->randomMode == randomMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
@@ -600,13 +619,35 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	continuousItem->gateMode = GridSeq::CONTINUOUS;
 	menu->addChild(continuousItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
-
 	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);
+
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *randomModeLabel = new MenuLabel();
+	randomModeLabel->text = "Random Button Mode";
+	menu->addChild(randomModeLabel);
+
+	GridSeqRandomModeItem *randomItem = new GridSeqRandomModeItem();
+	randomItem->text = "Random";
+	randomItem->gridSeq = gridSeq;
+	randomItem->randomMode = GridSeq::RANDOM;
+	menu->addChild(randomItem);
+
+	GridSeqRandomModeItem *randomMinItem = new GridSeqRandomModeItem();
+	randomMinItem->text = "First is Minimum";
+	randomMinItem->gridSeq = gridSeq;
+	randomMinItem->randomMode = GridSeq::FIRST_MIN;
+	menu->addChild(randomMinItem);
+
+	GridSeqRandomModeItem *randomMaxItem = new GridSeqRandomModeItem();
+	randomMaxItem->text = "First is Maximum";
+	randomMaxItem->gridSeq = gridSeq;
+	randomMaxItem->randomMode = GridSeq::FIRST_MAX;
+	menu->addChild(randomMaxItem);
 }
 
 Model *modelGridSeq = createModel<GridSeq, GridSeqWidget>("GridSeq");

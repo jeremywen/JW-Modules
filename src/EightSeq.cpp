@@ -65,6 +65,10 @@ struct EightSeq : Module,QuantizeUtils {
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
+
+	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
+	RandomMode randomMode = RANDOM;
+
 	dsp::PulseGenerator gatePulse;
 
 	EightSeq() {
@@ -73,8 +77,8 @@ struct EightSeq : Module,QuantizeUtils {
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 8.0, 8.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
-		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		configParam(PROB_ON_SWITCH_PARAM, 0.0, 1.0, 1.0, "Probability Switch");
@@ -108,6 +112,10 @@ struct EightSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
+		// randomMode
+		json_t *randomModeJ = json_integer((int) randomMode);
+		json_object_set_new(rootJ, "randomMode", randomModeJ);
+
 		return rootJ;
 	}
 
@@ -134,6 +142,11 @@ struct EightSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
+
+		// randomMode
+		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
+		if (randomModeJ)
+			randomMode = (RandomMode)json_integer_value(randomModeJ);
 	}
 
 	void onReset() override {
@@ -291,22 +304,17 @@ struct RandomizeNotes8SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
 			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getValue();
+			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
-			// DEBUG("shiftDown:%d",shiftDown);
-			// DEBUG("altDown:%d",altDown);
-			// DEBUG("superDown:%d",superDown);
 			for (int i = 0; i < 8; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == EightSeq::FIRST_MIN) {
 					if(i != 0){
 						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else if (altDown) {
+				} else if (mod->randomMode == EightSeq::FIRST_MAX) {
 					if(i != 0){
 						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
@@ -323,19 +331,18 @@ struct RandomizeProbs8SeqOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
-			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getValue();
+			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
+			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = 1.0;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
 			for (int i = 0; i < 8; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == EightSeq::FIRST_MIN) {
 					if(i != 0){
 						wid->probKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
 					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else if (altDown) {
+				} else if (mod->randomMode == EightSeq::FIRST_MAX) {
 					if(i != 0){
 						wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
@@ -469,25 +476,37 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 
 }
 
-struct GridSeqPitchMenuItem : MenuItem {
-	EightSeq *gridSeq;
+struct EightSeqPitchMenuItem : MenuItem {
+	EightSeq *eightSeq;
 	void onAction(const event::Action &e) override {
-		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
+		eightSeq->ignoreGateOnPitchOut = !eightSeq->ignoreGateOnPitchOut;
 	}
 	void step() override {
-		rightText = (gridSeq->ignoreGateOnPitchOut) ? "✔" : "";
+		rightText = (eightSeq->ignoreGateOnPitchOut) ? "✔" : "";
 		MenuItem::step();
 	}
 };
 
-struct GridSeqGateModeItem : MenuItem {
-	EightSeq *gridSeq;
+struct EightSeqGateModeItem : MenuItem {
+	EightSeq *eightSeq;
 	EightSeq::GateMode gateMode;
 	void onAction(const event::Action &e) override {
-		gridSeq->gateMode = gateMode;
+		eightSeq->gateMode = gateMode;
 	}
 	void step() override {
-		rightText = (gridSeq->gateMode == gateMode) ? "✔" : "";
+		rightText = (eightSeq->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct EightSeqRandomModeItem : MenuItem {
+	EightSeq *eightSeq;
+	EightSeq::RandomMode randomMode;
+	void onAction(const event::Action &e) override {
+		eightSeq->randomMode = randomMode;
+	}
+	void step() override {
+		rightText = (eightSeq->randomMode == randomMode) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -496,38 +515,60 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
-	EightSeq *gridSeq = dynamic_cast<EightSeq*>(module);
-	assert(gridSeq);
+	EightSeq *eightSeq = dynamic_cast<EightSeq*>(module);
+	assert(eightSeq);
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";
 	menu->addChild(modeLabel);
 
-	GridSeqGateModeItem *triggerItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *triggerItem = new EightSeqGateModeItem();
 	triggerItem->text = "Trigger";
-	triggerItem->gridSeq = gridSeq;
+	triggerItem->eightSeq = eightSeq;
 	triggerItem->gateMode = EightSeq::TRIGGER;
 	menu->addChild(triggerItem);
 
-	GridSeqGateModeItem *retriggerItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *retriggerItem = new EightSeqGateModeItem();
 	retriggerItem->text = "Retrigger";
-	retriggerItem->gridSeq = gridSeq;
+	retriggerItem->eightSeq = eightSeq;
 	retriggerItem->gateMode = EightSeq::RETRIGGER;
 	menu->addChild(retriggerItem);
 
-	GridSeqGateModeItem *continuousItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *continuousItem = new EightSeqGateModeItem();
 	continuousItem->text = "Continuous";
-	continuousItem->gridSeq = gridSeq;
+	continuousItem->eightSeq = eightSeq;
 	continuousItem->gateMode = EightSeq::CONTINUOUS;
 	menu->addChild(continuousItem);
+
+	EightSeqPitchMenuItem *pitchMenuItem = new EightSeqPitchMenuItem();
+	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
+	pitchMenuItem->eightSeq = eightSeq;
+	menu->addChild(pitchMenuItem);
 
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
-	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
-	pitchMenuItem->gridSeq = gridSeq;
-	menu->addChild(pitchMenuItem);
+	MenuLabel *randomModeLabel = new MenuLabel();
+	randomModeLabel->text = "Random Button Mode";
+	menu->addChild(randomModeLabel);
+
+	EightSeqRandomModeItem *randomItem = new EightSeqRandomModeItem();
+	randomItem->text = "Random";
+	randomItem->eightSeq = eightSeq;
+	randomItem->randomMode = EightSeq::RANDOM;
+	menu->addChild(randomItem);
+
+	EightSeqRandomModeItem *randomMinItem = new EightSeqRandomModeItem();
+	randomMinItem->text = "First is Minimum";
+	randomMinItem->eightSeq = eightSeq;
+	randomMinItem->randomMode = EightSeq::FIRST_MIN;
+	menu->addChild(randomMinItem);
+
+	EightSeqRandomModeItem *randomMaxItem = new EightSeqRandomModeItem();
+	randomMaxItem->text = "First is Maximum";
+	randomMaxItem->eightSeq = eightSeq;
+	randomMaxItem->randomMode = EightSeq::FIRST_MAX;
+	menu->addChild(randomMaxItem);
 }
 
 Model *modelEightSeq = createModel<EightSeq, EightSeqWidget>("8Seq");
