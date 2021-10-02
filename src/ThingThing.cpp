@@ -28,6 +28,7 @@ struct ThingThing : Module {
 	ThingThingBall *balls = new ThingThingBall[5];
 	float atten[5] = {1, 1, 1, 1, 1};
 	// float atten[5] = {0.0, 0.25, 0.5, 0.75, 1};
+	float width = RACK_GRID_WIDTH*20;
 
 	ThingThing() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -48,10 +49,15 @@ struct ThingThing : Module {
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "width", json_real(width));
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {}
+	void dataFromJson(json_t *rootJ) override {
+		json_t *widthJ = json_object_get(rootJ, "width");
+		if (widthJ)
+			width = json_number_value(widthJ);
+	}
 };
 
 struct ThingThingDisplay : LightWidget {
@@ -130,13 +136,11 @@ struct ThingThingWidget : ModuleWidget {
 	BGPanel *panel;
 	JWModuleResizeHandle *rightHandle;
 	void step() override;
-	json_t *toJson();
-	void fromJson(json_t *rootJ);
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
+	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0));
@@ -175,18 +179,12 @@ void ThingThingWidget::step() {
 	if (box.size.x < RACK_GRID_WIDTH * 20) box.size.x = RACK_GRID_WIDTH * 20;
 	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
+	
+	ThingThing *thingThing = dynamic_cast<ThingThing*>(module);
+	if(thingThing){
+		thingThing->width = box.size.x;
+	}
 	ModuleWidget::step();
 }
 
-json_t *ThingThingWidget::toJson() {
-	json_t *rootJ = ModuleWidget::toJson();
-	json_object_set_new(rootJ, "width", json_real(box.size.x));
-	return rootJ;
-}
-
-void ThingThingWidget::fromJson(json_t *rootJ) {
-	ModuleWidget::fromJson(rootJ);
-	json_t *widthJ = json_object_get(rootJ, "width");
-	if (widthJ)	box.size.x = json_number_value(widthJ);
-}
 Model *modelThingThing = createModel<ThingThing, ThingThingWidget>("ThingThing");

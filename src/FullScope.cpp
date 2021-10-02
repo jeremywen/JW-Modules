@@ -34,6 +34,7 @@ struct FullScope : Module {
 	float bufferY[BUFFER_SIZE] = {};
 	int bufferIndex = 0;
 	float frameIndex = 0;
+	float width = RACK_GRID_WIDTH*17;
 
 	dsp::SchmittTrigger sumTrigger;
 	dsp::SchmittTrigger extTrigger;
@@ -56,6 +57,7 @@ struct FullScope : Module {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		json_object_set_new(rootJ, "external", json_integer((int) external));
+		json_object_set_new(rootJ, "width", json_real(width));
 		return rootJ;
 	}
 
@@ -67,6 +69,10 @@ struct FullScope : Module {
 		json_t *extJ = json_object_get(rootJ, "external");
 		if (extJ)
 			external = json_integer_value(extJ);
+		
+		json_t *widthJ = json_object_get(rootJ, "width");
+		if (widthJ)
+			width = json_number_value(widthJ);
 	}
 
 	void onReset() override {
@@ -266,15 +272,13 @@ struct FullScopeWidget : ModuleWidget {
 	TransparentWidget *display;
 	FullScopeWidget(FullScope *module);
 	void step() override;
-	json_t *toJson();
-	void fromJson(json_t *rootJ);
 	void appendContextMenu(Menu *menu) override;
 };
 
 FullScopeWidget::FullScopeWidget(FullScope *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
-	
+	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
+
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
@@ -319,26 +323,12 @@ void FullScopeWidget::step() {
 	panel->box.size = box.size;
 	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
-	// rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
-	// leftHandle->box.pos.y = box.size.y - leftHandle->box.size.y;
+	
+	FullScope *fullScope = dynamic_cast<FullScope*>(module);
+	if(fullScope){
+		fullScope->width = box.size.x;
+	}
 	ModuleWidget::step();
-}
-
-json_t *FullScopeWidget::toJson() {
-	json_t *rootJ = ModuleWidget::toJson();
-	json_object_set_new(rootJ, "width", json_real(box.size.x));
-	json_object_set_new(rootJ, "height", json_real(box.size.y));
-	return rootJ;
-}
-
-void FullScopeWidget::fromJson(json_t *rootJ) {
-	ModuleWidget::fromJson(rootJ);
-	json_t *widthJ = json_object_get(rootJ, "width");
-	if (widthJ)
-		box.size.x = json_number_value(widthJ);
-	json_t *heightJ = json_object_get(rootJ, "height");
-	if (heightJ)
-		box.size.y = json_number_value(heightJ);
 }
 
 struct FullScopeLissajousModeMenuItem : MenuItem {
