@@ -802,6 +802,7 @@ struct NoteSeqFuDisplay : LightWidget {
 	}
 
 	void draw(const DrawArgs &args) override {
+		nvgGlobalTint(args.vg, color::WHITE);
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);

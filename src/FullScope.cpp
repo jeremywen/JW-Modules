@@ -211,6 +211,7 @@ struct FullScopeDisplay : LightWidget {
 
 	void draw(const DrawArgs &args) override {
 		if(module == NULL) return;
+		nvgGlobalTint(args.vg, color::WHITE);
 
 		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
 		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));

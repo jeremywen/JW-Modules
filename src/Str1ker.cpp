@@ -312,6 +312,7 @@ struct FaderDisplay : LightWidget {
 	}
 
 	void draw(const DrawArgs &args) override {
+		nvgGlobalTint(args.vg, color::WHITE);
 		//line
 		nvgFillColor(args.vg, nvgRGB(255, 255, 255));
 		nvgBeginPath(args.vg);

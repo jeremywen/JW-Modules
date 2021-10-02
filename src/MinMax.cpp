@@ -144,6 +144,7 @@ struct MinMaxDisplay : LightWidget {
 
 	void draw(const DrawArgs &args) override {
 		if(module == NULL) return;
+		nvgGlobalTint(args.vg, color::WHITE);
 		// Calculate and draw stats
 		if (++frame >= 4) {
 			frame = 0;

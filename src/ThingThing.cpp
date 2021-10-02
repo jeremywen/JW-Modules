@@ -65,6 +65,7 @@ struct ThingThingDisplay : LightWidget {
 	ThingThingDisplay(){}
 
 	void draw(const DrawArgs &args) override {
+		nvgGlobalTint(args.vg, color::WHITE);
 		nvgScissor(args.vg, RECT_ARGS(box));
 
 		//background
