@@ -56,7 +56,7 @@ struct EightSeq : Module,QuantizeUtils {
 	int index = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
-	bool gateState[8] = {};
+	bool gateState[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
@@ -441,9 +441,6 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 			int knobX = x * boxSizeX + 40;
 			int knobY = y * boxSizeY + 110;
 			int idx = (x+(y*4));
-			if(module != NULL){
-				module->gateState[idx] = true; //start with all gates on
-			}
 
 			//maybe someday put note labels in each cell
 			// float noteParamMax = 0;

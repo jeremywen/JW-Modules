@@ -75,7 +75,7 @@ struct GridSeq : Module,QuantizeUtils {
 	int posY = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
-	bool gateState[16] = {};
+	bool gateState[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
@@ -521,15 +521,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 			int knobX = x * boxSize + 75;
 			int knobY = y * boxSize + 105;
 			int idx = (x+(y*4));
-			if(module != NULL){
-				module->gateState[idx] = true; //start with all gates on
-			}
 
-			//maybe someday put note labels in each cell
-			// float noteParamMax = 0;
-			// if(module != NULL){
-			// 	noteParamMax = module->noteParamMax;
-			// }
 			ParamWidget *cellNoteKnob = createParam<SmallWhiteKnob>(Vec(knobX-2, knobY), module, GridSeq::CELL_NOTE_PARAM + idx);
 			addParam(cellNoteKnob);
 			seqKnobs.push_back(cellNoteKnob);

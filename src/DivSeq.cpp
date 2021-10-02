@@ -56,7 +56,7 @@ struct DivSeq : Module,QuantizeUtils {
 	bool playDiv = false;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
-	bool gateState[16] = {};
+	bool gateState[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
@@ -446,9 +446,6 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 			int knobX = x * boxSizeX + 60;
 			int knobY = y * boxSizeY + 80;
 			int idx = (x+(y*4));
-			if(module != NULL){
-				module->gateState[idx] = true; //start with all gates on
-			}
 
 			//maybe someday put note labels in each cell
 			// float noteParamMax = 0;
