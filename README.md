@@ -340,20 +340,18 @@ This module is one row of Patterns (rotated into one column)
   
   If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
-
-  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
-
 #### Right Click Context Menu
 
-  ![Menu](./doc/GridSeq-Menu-img2.png)
-
-  * **Trigger:** same as SEQ3
-  * **Retrigger:** same as SEQ3
-  * **Continuous:** same as SEQ3
-  * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
-  'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
-
+  * **Gate Mode**
+    * **Trigger:** same as SEQ3
+    * **Retrigger:** same as SEQ3
+    * **Continuous:** same as SEQ3
+    * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
+    'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
+  * **Random Button Mode** (applies to two bottom right randomize buttons)
+    * **Random:** full range possible when randomizing knobs
+    * **First is Minimum:** the first knob on the top left will be used as the minimum value when randomizing all knobs
+    * **First is Maximum:** the first knob on the top left will be used as the maximum value when randomizing all knobs
 
 ## 8Seq
 
@@ -395,9 +393,18 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
   
   If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+#### Right Click Context Menu
 
-  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
+  * **Gate Mode**
+    * **Trigger:** same as SEQ3
+    * **Retrigger:** same as SEQ3
+    * **Continuous:** same as SEQ3
+    * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
+    'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
+  * **Random Button Mode** (applies to two bottom right randomize buttons)
+    * **Random:** full range possible when randomizing knobs
+    * **First is Minimum:** the first knob on the top left will be used as the minimum value when randomizing all knobs
+    * **First is Maximum:** the first knob on the top left will be used as the maximum value when randomizing all knobs
 
 ## DivSeq
 
@@ -442,9 +449,18 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
   
   If you shift + click the random buttons, parameters will be set to their default values
 
-  If you alt + click the random buttons, parameters will be randomized with the maximum value being the first top left knob position
+#### Right Click Context Menu
 
-  If you cmd/win + click the random buttons, parameters will be randomized with the minimum value being the first top left knob position
+  * **Gate Mode**
+    * **Trigger:** same as SEQ3
+    * **Retrigger:** same as SEQ3
+    * **Continuous:** same as SEQ3
+    * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
+    'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
+  * **Random Button Mode** (applies to two bottom right randomize buttons)
+    * **Random:** full range possible when randomizing knobs
+    * **First is Minimum:** the first knob on the top left will be used as the minimum value when randomizing all knobs
+    * **First is Maximum:** the first knob on the top left will be used as the maximum value when randomizing all knobs
 
 ## Str1ker
 
