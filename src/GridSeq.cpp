@@ -194,14 +194,38 @@ struct GridSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
+		float firstKnobVal = params[CELL_NOTE_PARAM].getValue();
+		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 16; i++) {
-			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			if (randomMode == GridSeq::FIRST_MIN) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+				}
+			} else if (randomMode == GridSeq::FIRST_MAX) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(random::uniform() * firstKnobVal);
+				}
+			} else {
+				params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			}
 		}
 	}
 
 	void randomizeProbsOnly(){
+		float firstKnobVal = params[CELL_PROB_PARAM].getValue();
+		float firstKnobMaxVal = 1.0;
 		for (int i = 0; i < 16; i++) {
-			params[CELL_PROB_PARAM + i].setValue(random::uniform());
+			if (randomMode == GridSeq::FIRST_MIN) {
+				if(i != 0){
+					params[CELL_PROB_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+				}
+			} else if (randomMode == GridSeq::FIRST_MAX) {
+				if(i != 0){
+					params[CELL_PROB_PARAM + i].setValue(random::uniform() * firstKnobVal);
+				}
+			} else {
+				params[CELL_PROB_PARAM + i].setValue(random::uniform());
+			}
 		}
 	}
 

@@ -173,15 +173,40 @@ struct DivSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
+		int firstKnobVal = params[CELL_NOTE_PARAM].getValue();
+		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 16; i++) {
-			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			if (randomMode == DivSeq::FIRST_MIN) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+				}
+			} else if (randomMode == DivSeq::FIRST_MAX) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(random::uniform() * firstKnobVal);
+				}
+			} else {
+				params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			}
 		}
 	}
 
 	void randomizeDivsOnly(){
+		int firstKnobVal = params[CELL_DIV_PARAM].getValue();
+		float firstKnobMaxVal = divMax;
+
 		for (int i = 0; i < 16; i++) {
-			params[CELL_DIV_PARAM + i].setValue(random::uniform());
-		}
+				if (randomMode == DivSeq::FIRST_MIN) {
+					if(i != 0){
+						params[CELL_DIV_PARAM + i].setValue((int)(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal))));
+					}
+				} else if (randomMode == DivSeq::FIRST_MAX) {
+					if(i != 0){
+						params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*firstKnobVal+1));
+					}
+				} else {
+					params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*64+1));
+				}
+			}
 	}
 
 	float closestVoltageInScaleWrapper(float voltsIn){
@@ -342,7 +367,7 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 			for (int i = 0; i < 16; i++) {
 				if (mod->randomMode == DivSeq::FIRST_MIN) {
 					if(i != 0){
-						wid->divKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+						wid->divKnobs[i]->getParamQuantity()->setValue((int)(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal))));
 					}
 				} else if (shiftDown) {
 					wid->divKnobs[i]->getParamQuantity()->setValue(1);
