@@ -20,6 +20,7 @@ struct WavHead : Module {
 	bool snowMode = false;
 	WavHead() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configInput(VOLT_INPUT, "WavHead Power");
 	}
 	
 	json_t *dataToJson() override {

@@ -42,6 +42,13 @@ struct Tree : Module {
 		configParam(LENGTH_PARAM, 10.0, 200.0, 50, "Length");
 		configParam(HEIGHT_PARAM, 10.0, 250.0, 100, "Height");
 		configParam(RND_PARAM, 0.0, 1.0, 0.0, "Jitter");
+		configInput(ANGLE_INPUT, "Angle");
+		configInput(HUE_INPUT, "Color");
+		configInput(REDUCE_INPUT, "Reduce");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(HEIGHT_INPUT, "Height");
+		configInput(RND_INPUT, "Jitter");
+		
 	}
 
 	~Tree() {

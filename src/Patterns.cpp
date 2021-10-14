@@ -61,6 +61,20 @@ struct Patterns : Module {
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
+		
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(ROTATE_INPUT, "Rotate");
+		configInput(SHIFT_INPUT, "Shift");
+
+		for(int i=0;i<16;i++){
+			configOutput(OR_MAIN_OUTPUT + i, "OR " + std::to_string((15-i)+1));
+			configOutput(XOR_MAIN_OUTPUT + i, "XOR " + std::to_string((15-i)+1));
+		}
+		configOutput(POLY_OR_OUTPUT, "Poly OR");
+		configOutput(POLY_XOR_OUTPUT, "Poly XOR");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();

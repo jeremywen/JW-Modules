@@ -113,6 +113,20 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(START_INPUT, "Start");
+		configInput(ROTATE_INPUT, "Rotate");
+		configInput(FLIP_INPUT, "Flip");
+		configInput(SHIFT_INPUT, "Shift");
+
+		configOutput(POLY_VOCT_OUTPUT, "Poly V/Oct");
+		configOutput(POLY_GATE_OUTPUT, "Poly Gate");
+		configOutput(EOC_OUTPUT, "End of Cycle");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();

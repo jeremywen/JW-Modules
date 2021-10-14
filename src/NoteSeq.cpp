@@ -173,6 +173,46 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(CLEAR_INPUT, "Clear");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(RND_AMT_INPUT, "Random Amount");
+		configInput(ROT_RIGHT_INPUT, "Rotate Right");
+		configInput(ROT_LEFT_INPUT, "Rotate Left");
+		configInput(FLIP_HORIZ_INPUT, "Flip Horizontally");
+		configInput(FLIP_VERT_INPUT, "Flip Vertically");
+		configInput(SHIFT_UP_INPUT, "Shift Up");
+		configInput(SHIFT_DOWN_INPUT, "Shift Down");
+		configInput(HIGHEST_NOTE_INPUT, "Highest Note");
+		configInput(LOWEST_NOTE_INPUT, "Lowest Note");
+		configInput(ROOT_INPUT, "Root");
+		configInput(OCTAVE_INPUT, "Octave");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(MODE_INPUT, "Mode");
+		configInput(SHIFT_AMT_INPUT, "Shift Amount");
+		configInput(START_INPUT, "Start");
+		configInput(SHIFT_CHAOS_INPUT, "Shift Chaos");
+
+
+		for (int i = 0; i < POLY; i++) {
+			configOutput(VOCT_MAIN_OUTPUT + i, "V/Oct " + std::to_string(i+1));
+			configOutput(GATE_MAIN_OUTPUT + i, "Gate " + std::to_string(i+1));
+		}
+		configOutput(MIN_VOCT_OUTPUT, "Minimum V/Oct");
+		configOutput(MIN_GATE_OUTPUT, "Minimum Gate");
+		configOutput(MID_VOCT_OUTPUT, "Middle V/Oct");
+		configOutput(MID_GATE_OUTPUT, "Middle Gate");
+		configOutput(MAX_VOCT_OUTPUT, "Maximum V/Oct");
+		configOutput(MAX_GATE_OUTPUT, "Maximum Gate");
+		configOutput(RND_VOCT_OUTPUT, "Random V/Oct");
+		configOutput(RND_GATE_OUTPUT, "Random Gate");
+		configOutput(POLY_VOCT_OUTPUT, "Poly V/Oct");
+		configOutput(POLY_GATE_OUTPUT, "Poly Gate");
+		configOutput(EOC_OUTPUT, "End of Cycle");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();

@@ -49,7 +49,12 @@ struct FullScope : Module {
 		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0, "X Scale");
 		configParam(Y_SCALE_PARAM, -2.0, 8.0, 1.0, "Y Scale");
 		configParam(ROTATION_PARAM, -10.0, 10.0, 0, "Rotation");
-		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Speed");		
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Speed");
+		configInput(X_INPUT, "X");
+		configInput(Y_INPUT, "Y");
+		configInput(COLOR_INPUT, "Color");
+		configInput(TIME_INPUT, "Time");
+		configInput(ROTATION_INPUT, "Rotation");
 	}
 	void process(const ProcessArgs &args) override;
 

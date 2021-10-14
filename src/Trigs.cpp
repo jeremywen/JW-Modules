@@ -103,6 +103,20 @@ struct Trigs : Module {
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(START_INPUT, "Start");
+
+		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
+		for(int i=0; i<4; i++){
+			configOutput(GATE_OUTPUT + i, "Gate " + std::string(colors[i]));
+		}
+		configOutput(EOC_OUTPUT, "End of Cycle");
+		configOutput(OR_OUTPUT, "OR");
+		configOutput(XOR_OUTPUT, "XOR");
+		configOutput(NOR_OUTPUT, "NOR");
 		resetSeq();
 		resetMode = true;
 		clearCells();

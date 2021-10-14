@@ -27,6 +27,12 @@ struct Quantizer : Module,QuantizeUtils {
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(OCTAVE_PARAM, -5, 5 , 0, "Octave Shift");
+		configInput(NOTE_INPUT, "Note");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(VOLT_INPUT, "Voltage");
+		configInput(OCTAVE_INPUT, "Octave");
+		configOutput(VOLT_OUTPUT, "Quantized");
+		configBypass(VOLT_INPUT, VOLT_OUTPUT);
 	}
 
 	void process(const ProcessArgs &args) override;

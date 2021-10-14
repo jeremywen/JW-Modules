@@ -40,6 +40,10 @@ struct OnePattern : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random");
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configOutput(OR_MAIN_OUTPUT, "OR");
+		configOutput(XOR_MAIN_OUTPUT, "XOR");
 		resetSeq();
 		resetMode = true;
 		clearCells();

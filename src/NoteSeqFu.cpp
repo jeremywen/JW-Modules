@@ -176,6 +176,34 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			configParam(SEMI_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
 			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 1.0, "Division");
 		}
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(CLEAR_INPUT, "Clear");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(RND_AMT_INPUT, "Random Amount");
+		configInput(ROT_RIGHT_INPUT, "Rotate Right");
+		configInput(ROT_LEFT_INPUT, "Rotate Left");
+		configInput(FLIP_HORIZ_INPUT, "Flip Horizontally");
+		configInput(FLIP_VERT_INPUT, "Flip Vertically");
+		configInput(SHIFT_UP_INPUT, "Shift Up");
+		configInput(SHIFT_DOWN_INPUT, "Shift Down");
+		configInput(HIGHEST_NOTE_INPUT, "Highest Note");
+		configInput(LOWEST_NOTE_INPUT, "Lowest Note");
+		configInput(ROOT_INPUT, "Root");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(SHIFT_AMT_INPUT, "Shift Amount");
+		configInput(SHIFT_CHAOS_INPUT, "Shift Chaos");
+
+		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
+		for(int i=0;i<4;i++){
+			configOutput(POLY_VOCT_OUTPUT + i, "Poly V/Oct " + std::string(colors[i]));
+			configOutput(POLY_GATE_OUTPUT + i, "Poly Gate " + std::string(colors[i]));
+			configOutput(EOC_OUTPUT + i, "End of Cycle " + std::string(colors[i]));
+		}
+		configOutput(MERGED_VOCT_OUTPUT, "Merged Poly V/Oct");
+		configOutput(MERGED_GATE_OUTPUT, "Merged Poly Gate");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();

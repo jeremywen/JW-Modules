@@ -114,6 +114,25 @@ struct GridSeq : Module,QuantizeUtils {
 				configParam(CELL_PROB_PARAM + idx, 0.0, 1.0, 1.0, "Probability");
 			}
 		}
+		configInput(RIGHT_INPUT, "Right");
+		configInput(LEFT_INPUT, "Left");
+		configInput(DOWN_INPUT, "Down");
+		configInput(UP_INPUT, "Up");
+		configInput(RND_DIR_INPUT, "Random");
+		configInput(REPEAT_INPUT, "Repeat");
+		configInput(RESET_INPUT, "Reset");
+		configInput(ROOT_INPUT, "Root Note");
+		configInput(OCTAVE_INPUT, "Octave");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(VOLT_MAX_INPUT, "Range");
+		configInput(RND_GATES_INPUT, "Random Gates");
+		configInput(RND_PROBS_INPUT, "Random Probabilities");
+		configInput(RND_NOTES_INPUT, "Random Notes");
+		
+		configOutput(GATES_OUTPUT, "Gate");
+		configOutput(GATES_YX_OUTPUT, "Gate of YX");
+		configOutput(CELL_OUTPUT, "V/Oct");
+		configOutput(CELL_YX_OUTPUT, "V/Oct of YX");
 	}
 
 	void process(const ProcessArgs &args) override;

@@ -92,6 +92,14 @@ struct XYPad : Module {
 		configParam(AUTO_PLAY_PARAM, 0.0, 1.0, 0.0, "Auto Play");
 		configParam(PLAY_SPEED_PARAM, 0.0, 10.0, 1.0, "Play Speed");
 		configParam(SPEED_MULT_PARAM, 1.0, 100.0, 1.0, "Speed Multiplier");
+		configInput(PLAY_GATE_INPUT, "Gate");
+		configInput(PLAY_SPEED_INPUT, "Speed");
+		configOutput(X_OUTPUT, "X");
+		configOutput(Y_OUTPUT, "Y");
+		configOutput(X_INV_OUTPUT, "X Inverted");
+		configOutput(Y_INV_OUTPUT, "Y Inverted");
+		configOutput(GATE_OUTPUT, "Gate");
+
 	}
 
 	void process(const ProcessArgs &args) override;

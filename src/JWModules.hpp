@@ -102,7 +102,6 @@ struct NoteKnob : SmallWhiteKnob {
 	}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
-// DEBUG("getParamQuantity()->getDisplayValue()=%f", getParamQuantity()->getDisplayValue());
 			return quantizeUtils->noteName(int(getParamQuantity()->getDisplayValue()));
 		}
 		return "";

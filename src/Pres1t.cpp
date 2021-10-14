@@ -42,6 +42,14 @@ struct Pres1t : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(SAVE_PARAM, 0.0, 1.0, 0.0, "Save");
 		configParam(LOAD_PARAM, 0.0, 1.0, 0.0, "Load");
+		configInput(BPM_INPUT, "Voltage");
+		configInput(X_WRITE_INPUT, "Save X");
+		configInput(Y_WRITE_INPUT, "Save Y");
+		configInput(X_READ_INPUT, "Load X");
+		configInput(Y_READ_INPUT, "Load Y");
+		configInput(SAVE_INPUT, "Save");
+		configInput(LOAD_INPUT, "Load");
+		configOutput(BPM_OUTPUT, "Voltage");
 		onReset();
 	}
 

@@ -90,6 +90,21 @@ struct EightSeq : Module,QuantizeUtils {
 				configParam(CELL_PROB_PARAM + idx, 0.0, 1.0, 1.0, "Probability");
 			}
 		}
+		configInput(RIGHT_INPUT, "Clock");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(RESET_INPUT, "Reset");
+		configInput(ROOT_INPUT, "Root Note");
+		configInput(OCTAVE_INPUT, "Octave");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(VOLT_MAX_INPUT, "Range");
+		configInput(RND_GATES_INPUT, "Random Gates");
+		configInput(RND_PROBS_INPUT, "Random Probabilities");
+		configInput(RND_NOTES_INPUT, "Random Notes");
+		
+		configOutput(GATES_OUTPUT, "Gate");
+		configOutput(CELL_OUTPUT, "V/Oct");
+		configOutput(EOC_OUTPUT, "End of Cycle");
+		configOutput(PROB_OUTPUT, "Probability");
 	}
 
 	void process(const ProcessArgs &args) override;

@@ -63,6 +63,16 @@ struct Str1ker : Module {
 		configParam(ON_OFF_SWITCH, 0.0, 1.0, 1.0, "On/Off");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(FADER_RANGE_PARAM, 1, 50, 1, "Fader Range");
+		configInput(CLOCK_100s_INPUT, "100's");
+		configInput(CLOCK_10s_INPUT, "10's");
+		configInput(CLOCK_1s_INPUT, "1's");
+		configInput(CLOCK_DOT_100s_INPUT, ".00's");
+		configInput(BPM_INPUT, "BPM");
+		configInput(FADER_INPUT, "Fader");
+		configInput(RESET_INPUT, "Reset");
+		configOutput(RESET_OUTPUT, "Reset");
+		configOutput(CLOCK_OUTPUT, "Clock");
+		configOutput(BPM_OUTPUT, "BPM");
 		paramQuantities[CLOCK_100s_PARAM]->snapEnabled = true;
 		paramQuantities[CLOCK_10s_PARAM]->snapEnabled = true;
 		paramQuantities[CLOCK_1s_PARAM]->snapEnabled = true;

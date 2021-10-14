@@ -16,7 +16,7 @@ struct ThingThing : Module {
 		BALL_RAD_INPUT,
 		ZOOM_MULT_INPUT,
 		ANG_INPUT,
-		NUM_INPUTS = ANG_INPUT + 5
+		NUM_INPUTS = ANG_INPUT + 5 //I have no idea why this is 5 and below we do for loops up to 4 and add 1
 	};
 	enum OutputIds {
 		NUM_OUTPUTS
@@ -34,6 +34,11 @@ struct ThingThing : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(BALL_RAD_PARAM, 0.0, 30.0, 10.0, "Radius");
 		configParam(ZOOM_MULT_PARAM, 1.0, 200.0, 20.0, "Length");
+		configInput(BALL_RAD_INPUT, "Radius");
+		configInput(ZOOM_MULT_INPUT, "Length");
+		for(int i=0; i<4; i++){
+			configInput(ANG_INPUT + i+1, "Angle " + std::to_string(i+1));
+		}
 		balls[0].color = nvgRGB(255, 255, 255);//white
 		balls[1].color = nvgRGB(255, 151, 9);//orange
 		balls[2].color = nvgRGB(255, 243, 9);//yellow
