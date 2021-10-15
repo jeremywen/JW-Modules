@@ -34,13 +34,12 @@ struct D1v1de : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(DIV_PARAM, 1, 64, 4, "Division");
 		configParam(OFFSET_PARAM, 0, 64, 64, "Offset");
-
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
 		configInput(DIV_INPUT, "Division");
-
 		configOutput(CLOCK_OUTPUT, "Clock");
 		configOutput(POS_OUTPUT, "Position");
+		configBypass(CLOCK_INPUT, CLOCK_OUTPUT);
 	}
 
 	void onSampleRateChange() override {
