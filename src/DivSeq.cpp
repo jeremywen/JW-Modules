@@ -473,7 +473,7 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 	addOutput(createOutput<PJ301MPort>(Vec(14, 225), module, DivSeq::EOC_OUTPUT));
 }
 
-struct GridSeqPitchMenuItem : MenuItem {
+struct DivSeqPitchMenuItem : MenuItem {
 	DivSeq *gridSeq;
 	void onAction(const event::Action &e) override {
 		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
@@ -484,7 +484,7 @@ struct GridSeqPitchMenuItem : MenuItem {
 	}
 };
 
-struct GridSeqGateModeItem : MenuItem {
+struct DivSeqGateModeItem : MenuItem {
 	DivSeq *gridSeq;
 	DivSeq::GateMode gateMode;
 	void onAction(const event::Action &e) override {
@@ -507,19 +507,19 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	modeLabel->text = "Gate Mode";
 	menu->addChild(modeLabel);
 
-	GridSeqGateModeItem *triggerItem = new GridSeqGateModeItem();
+	DivSeqGateModeItem *triggerItem = new DivSeqGateModeItem();
 	triggerItem->text = "Trigger";
 	triggerItem->gridSeq = gridSeq;
 	triggerItem->gateMode = DivSeq::TRIGGER;
 	menu->addChild(triggerItem);
 
-	GridSeqGateModeItem *retriggerItem = new GridSeqGateModeItem();
+	DivSeqGateModeItem *retriggerItem = new DivSeqGateModeItem();
 	retriggerItem->text = "Retrigger";
 	retriggerItem->gridSeq = gridSeq;
 	retriggerItem->gateMode = DivSeq::RETRIGGER;
 	menu->addChild(retriggerItem);
 
-	GridSeqGateModeItem *continuousItem = new GridSeqGateModeItem();
+	DivSeqGateModeItem *continuousItem = new DivSeqGateModeItem();
 	continuousItem->text = "Continuous";
 	continuousItem->gridSeq = gridSeq;
 	continuousItem->gateMode = DivSeq::CONTINUOUS;
@@ -528,7 +528,7 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
+	DivSeqPitchMenuItem *pitchMenuItem = new DivSeqPitchMenuItem();
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);

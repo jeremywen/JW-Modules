@@ -469,7 +469,7 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 
 }
 
-struct GridSeqPitchMenuItem : MenuItem {
+struct EightSeqPitchMenuItem : MenuItem {
 	EightSeq *gridSeq;
 	void onAction(const event::Action &e) override {
 		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
@@ -480,7 +480,7 @@ struct GridSeqPitchMenuItem : MenuItem {
 	}
 };
 
-struct GridSeqGateModeItem : MenuItem {
+struct EightSeqGateModeItem : MenuItem {
 	EightSeq *gridSeq;
 	EightSeq::GateMode gateMode;
 	void onAction(const event::Action &e) override {
@@ -503,19 +503,19 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	modeLabel->text = "Gate Mode";
 	menu->addChild(modeLabel);
 
-	GridSeqGateModeItem *triggerItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *triggerItem = new EightSeqGateModeItem();
 	triggerItem->text = "Trigger";
 	triggerItem->gridSeq = gridSeq;
 	triggerItem->gateMode = EightSeq::TRIGGER;
 	menu->addChild(triggerItem);
 
-	GridSeqGateModeItem *retriggerItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *retriggerItem = new EightSeqGateModeItem();
 	retriggerItem->text = "Retrigger";
 	retriggerItem->gridSeq = gridSeq;
 	retriggerItem->gateMode = EightSeq::RETRIGGER;
 	menu->addChild(retriggerItem);
 
-	GridSeqGateModeItem *continuousItem = new GridSeqGateModeItem();
+	EightSeqGateModeItem *continuousItem = new EightSeqGateModeItem();
 	continuousItem->text = "Continuous";
 	continuousItem->gridSeq = gridSeq;
 	continuousItem->gateMode = EightSeq::CONTINUOUS;
@@ -524,7 +524,7 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	GridSeqPitchMenuItem *pitchMenuItem = new GridSeqPitchMenuItem();
+	EightSeqPitchMenuItem *pitchMenuItem = new EightSeqPitchMenuItem();
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);
