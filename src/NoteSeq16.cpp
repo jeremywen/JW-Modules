@@ -101,6 +101,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse;
 
+	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
+	GateMode gateMode = TRIGGER;
+
 	NoteSeq16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, 15.0, 0.0, "Start");
@@ -164,6 +167,10 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
 		
+		// gateMode
+		json_t *gateModeJ = json_integer((int) gateMode);
+		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
 		return rootJ;
 	}
 
@@ -183,6 +190,12 @@ struct NoteSeq16 : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
+		// gateMode
+		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+		if (gateModeJ)
+			gateMode = (GateMode)json_integer_value(gateModeJ);
+
 		gridChanged();
 	}
 
@@ -215,13 +228,12 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
 				float volts = closestVoltageForRow(polyYVals[i]);
-				// outputs[VOCT_MAIN_OUTPUT + i].setVoltage(volts);
 				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
 			}
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			// outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
-			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
-			// lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
+			bool gateOn = cellActive;
+			if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+			else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+			outputs[POLY_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0, i);
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
 		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
@@ -815,6 +827,18 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(scaleKnob);
 }
 
+struct NoteSeq16GateModeItem : MenuItem {
+	NoteSeq16 *noteSeq16;
+	NoteSeq16::GateMode gateMode;
+	void onAction(const event::Action &e) override {
+		noteSeq16->gateMode = gateMode;
+	}
+	void step() override {
+		rightText = (noteSeq16->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	NoteSeq16 *noteSeq16 = dynamic_cast<NoteSeq16*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -825,6 +849,31 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	channelItem->rightText = string::f("%d", noteSeq16->channels) + " " +RIGHT_ARROW;
 	channelItem->module = noteSeq16;
 	menu->addChild(channelItem);
+	
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Gate Mode";
+	menu->addChild(modeLabel);
+
+	NoteSeq16GateModeItem *triggerItem = new NoteSeq16GateModeItem();
+	triggerItem->text = "Trigger";
+	triggerItem->noteSeq16 = noteSeq16;
+	triggerItem->gateMode = NoteSeq16::TRIGGER;
+	menu->addChild(triggerItem);
+
+	NoteSeq16GateModeItem *retriggerItem = new NoteSeq16GateModeItem();
+	retriggerItem->text = "Retrigger";
+	retriggerItem->noteSeq16 = noteSeq16;
+	retriggerItem->gateMode = NoteSeq16::RETRIGGER;
+	menu->addChild(retriggerItem);
+
+	NoteSeq16GateModeItem *continuousItem = new NoteSeq16GateModeItem();
+	continuousItem->text = "Continuous";
+	continuousItem->noteSeq16 = noteSeq16;
+	continuousItem->gateMode = NoteSeq16::CONTINUOUS;
+	menu->addChild(continuousItem);
 }
 
 

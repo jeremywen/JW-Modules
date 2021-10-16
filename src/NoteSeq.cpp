@@ -146,6 +146,9 @@ struct NoteSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse, eocPulse;
 
+	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
+	GateMode gateMode = TRIGGER;
+
 	NoteSeq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, 31.0, 0.0, "Start");
@@ -249,7 +252,11 @@ struct NoteSeq : Module,QuantizeUtils {
 			json_array_append_new(cellsJ, cellJ);
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
-		
+
+		// gateMode
+		json_t *gateModeJ = json_integer((int) gateMode);
+		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
 		return rootJ;
 	}
 
@@ -269,6 +276,12 @@ struct NoteSeq : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
+		// gateMode
+		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+		if (gateModeJ)
+			gateMode = (GateMode)json_integer_value(gateModeJ);
+
 		gridChanged();
 	}
 
@@ -318,9 +331,11 @@ struct NoteSeq : Module,QuantizeUtils {
 				float volts = closestVoltageForRow(polyYVals[i]);
 				outputs[VOCT_MAIN_OUTPUT + i].setVoltage(volts);
 			}
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
-			lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
+			bool gateOn = cellActive;
+			if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+			else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+			outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateOn ? 10.0 : 0.0);
+			lights[GATES_LIGHT + i].value = gateOn ? 1.0 : 0.0;			
 		}
 		//ONLY NEW MAIN POLY OUTPUT
 		for(int i=0;i<channels;i++){
@@ -330,8 +345,10 @@ struct NoteSeq : Module,QuantizeUtils {
 				float volts = closestVoltageForRow(polyYVals[i]);
 				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
 			}
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
+			bool gateOn = cellActive;
+			if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+			else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+			outputs[POLY_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0, i);
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
 		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
@@ -347,7 +364,10 @@ struct NoteSeq : Module,QuantizeUtils {
 				outputs[MIN_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[0]));
 			}
 			if(outputs[MIN_GATE_OUTPUT].isConnected()){
-				outputs[MIN_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
+				bool gateOn = atLeastOne;
+				if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+				else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+				outputs[MIN_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0);
 			}
 
 			if(outputs[MID_VOCT_OUTPUT].isConnected() && atLeastOne){
@@ -356,7 +376,10 @@ struct NoteSeq : Module,QuantizeUtils {
 				outputs[MID_VOCT_OUTPUT].setVoltage(closestVoltageForRow((monoYVals[minPos] + monoYVals[maxPos]) * 0.5));
 			}
 			if(outputs[MID_GATE_OUTPUT].isConnected()){
-				outputs[MID_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
+				bool gateOn = atLeastOne;
+				if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+				else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+				outputs[MID_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0);
 			}
 
 			if(outputs[MAX_VOCT_OUTPUT].isConnected() && atLeastOne){
@@ -364,7 +387,10 @@ struct NoteSeq : Module,QuantizeUtils {
 				outputs[MAX_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[maxPos]));
 			}
 			if(outputs[MAX_GATE_OUTPUT].isConnected()){
-				outputs[MAX_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
+				bool gateOn = atLeastOne;
+				if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+				else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+				outputs[MAX_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0);
 			}
 
 			if(outputs[RND_VOCT_OUTPUT].isConnected() && atLeastOne){
@@ -372,7 +398,10 @@ struct NoteSeq : Module,QuantizeUtils {
 				outputs[RND_VOCT_OUTPUT].setVoltage(closestVoltageForRow(monoYVals[int(rndFloat0to1AtClockStep * maxPos)]));
 			}
 			if(outputs[RND_GATE_OUTPUT].isConnected()){
-				outputs[RND_GATE_OUTPUT].setVoltage((pulse && atLeastOne) ? 10.0 : 0.0);
+				bool gateOn = atLeastOne;
+				if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+				else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+				outputs[RND_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0);
 			}
 		}
 		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
@@ -1134,6 +1163,19 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(690, 345), module, NoteSeq::POLY_GATE_OUTPUT));
 }
 
+struct NoteSeqGateModeItem : MenuItem {
+	NoteSeq *noteSeq;
+	NoteSeq::GateMode gateMode;
+	void onAction(const event::Action &e) override {
+		noteSeq->gateMode = gateMode;
+	}
+	void step() override {
+		rightText = (noteSeq->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+
 void NoteSeqWidget::appendContextMenu(Menu *menu) {
 	NoteSeq *noteSeq = dynamic_cast<NoteSeq*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -1144,6 +1186,31 @@ void NoteSeqWidget::appendContextMenu(Menu *menu) {
 	channelItem->rightText = string::f("%d", noteSeq->channels) + " " +RIGHT_ARROW;
 	channelItem->module = noteSeq;
 	menu->addChild(channelItem);
+	
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Gate Mode";
+	menu->addChild(modeLabel);
+
+	NoteSeqGateModeItem *triggerItem = new NoteSeqGateModeItem();
+	triggerItem->text = "Trigger";
+	triggerItem->noteSeq = noteSeq;
+	triggerItem->gateMode = NoteSeq::TRIGGER;
+	menu->addChild(triggerItem);
+
+	NoteSeqGateModeItem *retriggerItem = new NoteSeqGateModeItem();
+	retriggerItem->text = "Retrigger";
+	retriggerItem->noteSeq = noteSeq;
+	retriggerItem->gateMode = NoteSeq::RETRIGGER;
+	menu->addChild(retriggerItem);
+
+	NoteSeqGateModeItem *continuousItem = new NoteSeqGateModeItem();
+	continuousItem->text = "Continuous";
+	continuousItem->noteSeq = noteSeq;
+	continuousItem->gateMode = NoteSeq::CONTINUOUS;
+	menu->addChild(continuousItem);
 }
 
 Model *modelNoteSeq = createModel<NoteSeq, NoteSeqWidget>("NoteSeq");

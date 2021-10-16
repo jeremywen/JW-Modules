@@ -143,6 +143,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator mainClockPulse;
 
+	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
+	GateMode gateMode = TRIGGER;
+
 	NoteSeqFu() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
@@ -242,6 +245,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
 		
+		// gateMode
+		json_t *gateModeJ = json_integer((int) gateMode);
+		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
 		return rootJ;
 	}
 
@@ -261,6 +268,12 @@ struct NoteSeqFu : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
+		// gateMode
+		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+		if (gateModeJ)
+			gateMode = (GateMode)json_integer_value(gateModeJ);
+		
 		gridChanged();
 	}
 
@@ -318,7 +331,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 							outputs[MERGED_VOCT_OUTPUT].setVoltage(volts, i + p * maxChannelsPerPlayhead);
 						}
 					}
-					float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+					bool gateOn = cellActive;
+					if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+					else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+					float gateVolts = gateOn ? 10.0 : 0.0;
 					outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
 					if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
 						outputs[MERGED_GATE_OUTPUT].setVoltage(gateVolts, i + p * maxChannelsPerPlayhead);
@@ -1119,16 +1135,53 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addParam(createParam<JwHorizontalSwitch>(Vec(668, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
 }
 
+struct NoteSeqFuGateModeItem : MenuItem {
+	NoteSeqFu *noteSeqFu;
+	NoteSeqFu::GateMode gateMode;
+	void onAction(const event::Action &e) override {
+		noteSeqFu->gateMode = gateMode;
+	}
+	void step() override {
+		rightText = (noteSeqFu->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
-	NoteSeqFu *noteSeq = dynamic_cast<NoteSeqFu*>(module);
+	NoteSeqFu *noteSeqFu = dynamic_cast<NoteSeqFu*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
 	NSFChannelItem *channelItem = new NSFChannelItem;
 	channelItem->text = "Polyphony channels";
-	channelItem->rightText = string::f("%d", noteSeq->channels) + " " +RIGHT_ARROW;
-	channelItem->module = noteSeq;
+	channelItem->rightText = string::f("%d", noteSeqFu->channels) + " " +RIGHT_ARROW;
+	channelItem->module = noteSeqFu;
 	menu->addChild(channelItem);
+
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Gate Mode";
+	menu->addChild(modeLabel);
+
+	NoteSeqFuGateModeItem *triggerItem = new NoteSeqFuGateModeItem();
+	triggerItem->text = "Trigger";
+	triggerItem->noteSeqFu = noteSeqFu;
+	triggerItem->gateMode = NoteSeqFu::TRIGGER;
+	menu->addChild(triggerItem);
+
+	NoteSeqFuGateModeItem *retriggerItem = new NoteSeqFuGateModeItem();
+	retriggerItem->text = "Retrigger";
+	retriggerItem->noteSeqFu = noteSeqFu;
+	retriggerItem->gateMode = NoteSeqFu::RETRIGGER;
+	menu->addChild(retriggerItem);
+
+	NoteSeqFuGateModeItem *continuousItem = new NoteSeqFuGateModeItem();
+	continuousItem->text = "Continuous";
+	continuousItem->noteSeqFu = noteSeqFu;
+	continuousItem->gateMode = NoteSeqFu::CONTINUOUS;
+	menu->addChild(continuousItem);
 }
 
 Model *modelNoteSeqFu = createModel<NoteSeqFu, NoteSeqFuWidget>("NoteSeqFu");
