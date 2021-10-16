@@ -111,6 +111,14 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 *  **Poly Outputs:** v/oct and gate as a polyphonic signal
 
+#### Right Click Context Menu
+
+  * **Polyphony Channels** allows you to select the number of polyphony channels out
+  * **Gate Mode**
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
+
 ## NoteSeqFu
 
 ![NoteSeqFu](./doc/noteseqfu-img3.png)
@@ -174,6 +182,14 @@ _NOTE: if module right click menu set to 4, merged polyphonic output has 16 chan
 So for example, you can program a drum beat with a kick at the lowest note and a snare on the 4th row up then connect your outputs to the lowest output and the 4th 
 output row up and they will work more like a midi sequencer. When 'Drum Mode' is switched to the left it grabs the 16 lowest notes which are 'active'.
 
+#### Right Click Context Menu
+
+  * **Polyphony Channels** allows you to select the number of polyphony channels out
+  * **Gate Mode**
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
+
 ## NoteSeq16
 
 ![NoteSeq16](./doc/noteseq16-img5.png)
@@ -210,6 +226,14 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **Poly Outs:** Send out up to 16 active notes.  This is based on the 'Drum Mode' switch. 
 *  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
 
+#### Right Click Context Menu
+
+  * **Polyphony Channels** allows you to select the number of polyphony channels out
+  * **Gate Mode**
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
+
 ## Trigs
 
 ![Trigs](./doc/trigs-img1.png)
@@ -239,7 +263,6 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
 *  **XOR Output:** fires if only one track will fire
 *  **NOR Output:** fires if no tracks will fire
 *  **EOC Output:** at the end of the loop it will send out a trigger (first clock tick after last tick in loop)
-
 
 ## Patterns
 
@@ -343,9 +366,9 @@ This module is one row of Patterns (rotated into one column)
 #### Right Click Context Menu
 
   * **Gate Mode**
-    * **Trigger:** same as SEQ3
-    * **Retrigger:** same as SEQ3
-    * **Continuous:** same as SEQ3
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
@@ -396,9 +419,9 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
 #### Right Click Context Menu
 
   * **Gate Mode**
-    * **Trigger:** same as SEQ3
-    * **Retrigger:** same as SEQ3
-    * **Continuous:** same as SEQ3
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
@@ -452,9 +475,9 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
 #### Right Click Context Menu
 
   * **Gate Mode**
-    * **Trigger:** same as SEQ3
-    * **Retrigger:** same as SEQ3
-    * **Continuous:** same as SEQ3
+    * **Trigger:** fires a trigger when step is on
+    * **Retrigger:** retriggers a new gate when step is on
+    * **Continuous:** keeps gate on until a step is off
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
