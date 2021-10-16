@@ -117,7 +117,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
 
 ## NoteSeqFu
 
@@ -188,7 +188,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
 
 ## NoteSeq16
 
@@ -232,7 +232,7 @@ output row up and they will work more like a midi sequencer. When 'Drum Mode' is
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
 
 ## Trigs
 
@@ -368,7 +368,7 @@ This module is one row of Patterns (rotated into one column)
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
@@ -421,7 +421,7 @@ It's like gridseq but simpler (no step direction handling) and you can use the p
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
@@ -477,7 +477,7 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
   * **Gate Mode**
     * **Trigger:** fires a trigger when step is on
     * **Retrigger:** retriggers a new gate when step is on
-    * **Continuous:** keeps gate on until a step is off
+    * **Continuous:** keeps gate on until next clock tick
     * **Ignore Gate for V/OCT Out:** If you want the pitch to continue changing even if the gates are not on, you can right click the module and check 
     'Ignore Gate for V/OCT Out'.  This can create interesting effects, for example, when gate is triggering an envelope with a long release.
   * **Random Button Mode** (applies to two bottom right randomize buttons)
