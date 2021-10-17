@@ -214,60 +214,64 @@ struct FullScopeDisplay : LightWidget {
 		nvgRestore(args.vg);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		if(module == NULL) return;
-		nvgGlobalTint(args.vg, color::WHITE);
 
-		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
-		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));
-		float offsetX = module->params[FullScope::X_POS_PARAM].getValue();
-		float offsetY = module->params[FullScope::Y_POS_PARAM].getValue();
+		if(layer == 1){
 
-		float valuesX[BUFFER_SIZE];
-		float valuesY[BUFFER_SIZE];
-		for (int i = 0; i < BUFFER_SIZE; i++) {
-			int j = i;
-			// Lock display to buffer if buffer update deltaTime <= 2^-11
-			if (module->lissajous)
-				j = (i + module->bufferIndex) % BUFFER_SIZE;
-			valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
-			valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
-		}
 
-		//color
-		if(module->inputs[FullScope::COLOR_INPUT].isConnected()){
-			float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].getVoltage(), 0.0, 6.0, 0, 1.0);
-			nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
-		} else {
-			nvgStrokeColor(args.vg, nvgRGBA(25, 150, 252, 0xc0));
-		}
+			float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
+			float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));
+			float offsetX = module->params[FullScope::X_POS_PARAM].getValue();
+			float offsetY = module->params[FullScope::Y_POS_PARAM].getValue();
 
-		// Draw waveforms
-		if (module->lissajous) {
-			// X x Y
-			if (module->inputs[FullScope::X_INPUT].isConnected() || module->inputs[FullScope::Y_INPUT].isConnected()) {
-				drawWaveform(args, valuesX, valuesY);
-			}
-		}
-		else {
-			// Y
-			if (module->inputs[FullScope::Y_INPUT].isConnected()) {
-				drawWaveform(args, valuesY, NULL);
+			float valuesX[BUFFER_SIZE];
+			float valuesY[BUFFER_SIZE];
+			for (int i = 0; i < BUFFER_SIZE; i++) {
+				int j = i;
+				// Lock display to buffer if buffer update deltaTime <= 2^-11
+				if (module->lissajous)
+					j = (i + module->bufferIndex) % BUFFER_SIZE;
+				valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
+				valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
 			}
 
-			// X
-			if (module->inputs[FullScope::X_INPUT].isConnected()) {
-				nvgStrokeColor(args.vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
-				drawWaveform(args, valuesX, NULL);
+			//color
+			if(module->inputs[FullScope::COLOR_INPUT].isConnected()){
+				float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].getVoltage(), 0.0, 6.0, 0, 1.0);
+				nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+			} else {
+				nvgStrokeColor(args.vg, nvgRGBA(25, 150, 252, 0xc0));
+			}
+
+			// Draw waveforms
+			if (module->lissajous) {
+				// X x Y
+				if (module->inputs[FullScope::X_INPUT].isConnected() || module->inputs[FullScope::Y_INPUT].isConnected()) {
+					drawWaveform(args, valuesX, valuesY);
+				}
+			}
+			else {
+				// Y
+				if (module->inputs[FullScope::Y_INPUT].isConnected()) {
+					drawWaveform(args, valuesY, NULL);
+				}
+
+				// X
+				if (module->inputs[FullScope::X_INPUT].isConnected()) {
+					nvgStrokeColor(args.vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
+					drawWaveform(args, valuesX, NULL);
+				}
+			}
+
+			// Calculate stats
+			if (++frame >= 4) {
+				frame = 0;
+				statsX.calculate(module->bufferX);
+				statsY.calculate(module->bufferY);
 			}
 		}
-
-		// Calculate stats
-		if (++frame >= 4) {
-			frame = 0;
-			statsX.calculate(module->bufferX);
-			statsY.calculate(module->bufferY);
-		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

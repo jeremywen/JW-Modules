@@ -471,50 +471,50 @@ struct TrigsDisplay : LightWidget {
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<COLS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * HW, 0);
-			nvgLineTo(args.vg, i * HW, box.size.y);
-			nvgStroke(args.vg);
-		}
-		for(int i=1;i<ROWS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * HW);
-			nvgLineTo(args.vg, box.size.x, i * HW);
-			nvgStroke(args.vg);
-		}
-
-		if(module == NULL) return;
-
-		//cells
-		for(int i=0;i<CELLS;i++){
-			if(module->cells[i]){
-				nvgFillColor(args.vg, colors[i/64]);
-				int x = module->xFromI(i);
-				int y = module->yFromI(i);
+		if(layer == 1){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+			for(int i=1;i<COLS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW, y * HW, HW, HW);
-				nvgFill(args.vg);
+				nvgMoveTo(args.vg, i * HW, 0);
+				nvgLineTo(args.vg, i * HW, box.size.y);
+				nvgStroke(args.vg);
 			}
-		}
+			for(int i=1;i<ROWS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, i * HW);
+				nvgLineTo(args.vg, box.size.x, i * HW);
+				nvgStroke(args.vg);
+			}
 
-		nvgStrokeWidth(args.vg, 2);
+			if(module == NULL) return;
 
-		//seq pos
-		int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
-		for(int i=0;i<4;i++){
+			//cells
+			for(int i=0;i<CELLS;i++){
+				if(module->cells[i]){
+					nvgFillColor(args.vg, colors[i/64]);
+					int x = module->xFromI(i);
+					int y = module->yFromI(i);
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, x * HW, y * HW, HW, HW);
+					nvgFill(args.vg);
+				}
+			}
+
+			nvgStrokeWidth(args.vg, 2);
+
+			//seq pos
+			int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
+			for(int i=0;i<4;i++){
 			//seq start line
 			float startX = (module->getSeqStart()%16) * HW;
 			float startY = ((module->getSeqStart()/16) + i*4) * HW;
@@ -541,6 +541,8 @@ struct TrigsDisplay : LightWidget {
 			nvgRect(args.vg, posX * HW, posY * HW, HW, HW);
 			nvgStroke(args.vg);
 		}
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

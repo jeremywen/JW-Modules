@@ -69,69 +69,74 @@ struct ThingThingDisplay : LightWidget {
 	ThingThing *module;
 	ThingThingDisplay(){}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
-		nvgScissor(args.vg, RECT_ARGS(box));
-
-		//background
-		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
-		nvgFill(args.vg);
-
-		if(module == NULL) return;
-
-		float ballRadius = module->params[ThingThing::BALL_RAD_PARAM].getValue();
-		if(module->inputs[ThingThing::BALL_RAD_INPUT].isConnected()){
-			ballRadius += rescalefjw(module->inputs[ThingThing::BALL_RAD_INPUT].getVoltage(), -5.0, 5.0, 0.0, 30.0);
+	void drawLayer(const DrawArgs &args, int layer) override {
+		if(layer == 0){
+			//background
+			nvgFillColor(args.vg, nvgRGB(0, 0, 0));
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+			nvgFill(args.vg);
 		}
+		
+		if(layer == 1){
+			nvgScissor(args.vg, RECT_ARGS(box));
 
-		float zoom = module->params[ThingThing::ZOOM_MULT_PARAM].getValue();
-		if(module->inputs[ThingThing::ZOOM_MULT_INPUT].isConnected()){
-			zoom += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].getVoltage(), -5.0, 5.0, 1.0, 50.0);
-		}
 
-      float x[5];
-      float y[5];
-      float angle[5];
+			if(module == NULL) return;
 
-      for(int i=0; i<5; i++){
-         angle[i] = i==0 ? 0 : (module->inputs[ThingThing::ANG_INPUT+i].getVoltage() + angle[i-1]) * module->atten[i];
-			x[i] = i==0 ? 0 : sinf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
-			y[i] = i==0 ? 0 : cosf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
-      }
+			float ballRadius = module->params[ThingThing::BALL_RAD_PARAM].getValue();
+			if(module->inputs[ThingThing::BALL_RAD_INPUT].isConnected()){
+				ballRadius += rescalefjw(module->inputs[ThingThing::BALL_RAD_INPUT].getVoltage(), -5.0, 5.0, 0.0, 30.0);
+			}
 
-		/////////////////////// LINES ///////////////////////
-		nvgSave(args.vg);
-		nvgTranslate(args.vg, box.size.x * 0.5, box.size.y * 0.5);
-		for(int i=0; i<5; i++){
-			nvgTranslate(args.vg, x[i], y[i]);
-			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-			if(i>0){
-				nvgStrokeWidth(args.vg, 1);
+			float zoom = module->params[ThingThing::ZOOM_MULT_PARAM].getValue();
+			if(module->inputs[ThingThing::ZOOM_MULT_INPUT].isConnected()){
+				zoom += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].getVoltage(), -5.0, 5.0, 1.0, 50.0);
+			}
+
+			float x[5];
+			float y[5];
+			float angle[5];
+
+			for(int i=0; i<5; i++){
+				angle[i] = i==0 ? 0 : (module->inputs[ThingThing::ANG_INPUT+i].getVoltage() + angle[i-1]) * module->atten[i];
+					x[i] = i==0 ? 0 : sinf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+					y[i] = i==0 ? 0 : cosf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+			}
+
+			/////////////////////// LINES ///////////////////////
+			nvgSave(args.vg);
+			nvgTranslate(args.vg, box.size.x * 0.5, box.size.y * 0.5);
+			for(int i=0; i<5; i++){
+				nvgTranslate(args.vg, x[i], y[i]);
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				if(i>0){
+					nvgStrokeWidth(args.vg, 1);
+					nvgBeginPath(args.vg);
+					nvgMoveTo(args.vg, 0, 0);
+					nvgLineTo(args.vg, -x[i], -y[i]);
+					nvgStroke(args.vg);
+				}
+			}
+			nvgRestore(args.vg);
+
+			/////////////////////// BALLS ///////////////////////
+			nvgSave(args.vg);
+			nvgTranslate(args.vg, box.size.x * 0.5, box.size.y * 0.5);
+			for(int i=0; i<5; i++){
+				nvgTranslate(args.vg, x[i], y[i]);
+				nvgStrokeColor(args.vg, module->balls[i].color);
+				nvgFillColor(args.vg, module->balls[i].color);
+				nvgStrokeWidth(args.vg, 2);
 				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, 0, 0);
-				nvgLineTo(args.vg, -x[i], -y[i]);
+				nvgCircle(args.vg, 0, 0, ballRadius);
+				nvgFill(args.vg);
 				nvgStroke(args.vg);
 			}
+			nvgRestore(args.vg);
+			nvgResetScissor(args.vg);
 		}
-		nvgRestore(args.vg);
-
-		/////////////////////// BALLS ///////////////////////
-		nvgSave(args.vg);
-		nvgTranslate(args.vg, box.size.x * 0.5, box.size.y * 0.5);
-		for(int i=0; i<5; i++){
-			nvgTranslate(args.vg, x[i], y[i]);
-			nvgStrokeColor(args.vg, module->balls[i].color);
-			nvgFillColor(args.vg, module->balls[i].color);
-			nvgStrokeWidth(args.vg, 2);
-			nvgBeginPath(args.vg);
-			nvgCircle(args.vg, 0, 0, ballRadius);
-			nvgFill(args.vg);
-			nvgStroke(args.vg);
-		}
-		nvgRestore(args.vg);
-		nvgResetScissor(args.vg);
+		Widget::drawLayer(args, layer);
 	}
 };
 

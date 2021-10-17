@@ -93,59 +93,63 @@ struct TreeDisplay : LightWidget {
 	float theta;
 	TreeDisplay(){}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
-		nvgScissor(args.vg, RECT_ARGS(box));
-		
-		//background
-		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
-		nvgFill(args.vg);
+	void drawLayer(const DrawArgs &args, int layer) override {
+		if(layer == 0){
+			//background
+			nvgFillColor(args.vg, nvgRGB(0, 0, 0));
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+			nvgFill(args.vg);
+		}
 
-		float v = 2.5;
-		if(module){
-			float inputOffset = module->inputs[Tree::ANGLE_INPUT].isConnected() ? module->inputs[Tree::ANGLE_INPUT].getVoltage() : 0.0;
-			v = clampfjw(module->params[Tree::ANGLE_PARAM].getValue()/9.0 + inputOffset, 0, 10.0);
-		}
-		float ang = rescalefjw(v, 0, 10, 0.0, 90.0);
-		theta = nvgDegToRad(ang);
+		if(layer == 1){
+			nvgScissor(args.vg, RECT_ARGS(box));
+			
+			float v = 2.5;
+			if(module){
+				float inputOffset = module->inputs[Tree::ANGLE_INPUT].isConnected() ? module->inputs[Tree::ANGLE_INPUT].getVoltage() : 0.0;
+				v = clampfjw(module->params[Tree::ANGLE_PARAM].getValue()/9.0 + inputOffset, 0, 10.0);
+			}
+			float ang = rescalefjw(v, 0, 10, 0.0, 90.0);
+			theta = nvgDegToRad(ang);
 
-		float hue = 0.1;
-		if(module){
-			float inputOffset = module->inputs[Tree::HUE_INPUT].isConnected() ? module->inputs[Tree::HUE_INPUT].getVoltage() : 0.0;
-			hue = clampfjw(module->params[Tree::HUE_PARAM].getValue() + inputOffset/10, 0, 1.0);
-		}
-		float reduce = 0.65;
-		if(module){
-			float inputOffset = module->inputs[Tree::REDUCE_INPUT].isConnected() ? module->inputs[Tree::REDUCE_INPUT].getVoltage() : 0.0;
-			reduce = clampfjw(module->params[Tree::REDUCE_PARAM].getValue() + rescale(inputOffset,-5,5,0.05,0.33), 0.1, 0.66);
-		}
-		float length = 110.0;
-		if(module){
-			float inputOffset = module->inputs[Tree::LENGTH_INPUT].isConnected() ? module->inputs[Tree::LENGTH_INPUT].getVoltage() : 0.0;
-			length = clampfjw(module->params[Tree::LENGTH_PARAM].getValue() + rescale(inputOffset,-5,5,5,100), 10.0, 200.0);
-		}
-		float height = 150.0;
-		if(module){
-			float inputOffset = module->inputs[Tree::HEIGHT_INPUT].isConnected() ? module->inputs[Tree::HEIGHT_INPUT].getVoltage() : 0.0;
-			height = clampfjw(module->params[Tree::HEIGHT_PARAM].getValue() + rescale(inputOffset,-5,5,5,125), 10.0, 250.0);
-		}
-		//https://processing.org/examples/tree.html
-		nvgTranslate(args.vg, box.size.x * 0.5, box.size.y);
-		// nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-		// nvgStrokeColor(args.vg, nvgHSLA(0.1, 0.5, 1, 0xc0));
-		nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
-		int strokeW = 2;
-		nvgStrokeWidth(args.vg, strokeW);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, 0);
-		nvgLineTo(args.vg, 0, -height);
-		nvgStroke(args.vg);
-		nvgTranslate(args.vg, 0, -height);
+			float hue = 0.1;
+			if(module){
+				float inputOffset = module->inputs[Tree::HUE_INPUT].isConnected() ? module->inputs[Tree::HUE_INPUT].getVoltage() : 0.0;
+				hue = clampfjw(module->params[Tree::HUE_PARAM].getValue() + inputOffset/10, 0, 1.0);
+			}
+			float reduce = 0.65;
+			if(module){
+				float inputOffset = module->inputs[Tree::REDUCE_INPUT].isConnected() ? module->inputs[Tree::REDUCE_INPUT].getVoltage() : 0.0;
+				reduce = clampfjw(module->params[Tree::REDUCE_PARAM].getValue() + rescale(inputOffset,-5,5,0.05,0.33), 0.1, 0.66);
+			}
+			float length = 110.0;
+			if(module){
+				float inputOffset = module->inputs[Tree::LENGTH_INPUT].isConnected() ? module->inputs[Tree::LENGTH_INPUT].getVoltage() : 0.0;
+				length = clampfjw(module->params[Tree::LENGTH_PARAM].getValue() + rescale(inputOffset,-5,5,5,100), 10.0, 200.0);
+			}
+			float height = 150.0;
+			if(module){
+				float inputOffset = module->inputs[Tree::HEIGHT_INPUT].isConnected() ? module->inputs[Tree::HEIGHT_INPUT].getVoltage() : 0.0;
+				height = clampfjw(module->params[Tree::HEIGHT_PARAM].getValue() + rescale(inputOffset,-5,5,5,125), 10.0, 250.0);
+			}
+			//https://processing.org/examples/tree.html
+			nvgTranslate(args.vg, box.size.x * 0.5, box.size.y);
+			// nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			// nvgStrokeColor(args.vg, nvgHSLA(0.1, 0.5, 1, 0xc0));
+			nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+			int strokeW = 2;
+			nvgStrokeWidth(args.vg, strokeW);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, 0);
+			nvgLineTo(args.vg, 0, -height);
+			nvgStroke(args.vg);
+			nvgTranslate(args.vg, 0, -height);
 
-		branch(args, length, reduce, 1, strokeW, hue);
-		nvgResetScissor(args.vg);
+			branch(args, length, reduce, 1, strokeW, hue);
+			nvgResetScissor(args.vg);
+		}
+		Widget::drawLayer(args, layer);
 	}
 
 	void branch(const DrawArgs &args, float dist, float reduce, int count, int strokeW, float hue){

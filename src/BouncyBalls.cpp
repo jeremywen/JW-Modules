@@ -290,36 +290,37 @@ struct BouncyBallDisplay : LightWidget {
 		}
 	}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
-		
-		if(module != NULL){
-			//paddle
-			if(module->paddle.visible){
-				nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-				nvgBeginPath(args.vg);
-				nvgRect(args.vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
-				nvgFill(args.vg);
+		if(layer == 1){
+			if(module != NULL){
+				//paddle
+				if(module->paddle.visible){
+					nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
+					nvgFill(args.vg);
+				}
+				//balls
+				for(int i=0; i<4; i++){
+					nvgFillColor(args.vg, module->balls[i].color);
+					nvgStrokeColor(args.vg, module->balls[i].color);
+					nvgStrokeWidth(args.vg, 2);
+					nvgBeginPath(args.vg);
+					Vec ctr = module->balls[i].box.getCenter();
+					nvgCircle(args.vg, ctr.x, ctr.y, module->ballRadius);
+					nvgFill(args.vg);
+					nvgStroke(args.vg);
+				}
+			} else {
+				//TODO maybe draw some balls and a paddle in preview
 			}
-			//balls
-			for(int i=0; i<4; i++){
-				nvgFillColor(args.vg, module->balls[i].color);
-				nvgStrokeColor(args.vg, module->balls[i].color);
-				nvgStrokeWidth(args.vg, 2);
-				nvgBeginPath(args.vg);
-				Vec ctr = module->balls[i].box.getCenter();
-				nvgCircle(args.vg, ctr.x, ctr.y, module->ballRadius);
-				nvgFill(args.vg);
-				nvgStroke(args.vg);
-			}
-		} else {
-			//TODO maybe draw some balls and a paddle in preview
 		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

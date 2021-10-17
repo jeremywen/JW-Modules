@@ -845,96 +845,98 @@ struct NoteSeqFuDisplay : LightWidget {
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<COLS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * HW, 0);
-			nvgLineTo(args.vg, i * HW, box.size.y);
-			nvgStroke(args.vg);
-		}
-		for(int i=1;i<ROWS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * HW);
-			nvgLineTo(args.vg, box.size.x, i * HW);
-			nvgStroke(args.vg);
-		}
-
-		if(module == NULL) return;
-
-		//highest note line
-		float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
-		nvgStrokeWidth(args.vg, 2);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowHighLimitY);
-		nvgLineTo(args.vg, box.size.x, rowHighLimitY);
-		nvgStroke(args.vg);
-
-		//lowest note line
-		float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
-		nvgStrokeWidth(args.vg, 2);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowLowLimitY);
-		nvgLineTo(args.vg, box.size.x, rowLowLimitY);
-		nvgStroke(args.vg);
-
-		//cells
-		nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
-		for(int i=0;i<CELLS;i++){
-			if(module->cells[i]){
-				int x = module->xFromI(i);
-				int y = module->yFromI(i);
+		if(layer == 1){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+			for(int i=1;i<COLS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW, y * HW, HW, HW);
-				nvgFill(args.vg);
-			}
-		}
-
-		for(int i=0;i<4;i++){
-			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
-				float startX = module->getSeqStart(i) * HW;
-				float endX = (module->getSeqEnd(i) + 1) * HW;
-				float endLines[2] = {startX, endX};
-				nvgStrokeWidth(args.vg, 2);
-				for(int j=0;j<2;j++){
-					float endLineX = endLines[j];
-					
-					//seq length line TOP COLOR
-					nvgStrokeColor(args.vg, colors[i]);
-					nvgBeginPath(args.vg);
-					nvgMoveTo(args.vg, endLineX, 0);
-					nvgLineTo(args.vg, endLineX, HW);
-					nvgStroke(args.vg);
-
-					//seq length line BOTTOM COLOR
-					nvgStrokeColor(args.vg, colors[i]);
-					nvgBeginPath(args.vg);
-					nvgMoveTo(args.vg, endLineX, box.size.y - HW);
-					nvgLineTo(args.vg, endLineX, box.size.y);
-					nvgStroke(args.vg);
-				}
-				//seq pos
-				int pos = module->resetMode ? module->getSeqStart(i) : module->playHeads[i].seqPos;
-				nvgStrokeWidth(args.vg, 2);
-				nvgStrokeColor(args.vg, colors[i]);
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, pos * HW, 0);
-				nvgLineTo(args.vg, pos * HW, box.size.y);
+				nvgMoveTo(args.vg, i * HW, 0);
+				nvgLineTo(args.vg, i * HW, box.size.y);
 				nvgStroke(args.vg);
 			}
+			for(int i=1;i<ROWS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, i * HW);
+				nvgLineTo(args.vg, box.size.x, i * HW);
+				nvgStroke(args.vg);
+			}
+
+			if(module == NULL) return;
+
+			//highest note line
+			float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
+			nvgStrokeWidth(args.vg, 2);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, rowHighLimitY);
+			nvgLineTo(args.vg, box.size.x, rowHighLimitY);
+			nvgStroke(args.vg);
+
+			//lowest note line
+			float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
+			nvgStrokeWidth(args.vg, 2);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, rowLowLimitY);
+			nvgLineTo(args.vg, box.size.x, rowLowLimitY);
+			nvgStroke(args.vg);
+
+			//cells
+			nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
+			for(int i=0;i<CELLS;i++){
+				if(module->cells[i]){
+					int x = module->xFromI(i);
+					int y = module->yFromI(i);
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, x * HW, y * HW, HW, HW);
+					nvgFill(args.vg);
+				}
+			}
+
+			for(int i=0;i<4;i++){
+				if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
+					float startX = module->getSeqStart(i) * HW;
+					float endX = (module->getSeqEnd(i) + 1) * HW;
+					float endLines[2] = {startX, endX};
+					nvgStrokeWidth(args.vg, 2);
+					for(int j=0;j<2;j++){
+						float endLineX = endLines[j];
+						
+						//seq length line TOP COLOR
+						nvgStrokeColor(args.vg, colors[i]);
+						nvgBeginPath(args.vg);
+						nvgMoveTo(args.vg, endLineX, 0);
+						nvgLineTo(args.vg, endLineX, HW);
+						nvgStroke(args.vg);
+
+						//seq length line BOTTOM COLOR
+						nvgStrokeColor(args.vg, colors[i]);
+						nvgBeginPath(args.vg);
+						nvgMoveTo(args.vg, endLineX, box.size.y - HW);
+						nvgLineTo(args.vg, endLineX, box.size.y);
+						nvgStroke(args.vg);
+					}
+					//seq pos
+					int pos = module->resetMode ? module->getSeqStart(i) : module->playHeads[i].seqPos;
+					nvgStrokeWidth(args.vg, 2);
+					nvgStrokeColor(args.vg, colors[i]);
+					nvgBeginPath(args.vg);
+					nvgMoveTo(args.vg, pos * HW, 0);
+					nvgLineTo(args.vg, pos * HW, box.size.y);
+					nvgStroke(args.vg);
+				}
+			}
 		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

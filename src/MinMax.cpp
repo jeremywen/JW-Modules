@@ -143,16 +143,20 @@ struct MinMaxDisplay : LightWidget {
 		nvgText(args.vg, pos.x + 10, pos.y + 78, text, NULL);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		if(module == NULL) return;
-		nvgGlobalTint(args.vg, color::WHITE);
-		// Calculate and draw stats
-		if (++frame >= 4) {
-			frame = 0;
-			statsX.calculate(module->bufferX);
-			statsY.calculate(module->bufferY);
+
+		if(layer == 1){
+
+			// Calculate and draw stats
+			if (++frame >= 4) {
+				frame = 0;
+				statsX.calculate(module->bufferX);
+				statsY.calculate(module->bufferY);
+			}
+			drawStats(args, Vec(0, 20), "X", &statsX);
 		}
-		drawStats(args, Vec(0, 20), "X", &statsX);
+		Widget::drawLayer(args, layer);
 	}
 };
 

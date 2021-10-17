@@ -505,89 +505,91 @@ struct XYPadDisplay : LightWidget {
 		}
 	}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		if(module == NULL) return;
-			
-		float ballX = module->params[XYPad::X_POS_PARAM].getValue();
-		float ballY = module->params[XYPad::Y_POS_PARAM].getValue();
-		float invBallX = module->displayWidth-ballX;
-		float invBallY = module->displayHeight-ballY;
+		if(layer == 1){
+			if(module == NULL) return;
+				
+			float ballX = module->params[XYPad::X_POS_PARAM].getValue();
+			float ballY = module->params[XYPad::Y_POS_PARAM].getValue();
+			float invBallX = module->displayWidth-ballX;
+			float invBallY = module->displayHeight-ballY;
 
-		//INVERTED///////////////////////////////////
-		NVGcolor invertedColor = nvgRGB(20, 50, 53);
-		NVGcolor ballColor = nvgRGB(25, 150, 252);
+			//INVERTED///////////////////////////////////
+			NVGcolor invertedColor = nvgRGB(20, 50, 53);
+			NVGcolor ballColor = nvgRGB(25, 150, 252);
 
-		//horizontal line
-		nvgStrokeColor(args.vg, invertedColor);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, invBallY);
-		nvgLineTo(args.vg, box.size.x, invBallY);
-		nvgStroke(args.vg);
-		
-		//vertical line
-		nvgStrokeColor(args.vg, invertedColor);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, invBallX, 0);
-		nvgLineTo(args.vg, invBallX, box.size.y);
-		nvgStroke(args.vg);
-		
-		//inv ball
-		nvgFillColor(args.vg, invertedColor);
-		nvgStrokeColor(args.vg, invertedColor);
-		nvgStrokeWidth(args.vg, module->ballStrokeWidth);
-		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, module->displayWidth-ballX, module->displayHeight-ballY, module->ballRadius);
-		if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
-		nvgStroke(args.vg);
-		
-		//POINTS///////////////////////////////////
-		if(module->points.size() > 0){
-			nvgStrokeColor(args.vg, ballColor);
-			nvgStrokeWidth(args.vg, 2);
+			//horizontal line
+			nvgStrokeColor(args.vg, invertedColor);
 			nvgBeginPath(args.vg);
-			long lastI = module->points.size() - 1;
-			for (long i = lastI; i>=0 && i<long(module->points.size()); i--) {
-				if(i == lastI){ 
-					nvgMoveTo(args.vg, module->points[i].x, module->points[i].y); 
-				} else {
-					nvgLineTo(args.vg, module->points[i].x, module->points[i].y); 
+			nvgMoveTo(args.vg, 0, invBallY);
+			nvgLineTo(args.vg, box.size.x, invBallY);
+			nvgStroke(args.vg);
+			
+			//vertical line
+			nvgStrokeColor(args.vg, invertedColor);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, invBallX, 0);
+			nvgLineTo(args.vg, invBallX, box.size.y);
+			nvgStroke(args.vg);
+			
+			//inv ball
+			nvgFillColor(args.vg, invertedColor);
+			nvgStrokeColor(args.vg, invertedColor);
+			nvgStrokeWidth(args.vg, module->ballStrokeWidth);
+			nvgBeginPath(args.vg);
+			nvgCircle(args.vg, module->displayWidth-ballX, module->displayHeight-ballY, module->ballRadius);
+			if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
+			nvgStroke(args.vg);
+			
+			//POINTS///////////////////////////////////
+			if(module->points.size() > 0){
+				nvgStrokeColor(args.vg, ballColor);
+				nvgStrokeWidth(args.vg, 2);
+				nvgBeginPath(args.vg);
+				long lastI = module->points.size() - 1;
+				for (long i = lastI; i>=0 && i<long(module->points.size()); i--) {
+					if(i == lastI){ 
+						nvgMoveTo(args.vg, module->points[i].x, module->points[i].y); 
+					} else {
+						nvgLineTo(args.vg, module->points[i].x, module->points[i].y); 
+					}
 				}
+				nvgStroke(args.vg);
 			}
+
+
+			//MAIN///////////////////////////////////
+
+			//horizontal line
+			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, ballY);
+			nvgLineTo(args.vg, box.size.x, ballY);
+			nvgStroke(args.vg);
+			
+			//vertical line
+			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, ballX, 0);
+			nvgLineTo(args.vg, ballX, box.size.y);
+			nvgStroke(args.vg);
+			
+			//ball
+			nvgFillColor(args.vg, ballColor);
+			nvgStrokeColor(args.vg, ballColor);
+			nvgStrokeWidth(args.vg, module->ballStrokeWidth);
+			nvgBeginPath(args.vg);
+			nvgCircle(args.vg, ballX, ballY, module->ballRadius);
+			if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
 			nvgStroke(args.vg);
 		}
-
-
-		//MAIN///////////////////////////////////
-
-		//horizontal line
-		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, ballY);
-		nvgLineTo(args.vg, box.size.x, ballY);
-		nvgStroke(args.vg);
-		
-		//vertical line
-		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, ballX, 0);
-		nvgLineTo(args.vg, ballX, box.size.y);
-		nvgStroke(args.vg);
-		
-		//ball
-		nvgFillColor(args.vg, ballColor);
-		nvgStrokeColor(args.vg, ballColor);
-		nvgStrokeWidth(args.vg, module->ballStrokeWidth);
-		nvgBeginPath(args.vg);
-		nvgCircle(args.vg, ballX, ballY, module->ballRadius);
-		if(module->params[XYPad::GATE_PARAM].getValue())nvgFill(args.vg);
-		nvgStroke(args.vg);
+		Widget::drawLayer(args, layer);
 	}
 };
 

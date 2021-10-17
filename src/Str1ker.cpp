@@ -321,22 +321,23 @@ struct FaderDisplay : LightWidget {
 		}
 	}
 
-	void draw(const DrawArgs &args) override {
-		nvgGlobalTint(args.vg, color::WHITE);
-		//line
-		nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 10, 15, 1, 220);
-		nvgFill(args.vg);
+	void drawLayer(const DrawArgs &args, int layer) override {
+		if(layer == 1){
+			//line
+			nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 10, 15, 1, 220);
+			nvgFill(args.vg);
 
-		if(!module){ return; }
+			if(!module){ return; }
 
-		//handle?
-		nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
-		nvgFill(args.vg);
-
+			//handle?
+			nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
+			nvgFill(args.vg);
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
