@@ -101,6 +101,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse;
 
+	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
+	GateMode gateMode = TRIGGER;
+
 	NoteSeq16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, 15.0, 0.0, "Start");
@@ -113,6 +116,20 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(START_INPUT, "Start");
+		configInput(ROTATE_INPUT, "Rotate");
+		configInput(FLIP_INPUT, "Flip");
+		configInput(SHIFT_INPUT, "Shift");
+
+		configOutput(POLY_VOCT_OUTPUT, "Poly V/Oct");
+		configOutput(POLY_GATE_OUTPUT, "Poly Gate");
+		configOutput(EOC_OUTPUT, "End of Cycle");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -150,6 +167,10 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
 		
+		// gateMode
+		json_t *gateModeJ = json_integer((int) gateMode);
+		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
 		return rootJ;
 	}
 
@@ -169,6 +190,12 @@ struct NoteSeq16 : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
+		// gateMode
+		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+		if (gateModeJ)
+			gateMode = (GateMode)json_integer_value(gateModeJ);
+
 		gridChanged();
 	}
 
@@ -201,13 +228,12 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			bool cellActive = hasVal && cells[iFromXY(seqPos, ROWS - polyYVals[i] - 1)];
 			if(cellActive){ 
 				float volts = closestVoltageForRow(polyYVals[i]);
-				// outputs[VOCT_MAIN_OUTPUT + i].setVoltage(volts);
 				outputs[POLY_VOCT_OUTPUT].setVoltage(volts, i);
 			}
-			float gateVolts = pulse && cellActive ? 10.0 : 0.0;
-			// outputs[GATE_MAIN_OUTPUT + i].setVoltage(gateVolts);
-			outputs[POLY_GATE_OUTPUT].setVoltage(gateVolts, i);
-			// lights[GATES_LIGHT + i].value = cellActive ? 1.0 : 0.0;			
+			bool gateOn = cellActive;
+			if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+			else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+			outputs[POLY_GATE_OUTPUT].setVoltage(gateOn ? 10.0 : 0.0, i);
 		}
 		outputs[POLY_GATE_OUTPUT].setChannels(channels);
 		outputs[POLY_VOCT_OUTPUT].setChannels(channels);
@@ -576,87 +602,91 @@ struct NoteSeq16Display : LightWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.y;
+		dragX = APP->scene->mousePos.x;
+		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->rack->mousePos.x;
-		float newDragY = APP->scene->rack->mousePos.y;
+		float newDragX = APP->scene->mousePos.x;
+		float newDragY = APP->scene->mousePos.y;
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<COLS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * HW, 0);
-			nvgLineTo(args.vg, i * HW, box.size.y);
-			nvgStroke(args.vg);
-		}
-		for(int i=1;i<ROWS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * HW);
-			nvgLineTo(args.vg, box.size.x, i * HW);
-			nvgStroke(args.vg);
-		}
-
-		if(module == NULL) return;
-
-		//cells
-		// nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
-		nvgFillColor(args.vg, nvgRGB(255, 151, 9));//orange
-		for(int i=0;i<CELLS;i++){
-			if(module->cells[i]){
-				int x = module->xFromI(i);
-				int y = module->yFromI(i);
+		if(layer == 1){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+			for(int i=1;i<COLS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW, y * HW, HW, HW);
-				nvgFill(args.vg);
+				nvgMoveTo(args.vg, i * HW, 0);
+				nvgLineTo(args.vg, i * HW, box.size.y);
+				nvgStroke(args.vg);
 			}
+			for(int i=1;i<ROWS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, i * HW);
+				nvgLineTo(args.vg, box.size.x, i * HW);
+				nvgStroke(args.vg);
+			}
+
+			if(module == NULL) return;
+
+			//cells
+			// nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
+			nvgFillColor(args.vg, nvgRGB(255, 151, 9));//orange
+			for(int i=0;i<CELLS;i++){
+				if(module->cells[i]){
+					int x = module->xFromI(i);
+					int y = module->yFromI(i);
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, x * HW, y * HW, HW, HW);
+					nvgFill(args.vg);
+				}
+			}
+
+			nvgStrokeWidth(args.vg, 2);
+
+			//seq start line
+			float startX = module->getSeqStart() * HW;
+			nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, startX, 0);
+			nvgLineTo(args.vg, startX, box.size.y);
+			nvgStroke(args.vg);
+
+			//seq length line
+			float endX = (module->getSeqEnd() + 1) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, endX, 0);
+			nvgLineTo(args.vg, endX, box.size.y);
+			nvgStroke(args.vg);
+
+			//seq pos
+			int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
+			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, pos * HW, 0, HW, box.size.y);
+			nvgStroke(args.vg);
 		}
+		Widget::drawLayer(args, layer);
 
-		nvgStrokeWidth(args.vg, 2);
-
-		//seq start line
-		float startX = module->getSeqStart() * HW;
-		nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, startX, 0);
-		nvgLineTo(args.vg, startX, box.size.y);
-		nvgStroke(args.vg);
-
-		//seq length line
-		float endX = (module->getSeqEnd() + 1) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, endX, 0);
-		nvgLineTo(args.vg, endX, box.size.y);
-		nvgStroke(args.vg);
-
-		//seq pos
-		int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
-		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, pos * HW, 0, HW, box.size.y);
-		nvgStroke(args.vg);
 	}
 };
 
 struct PlayModeKnob : JwSmallSnapKnob {
 	PlayModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeq16::PM_FWD_LOOP:return "→";
 				case NoteSeq16::PM_BWD_LOOP:return "←";
 				case NoteSeq16::PM_FWD_BWD_LOOP:return "→←";
@@ -671,8 +701,8 @@ struct PlayModeKnob : JwSmallSnapKnob {
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeq16::RND_BASIC:return "Basic";
 				case NoteSeq16::RND_EUCLID:return "Euclid";
 				case NoteSeq16::RND_SIN_WAVE:return "Sine";
@@ -800,6 +830,18 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(scaleKnob);
 }
 
+struct NoteSeq16GateModeItem : MenuItem {
+	NoteSeq16 *noteSeq16;
+	NoteSeq16::GateMode gateMode;
+	void onAction(const event::Action &e) override {
+		noteSeq16->gateMode = gateMode;
+	}
+	void step() override {
+		rightText = (noteSeq16->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	NoteSeq16 *noteSeq16 = dynamic_cast<NoteSeq16*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -810,6 +852,31 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	channelItem->rightText = string::f("%d", noteSeq16->channels) + " " +RIGHT_ARROW;
 	channelItem->module = noteSeq16;
 	menu->addChild(channelItem);
+	
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Gate Mode";
+	menu->addChild(modeLabel);
+
+	NoteSeq16GateModeItem *triggerItem = new NoteSeq16GateModeItem();
+	triggerItem->text = "Trigger";
+	triggerItem->noteSeq16 = noteSeq16;
+	triggerItem->gateMode = NoteSeq16::TRIGGER;
+	menu->addChild(triggerItem);
+
+	NoteSeq16GateModeItem *retriggerItem = new NoteSeq16GateModeItem();
+	retriggerItem->text = "Retrigger";
+	retriggerItem->noteSeq16 = noteSeq16;
+	retriggerItem->gateMode = NoteSeq16::RETRIGGER;
+	menu->addChild(retriggerItem);
+
+	NoteSeq16GateModeItem *continuousItem = new NoteSeq16GateModeItem();
+	continuousItem->text = "Continuous";
+	continuousItem->noteSeq16 = noteSeq16;
+	continuousItem->gateMode = NoteSeq16::CONTINUOUS;
+	menu->addChild(continuousItem);
 }
 
 

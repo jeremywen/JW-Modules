@@ -43,6 +43,12 @@ struct SimpleClock : Module {
 		configParam(CLOCK_PARAM, -2.0, 6.0, 1.0, "BPM", "", 2.f, 60.f);
 		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(PROB_PARAM, -2.0, 6.0, -2, "Random Reset Probability");
+		configOutput(CLOCK_OUTPUT, "Clock");
+		configOutput(RESET_OUTPUT, "Reset");
+		configOutput(DIV_4_OUTPUT, "/4");
+		configOutput(DIV_8_OUTPUT, "/8");
+		configOutput(DIV_16_OUTPUT, "/16");
+		configOutput(DIV_32_OUTPUT, "/32");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -118,10 +124,13 @@ void SimpleClock::process(const ProcessArgs &args) {
 }
 
 struct BPMKnob : SmallWhiteKnob {
-	BPMKnob(){ paramQuantity = NULL; }
+	BPMKnob(){ 
+		ParamQuantity* paramQuantity = getParamQuantity();
+		paramQuantity = NULL; 
+	}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			return std::to_string(static_cast<unsigned int>(round(powf(2.0, paramQuantity->getValue())*60.0))) + " BPM";
+		if(getParamQuantity() != NULL){
+			return std::to_string(static_cast<unsigned int>(round(powf(2.0, getParamQuantity()->getValue())*60.0))) + " BPM";
 		}
 		return "";
 	}

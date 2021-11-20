@@ -40,6 +40,10 @@ struct OnePattern : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random");
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configOutput(OR_MAIN_OUTPUT, "OR");
+		configOutput(XOR_MAIN_OUTPUT, "XOR");
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -183,55 +187,58 @@ struct OnePatternDisplay : LightWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.y;
+		dragX = APP->scene->mousePos.x;
+		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->rack->mousePos.x;
-		float newDragY = APP->scene->rack->mousePos.y;
+		float newDragX = APP->scene->mousePos.x;
+		float newDragY = APP->scene->mousePos.y;
 		module->setCellOnByDisplayPos(initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
-
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73)); //gray
-		for(int i=1;i<P_COLS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * P_HW, 0);
-			nvgLineTo(args.vg, i * P_HW, box.size.y);
-			nvgStroke(args.vg);
-		}
-		for(int i=1;i<P_ROWS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * P_HW);
-			nvgLineTo(args.vg, box.size.x, i * P_HW);
-			nvgStroke(args.vg);
-		}
-
-		if(module == NULL) return;
-
-		//cells
-		nvgFillColor(args.vg, nvgRGB(255, 243, 9));
-		for(int i=0;i<P_CELLS;i++){
-			if(module->cells[i]){
-				int x = 0;
-				int y = i;
+		
+		if(layer == 1){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73)); //gray
+			for(int i=1;i<P_COLS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * P_HW, y * P_HW, box.size.x, P_HW);
-				nvgFill(args.vg);
+				nvgMoveTo(args.vg, i * P_HW, 0);
+				nvgLineTo(args.vg, i * P_HW, box.size.y);
+				nvgStroke(args.vg);
 			}
-		}
+			for(int i=1;i<P_ROWS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, i * P_HW);
+				nvgLineTo(args.vg, box.size.x, i * P_HW);
+				nvgStroke(args.vg);
+			}
 
-		nvgStrokeWidth(args.vg, 2);
+			if(module == NULL) return;
+
+			//cells
+			nvgFillColor(args.vg, nvgRGB(255, 243, 9));
+			for(int i=0;i<P_CELLS;i++){
+				if(module->cells[i]){
+					int x = 0;
+					int y = i;
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, x * P_HW, y * P_HW, box.size.x, P_HW);
+					nvgFill(args.vg);
+				}
+			}
+
+			nvgStrokeWidth(args.vg, 2);
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

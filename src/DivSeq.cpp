@@ -56,7 +56,7 @@ struct DivSeq : Module,QuantizeUtils {
 	bool playDiv = false;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
-	bool gateState[16] = {};
+	bool gateState[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
@@ -67,6 +67,10 @@ struct DivSeq : Module,QuantizeUtils {
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
+
+	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
+	RandomMode randomMode = RANDOM;
+
 	dsp::PulseGenerator gatePulse;
 
 	DivSeq() {
@@ -75,8 +79,8 @@ struct DivSeq : Module,QuantizeUtils {
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0, "Length");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
-		configParam(RND_DIVS_PARAM, 0.0, 1.0, 0.0, "Random Divisions\n(Shift + Click to Init Defaults)\n(Alt + Click to use first knob as max)\n(Alt + Shift + Click to use first knob as min)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)");
+		configParam(RND_DIVS_PARAM, 0.0, 1.0, 0.0, "Random Divisions\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		for (int y = 0; y < 4; y++) {
@@ -87,6 +91,20 @@ struct DivSeq : Module,QuantizeUtils {
 				configParam(CELL_DIV_PARAM + idx, 1.0, divMax, 1.0, "Division");
 			}
 		}
+		configInput(RIGHT_INPUT, "Clock");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(RESET_INPUT, "Reset");
+		configInput(ROOT_INPUT, "Root Note");
+		configInput(OCTAVE_INPUT, "Octave");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(VOLT_MAX_INPUT, "Range");
+		configInput(RND_GATES_INPUT, "Random Gates");
+		configInput(RND_DIVS_INPUT, "Random Divisions");
+		configInput(RND_NOTES_INPUT, "Random Notes");
+		
+		configOutput(GATES_OUTPUT, "Gate");
+		configOutput(CELL_OUTPUT, "V/Oct");
+		configOutput(EOC_OUTPUT, "End of Cycle");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -108,6 +126,10 @@ struct DivSeq : Module,QuantizeUtils {
 		// gateMode
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
+		// randomMode
+		json_t *randomModeJ = json_integer((int) randomMode);
+		json_object_set_new(rootJ, "randomMode", randomModeJ);
 
 		return rootJ;
 	}
@@ -135,6 +157,11 @@ struct DivSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
+
+		// randomMode
+		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
+		if (randomModeJ)
+			randomMode = (RandomMode)json_integer_value(randomModeJ);
 	}
 
 	void onReset() override {
@@ -160,15 +187,40 @@ struct DivSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
+		int firstKnobVal = params[CELL_NOTE_PARAM].getValue();
+		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 16; i++) {
-			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			if (randomMode == DivSeq::FIRST_MIN) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+				}
+			} else if (randomMode == DivSeq::FIRST_MAX) {
+				if(i != 0){
+					params[CELL_NOTE_PARAM + i].setValue(random::uniform() * firstKnobVal);
+				}
+			} else {
+				params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
+			}
 		}
 	}
 
 	void randomizeDivsOnly(){
+		int firstKnobVal = params[CELL_DIV_PARAM].getValue();
+		float firstKnobMaxVal = divMax;
+
 		for (int i = 0; i < 16; i++) {
-			params[CELL_DIV_PARAM + i].setValue(random::uniform());
-		}
+				if (randomMode == DivSeq::FIRST_MIN) {
+					if(i != 0){
+						params[CELL_DIV_PARAM + i].setValue((int)(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal))));
+					}
+				} else if (randomMode == DivSeq::FIRST_MAX) {
+					if(i != 0){
+						params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*firstKnobVal+1));
+					}
+				} else {
+					params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*64+1));
+				}
+			}
 	}
 
 	float closestVoltageInScaleWrapper(float voltsIn){
@@ -295,27 +347,22 @@ struct RandomizeNotes16SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
 			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->paramQuantity->getValue();
+			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
-			// DEBUG("shiftDown:%d",shiftDown);
-			// DEBUG("altDown:%d",altDown);
-			// DEBUG("altAndShift:%d",altAndShift);
 			for (int i = 0; i < 16; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == DivSeq::FIRST_MIN) {
 					if(i != 0){
-						wid->seqKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
 					}
 				} else if (shiftDown) {
-					wid->seqKnobs[i]->paramQuantity->setValue(3);
-				} else if (altDown) {
+					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
+				} else if (mod->randomMode == DivSeq::FIRST_MAX) {
 					if(i != 0){
-						wid->seqKnobs[i]->paramQuantity->setValue(random::uniform() * firstKnobVal);
+						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
 					}
 				} else {
-					wid->seqKnobs[i]->paramQuantity->setValue(mod->getOneRandomNote());
+					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
 				}
 			}
 		}
@@ -328,24 +375,22 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
 			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			int firstKnobVal = wid->divKnobs[0]->paramQuantity->getValue();
+			int firstKnobVal = wid->divKnobs[0]->getParamQuantity()->getDisplayValue();
 			float firstKnobMaxVal = mod->divMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			bool altDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_ALT;
-			bool altAndShift = (e.mods & RACK_MOD_MASK) == (GLFW_MOD_ALT | GLFW_MOD_SHIFT);
 			for (int i = 0; i < 16; i++) {
-				if (altAndShift) {
+				if (mod->randomMode == DivSeq::FIRST_MIN) {
 					if(i != 0){
-						wid->divKnobs[i]->paramQuantity->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
+						wid->divKnobs[i]->getParamQuantity()->setValue((int)(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal))));
 					}
 				} else if (shiftDown) {
-					wid->divKnobs[i]->paramQuantity->setValue(1);
-				} else if (altDown) {
+					wid->divKnobs[i]->getParamQuantity()->setValue(1);
+				} else if (mod->randomMode == DivSeq::FIRST_MAX) {
 					if(i != 0){
-						wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*firstKnobVal+1));
+						wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*firstKnobVal+1));
 					}
 				} else {
-					wid->divKnobs[i]->paramQuantity->setValue((int)(random::uniform()*64+1));
+					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*64+1));
 				}
 			}
 		}
@@ -440,9 +485,6 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 			int knobX = x * boxSizeX + 60;
 			int knobY = y * boxSizeY + 80;
 			int idx = (x+(y*4));
-			if(module != NULL){
-				module->gateState[idx] = true; //start with all gates on
-			}
 
 			//maybe someday put note labels in each cell
 			// float noteParamMax = 0;
@@ -474,24 +516,36 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 }
 
 struct DivSeqPitchMenuItem : MenuItem {
-	DivSeq *gridSeq;
+	DivSeq *divSeq;
 	void onAction(const event::Action &e) override {
-		gridSeq->ignoreGateOnPitchOut = !gridSeq->ignoreGateOnPitchOut;
+		divSeq->ignoreGateOnPitchOut = !divSeq->ignoreGateOnPitchOut;
 	}
 	void step() override {
-		rightText = (gridSeq->ignoreGateOnPitchOut) ? "✔" : "";
+		rightText = (divSeq->ignoreGateOnPitchOut) ? "✔" : "";
 		MenuItem::step();
 	}
 };
 
 struct DivSeqGateModeItem : MenuItem {
-	DivSeq *gridSeq;
+	DivSeq *divSeq;
 	DivSeq::GateMode gateMode;
 	void onAction(const event::Action &e) override {
-		gridSeq->gateMode = gateMode;
+		divSeq->gateMode = gateMode;
 	}
 	void step() override {
-		rightText = (gridSeq->gateMode == gateMode) ? "✔" : "";
+		rightText = (divSeq->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct DivSeqRandomModeItem : MenuItem {
+	DivSeq *divSeq;
+	DivSeq::RandomMode randomMode;
+	void onAction(const event::Action &e) override {
+		divSeq->randomMode = randomMode;
+	}
+	void step() override {
+		rightText = (divSeq->randomMode == randomMode) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -500,8 +554,8 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
-	DivSeq *gridSeq = dynamic_cast<DivSeq*>(module);
-	assert(gridSeq);
+	DivSeq *divSeq = dynamic_cast<DivSeq*>(module);
+	assert(divSeq);
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";
@@ -509,29 +563,51 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 
 	DivSeqGateModeItem *triggerItem = new DivSeqGateModeItem();
 	triggerItem->text = "Trigger";
-	triggerItem->gridSeq = gridSeq;
+	triggerItem->divSeq = divSeq;
 	triggerItem->gateMode = DivSeq::TRIGGER;
 	menu->addChild(triggerItem);
 
 	DivSeqGateModeItem *retriggerItem = new DivSeqGateModeItem();
 	retriggerItem->text = "Retrigger";
-	retriggerItem->gridSeq = gridSeq;
+	retriggerItem->divSeq = divSeq;
 	retriggerItem->gateMode = DivSeq::RETRIGGER;
 	menu->addChild(retriggerItem);
 
 	DivSeqGateModeItem *continuousItem = new DivSeqGateModeItem();
 	continuousItem->text = "Continuous";
-	continuousItem->gridSeq = gridSeq;
+	continuousItem->divSeq = divSeq;
 	continuousItem->gateMode = DivSeq::CONTINUOUS;
 	menu->addChild(continuousItem);
+
+	DivSeqPitchMenuItem *pitchMenuItem = new DivSeqPitchMenuItem();
+	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
+	pitchMenuItem->divSeq = divSeq;
+	menu->addChild(pitchMenuItem);
 
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	DivSeqPitchMenuItem *pitchMenuItem = new DivSeqPitchMenuItem();
-	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
-	pitchMenuItem->gridSeq = gridSeq;
-	menu->addChild(pitchMenuItem);
+	MenuLabel *randomModeLabel = new MenuLabel();
+	randomModeLabel->text = "Random Button Mode";
+	menu->addChild(randomModeLabel);
+
+	DivSeqRandomModeItem *randomItem = new DivSeqRandomModeItem();
+	randomItem->text = "Random";
+	randomItem->divSeq = divSeq;
+	randomItem->randomMode = DivSeq::RANDOM;
+	menu->addChild(randomItem);
+
+	DivSeqRandomModeItem *randomMinItem = new DivSeqRandomModeItem();
+	randomMinItem->text = "First is Minimum";
+	randomMinItem->divSeq = divSeq;
+	randomMinItem->randomMode = DivSeq::FIRST_MIN;
+	menu->addChild(randomMinItem);
+
+	DivSeqRandomModeItem *randomMaxItem = new DivSeqRandomModeItem();
+	randomMaxItem->text = "First is Maximum";
+	randomMaxItem->divSeq = divSeq;
+	randomMaxItem->randomMode = DivSeq::FIRST_MAX;
+	menu->addChild(randomMaxItem);
 }
 
 Model *modelDivSeq = createModel<DivSeq, DivSeqWidget>("DivSeq");

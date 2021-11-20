@@ -20,6 +20,11 @@ struct Add5 : Module {
 
 	Add5() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		for(int i=0;i<NUM_INPUTS;i++){
+			configInput(VOLT_INPUT + i, "Voltage" + std::to_string(i+1));
+			configOutput(VOLT_OUTPUT + i, "Voltage" + std::to_string(i+1));
+			configBypass(VOLT_INPUT + i, VOLT_OUTPUT + i);
+		}
 	}
 
 	~Add5() {

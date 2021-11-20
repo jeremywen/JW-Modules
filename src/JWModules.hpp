@@ -61,11 +61,13 @@ struct CenteredLabel : Widget {
 
 ////////////////////////////////////////////// KNOBS //////////////////////////////////////////////
 
-struct SmallWhiteKnob : RoundKnob {
+struct SmallWhiteKnob : SvgKnob {
 	CenteredLabel* linkedLabel = NULL;
 	Module* linkedModule = NULL;
 
 	SmallWhiteKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		shadow->opacity = 0;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SmallWhiteKnob.svg")));
 	}
@@ -79,15 +81,15 @@ struct SmallWhiteKnob : RoundKnob {
 	}
 
 	void onChange(const event::Change &e) override {
-		RoundKnob::onChange(e);
+		SvgKnob::onChange(e);
 		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
 	}
 
 	virtual std::string formatCurrentValue() {
-		if(paramQuantity != NULL){
-			return std::to_string(static_cast<unsigned int>(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return std::to_string(static_cast<unsigned int>(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}
@@ -99,8 +101,8 @@ struct NoteKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			return quantizeUtils->noteName(int(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return quantizeUtils->noteName(int(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}
@@ -112,8 +114,8 @@ struct ScaleKnob : SmallWhiteKnob {
 		snap = true;
 	}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			return quantizeUtils->scaleName(int(paramQuantity->getValue()));
+		if(getParamQuantity() != NULL){
+			return quantizeUtils->scaleName(int(getParamQuantity()->getDisplayValue()));
 		}
 		return "";
 	}
@@ -125,14 +127,18 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 	}
 };
 
-struct JwTinyKnob : RoundKnob {
+struct JwTinyKnob : SvgKnob {
 	JwTinyKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteKnob.svg")));
 	}
 };
 
-struct JwTinyGrayKnob : RoundKnob {
+struct JwTinyGrayKnob : SvgKnob {
 	JwTinyGrayKnob() {
+		minAngle = -0.83 * M_PI;
+		maxAngle = 0.83 * M_PI;
 		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinyWhiteGrayKnob.svg")));
 	}
 };
@@ -213,36 +219,35 @@ struct White_TinyPJ301MPort : SvgPort {
 
 struct MyBlueValueLight : ModuleLightWidget {
 	MyBlueValueLight() {
-		firstLightId = 1;
-		this->bgColor = nvgRGB(255, 255, 255);
-		addBaseColor(nvgRGB(25, 150, 252));
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
+		this->addBaseColor(nvgRGB(25, 150, 252));
 	}
 };
 
 struct MyYellowValueLight : ModuleLightWidget {
 	MyYellowValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(255, 243, 9));
 	}
 };
 
 struct MyOrangeValueLight : ModuleLightWidget {
 	MyOrangeValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(255, 151, 9));
 	}
 };
 
 struct MyGreenValueLight : ModuleLightWidget {
 	MyGreenValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(0, 200, 0));
 	}
 };
 
 struct MyRedValueLight : ModuleLightWidget {
 	MyRedValueLight() {
-		firstLightId = 1;
+		this->bgColor = nvgRGBA(0x55, 0x55, 0x55, 0xff);
 		addBaseColor(nvgRGB(200, 0, 0));
 	}
 };

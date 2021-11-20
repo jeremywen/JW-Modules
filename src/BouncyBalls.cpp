@@ -86,21 +86,34 @@ struct BouncyBalls : Module {
 
 	BouncyBalls() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		for(int x=0; x<4; x++){
-			configParam(RESET_PARAM + x, 0.0, 1.0, 0.0, "Reset");
+		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
+		for(int i=0; i<4; i++){
+			configParam(RESET_PARAM + i, 0.0, 1.0, 0.0, "Reset");
+			configInput(RESET_INPUT + i, "Reset " + std::string(colors[i]));
+
+			configParam(TRIG_BTN_PARAM + i, 0.0, 1.0, 0.0, "Trigger");
+			configInput(TRIG_INPUT + i, "Trigger " + std::string(colors[i]));
+
+			configParam(VEL_X_PARAM + i, -3.0, 3.0, 0.25, "Velocity X");
+			configInput(VEL_X_INPUT + i, "Velocity X " + std::string(colors[i]));
+
+			configParam(VEL_Y_PARAM + i, -3.0, 3.0, 0.5, "Velocity Y");
+			configInput(VEL_Y_INPUT + i, "Velocity Y " + std::string(colors[i]));
+
+			configParam(SPEED_MULT_PARAM + i, -5, 20.0, 1.0, "Multiplier");
+			configInput(SPEED_MULT_INPUT + i, "Multiplier " + std::string(colors[i]));
+
+			configOutput(X_OUTPUT + i, "X " + std::string(colors[i]));
+			configOutput(Y_OUTPUT + i, "Y " + std::string(colors[i]));
+			configOutput(N_OUTPUT + i, "N " + std::string(colors[i]));
+			configOutput(E_OUTPUT + i, "E " + std::string(colors[i]));
+			configOutput(S_OUTPUT + i, "S " + std::string(colors[i]));
+			configOutput(W_OUTPUT + i, "W " + std::string(colors[i]));
+			configOutput(EDGE_HIT_OUTPUT + i, "Edge " + std::string(colors[i]));
+			configOutput(PAD_TRIG_OUTPUT + i, "Pad " + std::string(colors[i]));
 		}
-		for(int x=0; x<4; x++){
-			configParam(TRIG_BTN_PARAM + x, 0.0, 1.0, 0.0, "Trigger");
-		}
-		for(int x=0; x<4; x++){
-			configParam(VEL_X_PARAM + x, -3.0, 3.0, 0.25, "Velocity X");
-		}
-		for(int x=0; x<4; x++){
-			configParam(VEL_Y_PARAM + x, -3.0, 3.0, 0.5, "Velocity Y");
-		}
-		for(int x=0; x<4; x++){
-			configParam(SPEED_MULT_PARAM + x, -5, 20.0, 1.0, "Speed");
-		}
+		configInput(PAD_POS_X_INPUT, "Pad Pos X");
+		configInput(PAD_POS_Y_INPUT, "Pad Pos Y");
 		configParam(PAD_ON_PARAM, 0.0, 1.0, 0.0, "Pad On");
 		configParam(SCALE_X_PARAM, 0.01, 1.0, 0.5, "Scale X");
 		configParam(SCALE_Y_PARAM, 0.01, 1.0, 0.5, "Scale Y");
@@ -277,35 +290,37 @@ struct BouncyBallDisplay : LightWidget {
 		}
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
-		
-		if(module != NULL){
-			//paddle
-			if(module->paddle.visible){
-				nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-				nvgBeginPath(args.vg);
-				nvgRect(args.vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
-				nvgFill(args.vg);
+		if(layer == 1){
+			if(module != NULL){
+				//paddle
+				if(module->paddle.visible){
+					nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, module->paddle.box.pos.x, module->paddle.box.pos.y, 100, 10);
+					nvgFill(args.vg);
+				}
+				//balls
+				for(int i=0; i<4; i++){
+					nvgFillColor(args.vg, module->balls[i].color);
+					nvgStrokeColor(args.vg, module->balls[i].color);
+					nvgStrokeWidth(args.vg, 2);
+					nvgBeginPath(args.vg);
+					Vec ctr = module->balls[i].box.getCenter();
+					nvgCircle(args.vg, ctr.x, ctr.y, module->ballRadius);
+					nvgFill(args.vg);
+					nvgStroke(args.vg);
+				}
+			} else {
+				//TODO maybe draw some balls and a paddle in preview
 			}
-			//balls
-			for(int i=0; i<4; i++){
-				nvgFillColor(args.vg, module->balls[i].color);
-				nvgStrokeColor(args.vg, module->balls[i].color);
-				nvgStrokeWidth(args.vg, 2);
-				nvgBeginPath(args.vg);
-				Vec ctr = module->balls[i].box.getCenter();
-				nvgCircle(args.vg, ctr.x, ctr.y, module->ballRadius);
-				nvgFill(args.vg);
-				nvgStroke(args.vg);
-			}
-		} else {
-			//TODO maybe draw some balls and a paddle in preview
 		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

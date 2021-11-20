@@ -63,6 +63,19 @@ struct Str1ker : Module {
 		configParam(ON_OFF_SWITCH, 0.0, 1.0, 1.0, "On/Off");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(FADER_RANGE_PARAM, 1, 50, 1, "Fader Range");
+		configInput(CLOCK_100s_INPUT, "100's");
+		configInput(CLOCK_10s_INPUT, "10's");
+		configInput(CLOCK_1s_INPUT, "1's");
+		configInput(CLOCK_DOT_100s_INPUT, ".00's");
+		configInput(BPM_INPUT, "BPM");
+		configInput(FADER_INPUT, "Fader");
+		configInput(RESET_INPUT, "Reset");
+		configOutput(RESET_OUTPUT, "Reset");
+		configOutput(CLOCK_OUTPUT, "Clock");
+		configOutput(BPM_OUTPUT, "BPM");
+		paramQuantities[CLOCK_100s_PARAM]->snapEnabled = true;
+		paramQuantities[CLOCK_10s_PARAM]->snapEnabled = true;
+		paramQuantities[CLOCK_1s_PARAM]->snapEnabled = true;
 		transmitSocket.SetAllowReuse(true);
 	}
 
@@ -259,12 +272,12 @@ void Str1kerWidget::step() {
 		for(int i=0;i<4;i++){
 			if(str1ker->useBpmIn()){
 				//update knobs
-				knobs[i]->paramQuantity->setValue(str1ker->params[Str1ker::CLOCK_100s_INPUT + i].getValue());
+				knobs[i]->getParamQuantity()->setValue(str1ker->params[Str1ker::CLOCK_100s_INPUT + i].getValue());
 				// knobs[i]->dirty = true;//TODO FIX?
 				knobs[i]->step();
 			} else if(str1ker->inputs[Str1ker::CLOCK_100s_INPUT + i].isConnected()){
 				//move the knob based on input val
-				knobs[i]->paramQuantity->setValue(str1ker->getKnobValForInput(Str1ker::CLOCK_100s_INPUT + i));
+				knobs[i]->getParamQuantity()->setValue(str1ker->getKnobValForInput(Str1ker::CLOCK_100s_INPUT + i));
 				// knobs[i]->dirty = true;//TODO FIX?
 				knobs[i]->step();
 			}
@@ -297,32 +310,34 @@ struct FaderDisplay : LightWidget {
 	
 	void onDragStart(const event::DragStart &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			dragY = APP->scene->rack->mousePos.y;
+			dragY = APP->scene->mousePos.y;
 		}
 	}
 
 	void onDragMove(const event::DragMove &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			float newDragY = APP->scene->rack->mousePos.y;
+			float newDragY = APP->scene->mousePos.y;
 			module->faderVal = 0.5 - (clampfjw(initY + (newDragY - dragY) - 30.0, 0.0, 180.0) / 180.0);
 		}
 	}
 
-	void draw(const DrawArgs &args) override {
-		//line
-		nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 10, 15, 1, 220);
-		nvgFill(args.vg);
+	void drawLayer(const DrawArgs &args, int layer) override {
+		if(layer == 1){
+			//line
+			nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 10, 15, 1, 220);
+			nvgFill(args.vg);
 
-		if(!module){ return; }
+			if(!module){ return; }
 
-		//handle?
-		nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
-		nvgFill(args.vg);
-
+			//handle?
+			nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
+			nvgFill(args.vg);
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 

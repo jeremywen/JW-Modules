@@ -143,6 +143,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator mainClockPulse;
 
+	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
+	GateMode gateMode = TRIGGER;
+
 	NoteSeqFu() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
@@ -176,6 +179,34 @@ struct NoteSeqFu : Module,QuantizeUtils {
 			configParam(SEMI_KNOB_PARAM + i, -11.0, 11.0, 0.0, "Semitones");
 			configParam(DIVISION_KNOB_PARAM + i, 1, 32.0, 1.0, "Division");
 		}
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(CLEAR_INPUT, "Clear");
+		configInput(RND_TRIG_INPUT, "Random Trigger");
+		configInput(RND_AMT_INPUT, "Random Amount");
+		configInput(ROT_RIGHT_INPUT, "Rotate Right");
+		configInput(ROT_LEFT_INPUT, "Rotate Left");
+		configInput(FLIP_HORIZ_INPUT, "Flip Horizontally");
+		configInput(FLIP_VERT_INPUT, "Flip Vertically");
+		configInput(SHIFT_UP_INPUT, "Shift Up");
+		configInput(SHIFT_DOWN_INPUT, "Shift Down");
+		configInput(HIGHEST_NOTE_INPUT, "Highest Note");
+		configInput(LOWEST_NOTE_INPUT, "Lowest Note");
+		configInput(ROOT_INPUT, "Root");
+		configInput(SCALE_INPUT, "Scale");
+		configInput(LENGTH_INPUT, "Length");
+		configInput(SHIFT_AMT_INPUT, "Shift Amount");
+		configInput(SHIFT_CHAOS_INPUT, "Shift Chaos");
+
+		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
+		for(int i=0;i<4;i++){
+			configOutput(POLY_VOCT_OUTPUT + i, "Poly V/Oct " + std::string(colors[i]));
+			configOutput(POLY_GATE_OUTPUT + i, "Poly Gate " + std::string(colors[i]));
+			configOutput(EOC_OUTPUT + i, "End of Cycle " + std::string(colors[i]));
+		}
+		configOutput(MERGED_VOCT_OUTPUT, "Merged Poly V/Oct");
+		configOutput(MERGED_GATE_OUTPUT, "Merged Poly Gate");
+
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -214,6 +245,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
 		
+		// gateMode
+		json_t *gateModeJ = json_integer((int) gateMode);
+		json_object_set_new(rootJ, "gateMode", gateModeJ);
+
 		return rootJ;
 	}
 
@@ -233,6 +268,12 @@ struct NoteSeqFu : Module,QuantizeUtils {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
+		// gateMode
+		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
+		if (gateModeJ)
+			gateMode = (GateMode)json_integer_value(gateModeJ);
+		
 		gridChanged();
 	}
 
@@ -290,7 +331,10 @@ struct NoteSeqFu : Module,QuantizeUtils {
 							outputs[MERGED_VOCT_OUTPUT].setVoltage(volts, i + p * maxChannelsPerPlayhead);
 						}
 					}
-					float gateVolts = pulse && cellActive ? 10.0 : 0.0;
+					bool gateOn = cellActive;
+					if (gateMode == TRIGGER) gateOn = gateOn && pulse;
+					else if (gateMode == RETRIGGER) gateOn = gateOn && !pulse;
+					float gateVolts = gateOn ? 10.0 : 0.0;
 					outputs[POLY_GATE_OUTPUT + p].setVoltage(gateVolts, i);
 					if(i < 4){ //first four since we are merging 4 playheads into a max 16 channels
 						outputs[MERGED_GATE_OUTPUT].setVoltage(gateVolts, i + p * maxChannelsPerPlayhead);
@@ -791,113 +835,116 @@ struct NoteSeqFuDisplay : LightWidget {
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->rack->mousePos.x;
-		dragY = APP->scene->rack->mousePos.y;
+		dragX = APP->scene->mousePos.x;
+		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->rack->mousePos.x;
-		float newDragY = APP->scene->rack->mousePos.y;
+		float newDragX = APP->scene->mousePos.x;
+		float newDragY = APP->scene->mousePos.y;
 		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<COLS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, i * HW, 0);
-			nvgLineTo(args.vg, i * HW, box.size.y);
-			nvgStroke(args.vg);
-		}
-		for(int i=1;i<ROWS;i++){
-			nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * HW);
-			nvgLineTo(args.vg, box.size.x, i * HW);
-			nvgStroke(args.vg);
-		}
-
-		if(module == NULL) return;
-
-		//highest note line
-		float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
-		nvgStrokeWidth(args.vg, 2);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowHighLimitY);
-		nvgLineTo(args.vg, box.size.x, rowHighLimitY);
-		nvgStroke(args.vg);
-
-		//lowest note line
-		float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
-		nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
-		nvgStrokeWidth(args.vg, 2);
-		nvgBeginPath(args.vg);
-		nvgMoveTo(args.vg, 0, rowLowLimitY);
-		nvgLineTo(args.vg, box.size.x, rowLowLimitY);
-		nvgStroke(args.vg);
-
-		//cells
-		nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
-		for(int i=0;i<CELLS;i++){
-			if(module->cells[i]){
-				int x = module->xFromI(i);
-				int y = module->yFromI(i);
+		if(layer == 1){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+			for(int i=1;i<COLS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, x * HW, y * HW, HW, HW);
-				nvgFill(args.vg);
-			}
-		}
-
-		for(int i=0;i<4;i++){
-			if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
-				float startX = module->getSeqStart(i) * HW;
-				float endX = (module->getSeqEnd(i) + 1) * HW;
-				float endLines[2] = {startX, endX};
-				nvgStrokeWidth(args.vg, 2);
-				for(int j=0;j<2;j++){
-					float endLineX = endLines[j];
-					
-					//seq length line TOP COLOR
-					nvgStrokeColor(args.vg, colors[i]);
-					nvgBeginPath(args.vg);
-					nvgMoveTo(args.vg, endLineX, 0);
-					nvgLineTo(args.vg, endLineX, HW);
-					nvgStroke(args.vg);
-
-					//seq length line BOTTOM COLOR
-					nvgStrokeColor(args.vg, colors[i]);
-					nvgBeginPath(args.vg);
-					nvgMoveTo(args.vg, endLineX, box.size.y - HW);
-					nvgLineTo(args.vg, endLineX, box.size.y);
-					nvgStroke(args.vg);
-				}
-				//seq pos
-				int pos = module->resetMode ? module->getSeqStart(i) : module->playHeads[i].seqPos;
-				nvgStrokeWidth(args.vg, 2);
-				nvgStrokeColor(args.vg, colors[i]);
-				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, pos * HW, 0);
-				nvgLineTo(args.vg, pos * HW, box.size.y);
+				nvgMoveTo(args.vg, i * HW, 0);
+				nvgLineTo(args.vg, i * HW, box.size.y);
 				nvgStroke(args.vg);
 			}
+			for(int i=1;i<ROWS;i++){
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, i * HW);
+				nvgLineTo(args.vg, box.size.x, i * HW);
+				nvgStroke(args.vg);
+			}
+
+			if(module == NULL) return;
+
+			//highest note line
+			float rowHighLimitY = (32-module->getFinalHighestNote1to32()) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
+			nvgStrokeWidth(args.vg, 2);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, rowHighLimitY);
+			nvgLineTo(args.vg, box.size.x, rowHighLimitY);
+			nvgStroke(args.vg);
+
+			//lowest note line
+			float rowLowLimitY = (33-module->getFinalLowestNote1to32()) * HW;
+			nvgStrokeColor(args.vg, nvgRGB(120, 120, 120));
+			nvgStrokeWidth(args.vg, 2);
+			nvgBeginPath(args.vg);
+			nvgMoveTo(args.vg, 0, rowLowLimitY);
+			nvgLineTo(args.vg, box.size.x, rowLowLimitY);
+			nvgStroke(args.vg);
+
+			//cells
+			nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
+			for(int i=0;i<CELLS;i++){
+				if(module->cells[i]){
+					int x = module->xFromI(i);
+					int y = module->yFromI(i);
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, x * HW, y * HW, HW, HW);
+					nvgFill(args.vg);
+				}
+			}
+
+			for(int i=0;i<4;i++){
+				if(module->params[NoteSeqFu::PLAYHEAD_ON_PARAM + i].getValue()){
+					float startX = module->getSeqStart(i) * HW;
+					float endX = (module->getSeqEnd(i) + 1) * HW;
+					float endLines[2] = {startX, endX};
+					nvgStrokeWidth(args.vg, 2);
+					for(int j=0;j<2;j++){
+						float endLineX = endLines[j];
+						
+						//seq length line TOP COLOR
+						nvgStrokeColor(args.vg, colors[i]);
+						nvgBeginPath(args.vg);
+						nvgMoveTo(args.vg, endLineX, 0);
+						nvgLineTo(args.vg, endLineX, HW);
+						nvgStroke(args.vg);
+
+						//seq length line BOTTOM COLOR
+						nvgStrokeColor(args.vg, colors[i]);
+						nvgBeginPath(args.vg);
+						nvgMoveTo(args.vg, endLineX, box.size.y - HW);
+						nvgLineTo(args.vg, endLineX, box.size.y);
+						nvgStroke(args.vg);
+					}
+					//seq pos
+					int pos = module->resetMode ? module->getSeqStart(i) : module->playHeads[i].seqPos;
+					nvgStrokeWidth(args.vg, 2);
+					nvgStrokeColor(args.vg, colors[i]);
+					nvgBeginPath(args.vg);
+					nvgMoveTo(args.vg, pos * HW, 0);
+					nvgLineTo(args.vg, pos * HW, box.size.y);
+					nvgStroke(args.vg);
+				}
+			}
 		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
 struct PlayModeKnob : JwSmallSnapKnob {
 	PlayModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeqFu::PM_FWD_LOOP:return "→";
 				case NoteSeqFu::PM_BWD_LOOP:return "←";
 				case NoteSeqFu::PM_FWD_BWD_LOOP:return "→←";
@@ -912,8 +959,8 @@ struct PlayModeKnob : JwSmallSnapKnob {
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
-		if(paramQuantity != NULL){
-			switch(int(paramQuantity->getValue())){
+		if(getParamQuantity() != NULL){
+			switch(int(getParamQuantity()->getDisplayValue())){
 				case NoteSeqFu::RND_BASIC:return "Basic";
 				case NoteSeqFu::RND_EUCLID:return "Euclid";
 				case NoteSeqFu::RND_SIN_WAVE:return "Sine";
@@ -1090,16 +1137,53 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addParam(createParam<JwHorizontalSwitch>(Vec(668, 362), module, NoteSeqFu::INCLUDE_INACTIVE_PARAM));
 }
 
+struct NoteSeqFuGateModeItem : MenuItem {
+	NoteSeqFu *noteSeqFu;
+	NoteSeqFu::GateMode gateMode;
+	void onAction(const event::Action &e) override {
+		noteSeqFu->gateMode = gateMode;
+	}
+	void step() override {
+		rightText = (noteSeqFu->gateMode == gateMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
-	NoteSeqFu *noteSeq = dynamic_cast<NoteSeqFu*>(module);
+	NoteSeqFu *noteSeqFu = dynamic_cast<NoteSeqFu*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
 
 	NSFChannelItem *channelItem = new NSFChannelItem;
 	channelItem->text = "Polyphony channels";
-	channelItem->rightText = string::f("%d", noteSeq->channels) + " " +RIGHT_ARROW;
-	channelItem->module = noteSeq;
+	channelItem->rightText = string::f("%d", noteSeqFu->channels) + " " +RIGHT_ARROW;
+	channelItem->module = noteSeqFu;
 	menu->addChild(channelItem);
+
+	MenuLabel *spacerLabel2 = new MenuLabel();
+	menu->addChild(spacerLabel2);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Gate Mode";
+	menu->addChild(modeLabel);
+
+	NoteSeqFuGateModeItem *triggerItem = new NoteSeqFuGateModeItem();
+	triggerItem->text = "Trigger";
+	triggerItem->noteSeqFu = noteSeqFu;
+	triggerItem->gateMode = NoteSeqFu::TRIGGER;
+	menu->addChild(triggerItem);
+
+	NoteSeqFuGateModeItem *retriggerItem = new NoteSeqFuGateModeItem();
+	retriggerItem->text = "Retrigger";
+	retriggerItem->noteSeqFu = noteSeqFu;
+	retriggerItem->gateMode = NoteSeqFu::RETRIGGER;
+	menu->addChild(retriggerItem);
+
+	NoteSeqFuGateModeItem *continuousItem = new NoteSeqFuGateModeItem();
+	continuousItem->text = "Continuous";
+	continuousItem->noteSeqFu = noteSeqFu;
+	continuousItem->gateMode = NoteSeqFu::CONTINUOUS;
+	menu->addChild(continuousItem);
 }
 
 Model *modelNoteSeqFu = createModel<NoteSeqFu, NoteSeqFuWidget>("NoteSeqFu");

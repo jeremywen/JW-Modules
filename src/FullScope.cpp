@@ -34,6 +34,7 @@ struct FullScope : Module {
 	float bufferY[BUFFER_SIZE] = {};
 	int bufferIndex = 0;
 	float frameIndex = 0;
+	float width = RACK_GRID_WIDTH*17;
 
 	dsp::SchmittTrigger sumTrigger;
 	dsp::SchmittTrigger extTrigger;
@@ -48,7 +49,12 @@ struct FullScope : Module {
 		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0, "X Scale");
 		configParam(Y_SCALE_PARAM, -2.0, 8.0, 1.0, "Y Scale");
 		configParam(ROTATION_PARAM, -10.0, 10.0, 0, "Rotation");
-		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Speed");		
+		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Speed");
+		configInput(X_INPUT, "X");
+		configInput(Y_INPUT, "Y");
+		configInput(COLOR_INPUT, "Color");
+		configInput(TIME_INPUT, "Time");
+		configInput(ROTATION_INPUT, "Rotation");
 	}
 	void process(const ProcessArgs &args) override;
 
@@ -56,6 +62,7 @@ struct FullScope : Module {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "lissajous", json_integer((int) lissajous));
 		json_object_set_new(rootJ, "external", json_integer((int) external));
+		json_object_set_new(rootJ, "width", json_real(width));
 		return rootJ;
 	}
 
@@ -67,6 +74,10 @@ struct FullScope : Module {
 		json_t *extJ = json_object_get(rootJ, "external");
 		if (extJ)
 			external = json_integer_value(extJ);
+		
+		json_t *widthJ = json_object_get(rootJ, "width");
+		if (widthJ)
+			width = json_number_value(widthJ);
 	}
 
 	void onReset() override {
@@ -203,59 +214,64 @@ struct FullScopeDisplay : LightWidget {
 		nvgRestore(args.vg);
 	}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
 		if(module == NULL) return;
 
-		float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
-		float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));
-		float offsetX = module->params[FullScope::X_POS_PARAM].getValue();
-		float offsetY = module->params[FullScope::Y_POS_PARAM].getValue();
+		if(layer == 1){
 
-		float valuesX[BUFFER_SIZE];
-		float valuesY[BUFFER_SIZE];
-		for (int i = 0; i < BUFFER_SIZE; i++) {
-			int j = i;
-			// Lock display to buffer if buffer update deltaTime <= 2^-11
-			if (module->lissajous)
-				j = (i + module->bufferIndex) % BUFFER_SIZE;
-			valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
-			valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
-		}
 
-		//color
-		if(module->inputs[FullScope::COLOR_INPUT].isConnected()){
-			float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].getVoltage(), 0.0, 6.0, 0, 1.0);
-			nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
-		} else {
-			nvgStrokeColor(args.vg, nvgRGBA(25, 150, 252, 0xc0));
-		}
+			float gainX = powf(2.0, roundf(module->params[FullScope::X_SCALE_PARAM].getValue()));
+			float gainY = powf(2.0, roundf(module->params[FullScope::Y_SCALE_PARAM].getValue()));
+			float offsetX = module->params[FullScope::X_POS_PARAM].getValue();
+			float offsetY = module->params[FullScope::Y_POS_PARAM].getValue();
 
-		// Draw waveforms
-		if (module->lissajous) {
-			// X x Y
-			if (module->inputs[FullScope::X_INPUT].isConnected() || module->inputs[FullScope::Y_INPUT].isConnected()) {
-				drawWaveform(args, valuesX, valuesY);
-			}
-		}
-		else {
-			// Y
-			if (module->inputs[FullScope::Y_INPUT].isConnected()) {
-				drawWaveform(args, valuesY, NULL);
+			float valuesX[BUFFER_SIZE];
+			float valuesY[BUFFER_SIZE];
+			for (int i = 0; i < BUFFER_SIZE; i++) {
+				int j = i;
+				// Lock display to buffer if buffer update deltaTime <= 2^-11
+				if (module->lissajous)
+					j = (i + module->bufferIndex) % BUFFER_SIZE;
+				valuesX[i] = (module->bufferX[j] + offsetX) * gainX / 10.0;
+				valuesY[i] = (module->bufferY[j] + offsetY) * gainY / 10.0;
 			}
 
-			// X
-			if (module->inputs[FullScope::X_INPUT].isConnected()) {
-				nvgStrokeColor(args.vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
-				drawWaveform(args, valuesX, NULL);
+			//color
+			if(module->inputs[FullScope::COLOR_INPUT].isConnected()){
+				float hue = rescalefjw(module->inputs[FullScope::COLOR_INPUT].getVoltage(), 0.0, 6.0, 0, 1.0);
+				nvgStrokeColor(args.vg, nvgHSLA(hue, 0.5, 0.5, 0xc0));
+			} else {
+				nvgStrokeColor(args.vg, nvgRGBA(25, 150, 252, 0xc0));
+			}
+
+			// Draw waveforms
+			if (module->lissajous) {
+				// X x Y
+				if (module->inputs[FullScope::X_INPUT].isConnected() || module->inputs[FullScope::Y_INPUT].isConnected()) {
+					drawWaveform(args, valuesX, valuesY);
+				}
+			}
+			else {
+				// Y
+				if (module->inputs[FullScope::Y_INPUT].isConnected()) {
+					drawWaveform(args, valuesY, NULL);
+				}
+
+				// X
+				if (module->inputs[FullScope::X_INPUT].isConnected()) {
+					nvgStrokeColor(args.vg, nvgRGBA(0x28, 0xb0, 0xf3, 0xc0));
+					drawWaveform(args, valuesX, NULL);
+				}
+			}
+
+			// Calculate stats
+			if (++frame >= 4) {
+				frame = 0;
+				statsX.calculate(module->bufferX);
+				statsY.calculate(module->bufferY);
 			}
 		}
-
-		// Calculate stats
-		if (++frame >= 4) {
-			frame = 0;
-			statsX.calculate(module->bufferX);
-			statsY.calculate(module->bufferY);
-		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
@@ -266,15 +282,13 @@ struct FullScopeWidget : ModuleWidget {
 	TransparentWidget *display;
 	FullScopeWidget(FullScope *module);
 	void step() override;
-	json_t *toJson() override;
-	void fromJson(json_t *rootJ) override;
 	void appendContextMenu(Menu *menu) override;
 };
 
 FullScopeWidget::FullScopeWidget(FullScope *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
-	
+	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
+
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
@@ -319,26 +333,12 @@ void FullScopeWidget::step() {
 	panel->box.size = box.size;
 	display->box.size = Vec(box.size.x, box.size.y);
 	rightHandle->box.pos.x = box.size.x - rightHandle->box.size.x;
-	// rightHandle->box.pos.y = box.size.y - rightHandle->box.size.y;
-	// leftHandle->box.pos.y = box.size.y - leftHandle->box.size.y;
+	
+	FullScope *fullScope = dynamic_cast<FullScope*>(module);
+	if(fullScope){
+		fullScope->width = box.size.x;
+	}
 	ModuleWidget::step();
-}
-
-json_t *FullScopeWidget::toJson() {
-	json_t *rootJ = ModuleWidget::toJson();
-	json_object_set_new(rootJ, "width", json_real(box.size.x));
-	json_object_set_new(rootJ, "height", json_real(box.size.y));
-	return rootJ;
-}
-
-void FullScopeWidget::fromJson(json_t *rootJ) {
-	ModuleWidget::fromJson(rootJ);
-	json_t *widthJ = json_object_get(rootJ, "width");
-	if (widthJ)
-		box.size.x = json_number_value(widthJ);
-	json_t *heightJ = json_object_get(rootJ, "height");
-	if (heightJ)
-		box.size.y = json_number_value(heightJ);
 }
 
 struct FullScopeLissajousModeMenuItem : MenuItem {

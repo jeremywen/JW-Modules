@@ -34,6 +34,12 @@ struct D1v1de : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(DIV_PARAM, 1, 64, 4, "Division");
 		configParam(OFFSET_PARAM, 0, 64, 64, "Offset");
+		configInput(CLOCK_INPUT, "Clock");
+		configInput(RESET_INPUT, "Reset");
+		configInput(DIV_INPUT, "Division");
+		configOutput(CLOCK_OUTPUT, "Clock");
+		configOutput(POS_OUTPUT, "Position");
+		configBypass(CLOCK_INPUT, CLOCK_OUTPUT);
 	}
 
 	void onSampleRateChange() override {
@@ -116,53 +122,57 @@ struct D1v1deDisplay : LightWidget {
 	D1v1de *module;
 	D1v1deDisplay(){}
 
-	void draw(const DrawArgs &args) override {
+	void drawLayer(const DrawArgs &args, int layer) override {
+		nvgGlobalTint(args.vg, color::WHITE);
 		//background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 
-		int divInt = module ? module->getDivInt() : 4;
-		float rowHeight = box.size.y / divInt;
+		if(layer == 1){
+			int divInt = module ? module->getDivInt() : 4;
+			float rowHeight = box.size.y / divInt;
 
-		//grid
-		nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-		for(int i=1;i<divInt;i++){
-			nvgStrokeWidth(args.vg, 1);
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, 0, i * rowHeight);
-			nvgLineTo(args.vg, box.size.x, i * rowHeight);
-			nvgStroke(args.vg);
-		}
-
-		if(!module){ return; }
-
-		//offset
-		if(module->params[D1v1de::OFFSET_PARAM].getValue() > 0){
-			float offsetTopY = module->getOffsetInt() * rowHeight;
-			nvgFillColor(args.vg, nvgRGB(60, 70, 73));//line color
-			if(offsetTopY+rowHeight < box.size.y+2){
+			//grid
+			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
+			for(int i=1;i<divInt;i++){
+				nvgStrokeWidth(args.vg, 1);
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, 0, offsetTopY, box.size.x, rowHeight);
+				nvgMoveTo(args.vg, 0, i * rowHeight);
+				nvgLineTo(args.vg, box.size.x, i * rowHeight);
+				nvgStroke(args.vg);
+			}
+
+			if(!module){ return; }
+
+			//offset
+			if(module->params[D1v1de::OFFSET_PARAM].getValue() > 0){
+				float offsetTopY = module->getOffsetInt() * rowHeight;
+				nvgFillColor(args.vg, nvgRGB(60, 70, 73));//line color
+				if(offsetTopY+rowHeight < box.size.y+2){
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, 0, offsetTopY, box.size.x, rowHeight);
+					nvgFill(args.vg);
+				}
+			}
+
+			//block
+			switch(int(module->params[D1v1de::COLOR_PARAM].getValue())){
+				case 0: nvgFillColor(args.vg, nvgRGB(25, 150, 252)); break;//blue
+				case 1: nvgFillColor(args.vg, nvgRGB(255, 151, 9)); break;//orange
+				case 2: nvgFillColor(args.vg, nvgRGB(255, 243, 9)); break;//yellow
+				case 3: nvgFillColor(args.vg, nvgRGB(144, 26, 252)); break;//purple
+			}
+
+			float topY = module->ticks * rowHeight;
+			if(topY+rowHeight < box.size.y+2){
+				nvgBeginPath(args.vg);
+				nvgRect(args.vg, 0, topY, box.size.x, rowHeight);
 				nvgFill(args.vg);
 			}
 		}
-
-		//block
-		switch(int(module->params[D1v1de::COLOR_PARAM].getValue())){
-			case 0: nvgFillColor(args.vg, nvgRGB(25, 150, 252)); break;//blue
-			case 1: nvgFillColor(args.vg, nvgRGB(255, 151, 9)); break;//orange
-			case 2: nvgFillColor(args.vg, nvgRGB(255, 243, 9)); break;//yellow
-			case 3: nvgFillColor(args.vg, nvgRGB(144, 26, 252)); break;//purple
-		}
-
-		float topY = module->ticks * rowHeight;
-		if(topY+rowHeight < box.size.y+2){
-			nvgBeginPath(args.vg);
-			nvgRect(args.vg, 0, topY, box.size.x, rowHeight);
-			nvgFill(args.vg);
-		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
@@ -177,7 +187,7 @@ void D1v1deWidget::step() {
 	ModuleWidget::step();
 	D1v1de *d1v = dynamic_cast<D1v1de*>(module);
 	if(d1v && d1v->inputs[D1v1de::DIV_INPUT].isConnected()){
-		divKnob->paramQuantity->setValue(d1v->getDivInt());
+		divKnob->getParamQuantity()->setValue(d1v->getDivInt());
 		divKnob->step();
 	}
 }
