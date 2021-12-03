@@ -106,7 +106,6 @@ void MinMax::process(const ProcessArgs &args) {
 struct MinMaxDisplay : LightWidget {
 	MinMax *module;
 	int frame = 0;
-	std::shared_ptr<Font> font;
 
 	struct Stats {
 		float vrms, vpp, vmin = 0, vmax = 0;
@@ -127,20 +126,15 @@ struct MinMaxDisplay : LightWidget {
 	Stats statsX, statsY;
 
 	MinMaxDisplay() {
-		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/DejaVuSansMono.ttf"));
 	}
 
 	void drawStats(const DrawArgs &args, Vec pos, const char *title, Stats *stats) {
-		nvgFontSize(args.vg, 24);
-		nvgFontFaceId(args.vg, font->handle);
-		nvgTextLetterSpacing(args.vg, -2);
-
 		nvgFillColor(args.vg, nvgRGBA(0xff, 0xff, 0xff, 0x80));
 		char text[128];
 		snprintf(text, sizeof(text), "%5.2f", stats->vmin);
-		nvgText(args.vg, pos.x + 10, pos.y + 28, text, NULL);
+		nvgText(args.vg, pos.x + 25, pos.y + 28, text, NULL);
 		snprintf(text, sizeof(text), "%5.2f", stats->vmax);
-		nvgText(args.vg, pos.x + 10, pos.y + 78, text, NULL);
+		nvgText(args.vg, pos.x + 25, pos.y + 78, text, NULL);
 	}
 
 	void drawLayer(const DrawArgs &args, int layer) override {
