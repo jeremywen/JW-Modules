@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.2 ~ 2-9-22
+
+  * Fixed dragging at different zoom levels for
+    noteseq, noteseq16, noteseqfu, 1pattern, patterns, trigs, xypad 
+
 ## v1.0.29 ~ 5-11-21
 
   * Fixed EOC on all sequencers

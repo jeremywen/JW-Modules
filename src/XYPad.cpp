@@ -468,18 +468,13 @@ void XYPad::process(const ProcessArgs &args) {
 struct XYPadDisplay : LightWidget {
 	XYPad *module;
 	XYPadDisplay() {}
-	float initX = 0;
-	float initY = 0;
-	float dragX = 0;
-	float dragY = 0;
+	Vec dragPos;
 
 	void onButton(const event::Button &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			if(e.action == GLFW_PRESS){
 				e.consume(this);
-				// e.target = this;
-				initX = e.pos.x;
-				initY = e.pos.y;
+				dragPos = e.pos;
 				module->setMouseDown(e.pos, true);
 			} else {
 				module->setMouseDown(e.pos, false);
@@ -488,8 +483,6 @@ struct XYPadDisplay : LightWidget {
 	}
 
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->mousePos.x;
-		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragEnd(const event::DragEnd &e) override { 
@@ -499,9 +492,8 @@ struct XYPadDisplay : LightWidget {
 
 	void onDragMove(const event::DragMove &e) override {
 		if(module->state == XYPad::STATE_RECORDING){
-			float newDragX = APP->scene->mousePos.x;
-			float newDragY = APP->scene->mousePos.y;
-			module->setCurrentPos(initX+(newDragX-dragX), initY+(newDragY-dragY));
+			dragPos = dragPos.plus(e.mouseDelta.div(getAbsoluteZoom()));
+			module->setCurrentPos(dragPos.x, dragPos.y);
 		}
 	}
 

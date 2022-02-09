@@ -843,32 +843,24 @@ struct NoteSeq : Module,QuantizeUtils {
 struct NoteSeqDisplay : LightWidget {
 	NoteSeq *module;
 	bool currentlyTurningOn = false;
-	float initX = 0;
-	float initY = 0;
-	float dragX = 0;
-	float dragY = 0;
+	Vec dragPos;
 	NoteSeqDisplay(){}
 
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
-			// e.target = this;
-			initX = e.pos.x;
-			initY = e.pos.y;
+			dragPos = e.pos;
 			currentlyTurningOn = !module->isCellOnByDisplayPos(e.pos.x, e.pos.y);
 			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, currentlyTurningOn);
 		}
 	}
 	
 	void onDragStart(const event::DragStart &e) override {
-		dragX = APP->scene->mousePos.x;
-		dragY = APP->scene->mousePos.y;
 	}
 
 	void onDragMove(const event::DragMove &e) override {
-		float newDragX = APP->scene->mousePos.x;
-		float newDragY = APP->scene->mousePos.y;
-		module->setCellOnByDisplayPos(initX+(newDragX-dragX), initY+(newDragY-dragY), currentlyTurningOn);
+		dragPos = dragPos.plus(e.mouseDelta.div(getAbsoluteZoom()));
+		module->setCellOnByDisplayPos(dragPos.x, dragPos.y, currentlyTurningOn);
 	}
 
 	void drawLayer(const DrawArgs &args, int layer) override {
