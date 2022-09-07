@@ -446,6 +446,10 @@ struct TrigsDisplay : LightWidget {
 		colors[3] = nvgRGB(25, 150, 252);//blue
 	}
 
+	~TrigsDisplay() {
+		delete [] colors;
+	}
+
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
