@@ -218,6 +218,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		delete [] colNotesCache;
 		delete [] colNotesCache2;
 		delete [] playHeads;
+		delete [] hitEnd;
 	}
 
 	void onRandomize() override {
