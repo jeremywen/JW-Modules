@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.3 ~ 11-14-23
+
+  * added dark panels from Jorge Salas and updated code to use them
+
 ## v2.0.2 ~ 2-9-22
 
   * Fixed dragging at different zoom levels for
