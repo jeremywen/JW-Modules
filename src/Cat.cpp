@@ -65,7 +65,7 @@ CatWidget::CatWidget(Cat *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
-	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230));
+	BGPanel *panel = new BGPanel(nvgRGB(230, 230, 230), nvgRGB(51, 51, 51));
 	panel->box.size = box.size;
 	addChild(panel);
 

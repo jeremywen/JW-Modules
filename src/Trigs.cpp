@@ -610,10 +610,10 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*13, RACK_GRID_HEIGHT);
 
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Trigs.svg")));
-	addChild(panel);
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/Trigs.svg"), 
+		asset::plugin(pluginInstance, "res/dark/Trigs.svg")
+	));
 
 	TrigsDisplay *display = new TrigsDisplay();
 	display->module = module;

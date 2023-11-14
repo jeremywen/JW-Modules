@@ -415,12 +415,10 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/EightSeq.svg")));
-		addChild(panel);
-	}
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/EightSeq.svg"), 
+		asset::plugin(pluginInstance, "res/dark/EightSeq.svg")
+	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));

@@ -290,7 +290,7 @@ FullScopeWidget::FullScopeWidget(FullScope *module) {
 	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
 
 	{
-		panel = new BGPanel(nvgRGB(0, 0, 0));
+		panel = new BGPanel(nvgRGB(0, 0, 0), nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

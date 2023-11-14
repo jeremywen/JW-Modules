@@ -404,11 +404,11 @@ struct PattChannelItem : MenuItem {
 PatternsWidget::PatternsWidget(Patterns *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*16, RACK_GRID_HEIGHT);
-
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Patterns.svg")));
-	addChild(panel);
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/Patterns.svg"), 
+		asset::plugin(pluginInstance, "res/dark/Patterns.svg")
+	));
 
 	PatternsDisplay *display = new PatternsDisplay();
 	display->module = module;

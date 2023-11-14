@@ -1002,11 +1002,11 @@ struct NSFChannelItem : MenuItem {
 NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
-
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/NoteSeqFu.svg")));
-	addChild(panel);
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/NoteSeqFu.svg"), 
+		asset::plugin(pluginInstance, "res/dark/NoteSeqFu.svg")
+	));
 
 	NoteSeqFuDisplay *display = new NoteSeqFuDisplay();
 	display->module = module;

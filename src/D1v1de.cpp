@@ -196,12 +196,10 @@ D1v1deWidget::D1v1deWidget(D1v1de *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*8, RACK_GRID_HEIGHT);
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/D1v1de.svg")));
-		addChild(panel);
-	}
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/D1v1de.svg"), 
+		asset::plugin(pluginInstance, "res/dark/D1v1de.svg")
+	));
 
 	D1v1deDisplay *display = new D1v1deDisplay();
 	display->module = module;

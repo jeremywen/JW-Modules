@@ -1017,10 +1017,10 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/NoteSeq.svg")));
-	addChild(panel);
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/NoteSeq.svg"), 
+		asset::plugin(pluginInstance, "res/dark/NoteSeq.svg")
+	));
 
 	NoteSeqDisplay *display = new NoteSeqDisplay();
 	display->module = module;

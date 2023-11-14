@@ -621,11 +621,11 @@ struct RandomVariationButton : TinyButton {
 XYPadWidget::XYPadWidget(XYPad *module) {
 		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
-
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/XYPad.svg")));
-	addChild(panel);
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/XYPad.svg"), 
+		asset::plugin(pluginInstance, "res/dark/XYPad.svg")
+	));
 
 	XYPadDisplay *display = new XYPadDisplay();
 	display->module = module;

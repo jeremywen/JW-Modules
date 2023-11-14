@@ -65,13 +65,11 @@ struct QuantizerWidget : ModuleWidget {
 QuantizerWidget::QuantizerWidget(Quantizer *module) {
 		setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
-
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadPanel.svg")));
-		addChild(panel);
-	}
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/WavHeadPanel.svg"), 
+		asset::plugin(pluginInstance, "res/dark/WavHeadPanel.svg")
+	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));

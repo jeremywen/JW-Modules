@@ -348,10 +348,10 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*48, RACK_GRID_HEIGHT);
 
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/BouncyBalls.svg")));
-	addChild(panel);
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/BouncyBalls.svg"), 
+		asset::plugin(pluginInstance, "res/dark/BouncyBalls.svg")
+	));
 
 	BouncyBallDisplay *display = new BouncyBallDisplay();
 	display->module = module;

@@ -11,10 +11,12 @@ extern Plugin *pluginInstance;
 struct BGPanel : Widget {
 	Widget *panelBorder;
 	NVGcolor color;
+	NVGcolor darkColor;
 
-	BGPanel(NVGcolor _color) {
+	BGPanel(NVGcolor _color, NVGcolor _darkColor) {
 		panelBorder = new PanelBorder;
 		color = _color;
+		darkColor = _darkColor;
 		addChild(panelBorder);
 	}
 
@@ -26,7 +28,7 @@ struct BGPanel : Widget {
 	void draw(const DrawArgs &args) override {
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
-		nvgFillColor(args.vg, color);
+		nvgFillColor(args.vg, settings::preferDarkPanels ? darkColor : color);
 		nvgFill(args.vg);
 		Widget::draw(args);
 	}

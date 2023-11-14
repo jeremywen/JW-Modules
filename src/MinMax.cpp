@@ -160,15 +160,13 @@ struct MinMaxWidget : ModuleWidget {
 };
 
 MinMaxWidget::MinMaxWidget(MinMax *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/MinMax.svg")));
-		addChild(panel);
-	}
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/MinMax.svg"), 
+		asset::plugin(pluginInstance, "res/dark/MinMax.svg")
+	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));

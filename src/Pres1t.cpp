@@ -242,11 +242,11 @@ struct Pres1tWidget : ModuleWidget {
 Pres1tWidget::Pres1tWidget(Pres1t *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*8, RACK_GRID_HEIGHT);
-
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Pres1t.svg")));
-	addChild(panel);
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/Pres1t.svg"), 
+		asset::plugin(pluginInstance, "res/dark/Pres1t.svg")
+	));
 
 	Pres1tDisplay *display = new Pres1tDisplay();
 	display->module = module;

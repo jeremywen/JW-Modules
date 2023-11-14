@@ -242,11 +242,11 @@ struct OnePatternWidget : ModuleWidget {
 OnePatternWidget::OnePatternWidget(OnePattern *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*3, RACK_GRID_HEIGHT);
-
-	SVGPanel *panel = new SVGPanel();
-	panel->box.size = box.size;
-	panel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/OnePattern.svg")));
-	addChild(panel);
+	
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/OnePattern.svg"), 
+		asset::plugin(pluginInstance, "res/dark/OnePattern.svg")
+	));
 
 	OnePatternDisplay *display = new OnePatternDisplay();
 	display->module = module;
