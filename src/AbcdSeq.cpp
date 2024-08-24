@@ -7,7 +7,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		CELL_NOTE_PARAM,
 		CELL_GATE_PARAM = CELL_NOTE_PARAM + 32,
 		CELL_VEL_PARAM = CELL_GATE_PARAM + 32,
-		RND_NOTES_PARAM = CELL_VEL_PARAM + 32,
+		RND_CV_PARAM = CELL_VEL_PARAM + 32,
 		ROOT_NOTE_PARAM,
         RND_TEXT_PARAM,
 		SCALE_PARAM,
@@ -22,7 +22,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	enum InputIds {
 		RESET_INPUT,
 		CLOCK_INPUT,
-		RND_NOTES_INPUT,
+		RND_CV_INPUT,
 		RND_GATES_INPUT,
 		RND_TEXT_INPUT,
 		VOLT_MAX_INPUT,
@@ -77,7 +77,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random CV\n(Shift + Click to Init Defaults)");
+		configParam(RND_CV_PARAM, 0.0, 1.0, 0.0, "Random CV\n(Shift + Click to Init Defaults)");
 		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities\n(Shift + Click to Init Defaults)");
 		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
@@ -103,7 +103,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configInput(VOLT_MAX_INPUT, "Range");
 		configInput(RND_GATES_INPUT, "Random Gates");
 		configInput(RND_VELS_INPUT, "Random Velocities");
-		configInput(RND_NOTES_INPUT, "Random Notes");
+		configInput(RND_CV_INPUT, "Random Notes");
 		configInput(RND_TEXT_INPUT, "Random Text");
 		
 		configOutput(GATES_OUTPUT, "Gate");
@@ -304,7 +304,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			randomizeTextOnly();
 		}
 
-		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
+		if (rndNotesTrigger.process(inputs[RND_CV_INPUT].getVoltage())) {
 			randomizeNotesOnly();
 		}
 
@@ -542,11 +542,11 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addParam(createParam<RandomizeGatesButton>(Vec(230, paramY+10), module, AbcdSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, AbcdSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeVelButton>(Vec(255, paramY+10), module, AbcdSeq::RND_VELS_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, AbcdSeq::RND_VELS_INPUT));
+	addParam(createParam<RandomizeNotesButton>(Vec(255, paramY+10), module, AbcdSeq::RND_CV_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, AbcdSeq::RND_CV_INPUT));
 
-	addParam(createParam<RandomizeNotesButton>(Vec(279, paramY+10), module, AbcdSeq::RND_NOTES_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, AbcdSeq::RND_NOTES_INPUT));
+	addParam(createParam<RandomizeVelButton>(Vec(279, paramY+10), module, AbcdSeq::RND_VELS_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, AbcdSeq::RND_VELS_INPUT));
 
 	addParam(createParam<RandomizeTextButton>(Vec(304, paramY+10), module, AbcdSeq::RND_TEXT_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(304, 345), module, AbcdSeq::RND_TEXT_INPUT));
