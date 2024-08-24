@@ -508,8 +508,8 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addInput(createInput<PJ301MPort>(Vec(168, 26), module, AbcdSeq::RESET_INPUT));
 	addParam(createParam<TinyButton>(Vec(197, 31), module, AbcdSeq::RESET_PARAM));
 
-    OrderDisplay* orderDisplay = createWidget<OrderDisplay>(Vec(225, 15));
-    orderDisplay->box.size = Vec(300, 30);
+    OrderDisplay* orderDisplay = createWidget<OrderDisplay>(Vec(250, 20));
+    orderDisplay->box.size = Vec(344, 30);
     orderDisplay->setModule(module);
     orderTextField = orderDisplay->textField;
     addChild(orderDisplay);
