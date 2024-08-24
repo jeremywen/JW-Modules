@@ -58,6 +58,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool dirty = false;
     int col = 0;
     int row = 0;
+    int index = 0;
     int charIdx = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
@@ -220,13 +221,13 @@ struct AbcdSeq : Module,QuantizeUtils {
 	}
 
     void moveToNextStep(){
-        int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT + row].getVoltage(), 0, 10.0, 0.0, 7.0));
+        double lenVolts = clampfjw(inputs[LENGTH_INPUT + row].getVoltage(), 0.0, 10.0);
+        int inputOffset = int(rescalefjw(lenVolts, 0, 10.0, 0.0, 7.0));
         int rowLen = clampijw(params[LENGTH_KNOB_PARAM + row].getValue() + inputOffset, 1, 8);
+        // DEBUG("rowLen=%i", rowLen);
         col++;
-        if(col % rowLen == 0){
-            //end of row, next row/char
+        if(col % rowLen == 0){//end of row, next row/char
             char c = text[charIdx];
-            // DEBUG("c=%c", c);
             if(text.size() == 0){
                 row = (row + 1) % rowLen;
             } else {
@@ -238,7 +239,6 @@ struct AbcdSeq : Module,QuantizeUtils {
                 charIdx = 0;
             }
         }
-        // DEBUG("charIdx:%i, row:%i, col:%i", charIdx, row, col);
     }
 
     void randomizeTextOnly(){
@@ -321,7 +321,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			moveToNextStep();
 		} 
 	}
-    int index = col + row * 8;//ignores the length of a row
+    index = col + row * 8;//ignores the length of a row
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
@@ -330,6 +330,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			col = 0;
             resetRow();
 		}
+        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
