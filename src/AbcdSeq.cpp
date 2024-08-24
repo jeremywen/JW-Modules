@@ -259,7 +259,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     int getRowForChar(char c){
         c = toupper(c);
-        DEBUG("char=%c", c);
+        // DEBUG("char=%c", c);
         switch(c){
             case 'A': return 0; break;
             case 'B': return 1; break;
@@ -330,7 +330,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			col = 0;
             resetRow();
 		}
-        DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
+        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
