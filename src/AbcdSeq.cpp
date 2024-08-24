@@ -1,5 +1,7 @@
 #include "JWModules.hpp"
 
+std::string DEFAULT_TEXT = "AAAB";
+
 struct AbcdSeq : Module,QuantizeUtils {
 	enum ParamIds {
 		CELL_NOTE_PARAM,
@@ -52,7 +54,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger rndVelsTrigger;
 	dsp::SchmittTrigger gateTriggers[32];
 
-	std::string DEFAULT_TEXT = "AAAB";
 	std::string text = DEFAULT_TEXT;
 	bool dirty = false;
     int col = 0;
@@ -275,9 +276,9 @@ struct AbcdSeq : Module,QuantizeUtils {
     }
 
     void resetRow(){
-        if(DEFAULT_TEXT.size() > 0){
+        if(text.size() > 0){
             row = getRowForChar(text[0]);
-            DEBUG("row=%i,char=%c", row, text[0]);
+            //DEBUG("row=%i,char=%c", row, text[0]);
         } else {
             row = 0;
         }
@@ -368,12 +369,15 @@ struct OrderTextField : LedDisplayTextField {
 		if (module && module->dirty) {
 			setText(module->text);
 			module->dirty = false;
-		}
+        } else {
+            setText(DEFAULT_TEXT);
+        }
 	}
 
 	void onChange(const ChangeEvent& e) override {
-		if (module)
+		if (module) {
 			module->text = getText();
+        }
 	}
 };
 
@@ -454,7 +458,7 @@ struct RandomizeTextButton : TinyButton {
 			AbcdSeq *s = dynamic_cast<AbcdSeq*>(sw->module);
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
             if(shiftDown){
-                sw->orderTextField->setText(s->DEFAULT_TEXT);
+                sw->orderTextField->setText(DEFAULT_TEXT);
             } else {
 			    s->randomizeTextOnly();
             }
