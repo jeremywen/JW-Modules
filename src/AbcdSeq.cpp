@@ -87,7 +87,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 			for (int x = 0; x < 8; x++) {
 				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
-				configParam(CELL_VEL_PARAM + idx, 1.0, 10.0, 10.0, "Velocity");
+				configParam(CELL_VEL_PARAM + idx, 0.0, 10.0, 10.0, "Velocity");
 				idx++;
 			}
 		}
