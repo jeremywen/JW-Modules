@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.4 ~ 8-23-24
+
+  * added AbcdSeq
+  * Add5 is now Polyphonic
+
 ## v2.0.3 ~ 11-14-23
 
   * added dark panels from Jorge Salas and updated code to use them

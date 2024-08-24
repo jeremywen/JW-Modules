@@ -10,7 +10,7 @@
 	"sourceUrl": "https://github.com/jeremywen/JW-Modules",
 	"donateUrl": "https://www.paypal.me/jeremywen",
 	"changelogUrl": "https://github.com/jeremywen/JW-Modules/blob/master/CHANGELOG.md",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"modules": [
 		{
 			"slug": "BlankPanel_1HP",
@@ -52,7 +52,7 @@
 			"slug": "Add5",
 			"name": "Add5",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": ["Utility"]
+			"tags": ["Utility", "Poly"]
 		},
 		{
 			"slug": "BouncyBalls",
@@ -82,6 +82,12 @@
 			"slug": "8Seq",
 			"name": "8Seq",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#eightseq",
+			"tags": ["Sequencer"]
+		},
+		{
+			"slug": "AbcdSeq",
+			"name": "AbcdSeq",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#abcdseq",
 			"tags": ["Sequencer"]
 		},
 		{
