@@ -369,7 +369,7 @@ struct OrderTextField : LedDisplayTextField {
 		if (module && module->dirty) {
 			setText(module->text);
 			module->dirty = false;
-        } else {
+        } else if(!module){
             setText(DEFAULT_TEXT);
         }
 	}
@@ -470,6 +470,7 @@ struct OrderDisplay : LedDisplay {
     OrderTextField* textField;
 	void setModule(AbcdSeq* module) {
 		textField = createWidget<OrderTextField>(Vec(0, 0));
+		textField->text = DEFAULT_TEXT;
 		textField->box.size = box.size;
 		textField->multiline = false;
 		textField->module = module;
