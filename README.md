@@ -501,7 +501,7 @@ Rows A, B, C, and D are step sequencers.  The order that the step sequences play
 
 #### Inputs
 
-  *  **Text Input:** Possible characters: A, B, C, D will jump to those rows, O will jump to any other row, * will jump to any row
+  *  **Text Input:** Possible characters: A, B, C, D will jump to those rows, O will jump to any other row, * will jump to any row.  (You can use UPPER or lower case)
   *  **Clock Input:** clock to move the steps along to the right and to the next row
   *  **Reset Input:** this resets to the beginning of the sequence and resets all step counters.
   *  **Length Inputs:** length of each sequence

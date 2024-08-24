@@ -659,7 +659,12 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
     MenuLabel *helpLabel4 = new MenuLabel();
 	helpLabel4->text = "* will jump to any row";
 	menu->addChild(helpLabel4);
+
+    MenuLabel *helpLabel5 = new MenuLabel();
+	helpLabel5->text = "(UPPER or lower case works)";
+	menu->addChild(helpLabel5);
 }
+
 
 
 Model *modelAbcdSeq = createModel<AbcdSeq, AbcdSeqWidget>("AbcdSeq");
