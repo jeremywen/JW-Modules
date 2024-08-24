@@ -614,6 +614,14 @@ struct AbcdSeqGateModeItem : MenuItem {
 	}
 };
 
+struct AbcdSeqPresetItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	void onAction(const event::Action &e) override {
+		abcdSeq->text = text;
+		abcdSeq->dirty = true;
+	}
+};
+
 void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
@@ -668,6 +676,30 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
     MenuLabel *helpLabel5 = new MenuLabel();
 	helpLabel5->text = "(UPPER or lower case works)";
 	menu->addChild(helpLabel5);
+
+	MenuLabel *spacerLabel3 = new MenuLabel();
+	menu->addChild(spacerLabel3);
+
+    MenuLabel *helpLabel6 = new MenuLabel();
+	helpLabel6->text = "Text Presets";
+	menu->addChild(helpLabel6);
+
+	AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
+	presetMenuItem1->text = "ABCD";
+	presetMenuItem1->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem1);
+
+	AbcdSeqPresetItem *presetMenuItem2 = new AbcdSeqPresetItem();
+	presetMenuItem2->text = "AAAB";
+	presetMenuItem2->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem2);
+
+	AbcdSeqPresetItem *presetMenuItem3 = new AbcdSeqPresetItem();
+	presetMenuItem3->text = "AAABAAACAAAD";
+	presetMenuItem3->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem3);
+
+
 }
 
 
