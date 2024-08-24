@@ -704,7 +704,7 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(spacerLabel3);
 
     MenuLabel *helpLabel6 = new MenuLabel();
-	helpLabel6->text = "Text Presets";
+	helpLabel6->text = "Row Order Presets";
 	menu->addChild(helpLabel6);
 
 	AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
