@@ -58,7 +58,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool dirty = false;
     int col = 0;
     int row = 0;
-    int index = 0;
     int charIdx = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
@@ -229,7 +228,7 @@ struct AbcdSeq : Module,QuantizeUtils {
         if(col % rowLen == 0){//end of row, next row/char
             char c = text[charIdx];
             if(text.size() == 0){
-                row = (row + 1) % rowLen;
+                row = (row + 1) % 4;
             } else {
                 row = getRowForChar(c);
             }
@@ -260,6 +259,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     int getRowForChar(char c){
         c = toupper(c);
+        DEBUG("char=%c", c);
         switch(c){
             case 'A': return 0; break;
             case 'B': return 1; break;
@@ -321,7 +321,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			moveToNextStep();
 		} 
 	}
-    index = col + row * 8;//ignores the length of a row
+    int index = col + row * 8;//ignores the length of a row
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
@@ -330,7 +330,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			col = 0;
             resetRow();
 		}
-        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
+        DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
