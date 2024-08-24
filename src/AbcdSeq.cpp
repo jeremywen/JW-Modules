@@ -77,7 +77,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random CV\n(Shift + Click to Init Defaults)");
 		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities\n(Shift + Click to Init Defaults)");
 		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
@@ -85,7 +85,7 @@ struct AbcdSeq : Module,QuantizeUtils {
         int idx = 0;
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 8; x++) {
-				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
+				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "CV");
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
 				configParam(CELL_VEL_PARAM + idx, 0.0, 10.0, 10.0, "Velocity");
 				idx++;
@@ -227,7 +227,11 @@ struct AbcdSeq : Module,QuantizeUtils {
             //end of row, next row/char
             char c = text[charIdx];
             // DEBUG("c=%c", c);
-            row = getRowForChar(c);
+            if(text.size() == 0){
+                row = (row + 1) % rowLen;
+            } else {
+                row = getRowForChar(c);
+            }
             col = 0;
             charIdx++;
             if(charIdx + 1 > ((int)text.size())){

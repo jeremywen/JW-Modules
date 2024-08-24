@@ -158,7 +158,7 @@ struct TreeDisplay : LightWidget {
 			// DEBUG("count*0.001=%f",count*0.001);
 			count++;
 			float rnd1 = module ? module->rnd[count % RND_NUMS] : 0;
-			float rnd2 = module ? module->rnd[count+1 % RND_NUMS] : 0;
+			// float rnd2 = module ? module->rnd[count+1 % RND_NUMS] : 0;
 			nvgStrokeColor(args.vg, nvgHSLA(hue * count * 0.5, 0.5, 0.5, 0xc0));
 
 			nvgSave(args.vg);

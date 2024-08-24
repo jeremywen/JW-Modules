@@ -125,8 +125,8 @@ void SimpleClock::process(const ProcessArgs &args) {
 
 struct BPMKnob : SmallWhiteKnob {
 	BPMKnob(){ 
-		ParamQuantity* paramQuantity = getParamQuantity();
-		paramQuantity = NULL; 
+		// ParamQuantity* paramQuantity = getParamQuantity();
+		// paramQuantity = NULL; 
 	}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
