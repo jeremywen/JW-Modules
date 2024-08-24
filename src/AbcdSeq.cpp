@@ -1,6 +1,7 @@
 #include "JWModules.hpp"
 
 std::string DEFAULT_TEXT = "AAAB";
+std::string POSSIBLE_CHARS = "ABCDORabcdor";
 
 struct AbcdSeq : Module,QuantizeUtils {
 	enum ParamIds {
@@ -58,6 +59,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool dirty = false;
     int col = 0;
     int row = 0;
+    int currentRandomRow = 0;
     int charIdx = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
@@ -66,7 +68,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
 	float rndFloat0to1AtClockStep = random::uniform();
-	bool hitEnd = false;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -109,6 +110,8 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configOutput(GATES_OUTPUT, "Gate");
 		configOutput(CELL_OUTPUT, "V/Oct");
 		configOutput(VEL_OUTPUT, "Velocity");
+
+        row = getRowForChar(text[charIdx]);
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -169,7 +172,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	void onReset() override {
 		text = DEFAULT_TEXT;
 		dirty = true;
-		col = 0;
         resetRow();
 		resetMode = true;
 		for (int i = 0; i < 32; i++) {
@@ -219,25 +221,49 @@ struct AbcdSeq : Module,QuantizeUtils {
 		return closestVoltageInScale(octave + voltsScaled, rootNote, scale);
 	}
 
-    void moveToNextStep(){
+    int getCurrentRowLength(){
         double lenVolts = clampfjw(inputs[LENGTH_INPUT + row].getVoltage(), 0.0, 10.0);
         int inputOffset = int(rescalefjw(lenVolts, 0, 10.0, 0.0, 7.0));
         int rowLen = clampijw(params[LENGTH_KNOB_PARAM + row].getValue() + inputOffset, 1, 8);
-        // DEBUG("rowLen=%i", rowLen);
-        col++;
-        if(col % rowLen == 0){//end of row, next row/char
-            char c = text[charIdx];
+        return rowLen;
+    }
+
+    void moveToNextStep(){
+        int rowLen = getCurrentRowLength();
+        char currChar = text[charIdx];
+        char nextChar = text[(charIdx + 1) % text.size()];
+        bool goingForward = isupper(currChar);
+        bool nextCharGoingForward = isupper(nextChar);
+        bool endOfRow = false;
+
+        if(goingForward){
+            // DEBUG("fw currChar=%c, row=%i", currChar, row);
+            if(col+1 < rowLen){
+                col++;
+            } else {
+                endOfRow = true;
+            }
+        } else {
+            if(col > 0){
+                col--;
+            } else {
+                endOfRow = true;
+            }
+        }
+        if(endOfRow){
+            col = nextCharGoingForward ? 0 : rowLen - 1;
             if(text.size() == 0){
                 row = (row + 1) % 4;
             } else {
-                row = getRowForChar(c);
+                row = getRowForChar(nextChar);
             }
-            col = 0;
             charIdx++;
-            if(charIdx + 1 > ((int)text.size())){
+            if(charIdx >= ((int)text.size())){
                 charIdx = 0;
             }
         }
+        // DEBUG("rowLen=%i, forward=%i, col=%i, row=%i, currChar=%c, nextChar=%c, endOfRow=%i, next=%i", 
+        //     rowLen, goingForward, col, row, currChar, nextChar, endOfRow, nextCharGoingForward);
     }
 
     void randomizeTextOnly(){
@@ -245,43 +271,39 @@ struct AbcdSeq : Module,QuantizeUtils {
         text = "";
         int rndLen = (random::uniform() * 16) + 1;
         for(int i=0;i<rndLen;i++){
-            int n = (int)(random::uniform() * 6);
-            switch(n){
-                case 0: text.append("A"); break;
-                case 1: text.append("B"); break;
-                case 2: text.append("C"); break;
-                case 3: text.append("D"); break;
-                case 4: text.append("O"); break;
-                case 5: text.append("*"); break;
-            }
+            int n = (int)(random::uniform() * POSSIBLE_CHARS.size());
+            text += POSSIBLE_CHARS[n];
         }
     }
 
+    int getNewRandomRow(){
+        return (int)(random::uniform() * 4); 
+    }
+
+    int getNewRandomOtherRow(){
+        int prevRow = row;
+        int temp = getNewRandomRow(); 
+        while(temp == prevRow){
+            temp = getNewRandomRow(); 
+        }
+        return temp;
+    }
+
     int getRowForChar(char c){
-        c = toupper(c);
-        // DEBUG("char=%c", c);
         switch(c){
-            case 'A': return 0; break;
-            case 'B': return 1; break;
-            case 'C': return 2; break;
-            case 'D': return 3; break;
-            case 'O': {
-                int prevRow = row;
-                int temp = (int)(random::uniform() * 4); 
-                while(temp == prevRow){
-                    temp = (int)(random::uniform() * 4); 
-                }
-                return temp;
-                break;
-            }
-            case '*': return (int)(random::uniform() * 4); break;
+            case 'A': case 'a': return 0; break;
+            case 'B': case 'b': return 1; break;
+            case 'C': case 'c': return 2; break;
+            case 'D': case 'd': return 3; break;
+            case 'O': case 'o': return getNewRandomOtherRow(); break;
+            case 'R': case 'r': return getNewRandomRow(); break;
         }
         return 0;
     }
 
     void resetRow(){
         if(text.size() > 0){
-            row = getRowForChar(text[0]);
+            // int rowLen = getCurrentRowLength();
             //DEBUG("row=%i,char=%c", row, text[0]);
         } else {
             row = 0;
@@ -323,14 +345,14 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	}
     int index = col + row * 8;//ignores the length of a row
 	if (nextStep) {
+        // DEBUG("nextStep row=%i", row);
 		if(resetMode){
 			resetMode = false;
-			hitEnd = false;
 			phase = 0.0;
 			col = 0;
             resetRow();
 		}
-        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i", charIdx, row, col, index);
+        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i, char=%c", charIdx, row, col, index, text[charIdx]);
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
@@ -374,8 +396,8 @@ struct OrderTextField : LedDisplayTextField {
 		if (module && module->dirty) {
 			setText(module->text);
 			module->dirty = false;
-        } else if(!module){
-            setText(DEFAULT_TEXT);
+        // } else if(!module){
+        //     setText(DEFAULT_TEXT);
         }
 	}
 
@@ -670,11 +692,11 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(helpLabel3);
 
     MenuLabel *helpLabel4 = new MenuLabel();
-	helpLabel4->text = "* will jump to any row";
+	helpLabel4->text = "R will jump to any row";
 	menu->addChild(helpLabel4);
 
     MenuLabel *helpLabel5 = new MenuLabel();
-	helpLabel5->text = "(UPPER or lower case works)";
+	helpLabel5->text = "Upper case forwards and lower case backwards.";
 	menu->addChild(helpLabel5);
 
 	MenuLabel *spacerLabel3 = new MenuLabel();
@@ -685,7 +707,7 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(helpLabel6);
 
 	AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
-	presetMenuItem1->text = "ABCD";
+	presetMenuItem1->text = "AbCd";
 	presetMenuItem1->abcdSeq = abcdSeq;
 	menu->addChild(presetMenuItem1);
 
@@ -698,6 +720,11 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	presetMenuItem3->text = "AAABAAACAAAD";
 	presetMenuItem3->abcdSeq = abcdSeq;
 	menu->addChild(presetMenuItem3);
+
+	AbcdSeqPresetItem *presetMenuItem4 = new AbcdSeqPresetItem();
+	presetMenuItem4->text = "AaBbCcDd";
+	presetMenuItem4->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem4);
 
 
 }

@@ -492,7 +492,7 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
 
 #### Basics
 
-Rows A, B, C, and D are step sequencers.  The order that the step sequences play is based on the text input.  So ABAC will play row A until its length, and then play row B until its length, then row A until its length, then row C until its length, then loop around to the first character.
+Rows A, B, C, and D are step sequencers.  The order that the step sequences play is based on the text input.  So ABAC will play row A until its length, and then play row B until its length, then row A until its length, then row C until its length, then loop around to the first character.  Upper case will play the sequence forwards and lower case will play the sequence backwards.
 
 #### Controls
 
@@ -501,7 +501,7 @@ Rows A, B, C, and D are step sequencers.  The order that the step sequences play
 
 #### Inputs
 
-  *  **Row Order:** Possible characters: A, B, C, D will jump to those rows, O will jump to any other row, * will jump to any row.  (You can use UPPER or lower case)  If the text box is empty then it will just loop over rows ABCD.
+  *  **Row Order:** Possible characters: A, B, C, D will jump to those rows, O will jump to any other row, R will jump to any row.  If the text box is empty then it will just loop over rows ABCD.  Upper case will play the sequence forwards and lower case will play the sequence backwards.
   *  **Clock Input:** clock to move the steps along to the right and to the next row
   *  **Reset Input:** this resets to the beginning of the sequence and resets all step counters.
   *  **Length Inputs:** length of each sequence
