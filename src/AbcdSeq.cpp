@@ -230,10 +230,9 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     void moveToNextStep(){
         int rowLen = getCurrentRowLength();
+        // DEBUG("rowLen=%i", rowLen);
         char currChar = text[charIdx];
-        char nextChar = text[(charIdx + 1) % text.size()];
         bool goingForward = isupper(currChar);
-        bool nextCharGoingForward = isupper(nextChar);
         bool endOfRow = false;
 
         if(goingForward){
@@ -251,12 +250,14 @@ struct AbcdSeq : Module,QuantizeUtils {
             }
         }
         if(endOfRow){
-            col = nextCharGoingForward ? 0 : rowLen - 1;
+            char nextChar = text[(charIdx + 1) % text.size()];
+            bool nextCharGoingForward = isupper(nextChar);
             if(text.size() == 0){
                 row = (row + 1) % 4;
             } else {
                 row = getRowForChar(nextChar);
             }
+            col = nextCharGoingForward ? 0 : getCurrentRowLength() - 1;
             charIdx++;
             if(charIdx >= ((int)text.size())){
                 charIdx = 0;
