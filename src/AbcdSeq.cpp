@@ -59,6 +59,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool dirty = false;
     int col = 0;
     int row = 0;
+    int index = 0;
     int charIdx = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
@@ -228,13 +229,11 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     void moveToNextStep(){
         int rowLen = getCurrentRowLength();
-        // DEBUG("rowLen=%i", rowLen);
         char currChar = text[charIdx];
         bool goingForward = text.size() > 0 ? isupper(currChar) : true;
         bool endOfRow = false;
 
         if(goingForward){
-            // DEBUG("fw currChar=%c, row=%i", currChar, row);
             if(col+1 < rowLen){
                 col++;
             } else {
@@ -261,8 +260,6 @@ struct AbcdSeq : Module,QuantizeUtils {
                 charIdx = 0;
             }
         }
-        // DEBUG("rowLen=%i, forward=%i, col=%i, row=%i, currChar=%c, nextChar=%c, endOfRow=%i, next=%i", 
-        //     rowLen, goingForward, col, row, currChar, nextChar, endOfRow, nextCharGoingForward);
     }
 
     void randomizeTextOnly(){
@@ -302,10 +299,8 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     void resetRow(){
         if(text.size() > 0){
-            // int rowLen = getCurrentRowLength();
             row = getRowForChar(text[0]);
-            col = isupper(text[0]) ? -1 : getCurrentRowLength();
-            //DEBUG("row=%i,char=%c", row, text[0]);
+            col = isupper(text[0]) ? 0 : getCurrentRowLength() - 1;
         } else {
             row = 0;
         }
@@ -319,7 +314,6 @@ void AbcdSeq::process(const ProcessArgs &args) {
     if(!initialRowSet){
         row = getRowForChar(text[charIdx]);
         initialRowSet = true;
-        // DEBUG("row=%i, charIdx=%i, text=%c", row, charIdx, text[charIdx]);
     }
 
 	const float lightLambda = 0.10;	
@@ -350,15 +344,13 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			moveToNextStep();
 		} 
 	}
-    int index = col + row * 8;//ignores the length of a row
 	if (nextStep) {
-        // DEBUG("nextStep row=%i", row);
 		if(resetMode){
 			resetMode = false;
 			phase = 0.0;
             resetRow();
 		}
-        // DEBUG("charIdx:%i, row:%i, col:%i, index:%i, char=%c", charIdx, row, col, index, text[charIdx]);
+        index = col + row * 8;
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
