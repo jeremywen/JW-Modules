@@ -59,7 +59,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool dirty = false;
     int col = 0;
     int row = 0;
-    int currentRandomRow = 0;
     int charIdx = 0;
 	float phase = 0.0;
 	float noteParamMax = 10.0;
@@ -67,6 +66,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
+    bool initialRowSet = false;
 	float rndFloat0to1AtClockStep = random::uniform();
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
@@ -110,8 +110,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configOutput(GATES_OUTPUT, "Gate");
 		configOutput(CELL_OUTPUT, "V/Oct");
 		configOutput(VEL_OUTPUT, "Velocity");
-
-        row = getRowForChar(text[charIdx]);
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -305,6 +303,8 @@ struct AbcdSeq : Module,QuantizeUtils {
     void resetRow(){
         if(text.size() > 0){
             // int rowLen = getCurrentRowLength();
+            row = getRowForChar(text[0]);
+            col = isupper(text[0]) ? -1 : getCurrentRowLength();
             //DEBUG("row=%i,char=%c", row, text[0]);
         } else {
             row = 0;
@@ -316,6 +316,12 @@ struct AbcdSeq : Module,QuantizeUtils {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void AbcdSeq::process(const ProcessArgs &args) {
+    if(!initialRowSet){
+        row = getRowForChar(text[charIdx]);
+        initialRowSet = true;
+        DEBUG("row=%i, charIdx=%i, text=%c", row, charIdx, text[charIdx]);
+    }
+
 	const float lightLambda = 0.10;	
 	bool nextStep = false;
 	if (resetTrigger.process(inputs[RESET_INPUT].getVoltage()) || resetTrigger.process(params[RESET_PARAM].getValue())) {
@@ -350,7 +356,6 @@ void AbcdSeq::process(const ProcessArgs &args) {
 		if(resetMode){
 			resetMode = false;
 			phase = 0.0;
-			col = 0;
             resetRow();
 		}
         // DEBUG("charIdx:%i, row:%i, col:%i, index:%i, char=%c", charIdx, row, col, index, text[charIdx]);
