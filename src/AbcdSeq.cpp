@@ -68,7 +68,6 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
     bool initialRowSet = false;
-	float rndFloat0to1AtClockStep = random::uniform();
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -171,6 +170,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	void onReset() override {
 		text = DEFAULT_TEXT;
 		dirty = true;
+        charIdx = 0;
         resetRow();
 		resetMode = true;
 		for (int i = 0; i < 32; i++) {
@@ -298,9 +298,10 @@ struct AbcdSeq : Module,QuantizeUtils {
     }
 
     void resetRow(){
+        charIdx = 0;
         if(text.size() > 0){
-            row = getRowForChar(text[0]);
-            col = isupper(text[0]) ? 0 : getCurrentRowLength() - 1;
+            row = getRowForChar(text[charIdx]);
+            col = isupper(text[charIdx]) ? 0 : getCurrentRowLength() - 1;
         } else {
             row = 0;
         }
@@ -344,14 +345,15 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			moveToNextStep();
 		} 
 	}
+    index = col + row * 8;
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
 			phase = 0.0;
             resetRow();
+            index = col + row * 8;
+            // DEBUG("col=%i, index=%i", col, index);
 		}
-        index = col + row * 8;
-		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
 	}
