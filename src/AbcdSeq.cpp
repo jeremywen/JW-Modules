@@ -319,7 +319,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
     if(!initialRowSet){
         row = getRowForChar(text[charIdx]);
         initialRowSet = true;
-        DEBUG("row=%i, charIdx=%i, text=%c", row, charIdx, text[charIdx]);
+        // DEBUG("row=%i, charIdx=%i, text=%c", row, charIdx, text[charIdx]);
     }
 
 	const float lightLambda = 0.10;	
