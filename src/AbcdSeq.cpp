@@ -247,7 +247,7 @@ struct AbcdSeq : Module,QuantizeUtils {
             }
         }
         if(endOfRow){
-            char nextChar = text[(charIdx + 1) % text.size()];
+            char nextChar = text.size() > 0 ? text[(charIdx + 1) % text.size()] : 'a';
             bool nextCharGoingForward = text.size() > 0 ? isupper(nextChar) : true;
             if(text.size() == 0){
                 row = (row + 1) % 4;
