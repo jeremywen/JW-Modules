@@ -452,7 +452,7 @@ struct RandomizeVelButton : TinyButton {
                 if(shiftDown){
                     wid->divKnobs[i]->getParamQuantity()->setValue(10);
                 } else {
-                    wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform() * 10));
+                    wid->divKnobs[i]->getParamQuantity()->setValue(random::uniform() * 10);
                 }
 			}
 		}
