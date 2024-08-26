@@ -229,7 +229,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
     void moveToNextStep(){
         int rowLen = getCurrentRowLength();
-        char currChar = text[charIdx];
+        char currChar = text.size() > 0 ? text[charIdx] : 'a';
         bool goingForward = text.size() > 0 ? isupper(currChar) : true;
         bool endOfRow = false;
 
