@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.4 ~ 8-23-24
+## v2.0.5 ~ 8-26-24
 
   * added AbcdSeq
   * Add5 is now Polyphonic
