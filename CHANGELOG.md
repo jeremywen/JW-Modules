@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.6 ~ 9-1-24
+
+  * added EOC to AbcdSeq
+  * fixed - randomize velocities was an integer
+
 ## v2.0.5 ~ 8-26-24
 
   * added AbcdSeq

@@ -38,6 +38,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		GATES_OUTPUT,
 		CELL_OUTPUT,
 		VEL_OUTPUT,
+		EOC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -68,6 +69,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
     bool initialRowSet = false;
+	bool eocOn = false; 
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -228,10 +230,15 @@ struct AbcdSeq : Module,QuantizeUtils {
     }
 
     void moveToNextStep(){
+		if(text.size() == 0){
+			//just default so we don't have to deal with the empty string
+			text = DEFAULT_TEXT;
+		}
         int rowLen = getCurrentRowLength();
-        char currChar = text.size() > 0 ? text[charIdx] : 'a';
-        bool goingForward = text.size() > 0 ? isupper(currChar) : true;
+        char currChar = text[charIdx];
+        bool goingForward = isupper(currChar);
         bool endOfRow = false;
+		eocOn = false;
 
         if(goingForward){
             if(col+1 < rowLen){
@@ -247,18 +254,19 @@ struct AbcdSeq : Module,QuantizeUtils {
             }
         }
         if(endOfRow){
-            char nextChar = text.size() > 0 ? text[(charIdx + 1) % text.size()] : 'a';
-            bool nextCharGoingForward = text.size() > 0 ? isupper(nextChar) : true;
-            if(text.size() == 0){
-                row = (row + 1) % 4;
-            } else {
-                row = getRowForChar(nextChar);
-            }
+            char nextChar = 'A';
+            bool nextCharGoingForward =  true;
+			eocOn = charIdx == text.size() - 1;
+			nextChar = text[(charIdx + 1) % text.size()];
+			nextCharGoingForward = isupper(nextChar);
+			row = getRowForChar(nextChar);
             col = nextCharGoingForward ? 0 : getCurrentRowLength() - 1;
-            charIdx++;
-            if(charIdx >= ((int)text.size())){
-                charIdx = 0;
-            }
+			charIdx++; 
+			if(charIdx >= ((int)text.size())){
+				charIdx = 0;
+				eocOn = true;
+				// DEBUG("AAA eocOn=%i, charIdx=%i", eocOn, charIdx);
+			}
         }
     }
 
@@ -349,6 +357,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
+			eocOn = false;
 			phase = 0.0;
             resetRow();
             index = col + row * 8;
@@ -386,6 +395,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[VEL_OUTPUT].setVoltage(params[CELL_VEL_PARAM + index].getValue());
+	outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 };
 
 struct OrderTextField : LedDisplayTextField {
@@ -607,9 +617,10 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	}
 
 	///// OUTPUTS /////
-	addOutput(createOutput<PJ301MPort>(Vec(370, paramY+12), module, AbcdSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(431, paramY+12), module, AbcdSeq::CELL_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(495, paramY+12), module, AbcdSeq::VEL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(357, paramY+12), module, AbcdSeq::GATES_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(413.5, paramY+12), module, AbcdSeq::CELL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(467.5, paramY+12), module, AbcdSeq::VEL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(521, paramY+12), module, AbcdSeq::EOC_OUTPUT));
 };
 
 
