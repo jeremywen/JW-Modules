@@ -203,7 +203,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
 	void randomizeVelsOnly(){
 		for (int i = 0; i < 32; i++) {
-            params[CELL_VEL_PARAM + i].setValue((int)(random::uniform()*64+1));
+            params[CELL_VEL_PARAM + i].setValue(random::uniform() * 10);
         }
 	}
 
