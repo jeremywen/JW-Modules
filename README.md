@@ -489,7 +489,7 @@ NOTE: You may want to trigger a reset after changing division knobs.  This will 
 
 ## AbcdSeq
 
-![AbcdSeq](./doc/abcdseq-img.png)
+![AbcdSeq](./doc/abcdseq-img2.png)
 
 #### Basics
 
@@ -783,7 +783,7 @@ Created to show minimum and maximum voltages in a larger font than the Fundament
 
 ## Timer
 
-![Timer](./doc/timer.png)
+![Timer](./doc/timer-img1.png)
 
 _Drag the right side of the module to resize it!_
 
