@@ -708,6 +708,10 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	helpLabel4->text = "R will jump to any row";
 	menu->addChild(helpLabel4);
 
+    MenuLabel *helpLabel6 = new MenuLabel();
+	helpLabel6->text = "S will repeat last row";
+	menu->addChild(helpLabel6);
+
     MenuLabel *helpLabel5 = new MenuLabel();
 	helpLabel5->text = "Upper case forwards and lower case backwards.";
 	menu->addChild(helpLabel5);
@@ -738,6 +742,11 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	presetMenuItem4->text = "AaBbCcDd";
 	presetMenuItem4->abcdSeq = abcdSeq;
 	menu->addChild(presetMenuItem4);
+
+	AbcdSeqPresetItem *presetMenuItem5 = new AbcdSeqPresetItem();
+	presetMenuItem5->text = "OSSS";
+	presetMenuItem5->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem5);
 
 
 }
