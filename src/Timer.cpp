@@ -101,9 +101,9 @@ struct TimeDisplay : LightWidget {
 		if(layer == 1){
 			nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
 			nvgFontSize(args.vg, 20);
-			int hours = static_cast<unsigned int>(module->seconds / 3600);
-			int minutes = static_cast<unsigned int>(module->seconds / 60) - hours * 3600;
-			int seconds = static_cast<unsigned int>(module->seconds) - minutes * 60 - hours * 3600;
+			int hours = module->seconds / 3600;
+			int minutes = (module->seconds - hours * 3600) / 60;
+			int seconds = (module->seconds - hours * 3600) % 60;
 			std::string hoursStr = std::to_string(static_cast<unsigned int>(hours)) + "h";
 			std::string minutesStr = std::to_string(static_cast<unsigned int>(minutes)) + "m";
 			std::string secondsStr = std::to_string(static_cast<unsigned int>(seconds)) + "s";
