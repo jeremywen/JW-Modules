@@ -1,7 +1,7 @@
 #include "JWModules.hpp"
 
 std::string DEFAULT_TEXT = "AAAB";
-std::string POSSIBLE_CHARS = "ABCDORabcdor";
+std::string POSSIBLE_CHARS = "ABCDORSabcdors";
 
 struct AbcdSeq : Module,QuantizeUtils {
 	enum ParamIds {
