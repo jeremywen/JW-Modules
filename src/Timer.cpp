@@ -12,6 +12,7 @@ struct Timer : Module {
 		NUM_INPUTS
 	};
 	enum OutputIds {
+		CLOCK_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -19,6 +20,7 @@ struct Timer : Module {
 	};
 	dsp::SchmittTrigger runTrigger;
 	dsp::SchmittTrigger resetTrigger;
+	dsp::PulseGenerator gatePulse;
 
 	float phase = 0.0;
 	int seconds = 0;
@@ -33,6 +35,7 @@ struct Timer : Module {
 		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configInput(RUN_INPUT, "Start / Stop");
 		configInput(RESET_INPUT, "Reset");
+		configOutput(CLOCK_OUTPUT, "Trigger every second");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -75,8 +78,12 @@ void Timer::process(const ProcessArgs &args) {
 		if(phase >= 1.0){
 			seconds++;
 			phase = 0;
+			gatePulse.trigger(1e-3);
 		}
 	}
+
+	bool gpulse = running && gatePulse.process(1.0 / args.sampleRate);
+	outputs[CLOCK_OUTPUT].setVoltage(gpulse ? 10.0 : 0.0);
 };
 
 struct TimerWidget : ModuleWidget {
@@ -129,18 +136,21 @@ TimerWidget::TimerWidget(Timer *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-    TimeDisplay* timeDisplay = createWidget<TimeDisplay>(Vec(5, 45));
+    TimeDisplay* timeDisplay = createWidget<TimeDisplay>(Vec(5, 30));
     timeDisplay->box.size = Vec(50, 90);
     timeDisplay->module = module;
     addChild(timeDisplay);
 
 	///// RUN /////
-	addParam(createParam<TinyButton>(Vec(22.5, 182), module, Timer::RUN_PARAM));
-	addInput(createInput<PJ301MPort>(Vec(18, 200), module, Timer::RUN_INPUT));
+	addParam(createParam<TinyButton>(Vec(22.5, 157), module, Timer::RUN_PARAM));
+	addInput(createInput<PJ301MPort>(Vec(18, 175), module, Timer::RUN_INPUT));
 
 	///// RESET /////
-	addParam(createParam<TinyButton>(Vec(22.5, 267), module, Timer::RESET_PARAM));
-	addInput(createInput<PJ301MPort>(Vec(18, 284), module, Timer::RESET_INPUT));
+	addParam(createParam<TinyButton>(Vec(22.5, 227), module, Timer::RESET_PARAM));
+	addInput(createInput<PJ301MPort>(Vec(18, 244), module, Timer::RESET_INPUT));
+
+	addOutput(createOutput<PJ301MPort>(Vec(18, 295), module, Timer::CLOCK_OUTPUT));
+
 };
 
 void TimerWidget::appendContextMenu(Menu *menu) {}
