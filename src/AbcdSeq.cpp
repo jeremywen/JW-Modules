@@ -294,6 +294,7 @@ struct AbcdSeq : Module,QuantizeUtils {
     }
 
     int getRowForChar(char c){
+		int prevRow = row;
         switch(c){
             case 'A': case 'a': return 0; break;
             case 'B': case 'b': return 1; break;
@@ -301,6 +302,7 @@ struct AbcdSeq : Module,QuantizeUtils {
             case 'D': case 'd': return 3; break;
             case 'O': case 'o': return getNewRandomOtherRow(); break;
             case 'R': case 'r': return getNewRandomRow(); break;
+            case 'S': case 's': return prevRow; break;
         }
         return 0;
     }
