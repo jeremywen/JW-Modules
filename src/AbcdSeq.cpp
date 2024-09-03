@@ -256,7 +256,7 @@ struct AbcdSeq : Module,QuantizeUtils {
         if(endOfRow){
             char nextChar = 'A';
             bool nextCharGoingForward =  true;
-			eocOn = charIdx == text.size() - 1;
+			eocOn = charIdx == (int)text.size() - 1;
 			nextChar = text[(charIdx + 1) % text.size()];
 			nextCharGoingForward = isupper(nextChar);
 			row = getRowForChar(nextChar);
@@ -708,20 +708,20 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	helpLabel4->text = "R will jump to any row";
 	menu->addChild(helpLabel4);
 
-    MenuLabel *helpLabel6 = new MenuLabel();
-	helpLabel6->text = "S will repeat last row";
-	menu->addChild(helpLabel6);
-
     MenuLabel *helpLabel5 = new MenuLabel();
-	helpLabel5->text = "Upper case forwards and lower case backwards.";
+	helpLabel5->text = "S will repeat last row";
 	menu->addChild(helpLabel5);
+
+    MenuLabel *helpLabel6 = new MenuLabel();
+	helpLabel6->text = "Upper case forwards and lower case backwards.";
+	menu->addChild(helpLabel6);
 
 	MenuLabel *spacerLabel3 = new MenuLabel();
 	menu->addChild(spacerLabel3);
 
-    MenuLabel *helpLabel6 = new MenuLabel();
-	helpLabel6->text = "Row Order Presets";
-	menu->addChild(helpLabel6);
+    MenuLabel *helpLabel7 = new MenuLabel();
+	helpLabel7->text = "Row Order Presets";
+	menu->addChild(helpLabel7);
 
 	AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
 	presetMenuItem1->text = "AbCd";
