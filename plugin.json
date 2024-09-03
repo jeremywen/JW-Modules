@@ -150,6 +150,12 @@
 			"manualUrl": "https://github.com/jeremywen/JW-Modules#simpleclock",
 			"tags": ["Clock", "Random"]
 		},
+        {
+			"slug": "Timer",
+			"name": "Timer",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules#timer",
+			"tags": ["Clock", "Utility"]
+		},
 		{
 			"slug": "Str1ker",
 			"name": "Str1ker",

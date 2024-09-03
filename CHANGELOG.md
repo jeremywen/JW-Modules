@@ -2,6 +2,7 @@
 
 ## v2.0.6 ~ 9-3-24
 
+  # added Timer module
   * 'S' and 's' in AbcdSeq now play previous row
   * added EOC to AbcdSeq
   * fixed - randomize velocities was an integer

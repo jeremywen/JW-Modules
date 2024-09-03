@@ -402,6 +402,7 @@ extern Model *modelBlankPanelMedium;
 extern Model *modelBlankPanelLarge;
 extern Model *modelCoolBreeze;
 extern Model *modelPete;
+extern Model *modelTimer;
 
 inline int clampijw(int x, int minimum, int maximum) {
 	return clamp(x, minimum, maximum);
