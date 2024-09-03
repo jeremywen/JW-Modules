@@ -777,29 +777,6 @@ Created to show minimum and maximum voltages in a larger font than the Fundament
 
 ![MinMax](./doc/MinMax-img1.png)
 
-## Tree
-
-![Tree](./doc/tree-img2.png)
-
-## Timer
-
-![Timer](./doc/timer-img1.png)
-
-_Drag the right side of the module to resize it!_
-
-  *  **Angle Input:** angle to rotate each iteration
-  *  **Angle Knob:** angle to rotate each iteration
-  *  **Length Input:** length of first branch
-  *  **Length Knob:** length of first branch
-  *  **Height Input:** height of trunk
-  *  **Height Knob:** height of trunk
-  *  **Reduce Input:** branch reduction
-  *  **Reduce Knob:** branch reduction
-  *  **Color Input:** changes color
-  *  **Color Knob:** changes color
-  *  **Jitter Input:** triggers random numbers to add to rotation
-  *  **Jitter Button:** triggers random numbers to add to rotation
-
 ## WavHead
 
 Move WavHead up and down based on voltage in.  
@@ -817,6 +794,29 @@ Right click to:
 * change to snow mode
 
 ![WaveHead Menu](./doc/WavHead-menu-img2.png)
+
+## Tree
+
+![Tree](./doc/tree-img2.png)
+
+_Drag the right side of the module to resize it!_
+
+  *  **Angle Input:** angle to rotate each iteration
+  *  **Angle Knob:** angle to rotate each iteration
+  *  **Length Input:** length of first branch
+  *  **Length Knob:** length of first branch
+  *  **Height Input:** height of trunk
+  *  **Height Knob:** height of trunk
+  *  **Reduce Input:** branch reduction
+  *  **Reduce Knob:** branch reduction
+  *  **Color Input:** changes color
+  *  **Color Knob:** changes color
+  *  **Jitter Input:** triggers random numbers to add to rotation
+  *  **Jitter Button:** triggers random numbers to add to rotation
+
+## Timer
+
+![Timer](./doc/timer-img1.png)
 
 ## Change your Cable Colors in V1
 ```
