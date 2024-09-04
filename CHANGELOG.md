@@ -1,11 +1,12 @@
 # Change Log
 
-## v2.0.6 ~ 9-3-24
+## v2.0.6 ~ 9-4-24
 
   # added Timer module
   * 'S' and 's' in AbcdSeq now play previous row
   * added EOC to AbcdSeq
   * fixed - randomize velocities was an integer
+  * quantizer right click menu for 'Inputs Override Knobs'
 
 ## v2.0.5 ~ 8-26-24
 

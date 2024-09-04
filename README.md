@@ -642,6 +642,8 @@ _right click grid select yellow load cell_
 
 ## Quantizer
 
+Check right click menu for 'Inputs Override Knobs'.  This allows direct changes to labels based on voltage input.
+
 ![Quantizer](./doc/Quantizer-img1.png)
 
   *  **Root Knob:** root note if scaling pitch sent to "OUT"
