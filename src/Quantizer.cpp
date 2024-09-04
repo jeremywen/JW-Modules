@@ -1,6 +1,6 @@
 #include "JWModules.hpp"
 
-struct Quantizer : Module,QuantizeUtils {
+struct Quantizer : Module, QuantizeUtils {
 	enum ParamIds {
 		ROOT_NOTE_PARAM,
 		SCALE_PARAM,
@@ -21,7 +21,7 @@ struct Quantizer : Module,QuantizeUtils {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-
+	int scale = 0;
 	Quantizer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
@@ -48,7 +48,10 @@ struct Quantizer : Module,QuantizeUtils {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void Quantizer::process(const ProcessArgs &args) {
 	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
-	int scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	if(inputs[SCALE_INPUT].isConnected()){
+		//TODO ignore scale param and just use input
+	}
 	int octaveShift = params[OCTAVE_PARAM].getValue() + clampfjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5);
 	int channels = inputs[VOLT_INPUT].getChannels();
 	for (int c = 0; c < channels; c++) {
@@ -58,12 +61,24 @@ void Quantizer::process(const ProcessArgs &args) {
 	outputs[VOLT_OUTPUT].setChannels(channels);
 }
 
-struct QuantizerWidget : ModuleWidget { 
+struct QuantizerWidget : ModuleWidget {
+	ScaleKnob *scaleKnob;
 	QuantizerWidget(Quantizer *module); 
+	void step() override;
 };
 
+void QuantizerWidget::step() {
+	ModuleWidget::step();
+	Quantizer *qMod = dynamic_cast<Quantizer*>(module);
+	if(qMod && qMod->inputs[Quantizer::SCALE_INPUT].isConnected()){
+		scaleKnob->getParamQuantity()->setValue(qMod->scale);
+		scaleKnob->step();
+	}
+}
+
+
 QuantizerWidget::QuantizerWidget(Quantizer *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 	
 	setPanel(createPanel(
@@ -91,7 +106,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addParam(noteKnob);
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 90), module, Quantizer::NOTE_INPUT));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 133), module, Quantizer::SCALE_PARAM));
+	scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(17, 133), module, Quantizer::SCALE_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(15, 65);
 	scaleLabel->text = "Minor";
