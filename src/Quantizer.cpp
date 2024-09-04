@@ -21,7 +21,11 @@ struct Quantizer : Module, QuantizeUtils {
 	enum LightIds {
 		NUM_LIGHTS
 	};
+	
 	int scale = 0;
+	int rootNote = 0;
+	int octaveShift = 0;
+
 	Quantizer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
@@ -39,7 +43,13 @@ struct Quantizer : Module, QuantizeUtils {
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "inputsOverride", json_boolean(inputsOverride));
 		return rootJ;
+	}
+
+	void dataFromJson(json_t *rootJ) override {
+		json_t *inputsOverrideJ = json_object_get(rootJ, "inputsOverride");
+		if (inputsOverrideJ){ inputsOverride = json_is_true(inputsOverrideJ); }
 	}
 };
 
@@ -47,12 +57,27 @@ struct Quantizer : Module, QuantizeUtils {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void Quantizer::process(const ProcessArgs &args) {
-	int rootNote = params[ROOT_NOTE_PARAM].getValue() + rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
-	scale = params[SCALE_PARAM].getValue() + rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
-	if(inputs[SCALE_INPUT].isConnected()){
-		//TODO ignore scale param and just use input
+	int inputRootNote = rescalefjw(inputs[NOTE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_NOTES-1);
+	if(inputs[NOTE_INPUT].isConnected() && inputsOverride){
+		rootNote = inputRootNote;
+	} else {
+		rootNote = params[ROOT_NOTE_PARAM].getValue() + inputRootNote;
 	}
-	int octaveShift = params[OCTAVE_PARAM].getValue() + clampfjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5);
+
+	int inputScale = rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1);
+	if(inputs[SCALE_INPUT].isConnected() && inputsOverride){
+		scale = inputScale;
+	} else {
+		scale = params[SCALE_PARAM].getValue() + inputScale;
+	}
+
+	int inputOctaveShift = clampfjw(inputs[OCTAVE_INPUT].getVoltage(), -5, 5);
+	if(inputs[OCTAVE_INPUT].isConnected() && inputsOverride){
+		octaveShift = inputOctaveShift;
+	} else {
+		octaveShift = params[OCTAVE_PARAM].getValue() + inputOctaveShift;
+	}
+	
 	int channels = inputs[VOLT_INPUT].getChannels();
 	for (int c = 0; c < channels; c++) {
 		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale);
@@ -62,17 +87,30 @@ void Quantizer::process(const ProcessArgs &args) {
 }
 
 struct QuantizerWidget : ModuleWidget {
+	NoteKnob *noteKnob;
 	ScaleKnob *scaleKnob;
+	JwSmallSnapKnob *octaveKnob;
 	QuantizerWidget(Quantizer *module); 
 	void step() override;
+	void appendContextMenu(Menu *menu) override;
 };
 
 void QuantizerWidget::step() {
 	ModuleWidget::step();
 	Quantizer *qMod = dynamic_cast<Quantizer*>(module);
-	if(qMod && qMod->inputs[Quantizer::SCALE_INPUT].isConnected()){
-		scaleKnob->getParamQuantity()->setValue(qMod->scale);
-		scaleKnob->step();
+	if(qMod && qMod->inputsOverride){
+		if(qMod->inputs[Quantizer::NOTE_INPUT].isConnected()){
+			noteKnob->getParamQuantity()->setValue(qMod->rootNote);
+			noteKnob->step();
+		}
+		if(qMod->inputs[Quantizer::SCALE_INPUT].isConnected()){
+			scaleKnob->getParamQuantity()->setValue(qMod->scale);
+			scaleKnob->step();
+		}
+		if(qMod->inputs[Quantizer::OCTAVE_INPUT].isConnected()){
+			octaveKnob->getParamQuantity()->setValue(qMod->octaveShift);
+			octaveKnob->step();
+		}
 	}
 }
 
@@ -97,7 +135,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 60), module, Quantizer::ROOT_NOTE_PARAM));
+	noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 60), module, Quantizer::ROOT_NOTE_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(15, 29);
 	noteLabel->text = "C";
@@ -115,7 +153,8 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addParam(scaleKnob);
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 163), module, Quantizer::SCALE_INPUT));
 
-	addParam(createParam<JwSmallSnapKnob>(Vec(17, 205), module, Quantizer::OCTAVE_PARAM));
+	octaveKnob = createParam<JwSmallSnapKnob>(Vec(17, 205), module, Quantizer::OCTAVE_PARAM);
+	addParam(octaveKnob);
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 235), module, Quantizer::OCTAVE_INPUT));
 
 
@@ -143,4 +182,15 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addChild(outLabel);
 }
 
+void QuantizerWidget::appendContextMenu(Menu *menu) {
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->addChild(spacerLabel);
+	
+	Quantizer *quantizer = dynamic_cast<Quantizer*>(module);
+
+	InputsOverrideItem *inputsOverrideItem = new InputsOverrideItem();
+	inputsOverrideItem->text = "Inputs Override Knobs";
+	inputsOverrideItem->quantizeUtils = quantizer;
+	menu->addChild(inputsOverrideItem);
+}
 Model *modelQuantizer = createModel<Quantizer, QuantizerWidget>("Quantizer");

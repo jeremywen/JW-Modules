@@ -6,6 +6,18 @@
 using namespace rack;
 extern Plugin *pluginInstance;
 
+
+struct InputsOverrideItem : MenuItem {
+	QuantizeUtils *quantizeUtils;
+	void onAction(const event::Action &e) override {
+		quantizeUtils->inputsOverride = !quantizeUtils->inputsOverride;
+	}
+	void step() override {
+		rightText = quantizeUtils->inputsOverride ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 ////////////////////////////////////////////// PANELS //////////////////////////////////////////////
 
 struct BGPanel : Widget {

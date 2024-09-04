@@ -2,6 +2,8 @@
 
 struct QuantizeUtils {
 
+	bool inputsOverride = false;
+
 	//copied & fixed these scales http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
 	//more scales http://lawriecape.co.uk/theblog/index.php/archives/881
 	int SCALE_AEOLIAN        [8] = {0, 2, 3, 5, 7, 8, 10, 12};
