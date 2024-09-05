@@ -351,7 +351,7 @@ struct PatternsDisplay : LightWidget {
 
 			//cells
 			for(int i=0;i<P_CELLS;i++){
-				if(module->counters[i] % (i+1) == 0){
+				if(module->counters[i%16] % (i+1) == 0){
 					nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
 				} else {
 					nvgFillColor(args.vg, nvgRGB(255, 243, 9));//yellow
