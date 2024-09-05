@@ -1,12 +1,13 @@
 # Change Log
 
-## v2.0.6 ~ 9-4-24
+## v2.0.6 ~ 9-5-24
 
   # added Timer module
   * 'S' and 's' in AbcdSeq now play previous row
   * added EOC to AbcdSeq
   * fixed - randomize velocities was an integer
   * quantizer right click menu for 'Inputs Override Knobs'
+  * added blue indicator on divisions in OnePattern and Patterns
 
 ## v2.0.5 ~ 8-26-24
 

@@ -350,8 +350,12 @@ struct PatternsDisplay : LightWidget {
 			if(module == NULL) return;
 
 			//cells
-			nvgFillColor(args.vg, nvgRGB(255, 243, 9));
 			for(int i=0;i<P_CELLS;i++){
+				if(module->counters[i] % (i+1) == 0){
+					nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
+				} else {
+					nvgFillColor(args.vg, nvgRGB(255, 243, 9));//yellow
+				}
 				if(module->cells[i]){
 					int x = module->xFromI(i);
 					int y = module->yFromI(i);

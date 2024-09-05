@@ -196,6 +196,7 @@ struct OnePatternDisplay : LightWidget {
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
 		nvgFill(args.vg);
 		
+		
 		if(layer == 1){
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73)); //gray
@@ -217,8 +218,12 @@ struct OnePatternDisplay : LightWidget {
 			if(module == NULL) return;
 
 			//cells
-			nvgFillColor(args.vg, nvgRGB(255, 243, 9));
 			for(int i=0;i<P_CELLS;i++){
+				if(module->counters[i] % (i+1) == 0){
+					nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
+				} else {
+					nvgFillColor(args.vg, nvgRGB(255, 243, 9));//yellow
+				}
 				if(module->cells[i]){
 					int x = 0;
 					int y = i;
