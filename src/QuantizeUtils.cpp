@@ -1,8 +1,11 @@
 #include "rack.hpp"
+#include <iterator> // for std::begin, std::end
+#include <algorithm>
 
 struct QuantizeUtils {
 
 	bool inputsOverride = false;
+
 
 	//copied & fixed these scales http://www.grantmuller.com/MidiReference/doc/midiReference/ScaleReference.html
 	//more scales http://lawriecape.co.uk/theblog/index.php/archives/881

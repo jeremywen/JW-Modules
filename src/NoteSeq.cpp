@@ -871,17 +871,29 @@ struct NoteSeqDisplay : LightWidget {
 		nvgFill(args.vg);
 
 		if(layer == 1){
+			//highlight white keys
+			for(int i=0;i<ROWS;i++){
+				if(!isBlackKey(ROWS-1-i)){
+					nvgFillColor(args.vg, nvgRGB(40, 40, 40));
+					nvgBeginPath(args.vg);
+					nvgRect(args.vg, 0, i*HW, box.size.x, HW);
+					nvgFill(args.vg);
+				}
+			}
+
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-			for(int i=1;i<COLS;i++){
-				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+			for(int i=0;i<COLS+1;i++){
+				// nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgStrokeWidth(args.vg, 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, i * HW, 0);
 				nvgLineTo(args.vg, i * HW, box.size.y);
 				nvgStroke(args.vg);
 			}
-			for(int i=1;i<ROWS;i++){
-				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+			for(int i=0;i<ROWS+1;i++){
+				// nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
+				nvgStrokeWidth(args.vg, 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, 0, i * HW);
 				nvgLineTo(args.vg, box.size.x, i * HW);

@@ -6,6 +6,16 @@
 using namespace rack;
 extern Plugin *pluginInstance;
 
+static constexpr int blackKeys[20] = 
+               { 1,  3,  6,  8, 10, 
+				13, 15, 18, 20, 22,
+				25, 27, 30, 32, 34,
+				37, 39, 42, 44, 46 };
+
+inline bool isBlackKey(int indexFromBottom){
+	return std::find(std::begin(blackKeys), std::end(blackKeys), indexFromBottom) != std::end(blackKeys);
+}
+
 
 struct InputsOverrideItem : MenuItem {
 	QuantizeUtils *quantizeUtils;
