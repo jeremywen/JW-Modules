@@ -8,6 +8,7 @@
   * fixed - randomize velocities was an integer
   * quantizer right click menu for 'Inputs Override Knobs'
   * added blue indicator on divisions in OnePattern and Patterns
+  * added white key highlight
 
 ## v2.0.5 ~ 8-26-24
 
