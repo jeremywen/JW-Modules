@@ -87,7 +87,7 @@ struct QuantizeUtils {
 			case PENTATONIC:     curScaleArr = SCALE_PENTATONIC;    notesInScale=LENGTHOF(SCALE_PENTATONIC); break;
 			case PHRYGIAN:       curScaleArr = SCALE_PHRYGIAN;      notesInScale=LENGTHOF(SCALE_PHRYGIAN); break;
 			case TURKISH:        curScaleArr = SCALE_TURKISH;       notesInScale=LENGTHOF(SCALE_TURKISH); break;
-			case NONE:           return voltsIn;
+			case NONE:           curScaleArr = SCALE_CHROMATIC;     notesInScale=LENGTHOF(SCALE_CHROMATIC); break;
 		}
 
 		//C1 == -2.00, C2 == -1.00, C3 == 0.00, C4 == 1.00

@@ -613,8 +613,9 @@ struct NoteSeq16Display : LightWidget {
 
 		if(layer == 1){
 			//highlight white keys
+			int rootNote = module == NULL ? 0 : module->params[NoteSeq16::NOTE_KNOB_PARAM].getValue();
 			for(int i=0;i<ROWS;i++){
-				if(!isBlackKey(ROWS-1-i)){
+				if(!isBlackKey(ROWS-1-i+rootNote)){
 					nvgFillColor(args.vg, nvgRGB(40, 40, 40));
 					nvgBeginPath(args.vg);
 					nvgRect(args.vg, 0, i*HW, box.size.x, HW);
