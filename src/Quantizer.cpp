@@ -80,7 +80,7 @@ void Quantizer::process(const ProcessArgs &args) {
 	
 	int channels = inputs[VOLT_INPUT].getChannels();
 	for (int c = 0; c < channels; c++) {
-		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale);
+		float volts = closestVoltageInScale(inputs[VOLT_INPUT].getVoltage(c), rootNote, scale, true);
 		outputs[VOLT_OUTPUT].setVoltage(volts + octaveShift, c);
 	}
 	outputs[VOLT_OUTPUT].setChannels(channels);

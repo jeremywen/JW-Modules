@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.7 ~ 12-26-24
+
+  * fixed vertical lines every 4 columns in NoteSeq, NoteSeq16, and NoteSeqFu so you can now see where half way is for example
+  * fixed quantizer when it is built into a sequencer so 'None' means no quantizing.  When quantizer is on its own it means chromatic.
+
 ## v2.0.6 ~ 9-5-24
 
   * added Timer module

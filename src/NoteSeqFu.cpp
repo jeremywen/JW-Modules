@@ -860,8 +860,7 @@ struct NoteSeqFuDisplay : LightWidget {
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
 			for(int i=1;i<COLS;i++){
-				// nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
-				nvgStrokeWidth(args.vg, 1);
+				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, i * HW, 0);
 				nvgLineTo(args.vg, i * HW, box.size.y);

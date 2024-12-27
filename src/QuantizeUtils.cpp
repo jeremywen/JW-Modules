@@ -66,7 +66,11 @@ struct QuantizeUtils {
 	};
 
 	// long printIter = 0;
-	float closestVoltageInScale(float voltsIn, int rootNote, int currScale){
+	float closestVoltageInScale(float voltsIn, int rootNote, int currScale, bool noneIsChromatic=false) {
+		if(!noneIsChromatic && currScale == NONE){
+			return voltsIn;
+		}
+
 		int *curScaleArr;
 		int notesInScale = 0;
 		switch(currScale){
