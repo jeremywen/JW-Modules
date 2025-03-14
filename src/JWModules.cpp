@@ -1,9 +1,17 @@
 #include "JWModules.hpp"
 
+#if defined(METAMODULE_BUILTIN)
+extern Plugin *pluginInstance;
+#else
 Plugin *pluginInstance;
+#endif
 
-void init(rack::Plugin *p)
-{
+#if defined(METAMODULE_BUILTIN)
+void init_JWModules(rack::Plugin *p) {
+#else 
+void init(rack::Plugin *p) {
+#endif
+
 	pluginInstance = p;
 	p->addModel(modelAdd5);
 	p->addModel(modelAbcdSeq);

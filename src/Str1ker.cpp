@@ -1,7 +1,8 @@
 #include "JWModules.hpp"
+#ifdef OSC_ON
 #include "../lib/oscpack/osc/OscOutboundPacketStream.h"
 #include "../lib/oscpack/ip/UdpSocket.h"
-
+#endif
 
 #define ADDRESS "127.0.0.1"
 #define OUTPUT_BUFFER_SIZE 1024
@@ -51,8 +52,10 @@ struct Str1ker : Module {
 	dsp::SchmittTrigger resetTrigger;
 	dsp::PulseGenerator gatePulse;
 	dsp::PulseGenerator resetPulse;
+	#ifdef OSC_ON
 	IpEndpointName ipEndpointName = IpEndpointName(ADDRESS, oscPort);
 	UdpTransmitSocket transmitSocket = UdpTransmitSocket(ipEndpointName);
+	#endif
 
 	Str1ker() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -76,17 +79,22 @@ struct Str1ker : Module {
 		paramQuantities[CLOCK_100s_PARAM]->snapEnabled = true;
 		paramQuantities[CLOCK_10s_PARAM]->snapEnabled = true;
 		paramQuantities[CLOCK_1s_PARAM]->snapEnabled = true;
+		#ifdef OSC_ON
 		transmitSocket.SetAllowReuse(true);
+		#endif
 	}
 
 	void updateOscPort(){
+		#ifdef OSC_ON
 		if(oscOn){
 			ipEndpointName.port = oscPort;
 			transmitSocket.Connect(ipEndpointName);
 		}
+		#endif
 	}
 
 	void sendBpmOverOsc(){
+		#ifdef OSC_ON
 		if(oscOn){
 			// EXAMPLE: https://github.com/MariadeAnton/oscpack/blob/master/examples/SimpleSend.cpp
 
@@ -99,6 +107,7 @@ struct Str1ker : Module {
 			
 			transmitSocket.Send( p.Data(), p.Size() );
 		}
+		#endif
 	}
 
 	void onSampleRateChange() override {
@@ -424,6 +433,7 @@ struct MultMenuItem : MenuItem {
 	}
 };
 
+#ifdef OSC_ON
 struct OscOnMenuItem : MenuItem {
 	Str1ker *str1;
 	void onAction(const event::Action &e) override {
@@ -445,6 +455,7 @@ struct OscPortMenuItem : MenuItem {
 		rightText = (str1->oscPort == val) ? "✔" : "";
 	}
 };
+#endif
 
 void Str1kerWidget::appendContextMenu(Menu *menu) {
 	{	
@@ -487,6 +498,7 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 		item->val = 16;
 		menu->addChild(item);
 	}
+	#ifdef OSC_ON
 	{	
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
@@ -525,6 +537,7 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 		item->val = 10013;
 		menu->addChild(item);
 	}
+	#endif
 }
 
 Model *modelStr1ker = createModel<Str1ker, Str1kerWidget>("Str1ker");

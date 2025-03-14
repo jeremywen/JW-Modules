@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
     http://www.rossbencina.com/code/oscpack
@@ -81,3 +83,4 @@ inline bool operator!=( const IpEndpointName& lhs, const IpEndpointName& rhs )
 }
 
 #endif /* INCLUDED_OSCPACK_IPENDPOINTNAME_H */
+#endif

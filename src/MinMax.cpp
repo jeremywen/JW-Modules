@@ -30,7 +30,8 @@ struct MinMax : Module {
 	bool lissajous = false;
 	dsp::SchmittTrigger resetTrigger;
 
-	MinMax() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+	MinMax() : Module() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
 		configParam(TIME_PARAM, -6.0, -16.0, -14.0, "Time");
 		configInput(X_INPUT, "X");
 	}

@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
     http://www.rossbencina.com/code/oscpack
@@ -152,3 +154,4 @@ private:
 } // namespace osc
 
 #endif /* INCLUDED_OSCPACK_OSCOUTBOUNDPACKETSTREAM_H */
+#endif

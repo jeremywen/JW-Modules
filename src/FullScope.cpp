@@ -43,7 +43,8 @@ struct FullScope : Module {
 	float lights[4] = {};
 	dsp::SchmittTrigger resetTrigger;
 
-	FullScope() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+	FullScope() : Module() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
 		configParam(X_POS_PARAM, -10.0, 10.0, 0.0, "X Offset");
 		configParam(Y_POS_PARAM, -10.0, 10.0, 0.0, "Y Offset");
 		configParam(X_SCALE_PARAM, -2.0, 8.0, 1.0, "X Scale");

@@ -36,9 +36,17 @@ struct AbcdSeq : Module,QuantizeUtils {
 	};
 	enum OutputIds {
 		GATES_OUTPUT,
-		CELL_OUTPUT,
+		CV_OUTPUT,
 		VEL_OUTPUT,
 		EOC_OUTPUT,
+		A_GATE_OUTPUT,
+		B_GATE_OUTPUT,
+		C_GATE_OUTPUT,
+		D_GATE_OUTPUT,
+		A_CV_OUTPUT,
+		B_CV_OUTPUT,
+		C_CV_OUTPUT,
+		D_CV_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -110,8 +118,16 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configInput(RND_TEXT_INPUT, "Random Text");
 		
 		configOutput(GATES_OUTPUT, "Gate");
-		configOutput(CELL_OUTPUT, "V/Oct");
+		configOutput(CV_OUTPUT, "CV");
 		configOutput(VEL_OUTPUT, "Velocity");
+		configOutput(A_GATE_OUTPUT, "A Gate");
+		configOutput(B_GATE_OUTPUT, "B Gate");
+		configOutput(C_GATE_OUTPUT, "C Gate");
+		configOutput(D_GATE_OUTPUT, "D Gate");
+		configOutput(A_CV_OUTPUT, "A CV");
+		configOutput(B_CV_OUTPUT, "B CV");
+		configOutput(C_CV_OUTPUT, "C CV");
+		configOutput(D_CV_OUTPUT, "D CV");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -393,11 +409,13 @@ void AbcdSeq::process(const ProcessArgs &args) {
 
 	// Outputs
 	if(gatesOn || ignoreGateOnPitchOut)	{
-		outputs[CELL_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
+		outputs[CV_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
+		outputs[A_CV_OUTPUT + row].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[VEL_OUTPUT].setVoltage(params[CELL_VEL_PARAM + index].getValue());
 	outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
+	outputs[A_GATE_OUTPUT + row].setVoltage(gatesOn ? 10.0 : 0.0);
 };
 
 struct OrderTextField : LedDisplayTextField {
@@ -613,14 +631,16 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 			addChild(createLight<MediumLight<MyBlueValueLight>>(Vec(knobX+26.5, knobY-10.5), module, AbcdSeq::VEL_LIGHT + idx));
             idx++;
         }
-        addParam(createParam<JwSmallSnapKnob>(Vec(knobX + 57, knobY), module, AbcdSeq::LENGTH_KNOB_PARAM + y));
-	    addInput(createInput<TinyPJ301MPort>(Vec(knobX + 85, knobY+5), module, AbcdSeq::LENGTH_INPUT + y));
+        addParam(createParam<JwSmallSnapKnob>(Vec(knobX + 57, knobY-14), module, AbcdSeq::LENGTH_KNOB_PARAM + y));
+	    addInput(createInput<TinyPJ301MPort>(Vec(knobX + 85, knobY-9), module, AbcdSeq::LENGTH_INPUT + y));
 
+		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 55, knobY+16), module, AbcdSeq::A_GATE_OUTPUT + y));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 75, knobY+16), module, AbcdSeq::A_CV_OUTPUT + y));
 	}
 
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(357, paramY+12), module, AbcdSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(413.5, paramY+12), module, AbcdSeq::CELL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(413.5, paramY+12), module, AbcdSeq::CV_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(467.5, paramY+12), module, AbcdSeq::VEL_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(521, paramY+12), module, AbcdSeq::EOC_OUTPUT));
 };

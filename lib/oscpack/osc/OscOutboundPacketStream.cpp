@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
     http://www.rossbencina.com/code/oscpack
@@ -681,3 +683,4 @@ OutboundPacketStream& OutboundPacketStream::operator<<( const ArrayTerminator& r
 } // namespace osc
 
 
+#endif // OSC_ON

@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
 	http://www.rossbencina.com/code/oscpack
@@ -62,3 +64,4 @@ unsigned long GetHostByName( const char *name )
 
     return result;
 }
+#endif

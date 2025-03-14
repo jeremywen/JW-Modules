@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
     http://www.rossbencina.com/code/oscpack
@@ -50,3 +52,5 @@ ArrayInitiator BeginArray;
 ArrayTerminator EndArray;
 
 } // namespace osc
+
+#endif

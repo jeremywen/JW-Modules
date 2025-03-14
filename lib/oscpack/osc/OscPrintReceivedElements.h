@@ -1,3 +1,5 @@
+#ifdef OSC_ON
+
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
     http://www.rossbencina.com/code/oscpack
@@ -52,3 +54,4 @@ std::ostream& operator<<( std::ostream & os, const ReceivedBundle& b );
 } // namespace osc
 
 #endif /* INCLUDED_OSCPACK_OSCPRINTRECEIVEDELEMENTS_H */
+#endif

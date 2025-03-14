@@ -1,3 +1,4 @@
+#ifdef OSC_ON
 /*
 	oscpack -- Open Sound Control (OSC) packet manipulation library
 	http://www.rossbencina.com/code/oscpack
@@ -600,3 +601,4 @@ void SocketReceiveMultiplexer::AsynchronousBreak()
 	impl_->AsynchronousBreak();
 }
 
+#endif
