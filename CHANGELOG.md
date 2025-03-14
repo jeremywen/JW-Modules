@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.8 ~ 3-14-25
+
+  * added cv and gate outputs per row in AbcdSeq
+
 ## v2.0.7 ~ 12-26-24
 
   * fixed vertical lines every 4 columns in NoteSeq, NoteSeq16, and NoteSeqFu so you can now see where half way is for example
