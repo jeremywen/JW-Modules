@@ -146,19 +146,14 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 	
 	setPanel(createPanel(
-		asset::plugin(pluginInstance, "res/WavHeadPanel.svg"), 
-		asset::plugin(pluginInstance, "res/dark/WavHeadPanel.svg")
+		asset::plugin(pluginInstance, "res/SimpleClock.svg"), 
+		asset::plugin(pluginInstance, "res/dark/SimpleClock.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
-
-	CenteredLabel* const titleLabel = new CenteredLabel(16);
-	titleLabel->box.pos = Vec(15, 15);
-	titleLabel->text = "Clock";
-	addChild(titleLabel);
 
 	addParam(createParam<TinyButton>(Vec(23, 40), module, SimpleClock::RUN_PARAM));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(23+3.75, 40+3.75), module, SimpleClock::RUNNING_LIGHT));
@@ -175,41 +170,10 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
 
 	addOutput(createOutput<PJ301MPort>(Vec(18, 105), module, SimpleClock::CLOCK_OUTPUT));
 
-	CenteredLabel* const resetLabel = new CenteredLabel;
-	resetLabel->box.pos = Vec(15, 75);
-	resetLabel->text = "Reset";
-	addChild(resetLabel);
-
 	addParam(createParam<TinyButton>(Vec(23, 155), module, SimpleClock::RESET_PARAM));
 	addOutput(createOutput<PJ301MPort>(Vec(18, 175), module, SimpleClock::RESET_OUTPUT));
 
-
-	CenteredLabel* const rndResetLabel = new CenteredLabel(10);
-	rndResetLabel->box.pos = Vec(15, 108);
-	rndResetLabel->text = "Rnd Rst";
-	addChild(rndResetLabel);
 	addParam(createParam<SmallWhiteKnob>(Vec(17, 220), module, SimpleClock::PROB_PARAM));
-
-
-	CenteredLabel* const div4Label = new CenteredLabel(10);
-	div4Label->box.pos = Vec(8, 133);
-	div4Label->text = "/4";
-	addChild(div4Label);
-
-	CenteredLabel* const div8Label = new CenteredLabel(10);
-	div8Label->box.pos = Vec(21, 133);
-	div8Label->text = "/8";
-	addChild(div8Label);
-
-	CenteredLabel* const div16Label = new CenteredLabel(10);
-	div16Label->box.pos = Vec(8, 153);
-	div16Label->text = "/16";
-	addChild(div16Label);
-
-	CenteredLabel* const div32Label = new CenteredLabel(10);
-	div32Label->box.pos = Vec(21, 153);
-	div32Label->text = "/32";
-	addChild(div32Label);
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(10, 270), module, SimpleClock::DIV_4_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(34, 270), module, SimpleClock::DIV_8_OUTPUT));

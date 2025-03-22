@@ -120,19 +120,14 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 	
 	setPanel(createPanel(
-		asset::plugin(pluginInstance, "res/WavHeadPanel.svg"), 
-		asset::plugin(pluginInstance, "res/dark/WavHeadPanel.svg")
+		asset::plugin(pluginInstance, "res/Quantizer.svg"), 
+		asset::plugin(pluginInstance, "res/dark/Quantizer.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
-
-	CenteredLabel* const titleLabel = new CenteredLabel;
-	titleLabel->box.pos = Vec(15, 15);
-	titleLabel->text = "Quantizer";
-	addChild(titleLabel);
 
 	///// NOTE AND SCALE CONTROLS /////
 	noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(17, 60), module, Quantizer::ROOT_NOTE_PARAM));
@@ -157,29 +152,8 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	addParam(octaveKnob);
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 235), module, Quantizer::OCTAVE_INPUT));
 
-
 	addInput(createInput<TinyPJ301MPort>(Vec(10, 290), module, Quantizer::VOLT_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(35, 290), module, Quantizer::VOLT_OUTPUT));
-
-	CenteredLabel* const octLabel = new CenteredLabel;
-	octLabel->box.pos = Vec(15, 101.5);
-	octLabel->text = "Oct Shift";
-	addChild(octLabel);
-
-	CenteredLabel* const voctLabel = new CenteredLabel;
-	voctLabel->box.pos = Vec(15, 142);
-	voctLabel->text = "V/Oct";
-	addChild(voctLabel);
-
-	CenteredLabel* const inLabel = new CenteredLabel;
-	inLabel->box.pos = Vec(8, 159);
-	inLabel->text = "In";
-	addChild(inLabel);
-
-	CenteredLabel* const outLabel = new CenteredLabel;
-	outLabel->box.pos = Vec(22, 159);
-	outLabel->text = "Out";
-	addChild(outLabel);
 }
 
 void QuantizerWidget::appendContextMenu(Menu *menu) {
