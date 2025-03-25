@@ -68,15 +68,20 @@ struct BlackDisplay : LightWidget {
 
 ////////////////////////////////////////////// LABELS //////////////////////////////////////////////
 
+struct SmallWhiteKnob;
+
 struct CenteredLabel : Widget {
 	int fontSize;
 	std::string text = "";
+	SmallWhiteKnob *knob;
 	CenteredLabel(int _fontSize = 12) {
 		fontSize = _fontSize;
 		box.size.y = 100;
 		box.size.x = 100;
 	}
+	void updateText();
 	void draw(const DrawArgs &args) override {
+		updateText();
 		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
 		nvgFillColor(args.vg, nvgRGB(25, 150, 252));
 		nvgFontSize(args.vg, fontSize);
@@ -102,13 +107,7 @@ struct SmallWhiteKnob : SvgKnob {
 		linkedModule = module;
 		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
-		}
-	}
-
-	void draw(const DrawArgs &args) override {
-		SvgKnob::draw(args);
-		if (linkedModule && linkedLabel) {
-			linkedLabel->text = formatCurrentValue();
+			linkedLabel->knob = this;
 		}
 	}
 
@@ -177,7 +176,11 @@ struct JwTinyGraySnapKnob : JwTinyGrayKnob {
 struct BPMPartKnob : JwSmallSnapKnob {	
 	BPMPartKnob(){} 
 };
-
+inline void CenteredLabel::updateText() {
+	if (knob) {
+		text = knob->formatCurrentValue();
+	}
+}
 ////////////////////////////////////////////// SWITCHES //////////////////////////////////////////////
 
 struct JwHorizontalSwitch : SVGSwitch {
