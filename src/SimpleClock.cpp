@@ -161,10 +161,7 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
 	BPMKnob *clockKnob = dynamic_cast<BPMKnob*>(createParam<BPMKnob>(Vec(17, 60), module, SimpleClock::CLOCK_PARAM));
 	CenteredLabel* const bpmLabel = new CenteredLabel;
 	bpmLabel->box.pos = Vec(15, 50);
-	bpmLabel->text = "120 BPM";
-	if(module){
-		clockKnob->connectLabel(bpmLabel, module);
-	}
+	clockKnob->connectLabel(bpmLabel, module);
 	addChild(bpmLabel);
 	addParam(clockKnob);
 

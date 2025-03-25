@@ -69,11 +69,12 @@ struct BlackDisplay : LightWidget {
 ////////////////////////////////////////////// LABELS //////////////////////////////////////////////
 
 struct CenteredLabel : Widget {
-	std::string text;
 	int fontSize;
+	std::string text = "";
 	CenteredLabel(int _fontSize = 12) {
 		fontSize = _fontSize;
-		box.size.y = BND_WIDGET_HEIGHT;
+		box.size.y = 100;
+		box.size.x = 100;
 	}
 	void draw(const DrawArgs &args) override {
 		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);

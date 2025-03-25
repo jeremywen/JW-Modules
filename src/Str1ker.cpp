@@ -16,6 +16,7 @@ struct Str1ker : Module {
 		ON_OFF_SWITCH,
 		FADER_RANGE_PARAM,
 		RESET_BTN_PARAM,
+		FADER_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -66,6 +67,7 @@ struct Str1ker : Module {
 		configParam(ON_OFF_SWITCH, 0.0, 1.0, 1.0, "On/Off");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(FADER_RANGE_PARAM, 1, 50, 1, "Fader Range");
+		configParam(FADER_PARAM, -0.5, 0.5, 0, "Fader");
 		configInput(CLOCK_100s_INPUT, "100's");
 		configInput(CLOCK_10s_INPUT, "10's");
 		configInput(CLOCK_1s_INPUT, "1's");
@@ -152,6 +154,8 @@ struct Str1ker : Module {
 
 		if(inputs[FADER_INPUT].isConnected()){
 			faderVal = clampfjw(rescalefjw(inputs[FADER_INPUT].getVoltage(), 0.0, 10.0, -0.5, 0.5), -0.5, 0.5);
+		} else {
+			faderVal = clampfjw(params[FADER_PARAM].getValue(), -0.5, 0.5);
 		}
 
 		if(useBpmIn()){
@@ -296,59 +300,73 @@ void Str1kerWidget::step() {
 	}
 }
 
-struct FaderDisplay : LightWidget {
-	Str1ker *module;
-	float initY = 0;
-	float dragY = 0;
-	FaderDisplay(){}
+// struct FaderDisplay : LightWidget {
+// 	Str1ker *module;
+// 	float initY = 0;
+// 	float dragY = 0;
+// 	FaderDisplay(){}
 
-	void onButton(const event::Button &e) override {
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			e.consume(this);
-			initY = e.pos.y;
-		} else if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
-			e.consume(this);
-			module->resetFader();
-		}
-	}
+// 	void onButton(const event::Button &e) override {
+// 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+// 			e.consume(this);
+// 			initY = e.pos.y;
+// 		} else if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
+// 			e.consume(this);
+// 			module->resetFader();
+// 		}
+// 	}
 
-	// void onDoubleClick(const event::DoubleClick &e) override {
-	// 	e.consume(this);
-	// 	module->resetFader();
-	// }
+// 	// void onDoubleClick(const event::DoubleClick &e) override {
+// 	// 	e.consume(this);
+// 	// 	module->resetFader();
+// 	// }
 	
-	void onDragStart(const event::DragStart &e) override {
-		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			dragY = APP->scene->mousePos.y;
-		}
-	}
+// 	void onDragStart(const event::DragStart &e) override {
+// 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+// 			dragY = APP->scene->mousePos.y;
+// 		}
+// 	}
 
-	void onDragMove(const event::DragMove &e) override {
-		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			float newDragY = APP->scene->mousePos.y;
-			module->faderVal = 0.5 - (clampfjw(initY + (newDragY - dragY) - 30.0, 0.0, 180.0) / 180.0);
-		}
-	}
+// 	void onDragMove(const event::DragMove &e) override {
+// 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
+// 			float newDragY = APP->scene->mousePos.y;
+// 			module->faderVal = 0.5 - (clampfjw(initY + (newDragY - dragY) - 30.0, 0.0, 180.0) / 180.0);
+// 		}
+// 	}
 
-	void drawLayer(const DrawArgs &args, int layer) override {
-		if(layer == 1){
-			//line
-			nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-			nvgBeginPath(args.vg);
-			nvgRect(args.vg, 10, 15, 1, 220);
-			nvgFill(args.vg);
+// 	void drawLayer(const DrawArgs &args, int layer) override {
+// 		if(layer == 1){
+// 			//line
+// 			nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+// 			nvgBeginPath(args.vg);
+// 			nvgRect(args.vg, 10, 15, 1, 220);
+// 			nvgFill(args.vg);
 
-			if(!module){ return; }
+// 			if(!module){ return; }
 
-			//handle?
-			nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
-			nvgBeginPath(args.vg);
-			nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
-			nvgFill(args.vg);
-		}
-		Widget::drawLayer(args, layer);
+// 			//handle?
+// 			nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
+// 			nvgBeginPath(args.vg);
+// 			nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
+// 			nvgFill(args.vg);
+// 		}
+// 		Widget::drawLayer(args, layer);
+// 	}
+// };
+struct FaderSlider : SvgSlider {
+	FaderSlider() {
+		maxHandlePos = (math::Vec(8, 25).plus(math::Vec(-2.5f, 0)));
+		minHandlePos = (math::Vec(8, 185).plus(math::Vec(-2.5f, 0)));
+		setBackgroundSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/faderbg.svg")));
 	}
 };
+
+struct FaderSliderJW : FaderSlider {
+	FaderSliderJW() {
+		setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/fader.svg")));
+	}
+};
+
 
 Str1kerWidget::Str1kerWidget(Str1ker *module) {
 	setModule(module);
@@ -364,11 +382,7 @@ Str1kerWidget::Str1kerWidget(Str1ker *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	FaderDisplay *display = new FaderDisplay();
-	display->module = module;
-	display->box.pos = Vec(57, 80);
-	display->box.size = Vec(21, 250);
-	addChild(display);
+	addParam(createParam<FaderSliderJW>(Vec(57, 80), module, Str1ker::FADER_PARAM));
 
 	totalBpmLabel->box.pos = Vec(21, 30);
 	addChild(totalBpmLabel);
