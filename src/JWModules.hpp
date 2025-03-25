@@ -105,8 +105,8 @@ struct SmallWhiteKnob : SvgKnob {
 		}
 	}
 
-	void onChange(const event::Change &e) override {
-		SvgKnob::onChange(e);
+	void draw(const DrawArgs &args) override {
+		SvgKnob::draw(args);
 		if (linkedModule && linkedLabel) {
 			linkedLabel->text = formatCurrentValue();
 		}
