@@ -73,7 +73,7 @@ struct SmallWhiteKnob;
 struct CenteredLabel : Widget {
 	int fontSize;
 	std::string text = "";
-	SmallWhiteKnob *knob;
+	SmallWhiteKnob *knob = nullptr;
 	CenteredLabel(int _fontSize = 12) {
 		fontSize = _fontSize;
 		box.size.y = 100;
@@ -81,6 +81,7 @@ struct CenteredLabel : Widget {
 	}
 	void updateText();
 	void draw(const DrawArgs &args) override {
+		Widget::draw(args);
 		updateText();
 		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
 		nvgFillColor(args.vg, nvgRGB(25, 150, 252));
@@ -177,8 +178,8 @@ struct BPMPartKnob : JwSmallSnapKnob {
 	BPMPartKnob(){} 
 };
 inline void CenteredLabel::updateText() {
-	if (knob) {
-		text = knob->formatCurrentValue();
+	if (knob != nullptr && knob->linkedModule) {
+		this->text = knob->formatCurrentValue();
 	}
 }
 ////////////////////////////////////////////// SWITCHES //////////////////////////////////////////////

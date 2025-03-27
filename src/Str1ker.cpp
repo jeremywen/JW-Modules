@@ -46,7 +46,6 @@ struct Str1ker : Module {
 	float smpRate = APP->engine->getSampleRate();	
 	float oneOverRate = 1.0 / smpRate;	
 	float totalBpm = 120.0;
-	float faderVal = 0;
 	int clockMult = 4;
 	int oscPort = 7013;
 	dsp::SchmittTrigger runningTrigger;
@@ -120,23 +119,21 @@ struct Str1ker : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "clockMult", json_integer(clockMult));
-		json_object_set_new(rootJ, "faderVal", json_real(faderVal));
 		return rootJ;
 	}
 
 	void dataFromJson(json_t *rootJ) override {
 		clockMult = json_integer_value(json_object_get(rootJ, "clockMult"));
-		faderVal = json_real_value(json_object_get(rootJ, "faderVal"));
+		json_t *faderValJ = json_object_get(rootJ, "faderVal");
+		if (faderValJ) {
+			float faderVal = json_real_value(faderValJ);
+			params[FADER_PARAM].setValue(faderVal);
+		}
 	}
 
 	void onReset() override {
-		resetFader();
 		clockMult = 4;
 		resetClock();
-	}
-
-	void resetFader() {
-		faderVal = 0;
 	}
 
 	void resetClock() {
@@ -153,9 +150,7 @@ struct Str1ker : Module {
 		}
 
 		if(inputs[FADER_INPUT].isConnected()){
-			faderVal = clampfjw(rescalefjw(inputs[FADER_INPUT].getVoltage(), 0.0, 10.0, -0.5, 0.5), -0.5, 0.5);
-		} else {
-			faderVal = clampfjw(params[FADER_PARAM].getValue(), -0.5, 0.5);
+			params[FADER_PARAM].setValue(clampfjw(rescalefjw(inputs[FADER_INPUT].getVoltage(), 0.0, 10.0, -0.5, 0.5), -0.5, 0.5));
 		}
 
 		if(useBpmIn()){
@@ -237,7 +232,7 @@ struct Str1ker : Module {
 		clockDot100s = rescalefjw(clockDot100s, 0.0, 128.0, -0.64, 0.64);
 		/////////////////////////////////////////////
 		totalBpm = clock100s + clock10s + clock1s + clockDot100s;
-		totalBpm += totalBpm * (faderVal * (params[FADER_RANGE_PARAM].getValue() / 50.0));
+		totalBpm += totalBpm * (params[FADER_PARAM].getValue() * (params[FADER_RANGE_PARAM].getValue() / 50.0));
 	}
 
 	float getKnobValForInput(int i){
@@ -300,59 +295,6 @@ void Str1kerWidget::step() {
 	}
 }
 
-// struct FaderDisplay : LightWidget {
-// 	Str1ker *module;
-// 	float initY = 0;
-// 	float dragY = 0;
-// 	FaderDisplay(){}
-
-// 	void onButton(const event::Button &e) override {
-// 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-// 			e.consume(this);
-// 			initY = e.pos.y;
-// 		} else if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_RIGHT) {
-// 			e.consume(this);
-// 			module->resetFader();
-// 		}
-// 	}
-
-// 	// void onDoubleClick(const event::DoubleClick &e) override {
-// 	// 	e.consume(this);
-// 	// 	module->resetFader();
-// 	// }
-	
-// 	void onDragStart(const event::DragStart &e) override {
-// 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-// 			dragY = APP->scene->mousePos.y;
-// 		}
-// 	}
-
-// 	void onDragMove(const event::DragMove &e) override {
-// 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-// 			float newDragY = APP->scene->mousePos.y;
-// 			module->faderVal = 0.5 - (clampfjw(initY + (newDragY - dragY) - 30.0, 0.0, 180.0) / 180.0);
-// 		}
-// 	}
-
-// 	void drawLayer(const DrawArgs &args, int layer) override {
-// 		if(layer == 1){
-// 			//line
-// 			nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-// 			nvgBeginPath(args.vg);
-// 			nvgRect(args.vg, 10, 15, 1, 220);
-// 			nvgFill(args.vg);
-
-// 			if(!module){ return; }
-
-// 			//handle?
-// 			nvgFillColor(args.vg, nvgRGB(25, 150, 252));//blue
-// 			nvgBeginPath(args.vg);
-// 			nvgRect(args.vg, 5, 15 + ((0.5-module->faderVal) * 180), 10, 40);
-// 			nvgFill(args.vg);
-// 		}
-// 		Widget::drawLayer(args, layer);
-// 	}
-// };
 struct FaderSlider : SvgSlider {
 	FaderSlider() {
 		maxHandlePos = (math::Vec(8, 25).plus(math::Vec(-2.5f, 0)));
@@ -391,26 +333,22 @@ Str1kerWidget::Str1kerWidget(Str1ker *module) {
 	{
 		addInput(createInput<TinyPJ301MPort>(Vec(3, 101), module, Str1ker::CLOCK_100s_INPUT));
 		knobs[0] = dynamic_cast<BPMPartKnob*>(createParam<BPMPartKnob>(Vec(20, 96), module, Str1ker::CLOCK_100s_PARAM));
-		knobs[0]->connectLabel(totalBpmLabel, module);
 		addParam(knobs[0]);
 	}
 	{
 		addInput(createInput<TinyPJ301MPort>(Vec(3, 161), module, Str1ker::CLOCK_10s_INPUT));
 		knobs[1] = dynamic_cast<BPMPartKnob*>(createParam<BPMPartKnob>(Vec(20, 156), module, Str1ker::CLOCK_10s_PARAM));
-		knobs[1]->connectLabel(totalBpmLabel, module);
 		addParam(knobs[1]);
 	}
 	{
 		addInput(createInput<TinyPJ301MPort>(Vec(3, 222), module, Str1ker::CLOCK_1s_INPUT));
 		knobs[2] = dynamic_cast<BPMPartKnob*>(createParam<BPMPartKnob>(Vec(20, 217), module, Str1ker::CLOCK_1s_PARAM));
-		knobs[2]->connectLabel(totalBpmLabel, module);
 		addParam(knobs[2]);
 	}
 	{
 		addInput(createInput<TinyPJ301MPort>(Vec(3, 281), module, Str1ker::CLOCK_DOT_100s_INPUT));
 		//NOTE: midi might not reach last vals because it is 0-127 and we have 129 (-0.64 to +0.64) but whatever
 		knobs[3] = dynamic_cast<BPMPartKnob*>(createParam<BPMPartKnob>(Vec(20, 276), module, Str1ker::CLOCK_DOT_100s_PARAM));
-		knobs[3]->connectLabel(totalBpmLabel, module);
 		addParam(knobs[3]);
 	}
 	addInput(createInput<TinyPJ301MPort>(Vec(23, 330), module, Str1ker::FADER_INPUT));

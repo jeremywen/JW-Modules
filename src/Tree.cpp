@@ -191,7 +191,9 @@ struct TreeWidget : ModuleWidget {
 	BGPanel *panel;
 	JWModuleResizeHandle *rightHandle;
 	TreeWidget(Tree *module); 
+	#ifndef METAMODULE
 	void step() override;
+	#endif
 	void appendContextMenu(Menu *menu) override;
 };
 
@@ -210,11 +212,18 @@ TreeWidget::TreeWidget(Tree *module) {
 	setModule(module);
 	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
+	#ifdef METAMODULE
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/Tree.svg"), 
+		asset::plugin(pluginInstance, "res/Tree.svg")
+	));
+	#else
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0), nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
 		addChild(panel);
 	}
+	#endif
 
 	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
 	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
@@ -254,7 +263,7 @@ TreeWidget::TreeWidget(Tree *module) {
 	addParam(createParam<RandomizeButton>(Vec(220, 360), module, Tree::RND_PARAM));
 
 }
-
+#ifndef METAMODULE
 void TreeWidget::step() {
 	panel->box.size = box.size;
 	if (box.size.x < RACK_GRID_WIDTH * 20) box.size.x = RACK_GRID_WIDTH * 20;
@@ -267,7 +276,7 @@ void TreeWidget::step() {
 	}
 	ModuleWidget::step();
 }
-
+#endif
 void TreeWidget::appendContextMenu(Menu *menu) {
 }
 

@@ -282,19 +282,27 @@ struct FullScopeWidget : ModuleWidget {
 	JWModuleResizeHandle *rightHandle;
 	TransparentWidget *display;
 	FullScopeWidget(FullScope *module);
+	#ifndef METAMODULE
 	void step() override;
+	#endif
 	void appendContextMenu(Menu *menu) override;
 };
 
 FullScopeWidget::FullScopeWidget(FullScope *module) {
 	setModule(module);
 	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*17, RACK_GRID_HEIGHT);
-
+	#ifdef METAMODULE
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/FullScope.svg"), 
+		asset::plugin(pluginInstance, "res/FullScope.svg")
+	));
+	#else
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0), nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
 		addChild(panel);
 	}
+	#endif
 
 	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
 	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
@@ -330,6 +338,7 @@ FullScopeWidget::FullScopeWidget(FullScope *module) {
 	addChild(createWidget<Screw_W>(Vec(compX+2, compY+=adder-5)));
 }
 
+#ifndef METAMODULE
 void FullScopeWidget::step() {
 	panel->box.size = box.size;
 	display->box.size = Vec(box.size.x, box.size.y);
@@ -341,6 +350,7 @@ void FullScopeWidget::step() {
 	}
 	ModuleWidget::step();
 }
+#endif
 
 struct FullScopeLissajousModeMenuItem : MenuItem {
 	FullScope *fullScope;

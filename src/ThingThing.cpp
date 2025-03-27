@@ -146,18 +146,27 @@ struct ThingThingWidget : ModuleWidget {
 	ThingThingDisplay *display;
 	BGPanel *panel;
 	JWModuleResizeHandle *rightHandle;
+	#ifndef METAMODULE
 	void step() override;
+	#endif
 };
 
 ThingThingWidget::ThingThingWidget(ThingThing *module) {
 	setModule(module);
 	box.size = Vec(module ? module->width : RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
 
+	#ifdef METAMODULE
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/ThingThing.svg"), 
+		asset::plugin(pluginInstance, "res/ThingThing.svg")
+	));
+	#else
 	{
 		panel = new BGPanel(nvgRGB(0, 0, 0), nvgRGB(0, 0, 0));
 		panel->box.size = box.size;
 		addChild(panel);
 	}
+	#endif
 
 	JWModuleResizeHandle *leftHandle = new JWModuleResizeHandle;
 	JWModuleResizeHandle *rightHandle = new JWModuleResizeHandle;
@@ -185,6 +194,7 @@ ThingThingWidget::ThingThingWidget(ThingThing *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(190, 360), module, ThingThing::ZOOM_MULT_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(205, 360), module, ThingThing::ZOOM_MULT_PARAM));
 }
+#ifndef METAMODULE
 void ThingThingWidget::step() {
 	panel->box.size = box.size;
 	if (box.size.x < RACK_GRID_WIDTH * 20) box.size.x = RACK_GRID_WIDTH * 20;
@@ -197,5 +207,5 @@ void ThingThingWidget::step() {
 	}
 	ModuleWidget::step();
 }
-
+#endif
 Model *modelThingThing = createModel<ThingThing, ThingThingWidget>("ThingThing");
