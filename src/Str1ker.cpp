@@ -325,8 +325,11 @@ Str1kerWidget::Str1kerWidget(Str1ker *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	addParam(createParam<FaderSliderJW>(Vec(57, 80), module, Str1ker::FADER_PARAM));
-
-	totalBpmLabel->box.pos = Vec(21, 30);
+	#ifdef METAMODULE
+		totalBpmLabel->box.pos = Vec(21, 34);
+	#else
+		totalBpmLabel->box.pos = Vec(21, 30);
+	#endif
 	addChild(totalBpmLabel);
 
 	/////////////////////////////////// LEFT SIDE ///////////////////////////////////

@@ -355,17 +355,15 @@ struct SmallButton : SVGSwitch {
 
 ////////////////////////////////////////////// SCREWS //////////////////////////////////////////////
 
-struct Snowflake : SVGScrew {
+struct Snowflake : SVGWidget {
 	Snowflake() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SnowFlake.svg")));
-		box.size = sw->box.size;
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/SnowFlake.svg")));
 	}
 };
 
-struct WavHeadLogo : SVGScrew {
+struct WavHeadLogo : SVGWidget {
 	WavHeadLogo() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadSmall.svg")));
-		box.size = sw->box.size;
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/WavHeadSmall.svg")));
 	}
 };
 
@@ -383,17 +381,15 @@ struct Screw_W : SVGScrew {
 	}
 };
 
-struct CatScrew : SVGScrew {
+struct CatScrew : SVGWidget {
 	CatScrew() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Cat.svg")));
-		box.size = sw->box.size;
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Cat.svg")));
 	}
 };
 
-struct HairballScrew : SVGScrew {
+struct HairballScrew : SVGWidget {
 	HairballScrew() {
-		sw->setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Hairball.svg")));
-		box.size = sw->box.size;
+		setSVG(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Hairball.svg")));
 	}
 };
 

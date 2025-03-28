@@ -47,8 +47,8 @@ struct WavHead : Module {
 struct WavHeadWidget : ModuleWidget {
 	WavHeadWidget(WavHead *module);
 	void step() override;
-	Widget* widgetToMove[16];
-	Widget* snowflakesArr[10];
+	SvgWidget* widgetToMove[16];
+	SvgWidget* snowflakesArr[10];
 	void appendContextMenu(Menu *menu) override;
 };
 

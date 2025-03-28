@@ -27,8 +27,8 @@ struct Cat : Module {
 
 struct CatWidget : ModuleWidget {
 	CatWidget(Cat *module);
-	Widget* widgetToMove;
-	Widget* hairballs[10];
+	SvgWidget* widgetToMove;
+	SvgWidget* hairballs[10];
 	void step() override;
 };
 
