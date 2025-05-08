@@ -439,8 +439,17 @@ struct ArrangeDisplay : LightWidget {
 	Arrange *module;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
-	ArrangeDisplay(){}
+	NVGcolor *colors = new NVGcolor[4];
+	ArrangeDisplay(){
+		colors[0] = nvgRGB(255, 151, 9);//orange
+		colors[1] = nvgRGB(255, 243, 9);//yellow
+		colors[2] = nvgRGB(144, 26, 252);//purple
+		colors[3] = nvgRGB(25, 150, 252);//blue
 
+	}
+	~ArrangeDisplay(){
+		delete [] colors;
+	}
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
@@ -487,13 +496,13 @@ struct ArrangeDisplay : LightWidget {
 			if(module == NULL) return;
 
 			//cells
-			nvgFillColor(args.vg, nvgRGB(25, 150, 252)); //blue
 			for(int i=0;i<CELLS;i++){
 				if(module->cells[i]){
 					int x = module->xFromI(i);
 					int y = module->yFromI(i);
+					nvgFillColor(args.vg, colors[y%4]);
 					nvgBeginPath(args.vg);
-					nvgRect(args.vg, x * CELLW, y * CELLH, CELLW, CELLH);
+					nvgRect(args.vg, x * CELLW + 2, y * CELLH + 2, CELLW - 4, CELLH - 4);
 					nvgFill(args.vg);
 				}
 			}
