@@ -8,15 +8,6 @@
 #define CELLW 10
 #define CELLH 20
 
-struct ColBlocks {
-	int *vals = new int[16];
-	bool valid;
-
-	~ColBlocks() {
-		delete [] vals;
-	}
-};
-
 struct Arrange : Module {
 	enum ParamIds {
 		STEP_BTN_PARAM,
@@ -45,6 +36,8 @@ struct Arrange : Module {
 	enum OutputIds {
 		MAIN_OUTPUT,
 		EOC_OUTPUT = MAIN_OUTPUT + ROWS,
+		POS_OUTPUT,
+		INTENSITY_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -82,25 +75,24 @@ struct Arrange : Module {
 	};
 
 	float displayWidth = 0, displayHeight = 0;
-	float rate = 1.0 / APP->engine->getSampleRate();
 	int seqPos = 0;
-	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
 	bool goingForward = true;
 	bool eocOn = false; 
 	bool hitEnd = false;
 	bool resetMode = false;
+	bool *dirtyNames = new bool[ROWS];
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
-	ColBlocks *colBlocksCache = new ColBlocks[COLS];
-	ColBlocks *colBlocksCache2 = new ColBlocks[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig, shiftChaosTrig;
-	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse, eocPulse;
-
-	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
-	GateMode gateMode = TRIGGER;
+	std::string rowNames[16] = {
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", "",
+		"", "", "", ""
+	};
 
 	Arrange() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -120,7 +112,7 @@ struct Arrange : Module {
 		configInput(RND_TRIG_INPUT, "Random Trigger");
 		configInput(RND_AMT_INPUT, "Random Amount");
 		configInput(LENGTH_INPUT, "Length");
-		configInput(MODE_INPUT, "Mode");
+		configInput(MODE_INPUT, "Play Mode");
 		configInput(START_INPUT, "Start");
 
 
@@ -129,6 +121,8 @@ struct Arrange : Module {
 			configInput(MAIN_INPUT + i, "Input " + std::to_string(i+1));
 		}
 		configOutput(EOC_OUTPUT, "End of Cycle");
+		configOutput(POS_OUTPUT, "Position");
+		configOutput(INTENSITY_OUTPUT, "Intensity");
 
 		resetSeq();
 		resetMode = true;
@@ -138,8 +132,6 @@ struct Arrange : Module {
 	~Arrange() {
 		delete [] cells;
 		delete [] newCells;
-		delete [] colBlocksCache;
-		delete [] colBlocksCache2;
 	}
 
 	void onRandomize() override {
@@ -150,15 +142,16 @@ struct Arrange : Module {
 		resetSeq();
 		resetMode = true;
 		clearCells();
+		for (int i = 0; i < ROWS; ++i) {
+			rowNames[i].clear();
+		}
 	}
 
 	void onSampleRateChange() override {
-		rate = 1.0 / APP->engine->getSampleRate();
 	}
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
-		json_object_set_new(rootJ, "channels", json_integer(channels));
 		
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
@@ -167,21 +160,15 @@ struct Arrange : Module {
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
 
-		// gateMode
-		json_t *gateModeJ = json_integer((int) gateMode);
-		json_object_set_new(rootJ, "gateMode", gateModeJ);
-
+		json_t *rowNamesJ = json_array();
+		for (int i = 0; i < ROWS; i++) {
+			json_array_append_new(rowNamesJ, json_stringn(rowNames[i].c_str(), rowNames[i].size()));
+		}
+		json_object_set_new(rootJ, "rowNames", rowNamesJ);
 		return rootJ;
 	}
 
 	void dataFromJson(json_t *rootJ) override {
-		json_t *channelsJ = json_object_get(rootJ, "channels");
-		if (channelsJ){
-			channels = json_integer_value(channelsJ);
-		} else {
-			channels = 4;//hopefully this works for old patches
-		}
-
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ) {
 			for (int i = 0; i < CELLS; i++) {
@@ -190,13 +177,16 @@ struct Arrange : Module {
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
-
-		// gateMode
-		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
-		if (gateModeJ)
-			gateMode = (GateMode)json_integer_value(gateModeJ);
-
-		gridChanged();
+		json_t *rowNamesJ = json_object_get(rootJ, "rowNames");
+		if (rowNamesJ) {
+			for (int i = 0; i < ROWS; i++) {
+				json_t *rowNameJ = json_array_get(rowNamesJ, i);
+				if (rowNameJ){
+					rowNames[i] = json_string_value(rowNameJ);
+					dirtyNames[i] = true;
+				}
+			}
+		}
 	}
 
 	void process(const ProcessArgs &args) override {
@@ -215,42 +205,23 @@ struct Arrange : Module {
 			}
 			clockStep();
 		}
-
+		int rowsOn = 0;
 		for(int i=0;i<NUM_INPUTS;i++){
 			int channels = inputs[MAIN_INPUT + i].getChannels();
+			bool on = isCellOn(seqPos, i);
 			for (int c = 0; c < channels; c++) {
-				outputs[MAIN_OUTPUT + i].setVoltage(isCellOn(seqPos, i) ? inputs[i].getVoltage(c) : 0, c);
+				outputs[MAIN_OUTPUT + i].setVoltage(on ? inputs[i].getVoltage(c) : 0, c);
+			}
+			if(on){
+				rowsOn++;
 			}
 			outputs[MAIN_OUTPUT + i].setChannels(channels);
-		}
+		}		
+		outputs[POS_OUTPUT].setVoltage(rescalefjw(seqPos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
+		outputs[INTENSITY_OUTPUT].setVoltage(rescalefjw(rowsOn, 0.0, ROWS, 0.0, 10.0));
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);		
 		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
-	}
-
-	int * getYValsFromBottomAtSeqPos(){
-		int finalHigh = ROWS;
-		int finalLow = 1;
-		ColBlocks *cache = colBlocksCache2;
-		if(cache[seqPos].valid){
-			return cache[seqPos].vals;
-		}
-		
-		cache[seqPos].valid = true;
-		for(int i=0;i<COLS;i++){ cache[seqPos].vals[i] = -1; }
-
-		int valIdx = 0;
-		for(int i=CELLS-1;i>=0;i--){
-			int x = xFromI(i);
-			if(x == seqPos && (cells[i])){
-				int y = yFromI(i);
-				int yFromBottom = ROWS - 1 - y;
-				if(yFromBottom <= finalHigh-1 && yFromBottom >= finalLow-1){
-					cache[seqPos].vals[valIdx++] = yFromBottom;
-				}
-			}
-		}
-		return cache[seqPos].vals;
 	}
 
 	int findYValIdx(int arr[], int valToFind){
@@ -262,16 +233,8 @@ struct Arrange : Module {
 		return -1;
 	}
 
-	void gridChanged(){
-		for(int x=0; x < COLS; x++){
-			colBlocksCache[x].valid = false;
-			colBlocksCache2[x].valid = false;
-		}
-	}
-
 	void swapCells() {
 		std::swap(cells, newCells);
-		gridChanged();
 
 		for(int i=0;i<CELLS;i++){
 			newCells[i] = false;
@@ -375,7 +338,6 @@ struct Arrange : Module {
 			cells[i] = false;
 			newCells[i] = false;
 		}
-		gridChanged();
 	}
 
 	void randomizeCells() {
@@ -417,7 +379,7 @@ struct Arrange : Module {
 				for(int y=0; y < ROWS; y++){
 					for(int i=0; i < 3; i++){
 						if(random::uniform() < rndAmt){
-							int xLeft = int(random::uniform() * 16);
+							int xLeft = int(random::uniform() * COLS);
 							setCellOn(xLeft, y, true);
 							setCellOn(COLS-xLeft-1, y, true);
 						}
@@ -429,7 +391,7 @@ struct Arrange : Module {
 				for(int x=0; x < COLS; x++){
 					for(int i=0; i < 2; i++){
 						if(random::uniform() < rndAmt){
-							int yTop = int(random::uniform() * 16);
+							int yTop = int(random::uniform() * ROWS);
 							setCellOn(x, yTop, true);
 							setCellOn(x, ROWS-yTop-1, true);
 						}
@@ -449,8 +411,6 @@ struct Arrange : Module {
 		if(cellX >= 0 && cellX < COLS && 
 		   cellY >=0 && cellY < ROWS){
 			cells[iFromXY(cellX, cellY)] = on;
-			colBlocksCache[cellX].valid = false;
-			colBlocksCache2[cellX].valid = false;
 		}
 	}
 
@@ -598,6 +558,43 @@ struct RndModeKnob : JwSmallSnapKnob {
 		return "";
 	}
 };
+struct RowTextField : LedDisplayTextField {
+	Arrange* module;
+	int i = -1;
+
+	void step() override {
+		LedDisplayTextField::step();
+		if (module && module->dirtyNames) {
+			setText(module->rowNames[i]);
+			module->dirtyNames[i] = false;
+        }
+	}
+
+	void onChange(const ChangeEvent& e) override {
+		if (module) {
+			module->rowNames[i] = getText();
+        }
+	}
+};
+	
+struct RowDisplay : LedDisplay {
+    RowTextField* textField;
+	void setModule(Arrange* module, int i) {
+		textField = createWidget<RowTextField>(Vec(0, 0));
+		textField->module = module;
+		textField->i = i;
+		textField->text = "";
+		textField->box.size = box.size;
+		textField->multiline = false;
+		textField->color = nvgRGB(25, 150, 252);
+		textField->textOffset = Vec(-1, -1);
+		addChild(textField);
+	}
+    ~RowDisplay(){
+        textField = nullptr;
+    }
+};
+
 
 struct ArrangeWidget : ModuleWidget { 
 	ArrangeWidget(Arrange *module); 
@@ -615,7 +612,7 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 
 	ArrangeDisplay *display = new ArrangeDisplay();
 	display->module = module;
-	display->box.pos = Vec(40, 40);
+	display->box.pos = Vec(60, 42);
 	display->box.size = Vec(COLS*CELLW, ROWS*CELLH);
 	addChild(display);
 	if(module != NULL){
@@ -628,55 +625,62 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	///////////////////////////////////////////////////// LEFT SIDE /////////////////////////////////////////////////////
-	float topIn = 25.0;
-	float topKnob = 20.0;
+	// top row //
+	float topPort = 20.0;
+	float topKnob = 15.0;
 
-	//row 1
-	addInput(createInput<TinyPJ301MPort>(Vec(47.5, topIn), module, Arrange::CLOCK_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(73, topIn), module, Arrange::START_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(89, topKnob), module, Arrange::START_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(120, 20), module, Arrange::LENGTH_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(136, topKnob), module, Arrange::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(90, topPort), module, Arrange::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(120, topPort), module, Arrange::RESET_INPUT));
+	addParam(createParam<SmallButton>(Vec(140, topKnob), module, Arrange::RESET_BTN_PARAM));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(168, 20), module, Arrange::MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(184, topKnob), module, Arrange::PLAY_MODE_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(180, topPort), module, Arrange::START_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(200, topKnob), module, Arrange::START_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(245, topPort), module, Arrange::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(265, topKnob), module, Arrange::LENGTH_KNOB_PARAM));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(300, 20), module, Arrange::MODE_INPUT));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(320, topKnob), module, Arrange::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
-	playModeLabel->box.pos = Vec(90, 25);
+	playModeLabel->box.pos = Vec(161, 7);
 	playModeLabel->text = "";
 	playModeKnob->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
 	addParam(playModeKnob);
 
-	addInput(createInput<TinyPJ301MPort>(Vec(240, topIn), module, Arrange::RESET_INPUT));
-	addParam(createParam<SmallButton>(Vec(260, topKnob), module, Arrange::RESET_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(290, topIn), module, Arrange::CLEAR_INPUT));
-	addParam(createParam<SmallButton>(Vec(310, topKnob), module, Arrange::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(360, topPort), module, Arrange::CLEAR_INPUT));
+	addParam(createParam<SmallButton>(Vec(380, topKnob), module, Arrange::CLEAR_BTN_PARAM));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(500, topKnob), module, Arrange::RND_MODE_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(420, topPort), module, Arrange::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(440, topKnob), module, Arrange::RND_TRIG_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(480, topPort), module, Arrange::RND_AMT_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(500, topKnob), module, Arrange::RND_AMT_KNOB_PARAM));
+
+	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(538, topKnob), module, Arrange::RND_MODE_KNOB_PARAM));
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
-	rndModeLabel->box.pos = Vec(200, 25);
+	rndModeLabel->box.pos = Vec(275, 7);
 	rndModeLabel->text = "";
 	rndModeKnob->connectLabel(rndModeLabel, module);
 	addChild(rndModeLabel);
 	addParam(rndModeKnob);
 
-	addInput(createInput<TinyPJ301MPort>(Vec(300, topIn), module, Arrange::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(320, topKnob), module, Arrange::RND_TRIG_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(358, topIn), module, Arrange::RND_AMT_INPUT));
-	addParam(createParam<SmallWhiteKnob>(Vec(378, topKnob), module, Arrange::RND_AMT_KNOB_PARAM));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(580, topPort), module, Arrange::POS_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(610, topPort), module, Arrange::INTENSITY_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(640, topPort), module, Arrange::EOC_OUTPUT));
 
-	///////////////////////////////////////////////////// RIGHT SIDE /////////////////////////////////////////////////////
+	///////////////////////////////////////////////////// MAIN PORTS /////////////////////////////////////////////////////
 
-	float outputRowTop = 41.0;
+	float outputRowTop = 43.0;
 	float outputRowDist = 20.0;
 	for(int i=0;i<ROWS;i++){
-		addInput(createInput<TinyPJ301MPort>(Vec(5, outputRowTop + i * outputRowDist), module, Arrange::MAIN_INPUT + i));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(690, outputRowTop + i * outputRowDist), module, Arrange::MAIN_OUTPUT + i));
-		addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(710, (outputRowTop+3) + i * outputRowDist), module, Arrange::GATES_LIGHT + i));
-	}
+		addInput(createInput<TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange::MAIN_INPUT + i));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(702, outputRowTop + i * outputRowDist), module, Arrange::MAIN_OUTPUT + i));
+		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(710, (outputRowTop+3) + i * outputRowDist), module, Arrange::GATES_LIGHT + i));
 
-	addOutput(createOutput<TinyPJ301MPort>(Vec(623, topIn), module, Arrange::EOC_OUTPUT));
+		RowDisplay* rowDisplay = createWidget<RowDisplay>(Vec(20, outputRowTop + i * outputRowDist));
+		rowDisplay->box.size = Vec(36, 16);
+		rowDisplay->setModule(module, i);
+		addChild(rowDisplay);
+	}
 }
 
 void ArrangeWidget::appendContextMenu(Menu *menu) {
