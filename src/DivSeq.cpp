@@ -17,8 +17,8 @@ struct DivSeq : Module,QuantizeUtils {
 		NUM_PARAMS
 	};
 	enum InputIds {
-		CLOCK_INPUT,
-		EXT_CLOCK_INPUT,
+		CLOCK_INPUT,//not used but keep here
+		EXT_CLOCK_INPUT,//not used but keep here
 		RESET_INPUT,
 		RIGHT_INPUT,
 		RND_NOTES_INPUT,
@@ -83,6 +83,7 @@ struct DivSeq : Module,QuantizeUtils {
 		configParam(RND_DIVS_PARAM, 0.0, 1.0, 0.0, "Random Divisions\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
+		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 4; x++) {
 				int idx = (x+(y*4));

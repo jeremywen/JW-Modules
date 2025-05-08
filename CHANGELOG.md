@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.9 ~ 5-7-25
+
+  * minor fixes for meta module
+  * added Arrange module
+
 ## v2.0.8 ~ 3-14-25
 
   * added cv and gate outputs per row in AbcdSeq
