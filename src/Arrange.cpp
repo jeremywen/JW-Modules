@@ -2,8 +2,8 @@
 #include <algorithm>
 #include "JWModules.hpp"
 
-#define ROWS 16
-#define COLS 64
+#define ARRANGE_ROWS 16
+#define ARRANGE_COLS 64
 #define CELLS 1024
 #define CELLW 10
 #define CELLH 20
@@ -23,7 +23,7 @@ struct Arrange : Module {
 	};
 	enum InputIds {
 		MAIN_INPUT,
-		CLOCK_INPUT = MAIN_INPUT + ROWS,
+		CLOCK_INPUT = MAIN_INPUT + ARRANGE_ROWS,
 		RESET_INPUT,
 		CLEAR_INPUT,
 		RND_TRIG_INPUT,
@@ -35,14 +35,13 @@ struct Arrange : Module {
 	};
 	enum OutputIds {
 		MAIN_OUTPUT,
-		EOC_OUTPUT = MAIN_OUTPUT + ROWS,
+		EOC_OUTPUT = MAIN_OUTPUT + ARRANGE_ROWS,
 		POS_OUTPUT,
 		INTENSITY_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		GATES_LIGHT,
-		NUM_LIGHTS = GATES_LIGHT + ROWS,
+		NUM_LIGHTS,
 	};
 	enum PlayMode {
 		PM_FWD_LOOP,
@@ -60,19 +59,6 @@ struct Arrange : Module {
 		RND_MIRROR_Y,
 		NUM_RND_MODES
 	};
-	enum ShiftDirection {
-		DIR_UP,
-		DIR_DOWN,
-		DIR_CHAOS
-	};
-	enum RotateDirection {
-		DIR_LEFT,
-		DIR_RIGHT
-	};
-	enum FlipDirection {
-		DIR_HORIZ,
-		DIR_VERT
-	};
 
 	float displayWidth = 0, displayHeight = 0;
 	int seqPos = 0;
@@ -81,13 +67,11 @@ struct Arrange : Module {
 	bool eocOn = false; 
 	bool hitEnd = false;
 	bool resetMode = false;
-	bool *dirtyNames = new bool[ROWS];
+	bool *dirtyNames = new bool[ARRANGE_ROWS];
 	bool *cells = new bool[CELLS];
-	bool *newCells = new bool[CELLS];
-	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
-	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig, shiftChaosTrig;
-	dsp::PulseGenerator gatePulse, eocPulse;
-	std::string rowNames[16] = {
+	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig, rndTrig;
+	dsp::PulseGenerator eocPulse, gatePulse;
+	std::string rowNames[16] = {	
 		"", "", "", "",
 		"", "", "", "",
 		"", "", "", "",
@@ -96,9 +80,9 @@ struct Arrange : Module {
 
 	Arrange() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(START_PARAM, 0.0, COLS-1, 0.0, "Start");
+		configParam(START_PARAM, 0.0, ARRANGE_COLS-1, 0.0, "Start");
 		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
-		configParam(LENGTH_KNOB_PARAM, 1.0, COLS, COLS, "Length");
+		configParam(LENGTH_KNOB_PARAM, 1.0, ARRANGE_COLS, ARRANGE_COLS, "Length");
 		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
@@ -115,8 +99,7 @@ struct Arrange : Module {
 		configInput(MODE_INPUT, "Play Mode");
 		configInput(START_INPUT, "Start");
 
-
-		for (int i = 0; i < ROWS; i++) {
+		for (int i = 0; i < ARRANGE_ROWS; i++) {
 			configOutput(MAIN_OUTPUT + i, "Output " + std::to_string(i+1));
 			configInput(MAIN_INPUT + i, "Input " + std::to_string(i+1));
 		}
@@ -130,8 +113,14 @@ struct Arrange : Module {
 	}
 
 	~Arrange() {
-		delete [] cells;
-		delete [] newCells;
+		if (cells) {
+			delete[] cells;
+			cells = nullptr; // Avoid dangling pointer
+		}
+		if (dirtyNames) {
+			delete[] dirtyNames;
+			dirtyNames = nullptr; // Avoid dangling pointer
+		}
 	}
 
 	void onRandomize() override {
@@ -142,12 +131,9 @@ struct Arrange : Module {
 		resetSeq();
 		resetMode = true;
 		clearCells();
-		for (int i = 0; i < ROWS; ++i) {
+		for (int i = 0; i < ARRANGE_ROWS; ++i) {
 			rowNames[i].clear();
 		}
-	}
-
-	void onSampleRateChange() override {
 	}
 
 	json_t *dataToJson() override {
@@ -161,7 +147,7 @@ struct Arrange : Module {
 		json_object_set_new(rootJ, "cells", cellsJ);
 
 		json_t *rowNamesJ = json_array();
-		for (int i = 0; i < ROWS; i++) {
+		for (int i = 0; i < ARRANGE_ROWS; i++) {
 			json_array_append_new(rowNamesJ, json_stringn(rowNames[i].c_str(), rowNames[i].size()));
 		}
 		json_object_set_new(rootJ, "rowNames", rowNamesJ);
@@ -170,18 +156,19 @@ struct Arrange : Module {
 
 	void dataFromJson(json_t *rootJ) override {
 		json_t *cellsJ = json_object_get(rootJ, "cells");
-		if (cellsJ) {
+		if (cellsJ && json_array_size(cellsJ) == CELLS) {
 			for (int i = 0; i < CELLS; i++) {
 				json_t *cellJ = json_array_get(cellsJ, i);
 				if (cellJ)
 					cells[i] = json_integer_value(cellJ);
 			}
 		}
+
 		json_t *rowNamesJ = json_object_get(rootJ, "rowNames");
-		if (rowNamesJ) {
-			for (int i = 0; i < ROWS; i++) {
+		if (rowNamesJ && json_array_size(rowNamesJ) == ARRANGE_ROWS) {
+			for (int i = 0; i < ARRANGE_ROWS; i++) {
 				json_t *rowNameJ = json_array_get(rowNamesJ, i);
-				if (rowNameJ){
+				if (rowNameJ) {
 					rowNames[i] = json_string_value(rowNameJ);
 					dirtyNames[i] = true;
 				}
@@ -206,11 +193,11 @@ struct Arrange : Module {
 			clockStep();
 		}
 		int rowsOn = 0;
-		for(int i=0;i<NUM_INPUTS;i++){
+		for(int i=0;i<ARRANGE_ROWS;i++){
 			int channels = inputs[MAIN_INPUT + i].getChannels();
 			bool on = isCellOn(seqPos, i);
 			for (int c = 0; c < channels; c++) {
-				outputs[MAIN_OUTPUT + i].setVoltage(on ? inputs[i].getVoltage(c) : 0, c);
+				outputs[MAIN_OUTPUT + i].setVoltage(on ? inputs[MAIN_INPUT + i].getVoltage(c) : 0, c);
 			}
 			if(on){
 				rowsOn++;
@@ -218,27 +205,19 @@ struct Arrange : Module {
 			outputs[MAIN_OUTPUT + i].setChannels(channels);
 		}		
 		outputs[POS_OUTPUT].setVoltage(rescalefjw(seqPos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
-		outputs[INTENSITY_OUTPUT].setVoltage(rescalefjw(rowsOn, 0.0, ROWS, 0.0, 10.0));
+		outputs[INTENSITY_OUTPUT].setVoltage(rescalefjw(rowsOn, 0.0, ARRANGE_ROWS, 0.0, 10.0));
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);		
 		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
 	int findYValIdx(int arr[], int valToFind){
-		for(int i=0; i < ROWS; i++){
+		for(int i=0; i < ARRANGE_ROWS; i++){
 			if(arr[i] == valToFind){
 				return i;
 			}
 		}		
 		return -1;
-	}
-
-	void swapCells() {
-		std::swap(cells, newCells);
-
-		for(int i=0;i<CELLS;i++){
-			newCells[i] = false;
-		}
 	}
 
 	void clockStep(){
@@ -297,33 +276,33 @@ struct Arrange : Module {
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 			seqPos = getSeqStart();
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, COLS-1);
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, ARRANGE_COLS-1);
 		}
 	}
 
 	void resetSeqToEnd(){
 		int curPlayMode = getPlayMode();
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, COLS-1);
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, ARRANGE_COLS-1);
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			seqPos = getSeqStart();
 		}
 	}
 
 	int getSeqStart(){
-		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, COLS-1));
-		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, COLS-1);
+		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, ARRANGE_COLS-1));
+		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, ARRANGE_COLS-1);
 		return start;
 	}
 
 	int getSeqLen(){
-		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, COLS-1));
-		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, COLS);
+		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, ARRANGE_COLS-1));
+		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, ARRANGE_COLS);
 		return len;
 	}
 
 	int getSeqEnd(){
-		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, COLS-1);
+		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, ARRANGE_COLS-1);
 		return seqEnd;
 	}
 
@@ -336,7 +315,6 @@ struct Arrange : Module {
 	void clearCells() {
 		for(int i=0;i<CELLS;i++){
 			cells[i] = false;
-			newCells[i] = false;
 		}
 	}
 
@@ -351,10 +329,10 @@ struct Arrange : Module {
 				break;
 			}
 			case RND_EUCLID:{
-				for(int y=0; y < ROWS; y++){
+				for(int y=0; y < ARRANGE_ROWS; y++){
 					if(random::uniform() < rndAmt){
-						int div = int(random::uniform() * COLS * 0.5) + 1;
-						for(int x=0; x < COLS; x++){
+						int div = int(random::uniform() * ARRANGE_COLS * 0.5) + 1;
+						for(int x=0; x < ARRANGE_COLS; x++){
 							setCellOn(x, y, x % div == 0);
 						}
 					}
@@ -366,8 +344,8 @@ struct Arrange : Module {
 				for(int i=0;i<sinCount;i++){
 					float angle = 0;
 					float angleInc = random::uniform();
-					float offset = ROWS * 0.5;
-					for(int x=0;x<COLS;x+=1){
+					float offset = ARRANGE_ROWS * 0.5;
+					for(int x=0;x<ARRANGE_COLS;x+=1){
 						int y = int(offset + (sinf(angle)*(offset)));
 						setCellOn(x, y, true);
 						angle+=angleInc;
@@ -376,24 +354,24 @@ struct Arrange : Module {
 				break;
 			}
 			case RND_MIRROR_X:{
-				for(int y=0; y < ROWS; y++){
+				for(int y=0; y < ARRANGE_ROWS; y++){
 					for(int i=0; i < 3; i++){
 						if(random::uniform() < rndAmt){
-							int xLeft = int(random::uniform() * COLS);
+							int xLeft = int(random::uniform() * ARRANGE_COLS);
 							setCellOn(xLeft, y, true);
-							setCellOn(COLS-xLeft-1, y, true);
+							setCellOn(ARRANGE_COLS-xLeft-1, y, true);
 						}
 					}
 				}
 				break;
 			}
 			case RND_MIRROR_Y:{
-				for(int x=0; x < COLS; x++){
+				for(int x=0; x < ARRANGE_COLS; x++){
 					for(int i=0; i < 2; i++){
 						if(random::uniform() < rndAmt){
-							int yTop = int(random::uniform() * ROWS);
+							int yTop = int(random::uniform() * ARRANGE_ROWS);
 							setCellOn(x, yTop, true);
-							setCellOn(x, ROWS-yTop-1, true);
+							setCellOn(x, ARRANGE_ROWS-yTop-1, true);
 						}
 					}
 				}
@@ -407,11 +385,14 @@ struct Arrange : Module {
 		setCellOn(int(displayX / CELLW), int(displayY / CELLH), on);
 	}
 
-	void setCellOn(int cellX, int cellY, bool on){
-		if(cellX >= 0 && cellX < COLS && 
-		   cellY >=0 && cellY < ROWS){
-			cells[iFromXY(cellX, cellY)] = on;
-		}
+	void setCellOn(int cellX, int cellY, bool on) {
+	    if (cellX >= 0 && cellX < ARRANGE_COLS && 
+	        cellY >= 0 && cellY < ARRANGE_ROWS) {
+	        int index = iFromXY(cellX, cellY);
+	        if (index >= 0 && index < CELLS) {
+	            cells[index] = on;
+	        }
+	    }
 	}
 
 	bool isCellOnByDisplayPos(float displayX, float displayY){
@@ -423,15 +404,15 @@ struct Arrange : Module {
 	}
 
 	int iFromXY(int cellX, int cellY){
-		return cellX + cellY * COLS;
+		return cellX + cellY * ARRANGE_COLS;
 	}
 
 	int xFromI(int cellI){
-		return cellI % COLS;
+		return cellI % ARRANGE_COLS;
 	}
 
 	int yFromI(int cellI){
-		return cellI / COLS;
+		return cellI / ARRANGE_COLS;
 	}
 };
 
@@ -448,10 +429,13 @@ struct ArrangeDisplay : LightWidget {
 
 	}
 	~ArrangeDisplay(){
-		delete [] colors;
+		if(colors){
+			delete [] colors;
+			colors = nullptr;
+		}
 	}
 	void onButton(const event::Button &e) override {
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (module && e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
 			dragPos = e.pos;
 			currentlyTurningOn = !module->isCellOnByDisplayPos(e.pos.x, e.pos.y);
@@ -463,6 +447,7 @@ struct ArrangeDisplay : LightWidget {
 	}
 
 	void onDragMove(const event::DragMove &e) override {
+		if(module == NULL) return;
 		dragPos = dragPos.plus(e.mouseDelta.div(getAbsoluteZoom()));
 		module->setCellOnByDisplayPos(dragPos.x, dragPos.y, currentlyTurningOn);
 	}
@@ -478,14 +463,14 @@ struct ArrangeDisplay : LightWidget {
 
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
-			for(int i=0;i<COLS+1;i++){
+			for(int i=0;i<ARRANGE_COLS+1;i++){
 				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, i * CELLW, 0);
 				nvgLineTo(args.vg, i * CELLW, box.size.y);
 				nvgStroke(args.vg);
 			}
-			for(int i=0;i<ROWS+1;i++){
+			for(int i=0;i<ARRANGE_ROWS+1;i++){
 				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, 0, i * CELLH);
@@ -536,8 +521,8 @@ struct ArrangeDisplay : LightWidget {
 	}
 };
 
-struct PlayModeKnob : JwSmallSnapKnob {
-	PlayModeKnob(){}
+struct PlayModeKnob2 : JwSmallSnapKnob {
+	PlayModeKnob2(){}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
 			switch(int(getParamQuantity()->getDisplayValue())){
@@ -552,8 +537,8 @@ struct PlayModeKnob : JwSmallSnapKnob {
 	}
 };
 
-struct RndModeKnob : JwSmallSnapKnob {
-	RndModeKnob(){}
+struct RndModeKnob2 : JwSmallSnapKnob {
+	RndModeKnob2(){}
 	std::string formatCurrentValue() override {
 		if(getParamQuantity() != NULL){
 			switch(int(getParamQuantity()->getDisplayValue())){
@@ -567,6 +552,7 @@ struct RndModeKnob : JwSmallSnapKnob {
 		return "";
 	}
 };
+
 struct RowTextField : LedDisplayTextField {
 	Arrange* module;
 	int i = -1;
@@ -581,7 +567,7 @@ struct RowTextField : LedDisplayTextField {
 
 	void onChange(const ChangeEvent& e) override {
 		if (module) {
-			module->rowNames[i] = getText();
+			module->rowNames[i].assign(getText());
         }
 	}
 };
@@ -596,14 +582,15 @@ struct RowDisplay : LedDisplay {
 		textField->box.size = box.size;
 		textField->multiline = false;
 		textField->color = nvgRGB(25, 150, 252);
-		textField->textOffset = Vec(-1, -1);
+		textField->textOffset = Vec(-1, -2);
 		addChild(textField);
 	}
     ~RowDisplay(){
-        textField = nullptr;
+		if(textField){	
+			textField = nullptr;
+		}
     }
 };
-
 
 struct ArrangeWidget : ModuleWidget { 
 	ArrangeWidget(Arrange *module); 
@@ -622,7 +609,7 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 	ArrangeDisplay *display = new ArrangeDisplay();
 	display->module = module;
 	display->box.pos = Vec(60, 42);
-	display->box.size = Vec(COLS*CELLW, ROWS*CELLH);
+	display->box.size = Vec(ARRANGE_COLS*CELLW, ARRANGE_ROWS*CELLH);
 	addChild(display);
 	if(module != NULL){
 		module->displayWidth = display->box.size.x;
@@ -648,13 +635,13 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(265, topKnob), module, Arrange::LENGTH_KNOB_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(300, 20), module, Arrange::MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(320, topKnob), module, Arrange::PLAY_MODE_KNOB_PARAM));
+	PlayModeKnob2 *playModeKnob2 = dynamic_cast<PlayModeKnob2*>(createParam<PlayModeKnob2>(Vec(320, topKnob), module, Arrange::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(161, 7);
 	playModeLabel->text = "";
-	playModeKnob->connectLabel(playModeLabel, module);
+	playModeKnob2->connectLabel(playModeLabel, module);
 	addChild(playModeLabel);
-	addParam(playModeKnob);
+	addParam(playModeKnob2);
 
 	addInput(createInput<TinyPJ301MPort>(Vec(360, topPort), module, Arrange::CLEAR_INPUT));
 	addParam(createParam<SmallButton>(Vec(380, topKnob), module, Arrange::CLEAR_BTN_PARAM));
@@ -664,13 +651,13 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(480, topPort), module, Arrange::RND_AMT_INPUT));
 	addParam(createParam<SmallWhiteKnob>(Vec(500, topKnob), module, Arrange::RND_AMT_KNOB_PARAM));
 
-	RndModeKnob *rndModeKnob = dynamic_cast<RndModeKnob*>(createParam<RndModeKnob>(Vec(538, topKnob), module, Arrange::RND_MODE_KNOB_PARAM));
+	RndModeKnob2 *rndModeKnob2 = dynamic_cast<RndModeKnob2*>(createParam<RndModeKnob2>(Vec(538, topKnob), module, Arrange::RND_MODE_KNOB_PARAM));
 	CenteredLabel* const rndModeLabel = new CenteredLabel;
 	rndModeLabel->box.pos = Vec(275, 7);
 	rndModeLabel->text = "";
-	rndModeKnob->connectLabel(rndModeLabel, module);
+	rndModeKnob2->connectLabel(rndModeLabel, module);
 	addChild(rndModeLabel);
-	addParam(rndModeKnob);
+	addParam(rndModeKnob2);
 
 	addOutput(createOutput<TinyPJ301MPort>(Vec(580, topPort), module, Arrange::POS_OUTPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(610, topPort), module, Arrange::INTENSITY_OUTPUT));
@@ -680,10 +667,9 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 
 	float outputRowTop = 43.0;
 	float outputRowDist = 20.0;
-	for(int i=0;i<ROWS;i++){
+	for(int i=0;i<ARRANGE_ROWS;i++){
 		addInput(createInput<TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange::MAIN_INPUT + i));
 		addOutput(createOutput<TinyPJ301MPort>(Vec(702, outputRowTop + i * outputRowDist), module, Arrange::MAIN_OUTPUT + i));
-		// addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(710, (outputRowTop+3) + i * outputRowDist), module, Arrange::GATES_LIGHT + i));
 
 		RowDisplay* rowDisplay = createWidget<RowDisplay>(Vec(20, outputRowTop + i * outputRowDist));
 		rowDisplay->box.size = Vec(36, 16);
