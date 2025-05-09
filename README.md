@@ -10,7 +10,7 @@ Add JW-Modules through [the vcv library](https://library.vcvrack.com/?query=&bra
 
 Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
 
-![All](./doc/all-img20.gif)
+![All](./doc/all-img21.gif)
 
 ----
 ## Table of Contents:
@@ -47,7 +47,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ![Arrange](./doc/Arrange.png)
 
-[Video](https://www.youtube.com/watch?v=L-yIi9iPd8s)
+[Demo Video](https://www.youtube.com/watch?v=L-yIi9iPd8s)
 
 _Sends left input to right output if cell is on in that row_
 
@@ -64,7 +64,7 @@ _Sends left input to right output if cell is on in that row_
   * **Random mode knob:** changes how the sequence is randomized
   * **POS(Position) output:** position in sequence mapped to 0-10v
   * **INT(Intensity) output:** layer count mapped to 0-10v
-  * **EOC(End of CyCle) output:** triggers out when hitting the end
+  * **EOC(End of Cycle) output:** triggers out when hitting the end
 
 ## SimpleClock
 
