@@ -10,38 +10,61 @@ Add JW-Modules through [the vcv library](https://library.vcvrack.com/?query=&bra
 
 Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time donation with [Paypal](https://www.paypal.me/jeremywen)
 
-![All](./doc/all-img19.gif)
+![All](./doc/all-img20.gif)
 
 ----
 ## Table of Contents:
 
-* [SimpleClock](#simpleclock)
-* [NoteSeq](#noteSeq)
-* [NoteSeqFu](#noteSeqFu)
-* [NoteSeq16](#noteSeq16)
-* [Trigs](#trigs)
-* [Patterns](#patterns)
 * [1Pattern](#1pattern)
-* [GridSeq](#gridseq)
 * [8Seq](#8seq)
-* [DivSeq](#divseq)
 * [AbcdSeq](#abcdseq)
-* [Str1ker](#str1ker)
+* [Add5](#add5)
+* [Arrange](#arrange)
+* [Bouncy Balls](#bouncy-balls)
 * [D1v1de](#d1v1de)
+* [DivSeq](#divseq)
+* [FullScope](#fullscope)
+* [GridSeq](#gridseq)
+* [MinMax](#minmax)
+* [NoteSeq](#noteSeq)
+* [NoteSeq16](#noteSeq16)
+* [NoteSeqFu](#noteSeqFu)
+* [Patterns](#patterns)
 * [Pres1t](#pres1t)
 * [Quantizer](#quantizer)
-* [Bouncy Balls](#bouncy-balls)
-* [FullScope](#fullscope)
+* [SimpleClock](#simpleclock)
+* [Str1ker](#str1ker)
 * [Thing Thing](#thing-thing)
-* [XY-Pad](#xy-pad)
-* [Add5](#add5)
-* [MinMax](#minmax)
-* [WavHead](#wavhead)
-* [Tree](#tree)
 * [Timer](#timer)
+* [Tree](#tree)
+* [Trigs](#trigs)
+* [WavHead](#wavhead)
+* [XY-Pad](#xy-pad)
 
 ----
 
+## Arrange
+
+![Arrange](./doc/Arrange.png)
+
+[Video](https://www.youtube.com/watch?v=L-yIi9iPd8s)
+
+_Sends left input to right output if cell is on in that row_
+
+#### Controls on top 
+
+  * **Clock input:** every trigger in advances the sequencer position
+  * **Reset input and button:** every trigger in resets the sequencer position
+  * **Start input and knob:** moves the starting position of the sequence
+  * **Length input and knob:** changes the length of the sequence
+  * **Play Mode input and knob:** changes which direction the sequencer goes
+  * **Clear input and button:** every trigger in resets the sequencer position
+  * **Random trigger input and button:** every trigger in randomizrs the sequencer
+  * **Random amount input and button:** changes the amount of randomization
+  * **Random mode knob:** changes how the sequence is randomized
+  * **POS(Position) output:** position in sequence mapped to 0-10v
+  * **INT(Intensity) output:** layer count mapped to 0-10v
+  * **EOC(End of CyCle) output:** triggers out when hitting the end
 
 ## SimpleClock
 
