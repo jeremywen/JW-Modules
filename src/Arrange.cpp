@@ -192,10 +192,12 @@ struct Arrange : Module {
 			}
 			clockStep();
 		}
+		int pos = resetMode ? getSeqStart() : seqPos;
+
 		int rowsOn = 0;
 		for(int i=0;i<ARRANGE_ROWS;i++){
 			int channels = inputs[MAIN_INPUT + i].getChannels();
-			bool on = isCellOn(seqPos, i);
+			bool on = isCellOn(pos, i);
 			for (int c = 0; c < channels; c++) {
 				outputs[MAIN_OUTPUT + i].setVoltage(on ? inputs[MAIN_INPUT + i].getVoltage(c) : 0, c);
 			}
@@ -204,20 +206,11 @@ struct Arrange : Module {
 			}
 			outputs[MAIN_OUTPUT + i].setChannels(channels);
 		}		
-		outputs[POS_OUTPUT].setVoltage(rescalefjw(seqPos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
+		outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
 		outputs[INTENSITY_OUTPUT].setVoltage(rescalefjw(rowsOn, 0.0, ARRANGE_ROWS, 0.0, 10.0));
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);		
 		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
-	}
-
-	int findYValIdx(int arr[], int valToFind){
-		for(int i=0; i < ARRANGE_ROWS; i++){
-			if(arr[i] == valToFind){
-				return i;
-			}
-		}		
-		return -1;
 	}
 
 	void clockStep(){

@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.10 ~ 5-12-25
+
+  * fixed reset on Arrange
+
 ## v2.0.9 ~ 5-7-25
 
   * minor fixes for meta module
