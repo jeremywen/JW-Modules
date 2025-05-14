@@ -10,7 +10,7 @@
 
 struct Arrange : Module {
 	enum ParamIds {
-		STEP_BTN_PARAM,
+		STEP_BTN_PARAM,//not used
 		LENGTH_KNOB_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		RESET_BTN_PARAM,
@@ -81,7 +81,6 @@ struct Arrange : Module {
 	Arrange() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, ARRANGE_COLS-1, 0.0, "Start");
-		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
 		configParam(LENGTH_KNOB_PARAM, 1.0, ARRANGE_COLS, ARRANGE_COLS, "Length");
 		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
@@ -184,7 +183,7 @@ struct Arrange : Module {
 			resetMode = true;
 		}
 
-		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {
+		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
 			if(resetMode){
 				resetMode = false;
 				hitEnd = false;
