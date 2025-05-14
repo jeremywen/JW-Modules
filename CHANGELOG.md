@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.11 ~ 5-14-25
+
+  * fixed randomize on Arrange
+
 ## v2.0.10 ~ 5-12-25
 
   * fixed reset on Arrange
