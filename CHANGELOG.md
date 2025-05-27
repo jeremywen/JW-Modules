@@ -2,8 +2,9 @@
 
 ## v2.0.12 ~ 5-27-25
 
-  * Arrange:  added option to output absolute position instead of relative to start and length
-  * Arrange:  added labels to output ports for hovering over the port to see its label
+  * Arrange: added right click option to output absolute position instead of relative to start and length
+  * Arrange: added right click option to output 10v when there is no input for a row
+  * Arrange: added labels to output ports for hovering over the port to see its label
 
 ## v2.0.11 ~ 5-14-25
 
