@@ -176,6 +176,7 @@ struct Arrange : Module {
 				json_t *rowNameJ = json_array_get(rowNamesJ, i);
 				if (rowNameJ) {
 					rowNames[i] = json_string_value(rowNameJ);
+					getOutputInfo(Arrange::MAIN_OUTPUT + i)->description = rowNames[i];
 					dirtyNames[i] = true;
 				}
 			}
@@ -571,6 +572,7 @@ struct RowTextField : LedDisplayTextField {
 	void onChange(const ChangeEvent& e) override {
 		if (module) {
 			module->rowNames[i].assign(getText());
+			module->getOutputInfo(Arrange::MAIN_OUTPUT + i)->description = getText();
         }
 	}
 };
