@@ -67,7 +67,8 @@ struct Arrange : Module {
 	bool eocOn = false; 
 	bool hitEnd = false;
 	bool resetMode = false;
-	bool absoluteMode = false;
+	bool absolutePosMode = false;
+	bool defaultToTenVoltsWhenNoInput = false;
 	bool *dirtyNames = new bool[ARRANGE_ROWS];
 	bool *cells = new bool[CELLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig, rndTrig;
@@ -126,8 +127,10 @@ struct Arrange : Module {
 	void onRandomize() override {
 		randomizeCells();
 	}
-
+	
 	void onReset() override {
+		absolutePosMode = false;
+		defaultToTenVoltsWhenNoInput = false;
 		resetSeq();
 		resetMode = true;
 		clearCells();
@@ -139,7 +142,8 @@ struct Arrange : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
-		json_object_set_new(rootJ, "absoluteMode", json_boolean(absoluteMode));
+		json_object_set_new(rootJ, "absolutePosMode", json_boolean(absolutePosMode));
+		json_object_set_new(rootJ, "defaultToTenVoltsWhenNoInput", json_boolean(defaultToTenVoltsWhenNoInput));
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
 			json_t *cellJ = json_integer((int) cells[i]);
@@ -156,9 +160,14 @@ struct Arrange : Module {
 	}
 
 	void dataFromJson(json_t *rootJ) override {
-		json_t *absoluteModeJ = json_object_get(rootJ, "absoluteMode");
-		if (absoluteModeJ) {
-			absoluteMode = json_is_true(absoluteModeJ);
+		json_t *absolutePosModeJ = json_object_get(rootJ, "absolutePosMode");
+		if (absolutePosModeJ) {
+			absolutePosMode = json_is_true(absolutePosModeJ);
+		}
+
+		json_t *defaultToTenVoltsWhenNoInputJ = json_object_get(rootJ, "defaultToTenVoltsWhenNoInput");
+		if (defaultToTenVoltsWhenNoInputJ) {
+			defaultToTenVoltsWhenNoInput = json_is_true(defaultToTenVoltsWhenNoInputJ);
 		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
@@ -199,21 +208,30 @@ struct Arrange : Module {
 			}
 			clockStep();
 		}
-		int pos = resetMode ? getSeqStart() : seqPos;
 
+		int pos = resetMode ? getSeqStart() : seqPos;
 		int rowsOn = 0;
+		float defVolts = (defaultToTenVoltsWhenNoInput) ? 10.0f : 0.0f;
 		for(int i=0;i<ARRANGE_ROWS;i++){
-			int channels = inputs[MAIN_INPUT + i].getChannels();
 			bool on = isCellOn(pos, i);
-			for (int c = 0; c < channels; c++) {
-				outputs[MAIN_OUTPUT + i].setVoltage(on ? inputs[MAIN_INPUT + i].getVoltage(c) : 0, c);
+			int channels = inputs[MAIN_INPUT + i].getChannels();
+			if (channels > 0) {
+				for (int c = 0; c < channels; c++) {
+					float onVoltageOut = inputs[MAIN_INPUT + i].isConnected() ? inputs[MAIN_INPUT + i].getVoltage(c) : 0;
+					outputs[MAIN_OUTPUT + i].setVoltage(on ? onVoltageOut : 0, c);
+				}
+				outputs[MAIN_OUTPUT + i].setChannels(channels);
+			} else {
+				//NO INPUT
+				outputs[MAIN_OUTPUT + i].setVoltage(on ? defVolts : 0.0f);
+				outputs[MAIN_OUTPUT + i].setChannels(1);
+
 			}
 			if(on){
 				rowsOn++;
 			}
-			outputs[MAIN_OUTPUT + i].setChannels(channels);
 		}
-		if (absoluteMode) {
+		if (absolutePosMode) {
 			outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, 0, ARRANGE_COLS-1, 0.0, 10.0));
 		} else {
 			outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
@@ -597,14 +615,24 @@ struct RowDisplay : LedDisplay {
     }
 };
 
-struct ArrangeAbsoluteModeItem : MenuItem {
+struct ArrangeAbsolutePosModeItem : MenuItem {
 	Arrange *arrange;
-	bool absoluteMode = false;
 	void onAction(const event::Action &e) override {
-		arrange->absoluteMode = !absoluteMode;
+		arrange->absolutePosMode = !arrange->absolutePosMode;
 	}
 	void step() override {
-		rightText = arrange->absoluteMode ? "✔" : "";
+		rightText = (arrange->absolutePosMode) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct DefaultWhenNoInputModeItem : MenuItem {
+	Arrange *arrange;
+	void onAction(const event::Action &e) override {
+		arrange->defaultToTenVoltsWhenNoInput = !arrange->defaultToTenVoltsWhenNoInput;
+	}
+	void step() override {
+		rightText = (arrange->defaultToTenVoltsWhenNoInput) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -701,10 +729,15 @@ void ArrangeWidget::appendContextMenu(Menu *menu) {
 
 	Arrange *arrange = dynamic_cast<Arrange*>(module);
 
-	ArrangeAbsoluteModeItem *absoluteMode = new ArrangeAbsoluteModeItem();
-	absoluteMode->text = "Absolute Position";
-	absoluteMode->arrange = arrange;
-	menu->addChild(absoluteMode);
+	ArrangeAbsolutePosModeItem *absolutePosMode = new ArrangeAbsolutePosModeItem();
+	absolutePosMode->text = "Absolute Position";
+	absolutePosMode->arrange = arrange;
+	menu->addChild(absolutePosMode);
+
+	DefaultWhenNoInputModeItem *def = new DefaultWhenNoInputModeItem();
+	def->text = "Default to 10V out when no input";
+	def->arrange = arrange;
+	menu->addChild(def);
 }
 
 Model *modelArrange = createModel<Arrange, ArrangeWidget>("Arrange");
