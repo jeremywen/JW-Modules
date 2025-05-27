@@ -67,6 +67,7 @@ struct Arrange : Module {
 	bool eocOn = false; 
 	bool hitEnd = false;
 	bool resetMode = false;
+	bool absoluteMode = false;
 	bool *dirtyNames = new bool[ARRANGE_ROWS];
 	bool *cells = new bool[CELLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig, rndTrig;
@@ -138,6 +139,7 @@ struct Arrange : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		
+		json_object_set_new(rootJ, "absoluteMode", json_boolean(absoluteMode));
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
 			json_t *cellJ = json_integer((int) cells[i]);
@@ -154,6 +156,11 @@ struct Arrange : Module {
 	}
 
 	void dataFromJson(json_t *rootJ) override {
+		json_t *absoluteModeJ = json_object_get(rootJ, "absoluteMode");
+		if (absoluteModeJ) {
+			absoluteMode = json_is_true(absoluteModeJ);
+		}
+
 		json_t *cellsJ = json_object_get(rootJ, "cells");
 		if (cellsJ && json_array_size(cellsJ) == CELLS) {
 			for (int i = 0; i < CELLS; i++) {
@@ -204,8 +211,12 @@ struct Arrange : Module {
 				rowsOn++;
 			}
 			outputs[MAIN_OUTPUT + i].setChannels(channels);
-		}		
-		outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
+		}
+		if (absoluteMode) {
+			outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, 0, ARRANGE_COLS-1, 0.0, 10.0));
+		} else {
+			outputs[POS_OUTPUT].setVoltage(rescalefjw(pos, getSeqStart(), getSeqEnd(), 0.0, 10.0));
+		}
 		outputs[INTENSITY_OUTPUT].setVoltage(rescalefjw(rowsOn, 0.0, ARRANGE_ROWS, 0.0, 10.0));
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);		
@@ -584,6 +595,18 @@ struct RowDisplay : LedDisplay {
     }
 };
 
+struct ArrangeAbsoluteModeItem : MenuItem {
+	Arrange *arrange;
+	bool absoluteMode = false;
+	void onAction(const event::Action &e) override {
+		arrange->absoluteMode = !absoluteMode;
+	}
+	void step() override {
+		rightText = arrange->absoluteMode ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 struct ArrangeWidget : ModuleWidget { 
 	ArrangeWidget(Arrange *module); 
 	void appendContextMenu(Menu *menu) override;
@@ -671,6 +694,15 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 }
 
 void ArrangeWidget::appendContextMenu(Menu *menu) {
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->addChild(spacerLabel);
+
+	Arrange *arrange = dynamic_cast<Arrange*>(module);
+
+	ArrangeAbsoluteModeItem *absoluteMode = new ArrangeAbsoluteModeItem();
+	absoluteMode->text = "Absolute Position";
+	absoluteMode->arrange = arrange;
+	menu->addChild(absoluteMode);
 }
 
 Model *modelArrange = createModel<Arrange, ArrangeWidget>("Arrange");

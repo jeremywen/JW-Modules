@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.12 ~ 5-27-25
+
+  * Arrange:  added option to output absolute position instead of relative to start and length
+
 ## v2.0.11 ~ 5-14-25
 
   * fixed randomize on Arrange
