@@ -16,6 +16,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelAdd5);
 	p->addModel(modelAbcdSeq);
 	p->addModel(modelArrange);
+	p->addModel(modelArrange16);
 	p->addModel(modelBouncyBalls);
 	p->addModel(modelCat);
 	p->addModel(modelTree);

@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.13 ~ 5-28-25
+
+  * added module Arrange16, a newer smaller version of Arrange
+  
 ## v2.0.12 ~ 5-27-25
 
   * Arrange: added right click option to output absolute position instead of relative to start and length

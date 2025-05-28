@@ -398,6 +398,7 @@ struct HairballScrew : SVGWidget {
 extern Model *modelAdd5;
 extern Model *modelAbcdSeq;
 extern Model *modelArrange;
+extern Model *modelArrange16;
 extern Model *modelBouncyBalls;
 extern Model *modelSimpleClock;
 extern Model *modelStr1ker;
