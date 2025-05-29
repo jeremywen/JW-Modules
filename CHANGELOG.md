@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.13 ~ 5-29-25
+## v2.0.14 ~ 5-29-25
 
   * Trigs: now allows poly input for 4 different clocks/start/len/playmode/random one for each sequence
   
