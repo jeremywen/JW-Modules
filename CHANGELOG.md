@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.13 ~ 5-29-25
+
+  * Trigs: now allows poly input for 4 different clocks/start/len/playmode/random one for each sequence
+  
 ## v2.0.13 ~ 5-28-25
 
   * added module Arrange16, a newer smaller version of Arrange
