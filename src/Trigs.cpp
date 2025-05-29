@@ -39,6 +39,7 @@ struct Trigs : Module {
 		SHIFT_INPUT,
 		LENGTH_INPUT,
 		START_INPUT,
+		PLAY_MODE_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -82,15 +83,15 @@ struct Trigs : Module {
 
 	float displayWidth = 0, displayHeight = 0;
 	float rate = 1.0 / APP->engine->getSampleRate();
-	int seqPos = 0;//4 rows of 16
+	int seqPos[4] = {0, 0, 0, 0};
 	int channels = 1;
 	float rndFloat0to1AtClockStep = random::uniform();
-	bool goingForward = true;
-	bool resetMode = false;
-	bool eocOn = false; 
-	bool hitEnd = false;
-	bool *cells = new bool[CELLS];
-	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
+	bool goingForward[4] = {true, true, true, true};
+	bool resetMode[4] = {false, false, false, false};
+	bool eocOn[4] = {false, false, false, false}; 
+	bool hitEnd[4] = {false, false, false, false}; 
+	bool cells[CELLS];
+	dsp::SchmittTrigger clockTrig[4], resetTrig[4], clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse;
@@ -108,6 +109,7 @@ struct Trigs : Module {
 		configInput(RND_TRIG_INPUT, "Random Trigger");
 		configInput(LENGTH_INPUT, "Length");
 		configInput(START_INPUT, "Start");
+		configInput(PLAY_MODE_INPUT, "Play Mode");
 
 		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
 		for(int i=0; i<4; i++){
@@ -117,23 +119,32 @@ struct Trigs : Module {
 		configOutput(OR_OUTPUT, "OR");
 		configOutput(XOR_OUTPUT, "XOR");
 		configOutput(NOR_OUTPUT, "NOR");
-		resetSeq();
-		resetMode = true;
-		clearCells();
+		for (int i = 0; i < 4; i++) {
+			resetSeq(i);
+		}
+		std::fill(resetMode, resetMode + 4, true);
+		for (int i = 0; i < 4; i++) {
+			clearCells(i);
+		}
 	}
 
 	~Trigs() {
-		delete [] cells;
 	}
 
 	void onRandomize() override {
-		randomizeCells();
+		for (int i = 0; i < 4; i++) {
+			randomizeCells(i);
+		}
 	}
 
 	void onReset() override {
-		resetSeq();
-		resetMode = true;
-		clearCells();
+		for (int i = 0; i < 4; i++) {
+			resetSeq(i);
+		}
+		std::fill(resetMode, resetMode + 4, true);
+		for (int i = 0; i < 4; i++) {
+			clearCells(i);
+		}
 	}
 
 	void onSampleRateChange() override {
@@ -173,37 +184,87 @@ struct Trigs : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
-		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
-		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
-			resetMode = true;
-		}
-		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
-			if(resetMode){
-				resetMode = false;
-				hitEnd = false;
-				resetSeqToEnd();
+		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { 
+			for (int i = 0; i < 4; i++) {
+				clearCells(i);
 			}
-			clockStep();
+		}
+		
+		//if more than one reset input channel, then process separately
+		int rndChannelCount = inputs[RND_TRIG_INPUT].getChannels();
+		if(rndChannelCount > 1) {
+			for (int i = 0; i < rndChannelCount; i++) {
+				if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage(i))) {
+					randomizeCells(i);
+				}
+			}
+		} else {
+			for(int i=0;i<4;i++){
+				if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) {
+					randomizeCells(i);
+				}
+			}			
+		}
+
+		//if more than one reset input channel, then process separately
+		int resetChannelCount = inputs[RESET_INPUT].getChannels();
+		if(resetChannelCount > 1) {
+			for (int i = 0; i < resetChannelCount; i++) {
+				if (resetTrig[i].process(inputs[RESET_INPUT].getVoltage(i))) {
+					resetMode[i] = true;
+				}
+			}
+		} else {
+			for(int i=0;i<4;i++){
+				if (resetTrig[i].process(inputs[RESET_INPUT].getVoltage())) {
+					resetMode[i] = true;
+				}			
+			}			
+		}
+
+		//if more than one clock input channel, then process separately
+		int clockChannelCount = inputs[CLOCK_INPUT].getChannels();
+		if(clockChannelCount > 1) {
+			for (int i = 0; i < clockChannelCount; i++) {
+				if (clockTrig[i].process(inputs[CLOCK_INPUT].getVoltage(i))) {
+					if (resetMode[i]) {
+						resetMode[i] = false;
+						hitEnd[i] = false;
+						resetSeqToEnd(i);
+					}
+					clockStep(i);
+				}
+			}
+		} else {
+			for(int i=0;i<4;i++){
+				if (clockTrig[i].process(inputs[CLOCK_INPUT].getVoltage())) {
+					if (resetMode[i]) {
+						resetMode[i] = false;
+						hitEnd[i] = false;
+						resetSeqToEnd(i);
+					}
+					clockStep(i);
+				}
+			}
 		}
 
 		bool pulse = gatePulse.process(1.0 / args.sampleRate);
-		int seqPosX = xFromSeqPos();
 		int trigCount = 0;
 		for(int i=0;i<4;i++){
-			bool cellActive = cells[iFromXY(seqPosX, (seqPos/16) + i*4)];
+			int seqPosX = xFromSeqPos(i);
+			bool cellActive = cells[iFromXY(seqPosX, (seqPos[i]/16) + i*4)];
 			float gateVolts = (pulse && cellActive) ? 10.0 : 0.0;
 			trigCount += (pulse && cellActive);
-			outputs[GATE_OUTPUT + i].setVoltage(gateVolts);
+			outputs[GATE_OUTPUT + i].setVoltage(gateVolts, i);
+			outputs[EOC_OUTPUT].setVoltage((pulse && eocOn[i]) ? 10.0 : 0.0, i);
 		}
 		outputs[OR_OUTPUT].setVoltage((pulse && trigCount>0) ? 10.0 : 0.0);
 		outputs[NOR_OUTPUT].setVoltage((pulse && trigCount==0) ? 10.0 : 0.0);
 		outputs[XOR_OUTPUT].setVoltage((pulse && trigCount==1) ? 10.0 : 0.0);
-		outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
 	}
 
-	int xFromSeqPos(){
-		return seqPos % 16;
+	int xFromSeqPos(int seqIndex) {
+		return seqPos[seqIndex] % 16;
 	}
 
 	int findYValIdx(int arr[], int valToFind){
@@ -223,181 +284,114 @@ struct Trigs : Module {
 		return 1;
 	} 
 
-	void clockStep(){
+	void clockStep(int seqIndex){
 		gatePulse.trigger(1e-3);
 		rndFloat0to1AtClockStep = random::uniform();
-
-		int curPlayMode = getPlayMode();
-		int seqLen = getSeqLen();
-		int seqStart = getSeqStart();
-		int seqEnd = getSeqEnd();
-		eocOn = false;
-
+		
+		int curPlayMode = getPlayMode(seqIndex);
+		int seqLen = getSeqLen(seqIndex);
+		int seqStart = getSeqStart(seqIndex);
+		int seqEnd = getSeqEnd(seqIndex);
+		eocOn[seqIndex] = false;
+		
 		if(curPlayMode == PM_FWD_LOOP){
-			seqPos++;
-			if(seqPos > seqEnd){ 
-				seqPos = seqStart; 
-				if(hitEnd){eocOn = true;}
-				hitEnd = true;
+			seqPos[seqIndex]++;
+			if(seqPos[seqIndex] > seqEnd){ 
+				seqPos[seqIndex] = seqStart; 
+				if(hitEnd[seqIndex]){eocOn[seqIndex] = true;}
+				hitEnd[seqIndex] = true;
 			}
-			goingForward = true;
+			goingForward[seqIndex] = true;
 		} else if(curPlayMode == PM_BWD_LOOP){
-			seqPos = seqPos > seqStart ? seqPos - 1 : seqEnd;
-			goingForward = false;
-			if(seqPos == seqEnd){
-				if(hitEnd){eocOn = true;}
-				hitEnd = true;
+			seqPos[seqIndex] = seqPos[seqIndex] > seqStart ? seqPos[seqIndex] - 1 : seqEnd;
+			goingForward[seqIndex] = false;
+			if(seqPos[seqIndex] == seqEnd){
+				if(hitEnd[seqIndex]){eocOn[seqIndex] = true;}
+				hitEnd[seqIndex] = true;
 			}
 		} else if(curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			if(goingForward){
-				if(seqPos < seqEnd){
-					seqPos++;
+			if(goingForward[seqIndex]){
+				if(seqPos[seqIndex] < seqEnd){
+					seqPos[seqIndex]++;
 				} else {
-					seqPos--;
-					goingForward = false;
-					if(hitEnd){eocOn = true;}
-					hitEnd = true;
+					seqPos[seqIndex]--;
+					goingForward[seqIndex] = false;
+					if(hitEnd[seqIndex]){eocOn[seqIndex] = true;}
+					hitEnd[seqIndex] = true;
 				}
 			} else {
-				if(seqPos > seqStart){
-					seqPos--;
+				if(seqPos[seqIndex] > seqStart){
+					seqPos[seqIndex]--;
 				} else {
-					seqPos++;
-					goingForward = true;
-					if(hitEnd){eocOn = true;}
-					hitEnd = true;
+					seqPos[seqIndex]++;
+					goingForward[seqIndex] = true;
+					if(hitEnd[seqIndex]){eocOn[seqIndex] = true;}
+					hitEnd[seqIndex] = true;
 				}
 			}
 		} else if(curPlayMode == PM_RANDOM_POS){
-			seqPos = seqStart + int(random::uniform() * seqLen);
+			seqPos[seqIndex] = seqStart + int(random::uniform() * seqLen);
 		}
-		seqPos = clampijw(seqPos, seqStart, seqEnd);
+		seqPos[seqIndex] = clampijw(seqPos[seqIndex], seqStart, seqEnd);
 	}
 
-	void resetSeq(){
-		int curPlayMode = getPlayMode();
+	void resetSeq(int seqIndex){
+		int curPlayMode = getPlayMode(seqIndex);
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = getSeqStart();
+			seqPos[seqIndex] = getSeqStart(seqIndex);
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 63);
+			seqPos[seqIndex] = clampijw(getSeqStart(seqIndex) + getSeqLen(seqIndex), 0, 63);
 		}
 	}
 
-	void resetSeqToEnd(){
-		int curPlayMode = getPlayMode();
+	void resetSeqToEnd(int seqIndex){
+		int curPlayMode = getPlayMode(seqIndex);
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 63);
+			seqPos[seqIndex] = clampijw(getSeqStart(seqIndex) + getSeqLen(seqIndex), 0, 63);
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = getSeqStart();
+			seqPos[seqIndex] = getSeqStart(seqIndex);
 		}
 	}
 
-	int getSeqLen(){
-		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 63.0));
+	int getSeqLen(int seqIndex){
+		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(seqIndex), 0, 10.0, 0.0, 63.0));
 		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 64.0);
 		return len;
 	}
 
-	int getSeqStart(){
-		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, 63.0));
+	int getSeqStart(int seqIndex){
+		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(seqIndex), 0, 10.0, 0.0, 63.0));
 		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, 63.0);
 		return start;
 	}
 
-	int getSeqEnd(){
-		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, 63);
+	int getSeqEnd(int seqIndex){
+		int seqEnd = clampijw(getSeqStart(seqIndex) + getSeqLen(seqIndex) - 1, 0, 63);
 		return seqEnd;
 	}
 
-	int getPlayMode(){
-		int mode = clampijw(params[PLAY_MODE_KNOB_PARAM].getValue(), 0.0, NUM_PLAY_MODES - 1);
+	int getPlayMode(int seqIndex){
+		int modeOffset = int(rescalefjw(inputs[PLAY_MODE_INPUT].getVoltage(seqIndex), 0, 10.0, 0.0, NUM_PLAY_MODES - 1));
+		int mode = clampijw(params[PLAY_MODE_KNOB_PARAM].getValue() + modeOffset, 0.0, NUM_PLAY_MODES - 1);
 		return mode;
 	}
 
-	void clearCells() {
+	void clearCells(int seqIndex) {
 		for(int i=0;i<CELLS;i++){
-			cells[i] = false;
+			int y = yFromI(i);
+			if(y >= seqIndex * 4 && y < (seqIndex + 1) * 4){
+				setCellOn(xFromI(i), y, false);
+			}
 		}
 	}
 
-	void randomizeCells() {
-		clearCells();
+	void randomizeCells(int seqIndex) {
+		clearCells(seqIndex);
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
-		switch(0){
-			case RND_BASIC:{
-				for(int i=0;i<CELLS;i++){
-					setCellOn(xFromI(i), yFromI(i), random::uniform() < rndAmt);
-				}
-				break;
-			}
-			case RND_EUCLID:{
-				for(int y=0; y < ROWS; y++){
-					if(random::uniform() < rndAmt){
-						int div = int(random::uniform() * COLS * 0.5) + 1;
-						for(int x=0; x < COLS; x++){
-							setCellOn(x, y, x % div == 0);
-						}
-					}
-				}
-				break;
-			}
-			case RND_SIN_WAVE:{
-				int sinCount = int(rndAmt * 3) + 1;
-				for(int i=0;i<sinCount;i++){
-					float angle = 0;
-					float angleInc = random::uniform();
-					float offset = ROWS * 0.5;
-					for(int x=0;x<COLS;x+=1){
-						int y = int(offset + (sinf(angle)*(offset)));
-						setCellOn(x, y, true);
-						angle+=angleInc;
-					}
-				}
-				break;
-			}
-			case RND_LIFE_GLIDERS:{
-				int gliderCount = int(rndAmt * 20);
-				int size = 3;
-				for(int i=0;i<gliderCount;i++){
-					int x = size + int(random::uniform() * (COLS-size*2));
-					int y = size + int(random::uniform() * (ROWS-size*2));
-					if(random::uniform() < 0.5){
-						//down
-						if(random::uniform() < 0.5){
-							//right
-							setCellOn(x, y, true);
-							setCellOn(x+1, y+1, true);
-							setCellOn(x+1, y+2, true);
-							setCellOn(x, y+2, true);
-							setCellOn(x-1, y+2, true);
-						} else {
-							//left
-							setCellOn(x, y, true);
-							setCellOn(x-1, y+1, true);
-							setCellOn(x+1, y+2, true);
-							setCellOn(x, y+2, true);
-							setCellOn(x-1, y+2, true);
-						}
-					} else {
-						//up
-						if(random::uniform() < 0.5){
-							//right
-							setCellOn(x, y, true);
-							setCellOn(x+1, y-1, true);
-							setCellOn(x+1, y-2, true);
-							setCellOn(x, y-2, true);
-							setCellOn(x-1, y-2, true);
-						} else {
-							//left
-							setCellOn(x, y, true);
-							setCellOn(x-1, y-1, true);
-							setCellOn(x+1, y-2, true);
-							setCellOn(x, y-2, true);
-							setCellOn(x-1, y-2, true);
-						}
-					}
-				}
-				break;
+		for(int i=0;i<CELLS;i++){
+			int y = yFromI(i);
+			if(y >= seqIndex * 4 && y < (seqIndex + 1) * 4){
+				setCellOn(xFromI(i), y, random::uniform() < rndAmt);
 			}
 		}
 	}
@@ -508,35 +502,34 @@ struct TrigsDisplay : LightWidget {
 
 			nvgStrokeWidth(args.vg, 2);
 
-			//seq pos
-			int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
 			for(int i=0;i<4;i++){
-			//seq start line
-			float startX = (module->getSeqStart()%16) * HW;
-			float startY = ((module->getSeqStart()/16) + i*4) * HW;
-			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, startX, startY);
-			nvgLineTo(args.vg, startX, startY+HW);
-			nvgStroke(args.vg);
-
-			//seq length line
-			float endX = ((module->getSeqEnd() + 1)%16) * HW;
-			float endY = ((module->getSeqEnd()/16) + i*4) * HW;
-			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-			nvgBeginPath(args.vg);
-			nvgMoveTo(args.vg, endX, endY);
-			nvgLineTo(args.vg, endX, endY+HW);
-			nvgStroke(args.vg);
-
-			//seq position
-			int posX = pos % 16;
-			int posY = (pos/16) + i*4;
-			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
-			nvgBeginPath(args.vg);
-			nvgRect(args.vg, posX * HW, posY * HW, HW, HW);
-			nvgStroke(args.vg);
-		}
+				int seqPos = module->resetMode[i] ? module->getSeqStart(i) : module->seqPos[i];
+				//seq start line
+				float startX = (module->getSeqStart(i)%16) * HW;
+				float startY = ((module->getSeqStart(i)/16) + i*4) * HW;
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, startX, startY);
+				nvgLineTo(args.vg, startX, startY+HW);
+				nvgStroke(args.vg);
+				
+				//seq length line
+				float endX = ((module->getSeqEnd(i) + 1)%16) * HW;
+				float endY = ((module->getSeqEnd(i)/16) + i*4) * HW;
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, endX, endY);
+				nvgLineTo(args.vg, endX, endY+HW);
+				nvgStroke(args.vg);
+				
+				//seq position
+				int posX = seqPos % 16;
+				int posY = (seqPos/16) + i*4;
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgRect(args.vg, posX * HW, posY * HW, HW, HW);
+				nvgStroke(args.vg);
+			}
 		}
 		Widget::drawLayer(args, layer);
 	}
@@ -634,10 +627,11 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(33, 40), module, Trigs::RESET_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(58, 40), module, Trigs::START_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(75, 35), module, Trigs::START_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(108, 40), module, Trigs::LENGTH_INPUT));
-	addParam(createParam<JwSmallSnapKnob>(Vec(125, 35), module, Trigs::LENGTH_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(103, 40), module, Trigs::LENGTH_INPUT));
+	addParam(createParam<JwSmallSnapKnob>(Vec(120, 35), module, Trigs::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(158, 35), module, Trigs::PLAY_MODE_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(148, 40), module, Trigs::PLAY_MODE_INPUT));
+	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(165, 35), module, Trigs::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(85.5, 35);
 	playModeLabel->text = "";
