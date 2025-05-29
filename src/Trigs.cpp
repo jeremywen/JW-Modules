@@ -92,9 +92,9 @@ struct Trigs : Module {
 	bool hitEnd[4] = {false, false, false, false}; 
 	bool cells[CELLS];
 	dsp::SchmittTrigger clockTrig[4], resetTrig[4], clearTrig;
-	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
+	dsp::SchmittTrigger rndTrig[4], shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
-	dsp::PulseGenerator gatePulse;
+	dsp::PulseGenerator gatePulse[4];
 
 	Trigs() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -194,13 +194,13 @@ struct Trigs : Module {
 		int rndChannelCount = inputs[RND_TRIG_INPUT].getChannels();
 		if(rndChannelCount > 1) {
 			for (int i = 0; i < rndChannelCount; i++) {
-				if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage(i))) {
+				if (rndTrig[i].process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage(i))) {
 					randomizeCells(i);
 				}
 			}
 		} else {
 			for(int i=0;i<4;i++){
-				if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) {
+				if (rndTrig[i].process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) {
 					randomizeCells(i);
 				}
 			}			
@@ -248,19 +248,25 @@ struct Trigs : Module {
 			}
 		}
 
-		bool pulse = gatePulse.process(1.0 / args.sampleRate);
 		int trigCount = 0;
+		bool atLeastOnePulse = false;
 		for(int i=0;i<4;i++){
+			bool pulse = gatePulse[i].process(1.0 / args.sampleRate);
+			if (pulse) {
+				atLeastOnePulse = true;
+			}
 			int seqPosX = xFromSeqPos(i);
 			bool cellActive = cells[iFromXY(seqPosX, (seqPos[i]/16) + i*4)];
 			float gateVolts = (pulse && cellActive) ? 10.0 : 0.0;
 			trigCount += (pulse && cellActive);
-			outputs[GATE_OUTPUT + i].setVoltage(gateVolts, i);
+			outputs[GATE_OUTPUT + i].setVoltage(gateVolts);
 			outputs[EOC_OUTPUT].setVoltage((pulse && eocOn[i]) ? 10.0 : 0.0, i);
 		}
-		outputs[OR_OUTPUT].setVoltage((pulse && trigCount>0) ? 10.0 : 0.0);
-		outputs[NOR_OUTPUT].setVoltage((pulse && trigCount==0) ? 10.0 : 0.0);
-		outputs[XOR_OUTPUT].setVoltage((pulse && trigCount==1) ? 10.0 : 0.0);
+		outputs[EOC_OUTPUT].setChannels(clockChannelCount);
+
+		outputs[OR_OUTPUT].setVoltage((atLeastOnePulse && trigCount>0) ? 10.0 : 0.0);
+		outputs[NOR_OUTPUT].setVoltage((atLeastOnePulse && trigCount==0) ? 10.0 : 0.0);
+		outputs[XOR_OUTPUT].setVoltage((atLeastOnePulse && trigCount==1) ? 10.0 : 0.0);
 	}
 
 	int xFromSeqPos(int seqIndex) {
@@ -285,7 +291,7 @@ struct Trigs : Module {
 	} 
 
 	void clockStep(int seqIndex){
-		gatePulse.trigger(1e-3);
+		gatePulse[seqIndex].trigger(1e-3);
 		rndFloat0to1AtClockStep = random::uniform();
 		
 		int curPlayMode = getPlayMode(seqIndex);
