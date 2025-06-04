@@ -58,13 +58,13 @@
 			"slug": "Arrange",
 			"name": "Arrange",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": ["Sequencer", "Utility", "Switch"]
+			"tags": ["Sequencer", "Utility", "Switch", "Poly"]
 		},
 		{
 			"slug": "Arrange16",
 			"name": "Arrange16",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": ["Sequencer", "Utility", "Switch"]
+			"tags": ["Sequencer", "Utility", "Switch", "Poly"]
 		},
 		{
 			"slug": "BouncyBalls",
