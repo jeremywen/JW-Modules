@@ -2,9 +2,10 @@
 
 ## v2.0.15 ~ 6-8-25
 
-  * AbcdSeq: added menu options to randomize each row
-  * AbcdSeq: added menu options to copy/paste each row
-  * AbcdSeq: added button/input to randomize all lengths
+  * AbcdSeq: added menu options to randomize each row individually
+  * AbcdSeq: added menu options to copy/paste each row individually
+  * AbcdSeq: added button/input to randomize all length knobs
+  * AbcdSeq: added menu option to use velocity as a probability
 
 ## v2.0.14 ~ 5-29-25
 
