@@ -79,6 +79,12 @@ struct Arrange16 : Module {
 		"", "", "", "",
 		"", "", "", ""
 	};
+	NVGcolor colors[4] = {
+		nvgRGB(255, 151, 9), //orange
+		nvgRGB(255, 243, 9), //yellow
+		nvgRGB(144, 26, 252), //purple
+		nvgRGB(25, 150, 252)  //blue	
+	};
 
 	Arrange16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -442,19 +448,9 @@ struct Arrange16Display : LightWidget {
 	Arrange16 *module;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
-	NVGcolor *colors = new NVGcolor[4];
 	Arrange16Display(){
-		colors[0] = nvgRGB(255, 151, 9);//orange
-		colors[1] = nvgRGB(255, 243, 9);//yellow
-		colors[2] = nvgRGB(144, 26, 252);//purple
-		colors[3] = nvgRGB(25, 150, 252);//blue
-
 	}
 	~Arrange16Display(){
-		if(colors){
-			delete [] colors;
-			colors = nullptr;
-		}
 	}
 	void onButton(const event::Button &e) override {
 		if (module && e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
@@ -507,7 +503,7 @@ struct Arrange16Display : LightWidget {
 				if(module->cells[i]){
 					int x = module->xFromI(i);
 					int y = module->yFromI(i);
-					nvgFillColor(args.vg, colors[y%4]);
+					nvgFillColor(args.vg, module->colors[y%4]);
 					nvgBeginPath(args.vg);
 					nvgRect(args.vg, x * CELLW + 2, y * CELLH + 2, CELLW - 4, CELLH - 4);
 					nvgFill(args.vg);
@@ -604,7 +600,7 @@ struct RowDisplay : LedDisplay {
 		textField->text = "";
 		textField->box.size = box.size;
 		textField->multiline = false;
-		textField->color = nvgRGB(25, 150, 252);
+		if(module)textField->color = module->colors[i%4];
 		textField->textOffset = Vec(-1, -2);
 		addChild(textField);
 	}
@@ -717,8 +713,24 @@ Arrange16Widget::Arrange16Widget(Arrange16 *module) {
 	float outputRowTop = 43.0;
 	float outputRowDist = 20.0;
 	for(int i=0;i<ARRANGE_ROWS;i++){
-		addInput(createInput<TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_INPUT + i));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
+		if (i % 4 == 0) {
+			addInput(createInput<Orange_TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_INPUT + i));
+		} else if (i % 4 == 1) {
+			addInput(createInput<Yellow_TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_INPUT + i));
+		} else if (i % 4 == 2) {
+			addInput(createInput<Purple_TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_INPUT + i));
+		} else if (i % 4 == 3) {
+			addInput(createInput<Blue_TinyPJ301MPort>(Vec(3, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_INPUT + i));
+		}
+		if (i % 4 == 0) {
+			addOutput(createOutput<Orange_TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
+		} else if (i % 4 == 1) {
+			addOutput(createOutput<Yellow_TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
+		} else if (i % 4 == 2) {
+			addOutput(createOutput<Purple_TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
+		} else if (i % 4 == 3) {
+			addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
+		}
 
 		RowDisplay* rowDisplay = createWidget<RowDisplay>(Vec(20, outputRowTop + i * outputRowDist));
 		rowDisplay->box.size = Vec(36, 16);

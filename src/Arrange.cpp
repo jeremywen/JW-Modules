@@ -600,7 +600,7 @@ struct RowDisplay : LedDisplay {
 		textField->text = "";
 		textField->box.size = box.size;
 		textField->multiline = false;
-		textField->color = module->colors[i%4];
+		if(module)textField->color = module->colors[i%4];
 		textField->textOffset = Vec(-1, -2);
 		addChild(textField);
 	}
