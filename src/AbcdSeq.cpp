@@ -100,6 +100,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configParam(RND_LENGTHS_PARAM, 0.0, 1.0, 0.0, "Random Lengths\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
+		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
         int idx = 0;
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 8; x++) {
