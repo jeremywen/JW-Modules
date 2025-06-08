@@ -53,6 +53,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		B_EOC_OUTPUT,
 		C_EOC_OUTPUT,
 		D_EOC_OUTPUT,
+		POLY_CV_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -134,6 +135,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configOutput(GATES_OUTPUT, "Gate");
 		configOutput(CV_OUTPUT, "CV");
 		configOutput(VEL_OUTPUT, "Velocity");
+		configOutput(POLY_CV_OUTPUT, "Poly CV - 4 Channels");
 		configOutput(A_GATE_OUTPUT, "A Gate");
 		configOutput(B_GATE_OUTPUT, "B Gate");
 		configOutput(C_GATE_OUTPUT, "C Gate");
@@ -485,6 +487,11 @@ void AbcdSeq::process(const ProcessArgs &args) {
 		outputs[CV_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
 		outputs[A_CV_OUTPUT + row].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
 	}
+	for (int i = 0; i < 4; i++) {
+		int cellIndex = i * 8 + col;
+		outputs[POLY_CV_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + cellIndex].getValue()), i);
+	}
+	outputs[POLY_CV_OUTPUT].setChannels(4);
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[VEL_OUTPUT].setVoltage(params[CELL_VEL_PARAM + index].getValue());
 	outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
@@ -741,9 +748,10 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(357, paramY+12), module, AbcdSeq::GATES_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(413.5, paramY+12), module, AbcdSeq::CV_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(467.5, paramY+12), module, AbcdSeq::VEL_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(521, paramY+12), module, AbcdSeq::EOC_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(410, paramY+12), module, AbcdSeq::CV_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(462, paramY+12), module, AbcdSeq::VEL_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(514, paramY+12), module, AbcdSeq::EOC_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(566, paramY+12), module, AbcdSeq::POLY_CV_OUTPUT));
 };
 
 struct AbcdSeqPitchMenuItem : MenuItem {
