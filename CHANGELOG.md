@@ -8,6 +8,7 @@
   * AbcdSeq: added menu option to use velocity as a probability
   * AbcdSeq: added end of cycle per row
   * Arrange: colored text fields and input/output ports
+  * Arrange16: colored text fields and input/output ports
 
 ## v2.0.14 ~ 5-29-25
 
