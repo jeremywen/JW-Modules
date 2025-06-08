@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.15 ~ 6-8-25
+## v2.0.16 ~ 6-8-25
 
   * AbcdSeq: added menu options to randomize each row individually
   * AbcdSeq: added menu options to copy/paste each row individually
