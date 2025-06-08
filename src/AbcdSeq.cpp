@@ -539,7 +539,7 @@ struct RandomizeVelButton : TinyButton {
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 32; i++) {
                 if(shiftDown){
-                    wid->divKnobs[i]->getParamQuantity()->setValue(10);
+                    wid->divKnobs[i]->getParamQuantity()->setValue(5);
                 } else {
                     wid->divKnobs[i]->getParamQuantity()->setValue(random::uniform() * 10);
                 }
