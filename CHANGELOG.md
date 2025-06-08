@@ -2,12 +2,15 @@
 
 ## v2.0.16 ~ 6-8-25
 
+  * AbcdSeq: added poly out to get 4 channels of cv out per column
+
+## v2.0.15 ~ 6-8-25
+
   * AbcdSeq: added menu options to randomize each row individually
   * AbcdSeq: added menu options to copy/paste each row individually
   * AbcdSeq: added button/input to randomize all length knobs
   * AbcdSeq: added menu option to use velocity as a probability
   * AbcdSeq: added end of cycle per row
-  * AbcdSeq: added poly out to get 4 channels of cv out per column
   * Arrange: colored text fields and input/output ports
   * Arrange16: colored text fields and input/output ports
   * Quantizer: fixed dark mode
