@@ -49,6 +49,10 @@ struct AbcdSeq : Module,QuantizeUtils {
 		B_CV_OUTPUT,
 		C_CV_OUTPUT,
 		D_CV_OUTPUT,
+		A_EOC_OUTPUT,
+		B_EOC_OUTPUT,
+		C_EOC_OUTPUT,
+		D_EOC_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -81,6 +85,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool resetMode = false;
     bool initialRowSet = false;
 	bool eocOn = false;
+	bool eocRow[4] = {false, false, false, false};
 	bool velocityAsProbability = false;
 	float clipboard[8] = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
 	float rndNumOnClockTick = 0.0f;
@@ -137,6 +142,10 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configOutput(B_CV_OUTPUT, "B CV");
 		configOutput(C_CV_OUTPUT, "C CV");
 		configOutput(D_CV_OUTPUT, "D CV");
+		configOutput(A_EOC_OUTPUT, "A EOC");
+		configOutput(B_EOC_OUTPUT, "B EOC");
+		configOutput(C_EOC_OUTPUT, "C EOC");
+		configOutput(D_EOC_OUTPUT, "D EOC");
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -276,6 +285,9 @@ struct AbcdSeq : Module,QuantizeUtils {
         bool goingForward = isupper(currChar);
         bool endOfRow = false;
 		eocOn = false;
+		for (int i = 0; i < 4; i++) {
+			eocRow[i] = false;
+		}
 
         if(goingForward){
             if(col+1 < rowLen){
@@ -291,6 +303,7 @@ struct AbcdSeq : Module,QuantizeUtils {
             }
         }
         if(endOfRow){
+			eocRow[row] = true;
             char nextChar = 'A';
             bool nextCharGoingForward =  true;
 			eocOn = charIdx == (int)text.size() - 1;
@@ -336,6 +349,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 			clipboard[i] = params[CELL_NOTE_PARAM + idx].getValue();
 		}
 	}
+	
 	void pasteRowNotes(int rowIdx) {
 		if (rowIdx < 0 || rowIdx > 3) {
 			return; // Invalid row index
@@ -474,6 +488,9 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
 	outputs[VEL_OUTPUT].setVoltage(params[CELL_VEL_PARAM + index].getValue());
 	outputs[EOC_OUTPUT].setVoltage((pulse && eocOn) ? 10.0 : 0.0);
+	for (int i = 0; i < 4; i++) {
+		outputs[A_EOC_OUTPUT + i].setVoltage((pulse && eocRow[i]) ? 10.0 : 0.0);
+	}
 	outputs[A_GATE_OUTPUT + row].setVoltage(gatesOn ? 10.0 : 0.0);
 };
 
@@ -717,8 +734,9 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 		lengthKnobs.push_back(lengthKnob);
 	    addInput(createInput<TinyPJ301MPort>(Vec(knobX + 85, knobY-9), module, AbcdSeq::LENGTH_INPUT + y));
 
-		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 55, knobY+16), module, AbcdSeq::A_GATE_OUTPUT + y));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 75, knobY+16), module, AbcdSeq::A_CV_OUTPUT + y));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 55, knobY+15), module, AbcdSeq::A_GATE_OUTPUT + y));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 72, knobY+15), module, AbcdSeq::A_CV_OUTPUT + y));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 89, knobY+15), module, AbcdSeq::A_EOC_OUTPUT + y));
 	}
 
 	///// OUTPUTS /////
