@@ -1,5 +1,11 @@
 # Change Log
 
+## v2.0.15 ~ 6-8-25
+
+  * AbcdSeq: added menu options to randomize each row
+  * AbcdSeq: added menu options to copy/paste each row
+  * AbcdSeq: added button/input to randomize all lengths
+
 ## v2.0.14 ~ 5-29-25
 
   * Trigs: now allows poly input for 4 different clocks/start/len/playmode/random one for each sequence

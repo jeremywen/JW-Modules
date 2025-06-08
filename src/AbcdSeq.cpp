@@ -18,6 +18,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		RND_VELS_PARAM,
 		LENGTH_KNOB_PARAM,
 		RESET_PARAM = LENGTH_KNOB_PARAM + 4,
+		RND_LENGTHS_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -32,7 +33,8 @@ struct AbcdSeq : Module,QuantizeUtils {
 		OCTAVE_INPUT,
 		RND_VELS_INPUT,
 		LENGTH_INPUT,
-		NUM_INPUTS = LENGTH_INPUT + 4
+		RND_LENGTHS_INPUT = LENGTH_INPUT + 4,
+		NUM_INPUTS
 	};
 	enum OutputIds {
 		GATES_OUTPUT,
@@ -62,6 +64,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger rndTextTrigger;
 	dsp::SchmittTrigger rndGatesTrigger;
 	dsp::SchmittTrigger rndVelsTrigger;
+	dsp::SchmittTrigger rndLengthsTrigger;
 	dsp::SchmittTrigger gateTriggers[32];
 
 	std::string text = DEFAULT_TEXT;
@@ -77,7 +80,10 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool ignoreGateOnPitchOut = false;
 	bool resetMode = false;
     bool initialRowSet = false;
-	bool eocOn = false; 
+	bool eocOn = false;
+	bool velocityAsProbability = false;
+	float clipboard[8] = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
+	float rndNumOnClockTick = 0.0f;
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -91,6 +97,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configParam(RND_CV_PARAM, 0.0, 1.0, 0.0, "Random CV\n(Shift + Click to Init Defaults)");
 		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities\n(Shift + Click to Init Defaults)");
 		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text\n(Shift + Click to Init Defaults)");
+		configParam(RND_LENGTHS_PARAM, 0.0, 1.0, 0.0, "Random Lengths\n(Shift + Click to Init Defaults)");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
         int idx = 0;
@@ -116,6 +123,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configInput(RND_VELS_INPUT, "Random Velocities");
 		configInput(RND_CV_INPUT, "Random Notes");
 		configInput(RND_TEXT_INPUT, "Random Text");
+		configInput(RND_LENGTHS_INPUT, "Random Lengths");
 		
 		configOutput(GATES_OUTPUT, "Gate");
 		configOutput(CV_OUTPUT, "CV");
@@ -137,6 +145,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		json_object_set_new(rootJ, "ignoreGateOnPitchOut", json_boolean(ignoreGateOnPitchOut));
+		json_object_set_new(rootJ, "velocityAsProbability", json_boolean(velocityAsProbability));
 
 		// gates
 		json_t *gatesJ = json_array();
@@ -163,6 +172,10 @@ struct AbcdSeq : Module,QuantizeUtils {
 		json_t *ignoreGateOnPitchOutJ = json_object_get(rootJ, "ignoreGateOnPitchOut");
 		if (ignoreGateOnPitchOutJ)
 			ignoreGateOnPitchOut = json_is_true(ignoreGateOnPitchOutJ);
+
+		json_t *velocityAsProbabilityJ = json_object_get(rootJ, "velocityAsProbability");
+		if (velocityAsProbabilityJ)
+			velocityAsProbability = json_is_true(velocityAsProbabilityJ);
 
 		// gates
 		json_t *gatesJ = json_object_get(rootJ, "gates");
@@ -221,6 +234,13 @@ struct AbcdSeq : Module,QuantizeUtils {
 		for (int i = 0; i < 32; i++) {
             params[CELL_VEL_PARAM + i].setValue(random::uniform() * 10);
         }
+	}
+
+	void randomizeLengthsOnly(){
+		for (int i = 0; i < 4; i++) {
+			int rndLen = (random::uniform() * 8) + 1;
+			params[LENGTH_KNOB_PARAM + i].setValue(rndLen);
+		}
 	}
 
 	float closestVoltageInScaleWrapper(float voltsIn){
@@ -296,6 +316,35 @@ struct AbcdSeq : Module,QuantizeUtils {
         }
     }
 
+	void randomizeRowNotes(int rowIdx) {
+		if (rowIdx < 0 || rowIdx > 3) {
+			return; // Invalid row index
+		}
+		for (int i = 0; i < 8; i++) {
+			int idx = rowIdx * 8 + i;
+			params[CELL_NOTE_PARAM + idx].setValue(getOneRandomNote());
+		}
+	}
+
+	void copyRowNotes(int rowIdx) {
+		if (rowIdx < 0 || rowIdx > 3) {
+			return; // Invalid row index
+		}
+		for (int i = 0; i < 8; i++) {
+			int idx = rowIdx * 8 + i;
+			clipboard[i] = params[CELL_NOTE_PARAM + idx].getValue();
+		}
+	}
+	void pasteRowNotes(int rowIdx) {
+		if (rowIdx < 0 || rowIdx > 3) {
+			return; // Invalid row index
+		}
+		for (int i = 0; i < 8; i++) {
+			int idx = rowIdx * 8 + i;
+			params[CELL_NOTE_PARAM + idx].setValue(clipboard[i]);
+		}
+	}
+
     int getNewRandomRow(){
         return (int)(random::uniform() * 4); 
     }
@@ -358,6 +407,10 @@ void AbcdSeq::process(const ProcessArgs &args) {
 			randomizeNotesOnly();
 		}
 
+		if (rndLengthsTrigger.process(inputs[RND_LENGTHS_INPUT].getVoltage())) {
+			randomizeLengthsOnly();
+		}
+
 		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage())) {
 			randomizeGateStates();
 		}
@@ -383,6 +436,7 @@ void AbcdSeq::process(const ProcessArgs &args) {
 		}
 		lights[STEPS_LIGHT + index].value = 1.0;
 		gatePulse.trigger(1e-1);
+		rndNumOnClockTick = random::uniform();
 	}
 
 	bool pulse = gatePulse.process(1.0 / args.sampleRate);
@@ -390,20 +444,24 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	//////////////////////////////////////////////////////////////////////////////////////////	
 	// MAIN XY OUT
 	//////////////////////////////////////////////////////////////////////////////////////////	
-
+	
 	// Gate buttons
 	for (int i = 0; i < 32; i++) {
 		if (gateTriggers[i].process(params[CELL_GATE_PARAM + i].getValue())) {
 			gateState[i] = !gateState[i];
 		}
-
+		
 		if(lights[STEPS_LIGHT + i].value > 0){ 
 			lights[STEPS_LIGHT + i].value -= lights[STEPS_LIGHT + i].value / lightLambda / args.sampleRate; 
 		}
 		lights[GATES_LIGHT + i].value = (int)gateState[i];
 	}
-
+	
 	bool gatesOn = (running && gateState[index]);
+	if (velocityAsProbability) {
+		float vel = params[CELL_VEL_PARAM + index].getValue() / 10.0;
+		gatesOn = gatesOn && rndNumOnClockTick < vel;
+	}
 	if (gateMode == TRIGGER) gatesOn = gatesOn && pulse;
 	else if (gateMode == RETRIGGER) gatesOn = gatesOn && !pulse;
 
@@ -442,6 +500,7 @@ struct AbcdSeqWidget : ModuleWidget {
 	std::vector<ParamWidget*> seqKnobs;
 	std::vector<ParamWidget*> divKnobs;
 	std::vector<ParamWidget*> gateButtons;
+	std::vector<ParamWidget*> lengthKnobs;
     OrderTextField* orderTextField;
 	AbcdSeqWidget(AbcdSeq *module);
 	~AbcdSeqWidget(){ 
@@ -519,6 +578,24 @@ struct RandomizeTextButton : TinyButton {
             } else {
 			    s->randomizeTextOnly();
             }
+		}
+	}
+};
+
+struct RandomizeLengthsButton : TinyButton {
+	void onButton(const event::Button &e) override {
+		TinyButton::onButton(e);
+		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
+			AbcdSeqWidget *sw = this->getAncestorOfType<AbcdSeqWidget>();
+			AbcdSeq *s = dynamic_cast<AbcdSeq*>(sw->module);
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			for (int i = 0; i < 4; i++) {
+				if (shiftDown) {
+					sw->lengthKnobs[i]->getParamQuantity()->setValue(4.0);
+				} else {
+					s->randomizeLengthsOnly();
+				}
+			}
 		}
 	}
 };
@@ -604,6 +681,9 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addParam(createParam<RandomizeTextButton>(Vec(304, paramY+10), module, AbcdSeq::RND_TEXT_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(304, 345), module, AbcdSeq::RND_TEXT_INPUT));
 
+	addParam(createParam<RandomizeLengthsButton>(Vec(329, paramY+10), module, AbcdSeq::RND_LENGTHS_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(329, 345), module, AbcdSeq::RND_LENGTHS_INPUT));
+
 	//// MAIN SEQUENCER KNOBS ////
 	double boxSizeX = 61.5;
 	double boxSizeY = 61;
@@ -631,7 +711,9 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 			addChild(createLight<MediumLight<MyBlueValueLight>>(Vec(knobX+26.5, knobY-10.5), module, AbcdSeq::VEL_LIGHT + idx));
             idx++;
         }
-        addParam(createParam<JwSmallSnapKnob>(Vec(knobX + 57, knobY-14), module, AbcdSeq::LENGTH_KNOB_PARAM + y));
+        ParamWidget *lengthKnob = createParam<JwSmallSnapKnob>(Vec(knobX + 57, knobY-14), module, AbcdSeq::LENGTH_KNOB_PARAM + y);
+		addParam(lengthKnob);
+		lengthKnobs.push_back(lengthKnob);
 	    addInput(createInput<TinyPJ301MPort>(Vec(knobX + 85, knobY-9), module, AbcdSeq::LENGTH_INPUT + y));
 
 		addOutput(createOutput<TinyPJ301MPort>(Vec(knobX + 55, knobY+16), module, AbcdSeq::A_GATE_OUTPUT + y));
@@ -644,7 +726,6 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addOutput(createOutput<PJ301MPort>(Vec(467.5, paramY+12), module, AbcdSeq::VEL_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(521, paramY+12), module, AbcdSeq::EOC_OUTPUT));
 };
-
 
 struct AbcdSeqPitchMenuItem : MenuItem {
 	AbcdSeq *abcdSeq;
@@ -676,6 +757,207 @@ struct AbcdSeqPresetItem : MenuItem {
 		abcdSeq->dirty = true;
 	}
 };
+
+struct AbcdSeqRowOrderPresetItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	int presetIndex;
+	void onAction(const event::Action &e) override {
+		abcdSeq->resetMode = true;
+		switch (presetIndex) {
+			case 0: abcdSeq->text = "AbCd"; break;
+			case 1: abcdSeq->text = "AAAB"; break;
+			case 2: abcdSeq->text = "AAABAAACAAAD"; break;
+			case 3: abcdSeq->text = "AaBbCcDd"; break;
+			case 4: abcdSeq->text = "OSSS"; break;
+		}
+		abcdSeq->dirty = true;
+	}
+};
+
+struct PresetChildMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	PresetChildMenuItem() {
+		rightText = "▸";
+		text = "Row Order Text Presets";
+	}
+	Menu* createChildMenu() override {
+		Menu *menu = new Menu;
+		AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
+		presetMenuItem1->text = "AbCd";
+		presetMenuItem1->abcdSeq = abcdSeq;
+		menu->addChild(presetMenuItem1);
+		
+		AbcdSeqPresetItem *presetMenuItem2 = new AbcdSeqPresetItem();
+		presetMenuItem2->text = "AAAB";
+		presetMenuItem2->abcdSeq = abcdSeq;
+		menu->addChild(presetMenuItem2);
+		
+		AbcdSeqPresetItem *presetMenuItem3 = new AbcdSeqPresetItem();
+		presetMenuItem3->text = "AAABAAACAAAD";
+		presetMenuItem3->abcdSeq = abcdSeq;
+		menu->addChild(presetMenuItem3);
+		
+		AbcdSeqPresetItem *presetMenuItem4 = new AbcdSeqPresetItem();
+		presetMenuItem4->text = "AaBbCcDd";
+		presetMenuItem4->abcdSeq = abcdSeq;
+		menu->addChild(presetMenuItem4);
+		
+		AbcdSeqPresetItem *presetMenuItem5 = new AbcdSeqPresetItem();
+		presetMenuItem5->text = "OSSS";
+		presetMenuItem5->abcdSeq = abcdSeq;
+		menu->addChild(presetMenuItem5);
+		return menu;
+	}
+};
+
+struct PossibleCharsMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	PossibleCharsMenuItem() {
+		rightText = "▸";
+		text = "Possible Characters";
+	}
+	Menu* createChildMenu() override {
+		Menu *menu = new Menu;
+		MenuLabel *helpLabel2 = new MenuLabel();
+		helpLabel2->text = "A, B, C, D will jump to those rows";
+		menu->addChild(helpLabel2);
+
+		MenuLabel *helpLabel3 = new MenuLabel();
+		helpLabel3->text = "O will jump to any other row";
+		menu->addChild(helpLabel3);
+
+		MenuLabel *helpLabel4 = new MenuLabel();
+		helpLabel4->text = "R will jump to any row";
+		menu->addChild(helpLabel4);
+
+		MenuLabel *helpLabel5 = new MenuLabel();
+		helpLabel5->text = "S will repeat last row";
+		menu->addChild(helpLabel5);
+
+		MenuLabel *helpLabel6 = new MenuLabel();
+		helpLabel6->text = "Upper case forwards and lower case backwards.";
+		menu->addChild(helpLabel6);
+		return menu;
+	}
+};
+
+struct RandomizeRowMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	int row;
+	RandomizeRowMenuItem(int rowIdx) {
+		this->row = rowIdx;
+	}
+	void onAction(const event::Action &e) override {
+		if (abcdSeq) {
+			abcdSeq->randomizeRowNotes(row);
+		}
+	}
+};
+
+struct RandomizeMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	RandomizeMenuItem() {
+		rightText = "▸";
+		text = "Randomize Notes";
+	}
+	Menu* createChildMenu() override {
+		Menu *menu = new Menu;
+		RandomizeRowMenuItem *item0 = new RandomizeRowMenuItem(0);
+		item0->text = "Row A";
+		item0->abcdSeq = abcdSeq;
+		menu->addChild(item0);
+
+		RandomizeRowMenuItem *item1 = new RandomizeRowMenuItem(1);
+		item1->text = "Row B";
+		item1->abcdSeq = abcdSeq;
+		menu->addChild(item1);
+
+		RandomizeRowMenuItem *item2 = new RandomizeRowMenuItem(2);
+		item2->text = "Row C";
+		item2->abcdSeq = abcdSeq;
+		menu->addChild(item2);
+
+		RandomizeRowMenuItem *item3 = new RandomizeRowMenuItem(3);
+		item3->text = "Row D";
+		item3->abcdSeq = abcdSeq;
+		menu->addChild(item3);
+		return menu;
+	}
+};
+
+struct CopyRowMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	int row;
+	CopyRowMenuItem(int rowIdx) {
+		this->row = rowIdx;
+	}
+	void onAction(const event::Action &e) override {
+		if (abcdSeq) {
+			abcdSeq->copyRowNotes(row);
+		}
+	}
+};
+
+struct CopyMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	CopyMenuItem() {
+		rightText = "▸";
+		text = "Copy Row";
+	}
+	Menu* createChildMenu() override {
+		Menu *menu = new Menu;
+		for (int i = 0; i < 4; i++) {
+			CopyRowMenuItem *item = new CopyRowMenuItem(i);
+			item->text = "Row " + std::string(1, 'A' + i);
+			item->abcdSeq = abcdSeq;
+			menu->addChild(item);
+		}
+		return menu;
+	}
+};
+
+struct PasteRowMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	int row;
+	PasteRowMenuItem(int rowIdx) {
+		this->row = rowIdx;
+	}
+	void onAction(const event::Action &e) override {
+		if (abcdSeq) {
+			abcdSeq->pasteRowNotes(row);
+		}
+	}
+};
+
+struct PasteMenuItem : MenuItem {
+	AbcdSeq *abcdSeq;
+	PasteMenuItem() {
+		rightText = "▸";
+		text = "Paste Row";
+	}
+	Menu* createChildMenu() override {
+		Menu *menu = new Menu;
+		for (int i = 0; i < 4; i++) {
+			PasteRowMenuItem *item = new PasteRowMenuItem(i);
+			item->text = "Row " + std::string(1, 'A' + i);
+			item->abcdSeq = abcdSeq;
+			menu->addChild(item);
+		}
+		return menu;
+	}
+};
+
+struct VelocityAsProbabilitytem : MenuItem {
+	AbcdSeq *abcdSeq;
+	void onAction(const event::Action &e) override {
+		abcdSeq->velocityAsProbability = !abcdSeq->velocityAsProbability;
+	}
+	void step() override {
+		rightText = (abcdSeq->velocityAsProbability) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
 
 void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -712,63 +994,30 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-    MenuLabel *helpLabel = new MenuLabel();
-	helpLabel->text = "Possible characters";
-	menu->addChild(helpLabel);
+	PossibleCharsMenuItem *possibleCharsMenuItem = new PossibleCharsMenuItem();
+	possibleCharsMenuItem->abcdSeq = abcdSeq;
+	menu->addChild(possibleCharsMenuItem);
 
-    MenuLabel *helpLabel2 = new MenuLabel();
-	helpLabel2->text = "A, B, C, D will jump to those rows";
-	menu->addChild(helpLabel2);
+	PresetChildMenuItem *presetMenuItem = new PresetChildMenuItem();
+	presetMenuItem->abcdSeq = abcdSeq;
+	menu->addChild(presetMenuItem);
 
-    MenuLabel *helpLabel3 = new MenuLabel();
-	helpLabel3->text = "O will jump to any other row";
-	menu->addChild(helpLabel3);
+	RandomizeMenuItem *randomizeMenuItem = new RandomizeMenuItem();
+	randomizeMenuItem->abcdSeq = abcdSeq;
+	menu->addChild(randomizeMenuItem);
 
-    MenuLabel *helpLabel4 = new MenuLabel();
-	helpLabel4->text = "R will jump to any row";
-	menu->addChild(helpLabel4);
+	CopyMenuItem *copyMenuItem = new CopyMenuItem();
+	copyMenuItem->abcdSeq = abcdSeq;
+	menu->addChild(copyMenuItem);
+	
+	PasteMenuItem *pasteMenuItem = new PasteMenuItem();
+	pasteMenuItem->abcdSeq = abcdSeq;
+	menu->addChild(pasteMenuItem);
 
-    MenuLabel *helpLabel5 = new MenuLabel();
-	helpLabel5->text = "S will repeat last row";
-	menu->addChild(helpLabel5);
-
-    MenuLabel *helpLabel6 = new MenuLabel();
-	helpLabel6->text = "Upper case forwards and lower case backwards.";
-	menu->addChild(helpLabel6);
-
-	MenuLabel *spacerLabel3 = new MenuLabel();
-	menu->addChild(spacerLabel3);
-
-    MenuLabel *helpLabel7 = new MenuLabel();
-	helpLabel7->text = "Row Order Presets";
-	menu->addChild(helpLabel7);
-
-	AbcdSeqPresetItem *presetMenuItem1 = new AbcdSeqPresetItem();
-	presetMenuItem1->text = "AbCd";
-	presetMenuItem1->abcdSeq = abcdSeq;
-	menu->addChild(presetMenuItem1);
-
-	AbcdSeqPresetItem *presetMenuItem2 = new AbcdSeqPresetItem();
-	presetMenuItem2->text = "AAAB";
-	presetMenuItem2->abcdSeq = abcdSeq;
-	menu->addChild(presetMenuItem2);
-
-	AbcdSeqPresetItem *presetMenuItem3 = new AbcdSeqPresetItem();
-	presetMenuItem3->text = "AAABAAACAAAD";
-	presetMenuItem3->abcdSeq = abcdSeq;
-	menu->addChild(presetMenuItem3);
-
-	AbcdSeqPresetItem *presetMenuItem4 = new AbcdSeqPresetItem();
-	presetMenuItem4->text = "AaBbCcDd";
-	presetMenuItem4->abcdSeq = abcdSeq;
-	menu->addChild(presetMenuItem4);
-
-	AbcdSeqPresetItem *presetMenuItem5 = new AbcdSeqPresetItem();
-	presetMenuItem5->text = "OSSS";
-	presetMenuItem5->abcdSeq = abcdSeq;
-	menu->addChild(presetMenuItem5);
-
-
+	VelocityAsProbabilitytem *velocityAsProbabilityItem = new VelocityAsProbabilitytem();
+	velocityAsProbabilityItem->abcdSeq = abcdSeq;
+	velocityAsProbabilityItem->text = "Velocity as Probability";
+	menu->addChild(velocityAsProbabilityItem);
 }
 
 
