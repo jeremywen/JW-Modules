@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.1 ~ 11-29-25
+
+  * Bouncy Balls: fixed edge hit trigger
+
 ## v2.0.16 ~ 6-8-25
 
   * AbcdSeq: added poly out to get 4 channels of cv out per column

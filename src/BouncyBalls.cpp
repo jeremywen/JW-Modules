@@ -14,7 +14,7 @@ struct Ball {
 	Rect previousBox;
 	Vec vel;
 	dsp::SchmittTrigger resetTrigger, bumpTrigger;
-	dsp::PulseGenerator northPulse, eastPulse, southPulse, westPulse, paddlePulse;
+	dsp::PulseGenerator northPulse, eastPulse, southPulse, westPulse, paddlePulse, edgePulse;
 	NVGcolor color;
 	void setPosition(float x, float y){
 		previousBox.pos.x = box.pos.x;
@@ -220,24 +220,28 @@ void BouncyBalls::process(const ProcessArgs &args) {
 		if(b.box.pos.x + b.box.size.x >= displayWidth){
 			b.vel.x *= -1;
 			b.eastPulse.trigger(1e-3);
+			b.edgePulse.trigger(1e-3);
 			hitEdge = true;
 		}
 
 		if(b.box.pos.x <= 0){
 			b.vel.x *= -1;
 			b.westPulse.trigger(1e-3);
+			b.edgePulse.trigger(1e-3);
 			hitEdge = true;
 		}
 
 		if(b.box.pos.y + b.box.size.y >= displayHeight){
 			b.vel.y *= -1;
 			b.southPulse.trigger(1e-3);
+			b.edgePulse.trigger(1e-3);
 			hitEdge = true;
 		}
 
 		if(b.box.pos.y <= 0){
 			b.vel.y *= -1;
 			b.northPulse.trigger(1e-3);
+			b.edgePulse.trigger(1e-3);
 			hitEdge = true;
 		}
 
@@ -248,14 +252,30 @@ void BouncyBalls::process(const ProcessArgs &args) {
 			paddle.box.pos.y = clampfjw(rescalefjw(inputs[PAD_POS_Y_INPUT].getVoltage(), -5, 5, 0, displayHeight - 10), 0, displayHeight - 10);
 		}
 
-		if(outputs[X_OUTPUT + i].isConnected())outputs[X_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].getValue()) * params[SCALE_X_PARAM].getValue());
-		if(outputs[Y_OUTPUT + i].isConnected())outputs[Y_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].getValue()) * params[SCALE_Y_PARAM].getValue());//y is inverted because gui coords
-		if(outputs[N_OUTPUT + i].isConnected())outputs[N_OUTPUT + i].setVoltage(b.northPulse.process(rate) ? 10.0 : 0.0);
-		if(outputs[E_OUTPUT + i].isConnected())outputs[E_OUTPUT + i].setVoltage(b.eastPulse.process(rate) ? 10.0 : 0.0);
-		if(outputs[S_OUTPUT + i].isConnected())outputs[S_OUTPUT + i].setVoltage(b.southPulse.process(rate) ? 10.0 : 0.0);
-		if(outputs[W_OUTPUT + i].isConnected())outputs[W_OUTPUT + i].setVoltage(b.westPulse.process(rate) ? 10.0 : 0.0);
-		if(outputs[EDGE_HIT_OUTPUT + i].isConnected())outputs[EDGE_HIT_OUTPUT + i].setVoltage(hitEdge ? 10.0 : 0.0);
-		if(outputs[PAD_TRIG_OUTPUT + i].isConnected())outputs[PAD_TRIG_OUTPUT + i].setVoltage(b.paddlePulse.process(rate) ? 10.0 : 0.0);
+		if(outputs[X_OUTPUT + i].isConnected()) {
+			outputs[X_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.x, 0, displayWidth, minVolt, maxVolt) + params[OFFSET_X_VOLTS_PARAM].getValue()) * params[SCALE_X_PARAM].getValue());
+		}	
+		if(outputs[Y_OUTPUT + i].isConnected()) {
+			outputs[Y_OUTPUT + i].setVoltage((rescalefjw(b.box.pos.y, 0, displayHeight, maxVolt, minVolt) + params[OFFSET_Y_VOLTS_PARAM].getValue()) * params[SCALE_Y_PARAM].getValue());//y is inverted because gui coords
+		}	
+		if(outputs[N_OUTPUT + i].isConnected()) {
+			outputs[N_OUTPUT + i].setVoltage(b.northPulse.process(rate) ? 10.0 : 0.0);
+		}
+		if(outputs[E_OUTPUT + i].isConnected()) {
+			outputs[E_OUTPUT + i].setVoltage(b.eastPulse.process(rate) ? 10.0 : 0.0);
+		}
+		if(outputs[S_OUTPUT + i].isConnected()) {
+			outputs[S_OUTPUT + i].setVoltage(b.southPulse.process(rate) ? 10.0 : 0.0);
+		}
+		if(outputs[W_OUTPUT + i].isConnected()) {
+			outputs[W_OUTPUT + i].setVoltage(b.westPulse.process(rate) ? 10.0 : 0.0);
+		}
+		if(outputs[EDGE_HIT_OUTPUT + i].isConnected()) {
+			outputs[EDGE_HIT_OUTPUT + i].setVoltage(b.edgePulse.process(rate) ? 10.0 : 0.0);
+		}
+		if(outputs[PAD_TRIG_OUTPUT + i].isConnected()) {
+			outputs[PAD_TRIG_OUTPUT + i].setVoltage(b.paddlePulse.process(rate) ? 10.0 : 0.0);
+		}
 
 		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].getValue() + inputs[SPEED_MULT_INPUT + i].getVoltage()));
 		b.setPosition(
