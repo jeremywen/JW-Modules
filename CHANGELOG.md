@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.1 ~ 11-29-25
+## v2.0.17 ~ 11-29-25
 
   * Bouncy Balls: fixed edge hit trigger
 
