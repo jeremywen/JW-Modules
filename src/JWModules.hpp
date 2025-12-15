@@ -428,6 +428,10 @@ extern Model *modelBlankPanelLarge;
 extern Model *modelCoolBreeze;
 extern Model *modelPete;
 extern Model *modelTimer;
+extern Model *modelShiftRegRnd;
+extern Model *modelBuffer;
+extern Model *modelRandomSound;
+extern Model *modelStereoSwitch;
 
 inline int clampijw(int x, int minimum, int maximum) {
 	return clamp(x, minimum, maximum);

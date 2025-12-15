@@ -46,4 +46,8 @@ void init(rack::Plugin *p) {
 	p->addModel(modelCoolBreeze);
 	p->addModel(modelPete);
 	p->addModel(modelTimer);
+	p->addModel(modelShiftRegRnd);
+	p->addModel(modelBuffer);
+	p->addModel(modelRandomSound);
+	p->addModel(modelStereoSwitch);
 }

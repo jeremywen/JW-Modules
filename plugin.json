@@ -55,6 +55,30 @@
 			"tags": ["Utility", "Poly"]
 		},
 		{
+			"slug": "Buffer",
+			"name": "Buffer",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Effect", "Delay"]
+		},
+		{
+			"slug": "RandomSound",
+			"name": "Random Sound",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Oscillator", "Random"]
+		},
+		{
+			"slug": "ShiftRegRnd",
+			"name": "Shift Register Random",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Utility", "Poly"]
+		},
+		{
+			"slug": "StereoSwitch",
+			"name": "Weighted Random Stereo Switch",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Utility"]
+		},
+		{
 			"slug": "Arrange",
 			"name": "Arrange",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
