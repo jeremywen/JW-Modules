@@ -82,26 +82,41 @@ struct ThingThingDisplay : LightWidget {
 			nvgScissor(args.vg, RECT_ARGS(box));
 
 
-			if(module == NULL) return;
 
-			float ballRadius = module->params[ThingThing::BALL_RAD_PARAM].getValue();
-			if(module->inputs[ThingThing::BALL_RAD_INPUT].isConnected()){
+			// Show a sensible preview in the browser when module is null
+			bool haveModule = module != NULL;
+
+			float ballRadius = haveModule ? module->params[ThingThing::BALL_RAD_PARAM].getValue() : 5.0f;
+			if(haveModule && module->inputs[ThingThing::BALL_RAD_INPUT].isConnected()){
 				ballRadius += rescalefjw(module->inputs[ThingThing::BALL_RAD_INPUT].getVoltage(), -5.0, 5.0, 0.0, 30.0);
 			}
 
-			float zoom = module->params[ThingThing::ZOOM_MULT_PARAM].getValue();
-			if(module->inputs[ThingThing::ZOOM_MULT_INPUT].isConnected()){
+			float zoom = haveModule ? module->params[ThingThing::ZOOM_MULT_PARAM].getValue() : 50.0f;
+			if(haveModule && module->inputs[ThingThing::ZOOM_MULT_INPUT].isConnected()){
 				zoom += rescalefjw(module->inputs[ThingThing::ZOOM_MULT_INPUT].getVoltage(), -5.0, 5.0, 1.0, 50.0);
 			}
 
 			float x[5];
 			float y[5];
 			float angle[5];
-
+			// Default angles for browser preview (in -5..5 CV space)
+			const float defAng[5] = {0.0f, -2.5f, 1.5f, -1.2f, 0.9f};
 			for(int i=0; i<5; i++){
-				angle[i] = i==0 ? 0 : (module->inputs[ThingThing::ANG_INPUT+i].getVoltage() + angle[i-1]) * module->atten[i];
-					x[i] = i==0 ? 0 : sinf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
-					y[i] = i==0 ? 0 : cosf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+				if(i == 0){
+					angle[i] = 0.0f;
+					x[i] = 0.0f;
+					y[i] = 0.0f;
+					continue;
+				}
+				float a;
+				if(haveModule){
+					a = (module->inputs[ThingThing::ANG_INPUT+i].getVoltage() + angle[i-1]) * module->atten[i];
+				} else {
+					a = angle[i-1] + defAng[i];
+				}
+				angle[i] = a;
+				x[i] = sinf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
+				y[i] = cosf(rescalefjw(angle[i], -5, 5, -2*M_PI + M_PI/2.0f, 2*M_PI + M_PI/2.0f)) * zoom;
 			}
 
 			/////////////////////// LINES ///////////////////////
@@ -123,10 +138,18 @@ struct ThingThingDisplay : LightWidget {
 			/////////////////////// BALLS ///////////////////////
 			nvgSave(args.vg);
 			nvgTranslate(args.vg, box.size.x * 0.5, box.size.y * 0.5);
+			NVGcolor fallbackColors[5] = {
+				nvgRGB(255, 255, 255),
+				nvgRGB(255, 151, 9),
+				nvgRGB(255, 243, 9),
+				nvgRGB(144, 26, 252),
+				nvgRGB(25, 150, 252)
+			};
 			for(int i=0; i<5; i++){
 				nvgTranslate(args.vg, x[i], y[i]);
-				nvgStrokeColor(args.vg, module->balls[i].color);
-				nvgFillColor(args.vg, module->balls[i].color);
+				NVGcolor col = haveModule ? module->balls[i].color : fallbackColors[i];
+				nvgStrokeColor(args.vg, col);
+				nvgFillColor(args.vg, col);
 				nvgStrokeWidth(args.vg, 2);
 				nvgBeginPath(args.vg);
 				nvgCircle(args.vg, 0, 0, ballRadius);

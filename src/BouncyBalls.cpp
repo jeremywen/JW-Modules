@@ -212,19 +212,45 @@ void BouncyBalls::process(const ProcessArgs &args) {
 			b.vel = b.vel.plus(velocity.mult(velScale));
 		}
 
-		if(paddle.visible && b.box.intersects(paddle.box)){
-			
-			if(b.previousBox.getBottomRight().y < paddle.box.getTopRight().y || //ball was above
-			   b.previousBox.getTopRight().y > paddle.box.getBottomRight().y){ //ball was below
-				b.vel.y *= -1;
+		// Paddle collision: circle-rect response with reflection and separation
+		if (paddle.visible) {
+			Vec c = b.box.getCenter();
+			float rx0 = paddle.box.pos.x;
+			float ry0 = paddle.box.pos.y;
+			float rx1 = rx0 + paddle.box.size.x;
+			float ry1 = ry0 + paddle.box.size.y;
+			float qx = clampfjw(c.x, rx0, rx1);
+			float qy = clampfjw(c.y, ry0, ry1);
+			float dx = c.x - qx;
+			float dy = c.y - qy;
+			float r = ballRadius; // collision radius (visual stroke ignored)
+			float dist2 = dx*dx + dy*dy;
+			if (dist2 <= r*r) {
+				float dist = std::sqrt(dist2);
+				float nx, ny;
+				if (dist > 0.0001f) {
+					nx = dx / dist;
+					ny = dy / dist;
+				} else {
+					// Use velocity direction as fallback for normal
+					if (std::fabs(b.vel.x) > std::fabs(b.vel.y)) {
+						nx = (b.vel.x >= 0.f) ? 1.f : -1.f; ny = 0.f;
+					} else {
+						nx = 0.f; ny = (b.vel.y >= 0.f) ? 1.f : -1.f;
+					}
+				}
+				// Separate the ball out of the paddle by penetration depth
+				float penetration = r - dist + 0.5f; // small bias to prevent sticking
+				c.x += nx * penetration;
+				c.y += ny * penetration;
+				b.box.pos.x = c.x - b.box.size.x * 0.5f;
+				b.box.pos.y = c.y - b.box.size.y * 0.5f;
+				// Reflect velocity across collision normal
+				float dot = b.vel.x * nx + b.vel.y * ny;
+				b.vel.x = b.vel.x - 2.f * dot * nx;
+				b.vel.y = b.vel.y - 2.f * dot * ny;
+				b.paddlePulse.trigger(gatePulseLenSec);
 			}
-
-			if(b.previousBox.getBottomRight().x < paddle.box.getBottomLeft().x || //ball was left
-			   b.previousBox.getBottomLeft().x > paddle.box.getBottomRight().x){ //ball was right
-				b.vel.x *= -1;
-			}
-
-			b.paddlePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.x + b.box.size.x >= displayWidth){
@@ -281,6 +307,27 @@ void BouncyBalls::process(const ProcessArgs &args) {
 		}
 		if(outputs[PAD_TRIG_OUTPUT + i].isConnected()) {
 			outputs[PAD_TRIG_OUTPUT + i].setVoltage(b.paddlePulse.process(rate) ? 10.0 : 0.0);
+		}
+
+		// Resolve ball-ball collisions: update velocities only, no triggers
+		for (int j = i + 1; j < 4; j++) {
+			Ball &b2 = balls[j];
+			Vec p1 = b.box.getCenter();
+			Vec p2 = b2.box.getCenter();
+			float dx = p1.x - p2.x;
+			float dy = p1.y - p2.y;
+			float dist2 = dx * dx + dy * dy;
+			float minDist = ballRadius * 2.0f;
+			float minDist2 = minDist * minDist;
+			if (dist2 > 0.0f && dist2 <= minDist2) {
+				// Equal-mass elastic collision: exchange normal components
+				Vec dp = Vec(dx, dy);
+				Vec dv = Vec(b.vel.x - b2.vel.x, b.vel.y - b2.vel.y);
+				float factor = (dv.x * dp.x + dv.y * dp.y) / dist2;
+				Vec impulse = dp.mult(factor);
+				b.vel = b.vel.plus(Vec(-impulse.x, -impulse.y));
+				b2.vel = b2.vel.plus(impulse);
+			}
 		}
 
 		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].getValue() + inputs[SPEED_MULT_INPUT + i].getVoltage()));
@@ -343,7 +390,41 @@ struct BouncyBallDisplay : LightWidget {
 					nvgStroke(args.vg);
 				}
 			} else {
-				//TODO maybe draw some balls and a paddle in preview
+				// Draw a simple preview with a paddle and 4 colored balls when module is null
+				float ballRadius = 10.0f;
+				float stroke = 2.0f;
+				// Paddle centered near bottom
+				float padW = 100.0f;
+				float padH = 10.0f;
+				float padX = (box.size.x - padW) * 0.5f;
+				float padY = box.size.y - 30.0f;
+				nvgFillColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgRect(args.vg, padX, padY, padW, padH);
+				nvgFill(args.vg);
+				// Ball colors matching module defaults
+				NVGcolor colors[4] = {
+					nvgRGB(255, 151, 9),
+					nvgRGB(255, 243, 9),
+					nvgRGB(144, 26, 252),
+					nvgRGB(25, 150, 252)
+				};
+				// Arrange balls horizontally centered near middle
+				int nBalls = 4;
+				float spacing = ballRadius * 3.0f;
+				float totalSpan = spacing * (nBalls - 1);
+				float startX = (box.size.x * 0.5f) - (totalSpan * 0.5f);
+				float y = box.size.y * 0.45f;
+				for(int i=0; i<4; i++){
+					float x = startX + i * spacing;
+					nvgFillColor(args.vg, colors[i]);
+					nvgStrokeColor(args.vg, colors[i]);
+					nvgStrokeWidth(args.vg, stroke);
+					nvgBeginPath(args.vg);
+					nvgCircle(args.vg, x, y, ballRadius);
+					nvgFill(args.vg);
+					nvgStroke(args.vg);
+				}
 			}
 		}
 		Widget::drawLayer(args, layer);

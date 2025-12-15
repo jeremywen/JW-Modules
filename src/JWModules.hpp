@@ -345,6 +345,14 @@ struct TinyButton : SVGSwitch {
 	}
 };
 
+struct TinierButton : SVGSwitch {
+	TinierButton() {
+		momentary = true;
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinierButtonUp.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/TinierButtonDown.svg")));
+	}
+};
+
 struct SmallButton : SVGSwitch {
 	SmallButton() {
 		momentary = true;
@@ -395,43 +403,43 @@ struct HairballScrew : SVGWidget {
 
 ////////////////////////////////////////////// WIDGETS //////////////////////////////////////////////
 
-extern Model *modelAdd5;
 extern Model *modelAbcdSeq;
+extern Model *modelAdd5;
 extern Model *modelArrange;
 extern Model *modelArrange16;
+extern Model *modelBlankPanel1hp;
+extern Model *modelBlankPanelLarge;
+extern Model *modelBlankPanelMedium;
+extern Model *modelBlankPanelSmall;
 extern Model *modelBouncyBalls;
-extern Model *modelSimpleClock;
-extern Model *modelStr1ker;
+extern Model *modelBuffer;
+extern Model *modelCat;
+extern Model *modelCoolBreeze;
 extern Model *modelD1v1de;
-extern Model *modelPres1t;
-extern Model *modelMinMax;
-extern Model *modelQuantizer;
-extern Model *modelNoteSeq;
-extern Model *modelNoteSeqFu;
-extern Model *modelNoteSeq16;
-extern Model *modelOnePattern;
-extern Model *modelPatterns;
-extern Model *modelWavHead;
-extern Model *modelXYPad;
+extern Model *modelDivSeq;
+extern Model *modelEightSeq;
 extern Model *modelFullScope;
 extern Model *modelGridSeq;
-extern Model *modelEightSeq;
-extern Model *modelDivSeq;
+extern Model *modelMinMax;
+extern Model *modelNoteSeq;
+extern Model *modelNoteSeq16;
+extern Model *modelNoteSeqFu;
+extern Model *modelOnePattern;
+extern Model *modelPatterns;
+extern Model *modelPete;
+extern Model *modelPres1t;
+extern Model *modelQuantizer;
+extern Model *modelRandomSound;
+extern Model *modelShiftRegRnd;
+extern Model *modelSimpleClock;
+extern Model *modelStereoSwitch;
+extern Model *modelStr1ker;
 extern Model *modelThingThing;
-extern Model *modelCat;
+extern Model *modelTimer;
 extern Model *modelTree;
 extern Model *modelTrigs;
-extern Model *modelBlankPanel1hp;
-extern Model *modelBlankPanelSmall;
-extern Model *modelBlankPanelMedium;
-extern Model *modelBlankPanelLarge;
-extern Model *modelCoolBreeze;
-extern Model *modelPete;
-extern Model *modelTimer;
-extern Model *modelShiftRegRnd;
-extern Model *modelBuffer;
-extern Model *modelRandomSound;
-extern Model *modelStereoSwitch;
+extern Model *modelWavHead;
+extern Model *modelXYPad;
 
 inline int clampijw(int x, int minimum, int maximum) {
 	return clamp(x, minimum, maximum);

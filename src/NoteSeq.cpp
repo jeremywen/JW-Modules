@@ -239,6 +239,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		resetSeq();
 		resetMode = true;
 		clearCells();
+		lifeCounter = 0;
 	}
 
 	void onSampleRateChange() override {
@@ -321,6 +322,7 @@ struct NoteSeq : Module,QuantizeUtils {
 
 		if (resetTrig.process(params[RESET_BTN_PARAM].getValue() + inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
+			lifeCounter = 0;
 		}
 
 		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + params[STEP_BTN_PARAM].getValue())) {

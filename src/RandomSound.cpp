@@ -186,10 +186,10 @@ struct RandomSound : Module {
 		if (json_t *x = json_object_get(rootJ, "ampDecay")) params[AMP_DECAY_PARAM].setValue(clamp((float)json_real_value(x), 0.001f, 1.0f));
 		if (json_t *x = json_object_get(rootJ, "feedbackMax")) params[FEEDBACK_PARAM].setValue(clamp((float)json_real_value(x), 0.0f, 1.0f));
 		if (json_t *voicesJ = json_object_get(rootJ, "voices")) {
-			int i = 0;
+			size_t i = 0;
 			json_t *vj;
 			json_array_foreach(voicesJ, i, vj) {
-				if (i >= 16) break;
+				if (i >= (size_t)16) break;
 				Voice &v = voices[i];
 				if (json_t *x = json_object_get(vj, "freq")) v.freq = json_real_value(x);
 				if (json_t *x = json_object_get(vj, "phase")) v.phase = json_real_value(x);

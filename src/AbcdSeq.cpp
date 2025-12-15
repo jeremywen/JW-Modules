@@ -19,7 +19,9 @@ struct AbcdSeq : Module,QuantizeUtils {
 		LENGTH_KNOB_PARAM,
 		RESET_PARAM = LENGTH_KNOB_PARAM + 4,
 		RND_LENGTHS_PARAM,
-		NUM_PARAMS
+			RND_ROW_PARAM,
+		RND_COL_PARAM = RND_ROW_PARAM + 4,
+		NUM_PARAMS = RND_COL_PARAM + 8
 	};
 	enum InputIds {
 		RESET_INPUT,
@@ -106,6 +108,13 @@ struct AbcdSeq : Module,QuantizeUtils {
 		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities\n(Shift + Click to Init Defaults)");
 		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text\n(Shift + Click to Init Defaults)");
 		configParam(RND_LENGTHS_PARAM, 0.0, 1.0, 0.0, "Random Lengths\n(Shift + Click to Init Defaults)");
+				// Row/Column randomize buttons (parameters to attach UI buttons)
+				for (int y = 0; y < 4; y++) {
+					configParam(RND_ROW_PARAM + y, 0.0, 1.0, 0.0, std::string("Randomize Row ") + char('A' + y));
+				}
+				for (int x = 0; x < 8; x++) {
+					configParam(RND_COL_PARAM + x, 0.0, 1.0, 0.0, std::string("Randomize Column ") + std::to_string(x + 1));
+				}
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		configParam(RESET_PARAM, 0.0, 1.0, 0.0, "Reset");
@@ -619,6 +628,50 @@ struct RandomizeTextButton : TinyButton {
 	}
 };
 
+// Randomize a single row's notes
+struct RandomizeRowNotesButton : TinierButton {
+	int row = 0;
+	void onButton(const event::Button &e) override {
+		TinierButton::onButton(e);
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
+			AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
+			if (!mod) return;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			for (int x = 0; x < 8; x++) {
+				int idx = row * 8 + x;
+				if (shiftDown) {
+					wid->seqKnobs[idx]->getParamQuantity()->setValue(3);
+				} else {
+					wid->seqKnobs[idx]->getParamQuantity()->setValue(mod->getOneRandomNote());
+				}
+			}
+		}
+	}
+};
+
+// Randomize a single column's notes
+struct RandomizeColNotesButton : TinierButton {
+	int col = 0;
+	void onButton(const event::Button &e) override {
+		TinierButton::onButton(e);
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
+			AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
+			if (!mod) return;
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			for (int r = 0; r < 4; r++) {
+				int idx = r * 8 + col;
+				if (shiftDown) {
+					wid->seqKnobs[idx]->getParamQuantity()->setValue(3);
+				} else {
+					wid->seqKnobs[idx]->getParamQuantity()->setValue(mod->getOneRandomNote());
+				}
+			}
+		}
+	}
+};
+
 struct RandomizeLengthsButton : TinyButton {
 	void onButton(const event::Button &e) override {
 		TinyButton::onButton(e);
@@ -668,13 +721,13 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	///// CLOCK /////
-	addInput(createInput<PJ301MPort>(Vec(130, 26), module, AbcdSeq::CLOCK_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(132, 26), module, AbcdSeq::CLOCK_INPUT));
 
 	///// RESET /////
-	addInput(createInput<PJ301MPort>(Vec(168, 26), module, AbcdSeq::RESET_INPUT));
-	addParam(createParam<TinyButton>(Vec(197, 31), module, AbcdSeq::RESET_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(178, 26), module, AbcdSeq::RESET_INPUT));
+	addParam(createParam<TinyButton>(Vec(192, 26), module, AbcdSeq::RESET_PARAM));
 
-    OrderDisplay* orderDisplay = createWidget<OrderDisplay>(Vec(250, 20));
+	OrderDisplay* orderDisplay = createWidget<OrderDisplay>(Vec(250, 15));
     orderDisplay->box.size = Vec(344, 30);
     orderDisplay->setModule(module);
     orderTextField = orderDisplay->textField;
@@ -725,9 +778,21 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	double boxSizeX = 61.5;
 	double boxSizeY = 61;
     int idx = 0;
+
+	// Column randomize buttons above grid
+	for (int x = 0; x < 8; x++) {
+		int knobX = x * boxSizeX + 60;
+		RandomizeColNotesButton* cbtn = createParam<RandomizeColNotesButton>(Vec(knobX + 12, 48), module, AbcdSeq::RND_COL_PARAM + x);
+		cbtn->col = x;
+		addParam(cbtn);
+	}
 	for (int y = 0; y < 4; y++) {
         int knobX = 0;
-        int knobY = y * boxSizeY + 80;
+        int knobY = y * boxSizeY + 78;
+		// Row randomize button next to each row
+		RandomizeRowNotesButton* rbtn = createParam<RandomizeRowNotesButton>(Vec(42, knobY), module, AbcdSeq::RND_ROW_PARAM + y);
+		rbtn->row = y;
+		addParam(rbtn);
 		for (int x = 0; x < 8; x++) {
 			knobX = x * boxSizeX + 60;
 
@@ -1076,9 +1141,7 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	presetMenuItem->abcdSeq = abcdSeq;
 	menu->addChild(presetMenuItem);
 
-	RandomizeMenuItem *randomizeMenuItem = new RandomizeMenuItem();
-	randomizeMenuItem->abcdSeq = abcdSeq;
-	menu->addChild(randomizeMenuItem);
+	// Removed context-menu randomize notes; use row/column buttons on panel
 
 	CopyMenuItem *copyMenuItem = new CopyMenuItem();
 	copyMenuItem->abcdSeq = abcdSeq;

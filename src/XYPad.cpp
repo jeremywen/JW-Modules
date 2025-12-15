@@ -267,12 +267,22 @@ struct XYPad : Module {
 	}
 
 	void dataFromJson(json_t *rootJ) override {
-		lastRandomShape = json_integer_value(json_object_get(rootJ, "lastRandomShape"));
-		curPlayMode = json_integer_value(json_object_get(rootJ, "curPlayMode"));
+		// Clear current state before loading
+		setState(STATE_IDLE);
+		points.clear();
+
+		json_t *lastRandomShapeJ = json_object_get(rootJ, "lastRandomShape");
+		if (lastRandomShapeJ) lastRandomShape = json_integer_value(lastRandomShapeJ);
+		json_t *curPlayModeJ = json_object_get(rootJ, "curPlayMode");
+		if (curPlayModeJ) curPlayMode = json_integer_value(curPlayModeJ);
 
 		json_t *xPosJ = json_object_get(rootJ, "xPos");
 		json_t *yPosJ = json_object_get(rootJ, "yPos");
-		setCurrentPos(json_real_value(xPosJ), json_real_value(yPosJ));
+		if (xPosJ && yPosJ) {
+			setCurrentPos(json_real_value(xPosJ), json_real_value(yPosJ));
+		} else {
+			defaultPos();
+		}
 
 		json_t *array = json_object_get(rootJ, "points");
 		if(array){
@@ -286,12 +296,14 @@ struct XYPad : Module {
 		}
 
 		json_t *autoPlayOnJ = json_object_get(rootJ, "autoPlayOn");
-		if (autoPlayOnJ){
-			autoPlayOn = json_is_true(autoPlayOnJ);
-		}
+		autoPlayOn = autoPlayOnJ ? json_is_true(autoPlayOnJ) : false;
 		lights[AUTO_LIGHT].value = autoPlayOn ? 1.0 : 0.0;
 		params[AUTO_PLAY_PARAM].setValue(autoPlayOn ? 1 : 0);
-		if(autoPlayOn){setState(STATE_AUTO_PLAYING);}
+		if(autoPlayOn){
+			setState(STATE_AUTO_PLAYING);
+		} else {
+			setState(STATE_IDLE);
+		}
 	}
 
 	void defaultPos() {
@@ -470,6 +482,122 @@ struct XYPadDisplay : LightWidget {
 	XYPadDisplay() {}
 	Vec dragPos;
 
+	// Cached random preview when module == NULL
+	bool previewInit = false;
+	std::vector<Vec> previewPoints;
+	float previewBallRadius = 8.0f;
+	float previewStroke = 2.0f;
+	Vec previewBallPos = Vec(0,0);
+
+	void initRandomPreview() {
+		previewPoints.clear();
+		float minX = previewStroke + previewBallRadius;
+		float minY = previewStroke + previewBallRadius;
+		float maxX = box.size.x - (previewStroke + previewBallRadius);
+		float maxY = box.size.y - (previewStroke + previewBallRadius);
+		// Choose a random generator style similar to makeShape()
+		int mode = int(random::uniform() * 8.0f) % XYPad::NUM_SHAPES;
+		switch(mode){
+			case XYPad::RND_SINE: {
+				float twoPi = 2.0f * M_PI;
+				float cycles = 1 + int(random::uniform() * 6);
+				for(float i=0; i<twoPi * cycles; i+= M_PI/ (box.size.x > 0 ? box.size.x : 1) * cycles){
+					float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
+					float y = rescalefjw(sinf(i), -1, 1, minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+			case XYPad::RND_SQUARE: {
+				float twoPi = 2.0f * M_PI;
+				float cycles = 1 + int(random::uniform() * 6);
+				for(float i=0; i<twoPi * cycles; i+= M_PI/ (box.size.x > 0 ? box.size.x : 1) * cycles){
+					float x = rescalefjw(i, 0, twoPi*cycles, minX, maxX);
+					float y = rescalefjw(sinf(i)<0, 0, 1, minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+			case XYPad::RND_RAMP: {
+				float lastY = maxY;
+				float rate = random::uniform();
+				for(int i=0; i<2000; i+=2){
+					float x = minX + i;
+					if (x>maxX) break;
+					lastY -= powf(2, powf(x*0.005f, 2)) * rate;
+					float y = clampfjw(lastY, minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+			case XYPad::RND_LINE: {
+				float startHeight = (random::uniform() * maxY * 0.5f) + (maxY * 0.25f);
+				float rate = random::uniform() - 0.5f;
+				for(int i=0; i<2000; i+=2){
+					float x = minX + i;
+					if (x>maxX) break;
+					float y = clampfjw(startHeight + rate * x, minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+			case XYPad::RND_NOISE: {
+				float midHeight = maxY / 2.0f;
+				float amp = midHeight * 0.9f;
+				for(int i=0; i<2000; i+=2){
+					float x = minX + i;
+					if (x>maxX) break;
+					float y = clampfjw((random::uniform()*2-1) * amp + midHeight, minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+			case XYPad::RND_SINE_MOD: {
+				float midHeight = maxY / 2.0f;
+				float amp = midHeight * 0.45f;
+				float rate = random::uniform() * 0.1f;
+				float rateAdder = random::uniform() * 0.001f;
+				float ampAdder = random::uniform() * 0.25f;
+				for(int i=0; i<2000; i+=2){
+					float x = minX + i;
+					if (x>maxX) break;
+					float y = clampfjw(sinf(i*rate) * amp + (maxY / 2.0f), minY, maxY);
+					previewPoints.push_back(Vec(x,y));
+					rate+=rateAdder;
+					amp+=ampAdder;
+				}
+			} break;
+			case XYPad::RND_SPIRAL: {
+				float curX = maxX / 2.0f;
+				float curY = maxY / 2.0f;
+				float radius = 5;
+				float rate = 1 + (random::uniform()*0.1f);
+				for(int i=0; i<2000; i+=2){
+					float x = curX + sinf(i/10.0f) * radius;
+					float y = curY + cosf(i/10.0f) * radius;
+					if (x<minX || x>maxX || y<minY || y>maxY) break;
+					previewPoints.push_back(Vec(x,y));
+					radius*=rate;
+				}
+			} break;
+			case XYPad::RND_STEPS:
+			default: {
+				float x = maxX * 0.5f;
+				float y = maxY * 0.5f;
+				enum stateEnum { ST_RIGHT, ST_LEFT, ST_UP, ST_DOWN };
+				int squSt = ST_RIGHT;
+				int stepsBeforeStateChange = 5 * int(random::uniform()*5+1);
+				for(int i=0; i<2000; i+=2){
+					if(squSt == ST_RIGHT && x < maxX){ x++; }
+					else if(squSt == ST_LEFT && x > minX){ x--; }
+					else if(squSt == ST_UP && y > minY){ y--; }
+					else if(squSt == ST_DOWN && y < maxY){ y++; }
+					if(i % stepsBeforeStateChange == 0){ squSt = int(random::uniform() * 4); }
+					previewPoints.push_back(Vec(x,y));
+				}
+			} break;
+		}
+		// random ball pos aligned to last point or center
+		if (!previewPoints.empty()) previewBallPos = previewPoints.back();
+		else previewBallPos = Vec((minX+maxX)*0.5f, (minY+maxY)*0.5f);
+		previewInit = true;
+	}
+
 	void onButton(const event::Button &e) override {
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			if(e.action == GLFW_PRESS){
@@ -505,7 +633,74 @@ struct XYPadDisplay : LightWidget {
 		nvgFill(args.vg);
 
 		if(layer == 1){
-			if(module == NULL) return;
+			if(module == NULL) {
+				// Draw a random preview using cached points
+				if (!previewInit) initRandomPreview();
+				float ballX = previewBallPos.x;
+				float ballY = previewBallPos.y;
+				float invBallX = box.size.x - ballX;
+				float invBallY = box.size.y - ballY;
+
+				NVGcolor invertedColor = nvgRGB(20, 50, 53);
+				NVGcolor ballColor = nvgRGB(25, 150, 252);
+
+				// Inverted crosshair
+				nvgStrokeColor(args.vg, invertedColor);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, invBallY);
+				nvgLineTo(args.vg, box.size.x, invBallY);
+				nvgStroke(args.vg);
+				nvgStrokeColor(args.vg, invertedColor);
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, invBallX, 0);
+				nvgLineTo(args.vg, invBallX, box.size.y);
+				nvgStroke(args.vg);
+
+				// Inverted ball
+				nvgFillColor(args.vg, invertedColor);
+				nvgStrokeColor(args.vg, invertedColor);
+				nvgStrokeWidth(args.vg, previewStroke);
+				nvgBeginPath(args.vg);
+				nvgCircle(args.vg, invBallX, invBallY, previewBallRadius);
+				nvgFill(args.vg);
+				nvgStroke(args.vg);
+
+				// Path points
+				if(!previewPoints.empty()){
+					nvgStrokeColor(args.vg, ballColor);
+					nvgStrokeWidth(args.vg, 2);
+					nvgBeginPath(args.vg);
+					long lastI = previewPoints.size() - 1;
+					for (long i = lastI; i>=0 && i<long(previewPoints.size()); i--) {
+						if(i == lastI){ nvgMoveTo(args.vg, previewPoints[i].x, previewPoints[i].y); }
+						else { nvgLineTo(args.vg, previewPoints[i].x, previewPoints[i].y); }
+					}
+					nvgStroke(args.vg);
+				}
+
+				// Main crosshair
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, 0, ballY);
+				nvgLineTo(args.vg, box.size.x, ballY);
+				nvgStroke(args.vg);
+				nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, ballX, 0);
+				nvgLineTo(args.vg, ballX, box.size.y);
+				nvgStroke(args.vg);
+
+				// Main ball
+				nvgFillColor(args.vg, ballColor);
+				nvgStrokeColor(args.vg, ballColor);
+				nvgStrokeWidth(args.vg, previewStroke);
+				nvgBeginPath(args.vg);
+				nvgCircle(args.vg, ballX, ballY, previewBallRadius);
+				nvgFill(args.vg);
+				nvgStroke(args.vg);
+				Widget::drawLayer(args, layer);
+				return;
+			}
 				
 			float ballX = module->params[XYPad::X_POS_PARAM].getValue();
 			float ballY = module->params[XYPad::Y_POS_PARAM].getValue();

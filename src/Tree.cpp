@@ -12,6 +12,7 @@ struct Tree : Module {
 		LENGTH_PARAM,
 		HEIGHT_PARAM,
 		RND_PARAM,
+		JITTER_AMT_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -21,6 +22,7 @@ struct Tree : Module {
 		LENGTH_INPUT,
 		HEIGHT_INPUT,
 		RND_INPUT,
+		JITTER_AMT_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -40,14 +42,16 @@ struct Tree : Module {
 		configParam(HUE_PARAM, 0.0, 0.5, 0.1, "Color");
 		configParam(REDUCE_PARAM, 0.1, 0.68, 0.66, "Reduce");
 		configParam(LENGTH_PARAM, 10.0, 200.0, 50, "Length");
-		configParam(HEIGHT_PARAM, 10.0, 250.0, 100, "Height");
+		configParam(HEIGHT_PARAM, 0.0, 250.0, 100, "Height");
 		configParam(RND_PARAM, 0.0, 1.0, 0.0, "Jitter");
+		configParam(JITTER_AMT_PARAM, -5.0, 5.0, 0.0, "Jitter Amount");
 		configInput(ANGLE_INPUT, "Angle");
 		configInput(HUE_INPUT, "Color");
 		configInput(REDUCE_INPUT, "Reduce");
 		configInput(LENGTH_INPUT, "Length");
 		configInput(HEIGHT_INPUT, "Height");
 		configInput(RND_INPUT, "Jitter");
+		configInput(JITTER_AMT_INPUT, "Jitter Amount");
 		
 	}
 
@@ -131,7 +135,7 @@ struct TreeDisplay : LightWidget {
 			float height = 150.0;
 			if(module){
 				float inputOffset = module->inputs[Tree::HEIGHT_INPUT].isConnected() ? module->inputs[Tree::HEIGHT_INPUT].getVoltage() : 0.0;
-				height = clampfjw(module->params[Tree::HEIGHT_PARAM].getValue() + rescale(inputOffset,-5,5,5,125), 10.0, 250.0);
+				height = clampfjw(module->params[Tree::HEIGHT_PARAM].getValue() + rescale(inputOffset,-5,5,5,125), 0.0, 250.0);
 			}
 			//https://processing.org/examples/tree.html
 			nvgTranslate(args.vg, box.size.x * 0.5, box.size.y);
@@ -146,13 +150,19 @@ struct TreeDisplay : LightWidget {
 			nvgStroke(args.vg);
 			nvgTranslate(args.vg, 0, -height);
 
-			branch(args, length, reduce, 1, strokeW, hue);
+			// compute jitter amount from knob and optional CV (range -5..+5)
+			float jitterAmt = 0.0f;
+			if (module) {
+				float inputOffset = module->inputs[Tree::JITTER_AMT_INPUT].isConnected() ? module->inputs[Tree::JITTER_AMT_INPUT].getVoltage() : 0.0f;
+				jitterAmt = clampfjw(module->params[Tree::JITTER_AMT_PARAM].getValue() + inputOffset, -5.0, 5.0);
+			}
+			branch(args, length, reduce, 1, strokeW, hue, jitterAmt);
 			nvgResetScissor(args.vg);
 		}
 		Widget::drawLayer(args, layer);
 	}
 
-	void branch(const DrawArgs &args, float dist, float reduce, int count, int strokeW, float hue){
+	void branch(const DrawArgs &args, float dist, float reduce, int count, int strokeW, float hue, float jitterAmt){
 		dist *= reduce;
 		if (dist > 2) {
 			// DEBUG("count*0.001=%f",count*0.001);
@@ -162,25 +172,25 @@ struct TreeDisplay : LightWidget {
 			nvgStrokeColor(args.vg, nvgHSLA(hue * count * 0.5, 0.5, 0.5, 0xc0));
 
 			nvgSave(args.vg);
-			nvgRotate(args.vg, theta + rnd1);
+			nvgRotate(args.vg, theta + rnd1 * jitterAmt);
 			nvgStrokeWidth(args.vg, strokeW);
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, 0, 0);
 			nvgLineTo(args.vg, 0, -dist);
 			nvgStroke(args.vg);
 			nvgTranslate(args.vg, 0, -dist);
-			branch(args, dist, reduce, count, strokeW, hue);
+			branch(args, dist, reduce, count, strokeW, hue, jitterAmt);
 			nvgRestore(args.vg);
 
 			nvgSave(args.vg);
-			nvgRotate(args.vg, -theta + rnd1);
+			nvgRotate(args.vg, -theta + rnd1 * jitterAmt);
 			nvgStrokeWidth(args.vg, strokeW);
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, 0, 0);
 			nvgLineTo(args.vg, 0, -dist);
 			nvgStroke(args.vg);
 			nvgTranslate(args.vg, 0, -dist);
-			branch(args, dist, reduce, count, strokeW, hue);
+			branch(args, dist, reduce, count, strokeW, hue, jitterAmt);
 			nvgRestore(args.vg);
 		}
 	}
@@ -261,6 +271,9 @@ TreeWidget::TreeWidget(Tree *module) {
 
 	addInput(createInput<TinyPJ301MPort>(Vec(205, 360), module, Tree::RND_INPUT));
 	addParam(createParam<RandomizeButton>(Vec(220, 360), module, Tree::RND_PARAM));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(245, 360), module, Tree::JITTER_AMT_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(260, 360), module, Tree::JITTER_AMT_PARAM));
 
 }
 #ifndef METAMODULE

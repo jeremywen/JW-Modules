@@ -3,8 +3,8 @@
 #include "JWModules.hpp"
 
 #define ROWS 16
-#define COLS 16
-#define CELLS 256
+#define COLS 256
+#define CELLS (ROWS * COLS)
 #define POLY 16
 #define HW 11.75 //cell height and width
 
@@ -33,13 +33,14 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		LOW_HIGH_SWITCH_PARAM,
 		INCLUDE_INACTIVE_PARAM,
 		START_PARAM,
+		FOLLOW_PLAYHEAD_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		CLOCK_INPUT,
 		RESET_INPUT,
 		RND_TRIG_INPUT,
-		ROTATE_INPUT,
+		ROTATE_INPUT,//just keep so we dont mess up param order
 		FLIP_INPUT,
 		SHIFT_INPUT,
 		LENGTH_INPUT,
@@ -92,13 +93,14 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	bool resetMode = false;
 	bool eocOn = false; 
 	bool hitEnd = false;
+	bool followPlayhead = false;
 	bool *cells = new bool[CELLS];
 	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
-	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
+	dsp::SchmittTrigger flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse;
 
 	// Gate pulse length in seconds (for TRIGGER/RETRIGGER modes)
@@ -109,8 +111,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	NoteSeq16() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(START_PARAM, 0.0, 15.0, 0.0, "Start");
-		configParam(LENGTH_KNOB_PARAM, 1.0, 16.0, 16.0, "Length");
+		configParam(START_PARAM, 0.0, COLS - 1, 0.0, "Start");
+		configParam(LENGTH_KNOB_PARAM, 1.0, COLS, 16.0, "Length");
 		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
@@ -119,13 +121,13 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configParam(OCTAVE_KNOB_PARAM, -5.0, 7.0, 0.0, "Octave");
 		configParam(NOTE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_KNOB_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
+		configParam(FOLLOW_PLAYHEAD_PARAM, 0.0, 1.0, 0.0, "Follow Playhead");
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
 		configInput(RND_TRIG_INPUT, "Random Trigger");
 		configInput(LENGTH_INPUT, "Length");
 		configInput(START_INPUT, "Start");
-		configInput(ROTATE_INPUT, "Rotate");
 		configInput(FLIP_INPUT, "Flip");
 		configInput(SHIFT_INPUT, "Shift");
 
@@ -177,6 +179,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		// gate pulse length
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 
+		// follow playhead
+		json_object_set_new(rootJ, "followPlayhead", json_boolean(followPlayhead));
+
 		return rootJ;
 	}
 
@@ -209,13 +214,21 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
 		}
 
+		// follow playhead
+		json_t *followPlayheadJ = json_object_get(rootJ, "followPlayhead");
+		if (followPlayheadJ) {
+			followPlayhead = json_boolean_value(followPlayheadJ);
+			params[FOLLOW_PLAYHEAD_PARAM].setValue(followPlayhead ? 1.0f : 0.0f);
+		}
+
 		gridChanged();
 	}
 
 	void process(const ProcessArgs &args) override {
+		// Update follow flag from panel switch each frame
+		followPlayhead = params[FOLLOW_PLAYHEAD_PARAM].getValue() > 0.5f;
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
-		if (rotateRightTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateCells(DIR_RIGHT); }
 		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
 		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
 
@@ -265,7 +278,8 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		cache[seqPos].finalHigh = finalHigh;
 		cache[seqPos].finalLow = finalLow;
 		cache[seqPos].includeInactive = includeInactive;
-		for(int i=0;i<COLS;i++){ cache[seqPos].vals[i] = -1; }
+		// vals has ROWS slots; clear only that many to avoid overflow
+		for(int i=0;i<ROWS;i++){ cache[seqPos].vals[i] = -1; }
 
 		int valIdx = 0;
 		for(int i=CELLS-1;i>=0;i--){
@@ -368,33 +382,33 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
 			seqPos = getSeqStart();
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 15);
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, COLS - 1);
 		}
 	}
 
 	void resetSeqToEnd(){
 		int curPlayMode = getPlayMode();
 		if(curPlayMode == PM_FWD_LOOP || curPlayMode == PM_FWD_BWD_LOOP || curPlayMode == PM_RANDOM_POS){
-			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, 15);
+			seqPos = clampijw(getSeqStart() + getSeqLen(), 0, COLS - 1);
 		} else if(curPlayMode == PM_BWD_LOOP || curPlayMode == PM_BWD_FWD_LOOP){
 			seqPos = getSeqStart();
 		}
 	}
 
 	int getSeqLen(){
-		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
-		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
+		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, float(COLS - 1)));
+		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, float(COLS));
 		return len;
 	}
 
 	int getSeqStart(){
-		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, 15.0));
-		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, 15.0);
+		int inputOffset = int(rescalefjw(inputs[START_INPUT].getVoltage(), 0, 10.0, 0.0, float(COLS - 1)));
+		int start = clampijw(params[START_PARAM].getValue() + inputOffset, 0.0, float(COLS - 1));
 		return start;
 	}
 
 	int getSeqEnd(){
-		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, 15);
+		int seqEnd = clampijw(getSeqStart() + getSeqLen() - 1, 0, COLS - 1);
 		return seqEnd;
 	}
 
@@ -410,22 +424,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		gridChanged();
 	}
 
-	void rotateCells(RotateDirection dir){
-		for(int x=0; x < COLS; x++){
-			for(int y=0; y < ROWS; y++){
-				switch(dir){
-					case DIR_RIGHT:
-						newCells[iFromXY(x, y)] = cells[iFromXY(y, COLS - x - 1)];
-						break;
-					case DIR_LEFT:
-						newCells[iFromXY(x, y)] = cells[iFromXY(COLS - y - 1, x)];
-						break;
-				}
-
-			}
-		}
-		swapCells();
-	}
+	// rotate removed: behavior assumes square grid; not supported for rectangular grid
 
 	void flipCells(FlipDirection dir){
 		for(int x=0; x < COLS; x++){
@@ -582,7 +581,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	int iFromXY(int cellX, int cellY){
-		return cellX + cellY * ROWS;
+		return cellX + cellY * COLS;
 	}
 
 	int xFromI(int cellI){
@@ -598,14 +597,35 @@ struct NoteSeq16Display : LightWidget {
 	NoteSeq16 *module;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
+	float scrollX = 0.0f;
+	bool hovered = false;
+	bool scrollDragging = false;
+	float dragThumbOffset = 0.0f;
 	NoteSeq16Display(){}
 
 	void onButton(const event::Button &e) override {
 		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
 			dragPos = e.pos;
-			currentlyTurningOn = !module->isCellOnByDisplayPos(e.pos.x, e.pos.y);
-			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, currentlyTurningOn);
+			// Check if clicking on scrollbar area
+			float trackH = 6.0f;
+			float sbTop = box.size.y - trackH;
+			if (e.pos.y >= sbTop) {
+				// Start dragging scrollbar
+				float contentW = COLS * HW;
+				float viewportW = box.size.x;
+				float ratio = viewportW / std::max(viewportW, contentW);
+				float thumbW = std::max(20.0f, box.size.x * ratio);
+				float maxScroll = std::max(0.0f, contentW - viewportW);
+				float t = (maxScroll <= 0.0f) ? 0.0f : (scrollX / maxScroll);
+				float thumbX = (box.size.x - thumbW) * clampfjw(t, 0.0f, 1.0f);
+				scrollDragging = true;
+				dragThumbOffset = e.pos.x - thumbX;
+			} else {
+				float gx = e.pos.x + scrollX;
+				currentlyTurningOn = !module->isCellOnByDisplayPos(gx, e.pos.y);
+				module->setCellOnByDisplayPos(gx, e.pos.y, currentlyTurningOn);
+			}
 		}
 	}
 	
@@ -614,11 +634,52 @@ struct NoteSeq16Display : LightWidget {
 
 	void onDragMove(const event::DragMove &e) override {
 		dragPos = dragPos.plus(e.mouseDelta.div(getAbsoluteZoom()));
-		module->setCellOnByDisplayPos(dragPos.x, dragPos.y, currentlyTurningOn);
+		if (scrollDragging) {
+			float contentW = COLS * HW;
+			float viewportW = box.size.x;
+			float ratio = viewportW / std::max(viewportW, contentW);
+			float thumbW = std::max(20.0f, box.size.x * ratio);
+			float clampedX = clampfjw(dragPos.x - dragThumbOffset, 0.0f, box.size.x - thumbW);
+			float t = (box.size.x - thumbW) <= 0.0f ? 0.0f : (clampedX / (box.size.x - thumbW));
+			float maxScroll = std::max(0.0f, contentW - viewportW);
+			scrollX = maxScroll * t;
+		} else {
+			float gx = dragPos.x + scrollX;
+			module->setCellOnByDisplayPos(gx, dragPos.y, currentlyTurningOn);
+		}
+	}
+
+	void onDragEnd(const event::DragEnd &e) override {
+		scrollDragging = false;
+		LightWidget::onDragEnd(e);
+	}
+
+	void onEnter(const event::Enter &e) override {
+		hovered = true;
+		LightWidget::onEnter(e);
+	}
+
+	void onLeave(const event::Leave &e) override {
+		hovered = false;
+		LightWidget::onLeave(e);
+	}
+
+	void onHoverScroll(const event::HoverScroll &e) override {
+		// Horizontal scroll with Shift or natural trackpad; always support horizontal via x
+		float dx = (e.scrollDelta.x != 0.0f) ? e.scrollDelta.x : (e.scrollDelta.y * -1.0f);
+		float contentW = COLS * HW;
+		float viewportW = box.size.x;
+		float maxX = std::max(0.0f, contentW - viewportW);
+		scrollX = clampfjw(scrollX + dx * 10.0f, 0.0f, maxX);
+		e.consume(this);
 	}
 
 	void drawLayer(const DrawArgs &args, int layer) override {
-		//background
+		// Clip to viewport
+		nvgSave(args.vg);
+		nvgScissor(args.vg, 0, 0, box.size.x, box.size.y);
+
+		// background
 		nvgFillColor(args.vg, nvgRGB(0, 0, 0));
 		nvgBeginPath(args.vg);
 		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
@@ -635,6 +696,26 @@ struct NoteSeq16Display : LightWidget {
 					nvgFill(args.vg);
 				}
 			}
+
+			// auto-follow playhead: smoothly center within viewport to avoid jumping
+			if (module && module->followPlayhead) {
+				float posX = (module->resetMode ? module->getSeqStart() : module->seqPos) * HW;
+				float viewportW = box.size.x;
+				float contentW = COLS * HW;
+				float maxScroll = std::max(0.0f, contentW - viewportW);
+				float target = posX - viewportW * 0.5f;
+				float desired = clampfjw(target, 0.0f, maxScroll);
+				// Smoothly approach desired center; small deadzone to reduce micro-movement
+				float deadzone = HW * 0.5f;
+				if (std::fabs((scrollX + viewportW * 0.5f) - posX) > deadzone) {
+					float alpha = 0.2f; // follow smoothing factor
+					scrollX = scrollX + (desired - scrollX) * alpha;
+				}
+			}
+
+			// translate and draw the scrolling grid content
+			nvgSave(args.vg);
+			nvgTranslate(args.vg, -scrollX, 0);
 
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
@@ -692,9 +773,101 @@ struct NoteSeq16Display : LightWidget {
 			nvgBeginPath(args.vg);
 			nvgRect(args.vg, pos * HW, 0, HW, box.size.y);
 			nvgStroke(args.vg);
+
+			// restore transform so overlay scrollbar stays fixed
+			nvgRestore(args.vg);
+
+			// Draw overlay scrollbar at bottom
+			float trackH = 6.0f;
+			float sbTop = box.size.y - trackH;
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, scrollX > 0.0f || hovered ? 0 : 0, sbTop, box.size.x, trackH);
+			NVGcolor trackColor = hovered ? nvgRGB(35, 35, 35) : nvgRGB(25, 25, 25);
+			nvgFillColor(args.vg, trackColor);
+			nvgFill(args.vg);
+
+			float contentW = COLS * HW;
+			float viewportW = box.size.x;
+			float ratio = viewportW / std::max(viewportW, contentW);
+			float thumbW = std::max(20.0f, box.size.x * ratio);
+			float maxScroll = std::max(0.0f, contentW - viewportW);
+			float t = (maxScroll <= 0.0f) ? 0.0f : (scrollX / maxScroll);
+			float thumbX = (box.size.x - thumbW) * clampfjw(t, 0.0f, 1.0f);
+
+			nvgBeginPath(args.vg);
+			nvgRect(args.vg, thumbX, sbTop, thumbW, trackH);
+			NVGcolor thumbColor = hovered ? nvgRGB(90, 90, 90) : nvgRGB(70, 70, 70);
+			nvgFillColor(args.vg, thumbColor);
+			nvgFill(args.vg);
 		}
 		Widget::drawLayer(args, layer);
+		nvgResetScissor(args.vg);
+		nvgRestore(args.vg);
+	}
+};
 
+// Simple horizontal scrollbar to control NoteSeq16Display::scrollX
+struct NS16HScrollBar : Widget {
+	NoteSeq16Display* target = nullptr;
+	float contentW = 0.0f;
+	float dragX = 0.0f;
+	NS16HScrollBar(){}
+
+	void step() override {
+		Widget::step();
+		if (!target) return;
+		contentW = COLS * HW;
+	}
+
+	void draw(const DrawArgs &args) override {
+		if (!target) return;
+		float viewportW = target->box.size.x;
+		float trackH = 6.0f;
+		// Track
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, trackH);
+		// Dim when not hovered
+		NVGcolor trackColor = target->hovered ? nvgRGB(35, 35, 35) : nvgRGB(25, 25, 25);
+		nvgFillColor(args.vg, trackColor);
+		nvgFill(args.vg);
+
+		// Thumb size proportional to viewport/content
+		float ratio = viewportW / std::max(viewportW, contentW);
+		float thumbW = std::max(20.0f, box.size.x * ratio);
+		float maxScroll = std::max(0.0f, contentW - viewportW);
+		float t = (maxScroll <= 0.0f) ? 0.0f : (target->scrollX / maxScroll);
+		float thumbX = (box.size.x - thumbW) * clampfjw(t, 0.0f, 1.0f);
+
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, thumbX, 0, thumbW, trackH);
+		NVGcolor thumbColor = target->hovered ? nvgRGB(90, 90, 90) : nvgRGB(70, 70, 70);
+		nvgFillColor(args.vg, thumbColor);
+		nvgFill(args.vg);
+	}
+
+	void onButton(const event::Button &e) override {
+		if (!target) return;
+		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
+			e.consume(this);
+			dragX = e.pos.x;
+			dragHandle(dragX);
+		}
+	}
+
+	void onDragMove(const event::DragMove &e) override {
+		if (!target) return;
+		dragX = clampfjw(dragX + e.mouseDelta.x / getAbsoluteZoom(), 0.0f, box.size.x);
+		dragHandle(dragX);
+	}
+
+	void dragHandle(float x) {
+		float viewportW = target->box.size.x;
+		float ratio = viewportW / std::max(viewportW, contentW);
+		float thumbW = std::max(20.0f, box.size.x * ratio);
+		float clampedX = clampfjw(x - thumbW * 0.5f, 0.0f, box.size.x - thumbW);
+		float t = (box.size.x - thumbW) <= 0.0f ? 0.0f : (clampedX / (box.size.x - thumbW));
+		float maxScroll = std::max(0.0f, contentW - viewportW);
+		target->scrollX = maxScroll * t;
 	}
 };
 
@@ -771,6 +944,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 		asset::plugin(pluginInstance, "res/dark/NoteSeq16.svg")
 	));
 
+	// Inline viewport with internal clipping and horizontal scroll
 	NoteSeq16Display *display = new NoteSeq16Display();
 	display->module = module;
 	display->box.pos = Vec(3, 75);
@@ -780,6 +954,8 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 		module->displayWidth = display->box.size.x;
 		module->displayHeight = display->box.size.y;
 	}
+
+	// Built-in overlay scrollbar is drawn and handled inside NoteSeq16Display
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
@@ -812,7 +988,6 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 296), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	float bottomInpY = 338;
-	addInput(createInput<TinyPJ301MPort>(Vec(38, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(68, bottomInpY), module, NoteSeq16::FLIP_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(96, bottomInpY), module, NoteSeq16::SHIFT_INPUT));
 
@@ -821,6 +996,8 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(139, bottomInpY), module, NoteSeq16::POLY_VOCT_OUTPUT));
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
 	addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
+	// Follow Playhead switch
+	addParam(createParam<JwHorizontalSwitch>(Vec(36, bottomInpY), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, NoteSeq16::EOC_OUTPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
@@ -857,6 +1034,8 @@ struct NoteSeq16GateModeItem : MenuItem {
 		MenuItem::step();
 	}
 };
+
+// Follow Playhead controlled by panel switch; no context menu item
 
 // Context menu slider to control gate pulse length (ms)
 struct NS16GatePulseLengthQuantity : Quantity {
@@ -896,6 +1075,8 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
+
+	// Follow Playhead is controlled from the panel
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";

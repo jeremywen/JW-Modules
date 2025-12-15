@@ -81,11 +81,16 @@ struct GridSeq : Module,QuantizeUtils {
 	bool resetMode = false;
 	float rndFloat0to1AtClockStep = random::uniform();
 
+	// Snake direction state for snake patterns
+	bool snakeRight = true;
+	bool snakeDown = true;
+
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
 
-	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
-	RandomMode randomMode = RANDOM;
+	// René-like pattern modes
+	enum PatternMode { ROW_MAJOR, COL_MAJOR, SNAKE_ROWS, SNAKE_COLS, SNAKE_DIAG_DR, SNAKE_DIAG_UR };
+	PatternMode patternMode = ROW_MAJOR;
 
 	dsp::PulseGenerator gatePulse;
 
@@ -158,12 +163,13 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_integer((int) randomMode);
-		json_object_set_new(rootJ, "randomMode", randomModeJ);
-
 		// gate pulse length
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
+		// pattern mode
+		json_object_set_new(rootJ, "patternMode", json_integer((int)patternMode));
+
+		// snake state (not critical to persist; omit for simplicity)
 
 		return rootJ;
 	}
@@ -192,17 +198,18 @@ struct GridSeq : Module,QuantizeUtils {
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
-		if (randomModeJ)
-			randomMode = (RandomMode)json_integer_value(randomModeJ);
-
 		// gate pulse length
 		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
 		if (gatePulseLenSecJ) {
 			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
 			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
 		}
+
+		// pattern mode
+		json_t *patternModeJ = json_object_get(rootJ, "patternMode");
+		if (patternModeJ) patternMode = (PatternMode) json_integer_value(patternModeJ);
+
+		// ignore legacy auto-wrap keys if present
 	}
 
 	void onReset() override {
@@ -226,38 +233,14 @@ struct GridSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
-		float firstKnobVal = params[CELL_NOTE_PARAM].getValue();
-		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 16; i++) {
-			if (randomMode == GridSeq::FIRST_MIN) {
-				if(i != 0){
-					params[CELL_NOTE_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-				}
-			} else if (randomMode == GridSeq::FIRST_MAX) {
-				if(i != 0){
-					params[CELL_NOTE_PARAM + i].setValue(random::uniform() * firstKnobVal);
-				}
-			} else {
-				params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
-			}
+			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
 		}
 	}
 
 	void randomizeProbsOnly(){
-		float firstKnobVal = params[CELL_PROB_PARAM].getValue();
-		float firstKnobMaxVal = 1.0;
 		for (int i = 0; i < 16; i++) {
-			if (randomMode == GridSeq::FIRST_MIN) {
-				if(i != 0){
-					params[CELL_PROB_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-				}
-			} else if (randomMode == GridSeq::FIRST_MAX) {
-				if(i != 0){
-					params[CELL_PROB_PARAM + i].setValue(random::uniform() * firstKnobVal);
-				}
-			} else {
-				params[CELL_PROB_PARAM + i].setValue(random::uniform());
-			}
+			params[CELL_PROB_PARAM + i].setValue(random::uniform());
 		}
 	}
 
@@ -276,10 +259,78 @@ struct GridSeq : Module,QuantizeUtils {
 		return closestVoltageInScale(octave + voltsScaled, rootNote, scale);
 	}
 
-	void handleMoveRight(){ posX = posX == 3 ? 0 : posX + 1; }
-	void handleMoveLeft(){ posX = posX == 0 ? 3 : posX - 1; }
-	void handleMoveDown(){ posY = posY == 3 ? 0 : posY + 1; }
-	void handleMoveUp(){ posY = posY == 0 ? 3 : posY - 1; }
+	void handleMoveRight(){
+		if (patternMode == SNAKE_ROWS) {
+			if (snakeRight) {
+				if (posX == 3) { snakeRight = false; posY = (posY + 1) % 4; }
+				else { posX++; }
+			} else {
+				if (posX == 0) { snakeRight = true; posY = (posY + 1) % 4; }
+				else { posX--; }
+			}
+		} else if (patternMode == SNAKE_DIAG_DR) {
+			int dx = snakeRight ? 1 : -1;
+			int dy = snakeDown ? 1 : -1;
+			int nx = posX + dx;
+			int ny = posY + dy;
+			if (nx < 0 || nx > 3) { snakeRight = !snakeRight; nx = clampijw(nx, 0, 3); }
+			if (ny < 0 || ny > 3) { snakeDown = !snakeDown; ny = clampijw(ny, 0, 3); }
+			posX = nx; posY = ny;
+		} else if (patternMode == SNAKE_DIAG_UR) {
+			int dx = snakeRight ? 1 : -1;
+			int dy = snakeDown ? -1 : 1;
+			int nx = posX + dx;
+			int ny = posY + dy;
+			if (nx < 0 || nx > 3) { snakeRight = !snakeRight; nx = clampijw(nx, 0, 3); }
+			if (ny < 0 || ny > 3) { snakeDown = !snakeDown; ny = clampijw(ny, 0, 3); }
+			posX = nx; posY = ny;
+		} else {
+			posX = (posX + 1) % 4;
+			if (patternMode == ROW_MAJOR && posX == 0) posY = (posY + 1) % 4;
+		}
+	}
+	void handleMoveLeft(){
+		if (patternMode == SNAKE_ROWS) {
+			// same as right; external left triggers reverse sense
+			handleMoveRight();
+		} else if (patternMode == SNAKE_DIAG_DR || patternMode == SNAKE_DIAG_UR) {
+			snakeRight = !snakeRight;
+			handleMoveRight();
+		} else {
+			posX = (posX + 3) % 4;
+			if (patternMode == ROW_MAJOR && posX == 3) posY = (posY + 3) % 4;
+		}
+	}
+	void handleMoveDown(){
+		if (patternMode == SNAKE_COLS) {
+			if (snakeDown) {
+				if (posY == 3) { snakeDown = false; posX = (posX + 1) % 4; }
+				else { posY++; }
+			} else {
+				if (posY == 0) { snakeDown = true; posX = (posX + 1) % 4; }
+				else { posY--; }
+			}
+		} else if (patternMode == SNAKE_DIAG_DR || patternMode == SNAKE_DIAG_UR) {
+			// Down mirrors right in diagonal modes
+			handleMoveRight();
+		} else {
+			posY = (posY + 1) % 4;
+			if (patternMode == COL_MAJOR && posY == 0) posX = (posX + 1) % 4;
+		}
+	}
+	void handleMoveUp(){
+		if (patternMode == SNAKE_COLS) {
+			// same as down; external up triggers reverse sense
+			handleMoveDown();
+		} else if (patternMode == SNAKE_DIAG_DR || patternMode == SNAKE_DIAG_UR) {
+			// Up reverses diagonal sense
+			snakeDown = !snakeDown;
+			handleMoveRight();
+		} else {
+			posY = (posY + 3) % 4;
+			if (patternMode == COL_MAJOR && posY == 3) posX = (posX + 3) % 4;
+		}
+	}
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -426,20 +477,10 @@ struct RandomizeNotesOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
 			GridSeq *mod = dynamic_cast<GridSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getDisplayValue();
-			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 16; i++) {
-				if (mod->randomMode == GridSeq::FIRST_MIN) {
-					if(i != 0){
-						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-					}
-				} else if (shiftDown) {
+				if (shiftDown) {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else if (mod->randomMode == GridSeq::FIRST_MAX) {
-					if(i != 0){
-						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
-					}
 				} else {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
 				}
@@ -453,21 +494,10 @@ struct RandomizeProbsOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
-			GridSeq *mod = dynamic_cast<GridSeq*>(wid->module);
-			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getDisplayValue();
-			float firstKnobMaxVal = 1.0;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 16; i++) {
-				if (mod->randomMode == GridSeq::FIRST_MIN) {
-					if(i != 0){
-						wid->probKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-					}
-				} else if (shiftDown) {
+				if (shiftDown) {
 					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else if (mod->randomMode == GridSeq::FIRST_MAX) {
-					if(i != 0){
-						wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
-					}
 				} else {
 					wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform());
 				}
@@ -624,18 +654,6 @@ struct GridSeqGateModeItem : MenuItem {
 	}
 };
 
-struct GridSeqRandomModeItem : MenuItem {
-	GridSeq *gridSeq;
-	GridSeq::RandomMode randomMode;
-	void onAction(const event::Action &e) override {
-		gridSeq->randomMode = randomMode;
-	}
-	void step() override {
-		rightText = (gridSeq->randomMode == randomMode) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
 // Context menu slider to control gate pulse length (ms)
 struct GridGatePulseLengthQuantity : Quantity {
 	GridSeq* gridSeq = nullptr;
@@ -659,6 +677,18 @@ struct GridGatePulseLengthQuantity : Quantity {
 struct GridGatePulseLengthSlider : ui::Slider {
 	GridGatePulseLengthSlider() { quantity = new GridGatePulseLengthQuantity; }
 	~GridGatePulseLengthSlider() { delete quantity; }
+};
+
+struct GridSeqPatternModeItem : MenuItem {
+	GridSeq *gridSeq;
+	GridSeq::PatternMode mode;
+	void onAction(const event::Action &e) override {
+		gridSeq->patternMode = mode;
+	}
+	void step() override {
+		rightText = (gridSeq->patternMode == mode) ? "✔" : "";
+		MenuItem::step();
+	}
 };
 
 void GridSeqWidget::appendContextMenu(Menu *menu) {
@@ -698,27 +728,47 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	MenuLabel *randomModeLabel = new MenuLabel();
-	randomModeLabel->text = "Random Button Mode";
-	menu->addChild(randomModeLabel);
+	// Auto-wrap options removed in favor of snake pattern modes
 
-	GridSeqRandomModeItem *randomItem = new GridSeqRandomModeItem();
-	randomItem->text = "Random";
-	randomItem->gridSeq = gridSeq;
-	randomItem->randomMode = GridSeq::RANDOM;
-	menu->addChild(randomItem);
+	MenuLabel *patternLabel = new MenuLabel();
+	patternLabel->text = "Pattern Mode";
+	menu->addChild(patternLabel);
 
-	GridSeqRandomModeItem *randomMinItem = new GridSeqRandomModeItem();
-	randomMinItem->text = "First is Minimum";
-	randomMinItem->gridSeq = gridSeq;
-	randomMinItem->randomMode = GridSeq::FIRST_MIN;
-	menu->addChild(randomMinItem);
+	GridSeqPatternModeItem *rowMajorItem = new GridSeqPatternModeItem();
+	rowMajorItem->text = "Row-Major";
+	rowMajorItem->gridSeq = gridSeq;
+	rowMajorItem->mode = GridSeq::ROW_MAJOR;
+	menu->addChild(rowMajorItem);
 
-	GridSeqRandomModeItem *randomMaxItem = new GridSeqRandomModeItem();
-	randomMaxItem->text = "First is Maximum";
-	randomMaxItem->gridSeq = gridSeq;
-	randomMaxItem->randomMode = GridSeq::FIRST_MAX;
-	menu->addChild(randomMaxItem);
+	GridSeqPatternModeItem *colMajorItem = new GridSeqPatternModeItem();
+	colMajorItem->text = "Column-Major";
+	colMajorItem->gridSeq = gridSeq;
+	colMajorItem->mode = GridSeq::COL_MAJOR;
+	menu->addChild(colMajorItem);
+
+	GridSeqPatternModeItem *snakeRowsItem = new GridSeqPatternModeItem();
+	snakeRowsItem->text = "Snake Rows";
+	snakeRowsItem->gridSeq = gridSeq;
+	snakeRowsItem->mode = GridSeq::SNAKE_ROWS;
+	menu->addChild(snakeRowsItem);
+
+	GridSeqPatternModeItem *snakeColsItem = new GridSeqPatternModeItem();
+	snakeColsItem->text = "Snake Columns";
+	snakeColsItem->gridSeq = gridSeq;
+	snakeColsItem->mode = GridSeq::SNAKE_COLS;
+	menu->addChild(snakeColsItem);
+
+	GridSeqPatternModeItem *snakeDiagDRItem = new GridSeqPatternModeItem();
+	snakeDiagDRItem->text = "Snake Diagonal Down-Right";
+	snakeDiagDRItem->gridSeq = gridSeq;
+	snakeDiagDRItem->mode = GridSeq::SNAKE_DIAG_DR;
+	menu->addChild(snakeDiagDRItem);
+
+	GridSeqPatternModeItem *snakeDiagURItem = new GridSeqPatternModeItem();
+	snakeDiagURItem->text = "Snake Diagonal Up-Right";
+	snakeDiagURItem->gridSeq = gridSeq;
+	snakeDiagURItem->mode = GridSeq::SNAKE_DIAG_UR;
+	menu->addChild(snakeDiagURItem);
 
 	// Gate pulse length slider
 	MenuLabel *gatePulseLabel = new MenuLabel();

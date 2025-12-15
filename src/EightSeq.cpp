@@ -66,8 +66,9 @@ struct EightSeq : Module,QuantizeUtils {
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
 
-	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
-	RandomMode randomMode = RANDOM;
+	// Traversal pattern modes
+	enum PatternMode { ROW_MAJOR, COL_MAJOR, SNAKE_ROWS, SNAKE_COLS };
+	PatternMode patternMode = ROW_MAJOR;
 
 	dsp::PulseGenerator gatePulse;
 
@@ -130,12 +131,11 @@ struct EightSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_integer((int) randomMode);
-		json_object_set_new(rootJ, "randomMode", randomModeJ);
-
 		// gate pulse length
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
+		// pattern mode
+		json_object_set_new(rootJ, "patternMode", json_integer((int)patternMode));
 
 		return rootJ;
 	}
@@ -164,16 +164,19 @@ struct EightSeq : Module,QuantizeUtils {
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
-		if (randomModeJ)
-			randomMode = (RandomMode)json_integer_value(randomModeJ);
-
 		// gate pulse length
 		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
 		if (gatePulseLenSecJ) {
 			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
 			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
+
+		// pattern mode
+		json_t *patternModeJ = json_object_get(rootJ, "patternMode");
+		if (patternModeJ) {
+			int pm = (int)json_integer_value(patternModeJ);
+			pm = clampijw(pm, ROW_MAJOR, SNAKE_COLS);
+			patternMode = (PatternMode)pm;
 		}
 	}
 
@@ -200,38 +203,14 @@ struct EightSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
-		float firstKnobVal = params[CELL_NOTE_PARAM].getValue();
-		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 8; i++) {
-			if (randomMode == EightSeq::FIRST_MIN) {
-				if(i != 0){
-					params[CELL_NOTE_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-				}
-			} else if (randomMode == EightSeq::FIRST_MAX) {
-				if(i != 0){
-					params[CELL_NOTE_PARAM + i].setValue(random::uniform() * firstKnobVal);
-				}
-			} else {
-				params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
-			}
+			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
 		}
 	}
 
 	void randomizeProbsOnly(){
-		float firstKnobVal = params[CELL_PROB_PARAM].getValue();
-		float firstKnobMaxVal = 1.0;
 		for (int i = 0; i < 8; i++) {
-			if (randomMode == EightSeq::FIRST_MIN) {
-				if(i != 0){
-					params[CELL_PROB_PARAM + i].setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-				}
-			} else if (randomMode == EightSeq::FIRST_MAX) {
-				if(i != 0){
-					params[CELL_PROB_PARAM + i].setValue(random::uniform() * firstKnobVal);
-				}
-			} else {
-				params[CELL_PROB_PARAM + i].setValue(random::uniform());
-			}
+			params[CELL_PROB_PARAM + i].setValue(random::uniform());
 		}
 	}
 
@@ -292,7 +271,23 @@ void EightSeq::process(const ProcessArgs &args) {
 			index = 0;
 		}
 		rndFloat0to1AtClockStep = random::uniform();
-		lights[STEPS_LIGHT + index].value = 1.0;
+		// Light the currently addressed step according to traversal pattern
+		int order[8];
+		// Build traversal order once per step; small fixed size
+		// ROW_MAJOR: 0..7
+		order[0]=0; order[1]=1; order[2]=2; order[3]=3; order[4]=4; order[5]=5; order[6]=6; order[7]=7;
+		if (patternMode == COL_MAJOR) {
+			// columns first: 0,4,1,5,2,6,3,7
+			order[0]=0; order[1]=4; order[2]=1; order[3]=5; order[4]=2; order[5]=6; order[6]=3; order[7]=7;
+		} else if (patternMode == SNAKE_ROWS) {
+			// row0 L->R then row1 R->L: 0,1,2,3,7,6,5,4
+			order[0]=0; order[1]=1; order[2]=2; order[3]=3; order[4]=7; order[5]=6; order[6]=5; order[7]=4;
+		} else if (patternMode == SNAKE_COLS) {
+			// col0 T->B, col1 B->T, ...: 0,4,5,1,2,6,7,3
+			order[0]=0; order[1]=4; order[2]=5; order[3]=1; order[4]=2; order[5]=6; order[6]=7; order[7]=3;
+		}
+		int playIdx = order[index];
+		lights[STEPS_LIGHT + playIdx].value = 1.0;
 		gatePulse.trigger(gatePulseLenSec);
 	}
 
@@ -316,21 +311,32 @@ void EightSeq::process(const ProcessArgs &args) {
 	}
 
 	// Cells
-	bool prob = params[CELL_PROB_PARAM + index].getValue() > rndFloat0to1AtClockStep;
+	// Map index through traversal order to get actual cell position
+	int order[8];
+	order[0]=0; order[1]=1; order[2]=2; order[3]=3; order[4]=4; order[5]=5; order[6]=6; order[7]=7;
+	if (patternMode == COL_MAJOR) {
+		order[0]=0; order[1]=4; order[2]=1; order[3]=5; order[4]=2; order[5]=6; order[6]=3; order[7]=7;
+	} else if (patternMode == SNAKE_ROWS) {
+		order[0]=0; order[1]=1; order[2]=2; order[3]=3; order[4]=7; order[5]=6; order[6]=5; order[7]=4;
+	} else if (patternMode == SNAKE_COLS) {
+		order[0]=0; order[1]=4; order[2]=5; order[3]=1; order[4]=2; order[5]=6; order[6]=7; order[7]=3;
+	}
+	int playIdx = order[index];
+	bool prob = params[CELL_PROB_PARAM + playIdx].getValue() > rndFloat0to1AtClockStep;
 	if(!params[PROB_ON_SWITCH_PARAM].getValue()){
 		prob = true;
 	}
 
-	bool gatesOn = (running && gateState[index] && prob);
+	bool gatesOn = (running && gateState[playIdx] && prob);
 	if (gateMode == TRIGGER) gatesOn = gatesOn && pulse;
 	else if (gateMode == RETRIGGER) gatesOn = gatesOn && !pulse;
 
 	// Outputs
 	if(gatesOn || ignoreGateOnPitchOut)	{
-		outputs[CELL_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + index].getValue()));
+		outputs[CELL_OUTPUT].setVoltage(closestVoltageInScaleWrapper(params[CELL_NOTE_PARAM + playIdx].getValue()));
 	}
 	outputs[GATES_OUTPUT].setVoltage(gatesOn ? 10.0 : 0.0);
-	outputs[PROB_OUTPUT].setVoltage(rescalefjw(params[CELL_PROB_PARAM + index].getValue(), 0.0, 1.0, 1.0, 10.0));
+	outputs[PROB_OUTPUT].setVoltage(rescalefjw(params[CELL_PROB_PARAM + playIdx].getValue(), 0.0, 1.0, 1.0, 10.0));
 	outputs[EOC_OUTPUT].setVoltage((pulse && hitEnd && index == 0) ? 10.0 : 0.0);
 	if(index == len-1){
 		hitEnd = true;
@@ -356,20 +362,10 @@ struct RandomizeNotes8SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
 			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
-			float firstKnobVal = wid->seqKnobs[0]->getParamQuantity()->getDisplayValue();
-			float firstKnobMaxVal = mod->noteParamMax;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 8; i++) {
-				if (mod->randomMode == EightSeq::FIRST_MIN) {
-					if(i != 0){
-						wid->seqKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-					}
-				} else if (shiftDown) {
+				if (shiftDown) {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else if (mod->randomMode == EightSeq::FIRST_MAX) {
-					if(i != 0){
-						wid->seqKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
-					}
 				} else {
 					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
 				}
@@ -383,21 +379,10 @@ struct RandomizeProbs8SeqOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
-			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
-			float firstKnobVal = wid->probKnobs[0]->getParamQuantity()->getDisplayValue();
-			float firstKnobMaxVal = 1.0;
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 8; i++) {
-				if (mod->randomMode == EightSeq::FIRST_MIN) {
-					if(i != 0){
-						wid->probKnobs[i]->getParamQuantity()->setValue(firstKnobVal + (random::uniform() * (firstKnobMaxVal - firstKnobVal)));
-					}
-				} else if (shiftDown) {
+				if (shiftDown) {
 					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else if (mod->randomMode == EightSeq::FIRST_MAX) {
-					if(i != 0){
-						wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform() * firstKnobVal);
-					}
 				} else {
 					wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform());
 				}
@@ -412,8 +397,9 @@ struct RandomizeGates8SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
 			EightSeq *gs = dynamic_cast<EightSeq*>(gsw->module);
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 8; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+				if (shiftDown) {
 					gs->gateState[i] = true;
 				} else {
 					bool active = random::uniform() > 0.5;
@@ -546,14 +532,14 @@ struct EightSeqGateModeItem : MenuItem {
 	}
 };
 
-struct EightSeqRandomModeItem : MenuItem {
+struct EightSeqPatternModeItem : MenuItem {
 	EightSeq *eightSeq;
-	EightSeq::RandomMode randomMode;
+	EightSeq::PatternMode patternMode;
 	void onAction(const event::Action &e) override {
-		eightSeq->randomMode = randomMode;
+		eightSeq->patternMode = patternMode;
 	}
 	void step() override {
-		rightText = (eightSeq->randomMode == randomMode) ? "✔" : "";
+		rightText = (eightSeq->patternMode == patternMode) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -639,27 +625,34 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-	MenuLabel *randomModeLabel = new MenuLabel();
-	randomModeLabel->text = "Random Button Mode";
-	menu->addChild(randomModeLabel);
+	// Traversal pattern menu
+	MenuLabel *patternLabel = new MenuLabel();
+	patternLabel->text = "Traversal Pattern";
+	menu->addChild(patternLabel);
 
-	EightSeqRandomModeItem *randomItem = new EightSeqRandomModeItem();
-	randomItem->text = "Random";
-	randomItem->eightSeq = eightSeq;
-	randomItem->randomMode = EightSeq::RANDOM;
-	menu->addChild(randomItem);
+	EightSeqPatternModeItem *rowMajorItem = new EightSeqPatternModeItem();
+	rowMajorItem->text = "Row-Major";
+	rowMajorItem->eightSeq = eightSeq;
+	rowMajorItem->patternMode = EightSeq::ROW_MAJOR;
+	menu->addChild(rowMajorItem);
 
-	EightSeqRandomModeItem *randomMinItem = new EightSeqRandomModeItem();
-	randomMinItem->text = "First is Minimum";
-	randomMinItem->eightSeq = eightSeq;
-	randomMinItem->randomMode = EightSeq::FIRST_MIN;
-	menu->addChild(randomMinItem);
+	EightSeqPatternModeItem *colMajorItem = new EightSeqPatternModeItem();
+	colMajorItem->text = "Col-Major";
+	colMajorItem->eightSeq = eightSeq;
+	colMajorItem->patternMode = EightSeq::COL_MAJOR;
+	menu->addChild(colMajorItem);
 
-	EightSeqRandomModeItem *randomMaxItem = new EightSeqRandomModeItem();
-	randomMaxItem->text = "First is Maximum";
-	randomMaxItem->eightSeq = eightSeq;
-	randomMaxItem->randomMode = EightSeq::FIRST_MAX;
-	menu->addChild(randomMaxItem);
+	EightSeqPatternModeItem *snakeRowsItem = new EightSeqPatternModeItem();
+	snakeRowsItem->text = "Snake Rows";
+	snakeRowsItem->eightSeq = eightSeq;
+	snakeRowsItem->patternMode = EightSeq::SNAKE_ROWS;
+	menu->addChild(snakeRowsItem);
+
+	EightSeqPatternModeItem *snakeColsItem = new EightSeqPatternModeItem();
+	snakeColsItem->text = "Snake Cols";
+	snakeColsItem->eightSeq = eightSeq;
+	snakeColsItem->patternMode = EightSeq::SNAKE_COLS;
+	menu->addChild(snakeColsItem);
 
 	// Gate pulse length slider
 	MenuLabel *gatePulseLabel = new MenuLabel();

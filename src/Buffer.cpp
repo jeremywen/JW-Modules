@@ -160,16 +160,16 @@ struct Buffer : Module {
 		}
 		
 		// Calculate loop positions and length
-		int loopStart, loopEnd, loopLength;
+		int loopStart, loopLength;//, loopEnd;
 		if (playbackDirection == 1) {
 			// Forward: from start to end
 			loopStart = (writePos - startSamples - (endSamples - startSamples) + bufferSize * 3) % bufferSize;
-			loopEnd = (writePos - startSamples + bufferSize * 2) % bufferSize;
+			// loopEnd = (writePos - startSamples + bufferSize * 2) % bufferSize;
 			loopLength = (endSamples - startSamples);
 		} else {
 			// Backward: from start to end (start is further back)
 			loopStart = (writePos - startSamples + bufferSize * 2) % bufferSize;
-			loopEnd = (writePos - endSamples + bufferSize * 2) % bufferSize;
+			// loopEnd = (writePos - endSamples + bufferSize * 2) % bufferSize;
 			loopLength = (startSamples - endSamples);
 		}
 		if (loopLength < 1) loopLength = 1;

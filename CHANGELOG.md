@@ -1,5 +1,23 @@
 # Change Log
 
+## v2.0.18 ~ 12-20-25
+
+  * Buffer: NEW MODULE
+  * Random Sound: NEW MODULE
+  * Shift Reister Random: NEW MODULE
+  * Stereo Switch: NEW MODULE
+  * NoteSeq16: now has 256 steps and scrolls
+  * GridSeq: now has snake options in right click menu
+  * EightSeq: now has snake options in right click menu
+  * AbcdSeq: now has randomize column and row buttons
+  * Bouncy Balls: balls now hit each other
+  * NoteSeq: life counter resets on reset
+  * NoteSeqFu: life counter resets on reset
+  * ThingThing: added a jitter amount knob
+  * XYPad: clears drawing on load preset
+
+  Added gate length slider to right click menu of all module which output a trigger/gate
+
 ## v2.0.17 ~ 11-29-25
 
   * Bouncy Balls: fixed edge hit trigger

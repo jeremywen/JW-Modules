@@ -68,8 +68,8 @@ struct DivSeq : Module,QuantizeUtils {
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
 
-	// Maximum division used when randomizing divisions
-	int maxRandomDiv = 64;
+	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
+	RandomMode randomMode = RANDOM;
 
 	dsp::PulseGenerator gatePulse;
 
@@ -131,9 +131,9 @@ struct DivSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
-
-		// maxRandomDiv
-		json_object_set_new(rootJ, "maxRandomDiv", json_integer(maxRandomDiv));
+		// randomMode
+		json_t *randomModeJ = json_integer((int) randomMode);
+		json_object_set_new(rootJ, "randomMode", randomModeJ);
 
 		// gate pulse length
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
@@ -165,13 +165,10 @@ struct DivSeq : Module,QuantizeUtils {
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 
-
-		// maxRandomDiv
-		json_t *maxRandomDivJ = json_object_get(rootJ, "maxRandomDiv");
-		if (maxRandomDivJ) {
-			maxRandomDiv = (int) json_integer_value(maxRandomDivJ);
-			maxRandomDiv = clampijw(maxRandomDiv, 1.0, 64.0);
-		}
+		// randomMode
+		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
+		if (randomModeJ)
+			randomMode = (RandomMode)json_integer_value(randomModeJ);
 
 		// gate pulse length
 		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
@@ -204,18 +201,14 @@ struct DivSeq : Module,QuantizeUtils {
 	}
 
 	void randomizeNotesOnly(){
-		int firstKnobVal = params[CELL_NOTE_PARAM].getValue();
-		float firstKnobMaxVal = noteParamMax;
 		for (int i = 0; i < 16; i++) {
 			params[CELL_NOTE_PARAM + i].setValue(getOneRandomNote());
 		}
 	}
 
 	void randomizeDivsOnly(){
-		int maxDiv = clampijw(maxRandomDiv, 1.0, 64.0);
-
 		for (int i = 0; i < 16; i++) {
-			params[CELL_DIV_PARAM + i].setValue((int)(random::uniform() * maxDiv + 1));
+			params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*64+1));
 		}
 	}
 
@@ -360,14 +353,12 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
-			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			int maxDiv = clampijw(mod->maxRandomDiv, 1.0, 64.0);
 			for (int i = 0; i < 16; i++) {
 				if (shiftDown) {
 					wid->divKnobs[i]->getParamQuantity()->setValue(1);
 				} else {
-					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform() * maxDiv + 1));
+					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*64+1));
 				}
 			}
 		}
@@ -380,8 +371,9 @@ struct RandomizeGates16SeqOnlyButton : TinyButton {
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *gsw = this->getAncestorOfType<DivSeqWidget>();
 			DivSeq *gs = dynamic_cast<DivSeq*>(gsw->module);
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 16; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+				if (shiftDown) {
 					gs->gateState[i] = true;
 				} else {
 					bool active = random::uniform() > 0.5;
@@ -513,62 +505,16 @@ struct DivSeqGateModeItem : MenuItem {
 	}
 };
 
-// Context menu slider to control gate pulse length (ms)
-struct DivGatePulseLengthQuantity : Quantity {
-	DivSeq* divSeq = nullptr;
-	void setValue(float value) override {
-		if (!divSeq) return;
-		divSeq->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+struct DivSeqRandomModeItem : MenuItem {
+	DivSeq *divSeq;
+	DivSeq::RandomMode randomMode;
+	void onAction(const event::Action &e) override {
+		divSeq->randomMode = randomMode;
 	}
-	float getValue() override {
-		return divSeq ? divSeq->gatePulseLenSec : getDefaultValue();
+	void step() override {
+		rightText = (divSeq->randomMode == randomMode) ? "✔" : "";
+		MenuItem::step();
 	}
-	float getMinValue() override { return 0.001f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override { return 0.005f; }
-	float getDisplayValue() override { return getValue() * 1000.f; }
-	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-	int getDisplayPrecision() override { return 0; }
-	std::string getLabel() override { return "Gate Pulse Length"; }
-	std::string getUnit() override { return "ms"; }
-};
-
-struct DivGatePulseLengthSlider : ui::Slider {
-	DivGatePulseLengthSlider() { quantity = new DivGatePulseLengthQuantity; }
-	~DivGatePulseLengthSlider() { delete quantity; }
-};
-
-// Context menu slider to control maximum random division
-struct DivMaxRandomDivQuantity : Quantity {
-	DivSeq* divSeq = nullptr;
-	void setValue(float value) override {
-		if (!divSeq) return;
-		int v = (int) (value + 0.5f);
-		v = clampijw(v, 1.0, 64.0);
-		divSeq->maxRandomDiv = v;
-	}
-	float getValue() override {
-		if (!divSeq) return getDefaultValue();
-		return (float) clampijw(divSeq->maxRandomDiv, 1.0, 64.0);
-	}
-	float getMinValue() override { return 1.0f; }
-	float getMaxValue() override { return 64.0f; }
-	float getDefaultValue() override { return 64.0f; }
-	float getDisplayValue() override { return getValue(); }
-	void setDisplayValue(float displayValue) override { setValue(displayValue); }
-	int getDisplayPrecision() override { return 0; }
-	std::string getDisplayValueString() override {
-		int v = (int)(getValue() + 0.5f);
-		if (v < 1) v = 1;
-		if (v > 64) v = 64;
-		return std::to_string(v);
-	}
-	std::string getLabel() override { return "Max Random Div"; }
-};
-
-struct DivMaxRandomDivSlider : ui::Slider {
-	DivMaxRandomDivSlider() { quantity = new DivMaxRandomDivQuantity; }
-	~DivMaxRandomDivSlider() { delete quantity; }
 };
 
 void DivSeqWidget::appendContextMenu(Menu *menu) {
@@ -608,25 +554,27 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
 
-    // Max Random Div slider
-    MenuLabel *maxDivLabel = new MenuLabel();
-    maxDivLabel->text = "Max Random Div";
-    menu->addChild(maxDivLabel);
+	MenuLabel *randomModeLabel = new MenuLabel();
+	randomModeLabel->text = "Random Button Mode";
+	menu->addChild(randomModeLabel);
 
-    DivMaxRandomDivSlider* maxDivSlider = new DivMaxRandomDivSlider();
-    static_cast<DivMaxRandomDivQuantity*>(maxDivSlider->quantity)->divSeq = divSeq;
-    maxDivSlider->box.size.x = 220.0f;
-    menu->addChild(maxDivSlider);
+	DivSeqRandomModeItem *randomItem = new DivSeqRandomModeItem();
+	randomItem->text = "Random";
+	randomItem->divSeq = divSeq;
+	randomItem->randomMode = DivSeq::RANDOM;
+	menu->addChild(randomItem);
 
-	// Gate pulse length slider
-	MenuLabel *gatePulseLabel = new MenuLabel();
-	gatePulseLabel->text = "Gate Pulse Length";
-	menu->addChild(gatePulseLabel);
+	DivSeqRandomModeItem *randomMinItem = new DivSeqRandomModeItem();
+	randomMinItem->text = "First is Minimum";
+	randomMinItem->divSeq = divSeq;
+	randomMinItem->randomMode = DivSeq::FIRST_MIN;
+	menu->addChild(randomMinItem);
 
-	DivGatePulseLengthSlider* gateSlider = new DivGatePulseLengthSlider();
-	static_cast<DivGatePulseLengthQuantity*>(gateSlider->quantity)->divSeq = divSeq;
-	gateSlider->box.size.x = 220.0f;
-	menu->addChild(gateSlider);
+	DivSeqRandomModeItem *randomMaxItem = new DivSeqRandomModeItem();
+	randomMaxItem->text = "First is Maximum";
+	randomMaxItem->divSeq = divSeq;
+	randomMaxItem->randomMode = DivSeq::FIRST_MAX;
+	menu->addChild(randomMaxItem);
 }
 
 Model *modelDivSeq = createModel<DivSeq, DivSeqWidget>("DivSeq");
