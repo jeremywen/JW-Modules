@@ -80,6 +80,8 @@ struct BouncyBalls : Module {
 	float minVolt = -5, maxVolt = 5;
 	float velScale = 0.01;
 	float rate = 1.0 / APP->engine->getSampleRate();
+	// Gate pulse length in seconds for edge/paddle direction triggers
+	float gatePulseLenSec = 0.005f;
 	
 	Ball *balls = new Ball[4];
 	Paddle paddle;
@@ -153,6 +155,8 @@ struct BouncyBalls : Module {
 		json_object_set_new(rootJ, "paddleX", json_real(paddle.box.pos.x));
 		json_object_set_new(rootJ, "paddleY", json_real(paddle.box.pos.y));
 		json_object_set_new(rootJ, "paddleVisible", json_boolean(paddle.visible));
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 		return rootJ;
 	}
 
@@ -167,6 +171,13 @@ struct BouncyBalls : Module {
 			paddle.visible = json_is_true(paddleVisibleJ);
 		}
 		lights[PAD_ON_LIGHT].value = paddle.visible ? 1.0 : 0.0;
+
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
 	}
 
 	void resetBallAtIdx(int i){
@@ -213,36 +224,31 @@ void BouncyBalls::process(const ProcessArgs &args) {
 				b.vel.x *= -1;
 			}
 
-			b.paddlePulse.trigger(1e-3);
+			b.paddlePulse.trigger(gatePulseLenSec);
 		}
 
-		bool hitEdge = false;
 		if(b.box.pos.x + b.box.size.x >= displayWidth){
 			b.vel.x *= -1;
-			b.eastPulse.trigger(1e-3);
-			b.edgePulse.trigger(1e-3);
-			hitEdge = true;
+			b.eastPulse.trigger(gatePulseLenSec);
+			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.x <= 0){
 			b.vel.x *= -1;
-			b.westPulse.trigger(1e-3);
-			b.edgePulse.trigger(1e-3);
-			hitEdge = true;
+			b.westPulse.trigger(gatePulseLenSec);
+			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.y + b.box.size.y >= displayHeight){
 			b.vel.y *= -1;
-			b.southPulse.trigger(1e-3);
-			b.edgePulse.trigger(1e-3);
-			hitEdge = true;
+			b.southPulse.trigger(gatePulseLenSec);
+			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.y <= 0){
 			b.vel.y *= -1;
-			b.northPulse.trigger(1e-3);
-			b.edgePulse.trigger(1e-3);
-			hitEdge = true;
+			b.northPulse.trigger(gatePulseLenSec);
+			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(paddle.visible && inputs[PAD_POS_X_INPUT].isConnected()){
@@ -348,6 +354,7 @@ struct BouncyBallsWidget : ModuleWidget {
 	BouncyBallsWidget(BouncyBalls *module);
 	void addButton(Vec pos, int param);
 	void addColoredPort(int color, Vec pos, int param, bool input);
+	void appendContextMenu(Menu *menu) override;
 };
 
 struct PaddleVisibleButton : TinyButton {
@@ -493,6 +500,43 @@ void BouncyBallsWidget::addColoredPort(int color, Vec pos, int param, bool input
 			else { addOutput(createOutput<White_TinyPJ301MPort>(pos, module, param));	}
 			break;
 	}
+}
+
+// Context menu slider to control gate pulse length (ms)
+void BouncyBallsWidget::appendContextMenu(Menu *menu) {
+	BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(module);
+	if (!bbs) return;
+
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Pulse Length";
+	menu->addChild(gatePulseLabel);
+
+	struct BBGatePulseLengthQuantity : Quantity {
+		BouncyBalls* bbs = nullptr;
+		void setValue(float value) override {
+			if (!bbs) return;
+			bbs->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+		}
+		float getValue() override { return bbs ? bbs->gatePulseLenSec : getDefaultValue(); }
+		float getMinValue() override { return 0.001f; }
+		float getMaxValue() override { return 1.0f; }
+		float getDefaultValue() override { return 0.005f; }
+		float getDisplayValue() override { return getValue() * 1000.f; }
+		void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+		int getDisplayPrecision() override { return 0; }
+		std::string getLabel() override { return "Gate Pulse Length"; }
+		std::string getUnit() override { return "ms"; }
+	};
+
+	struct BBGatePulseLengthSlider : ui::Slider {
+		BBGatePulseLengthSlider() { quantity = new BBGatePulseLengthQuantity; }
+		~BBGatePulseLengthSlider() { delete quantity; }
+	};
+
+	BBGatePulseLengthSlider* gateSlider = new BBGatePulseLengthSlider();
+	static_cast<BBGatePulseLengthQuantity*>(gateSlider->quantity)->bbs = bbs;
+	gateSlider->box.size.x = 220.0f;
+	menu->addChild(gateSlider);
 }
 
 Model *modelBouncyBalls = createModel<BouncyBalls, BouncyBallsWidget>("BouncyBalls");

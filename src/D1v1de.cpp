@@ -30,6 +30,9 @@ struct D1v1de : Module {
 	dsp::SchmittTrigger clockTrig;
 	dsp::PulseGenerator gatePulse;
 
+	// Gate pulse length in seconds (controls CLOCK_OUTPUT pulse width)
+	float gatePulseLenSec = 0.005f;
+
 	D1v1de() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(DIV_PARAM, 1, 64, 4, "Division");
@@ -50,11 +53,17 @@ struct D1v1de : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "blockColor", json_integer(int(params[COLOR_PARAM].getValue())));
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 		return rootJ;
 	}
 
 	void dataFromJson(json_t *rootJ) override {
 		params[COLOR_PARAM].setValue(json_integer_value(json_object_get(rootJ, "blockColor")));
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
 	}
 
 	void onReset() override {
@@ -97,14 +106,14 @@ struct D1v1de : Module {
 			int divInt = getDivInt();
 			int offsetInt = getOffsetInt();
 			ticks++;
-			if(ticks == offsetInt){
+				if(ticks == offsetInt){
 				pulseOut = true;
-				gatePulse.trigger(1e-3);
+					gatePulse.trigger(gatePulseLenSec);
 			}
 			if(ticks == divInt){
 				if(!pulseOut){
 					pulseOut = true;
-					gatePulse.trigger(1e-3);
+						gatePulse.trigger(gatePulseLenSec);
 				}
 			}
 			if(ticks >= divInt){
@@ -247,6 +256,35 @@ struct ColorMenuItem : MenuItem {
 	}
 };
 
+// Context menu slider to control CLOCK_OUTPUT pulse length (milliseconds)
+struct D1vGatePulseLengthQuantity : Quantity {
+	D1v1de* module = nullptr;
+	void setValue(float value) override {
+		if (!module) return;
+		module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+	}
+	float getValue() override {
+		return module ? module->gatePulseLenSec : getDefaultValue();
+	}
+	float getMinValue() override { return 0.001f; } // 1 ms
+	float getMaxValue() override { return 1.0f; }   // 1000 ms
+	float getDefaultValue() override { return 0.005f; }
+	float getDisplayValue() override { return getValue() * 1000.f; }
+	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+	int getDisplayPrecision() override { return 0; }
+	std::string getLabel() override { return "Gate Pulse Length"; }
+	std::string getUnit() override { return "ms"; }
+};
+
+struct D1vGatePulseLengthSlider : ui::Slider {
+	D1vGatePulseLengthSlider() {
+		quantity = new D1vGatePulseLengthQuantity;
+	}
+	~D1vGatePulseLengthSlider() {
+		delete quantity;
+	}
+};
+
 void D1v1deWidget::appendContextMenu(Menu *menu) {
 	{	
 		MenuLabel *spacerLabel = new MenuLabel();
@@ -282,6 +320,16 @@ void D1v1deWidget::appendContextMenu(Menu *menu) {
 		item->module = d1v;
 		menu->addChild(item);
 	}
+
+	// Gate pulse length slider
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Pulse Length";
+	menu->addChild(gatePulseLabel);
+
+	D1vGatePulseLengthSlider* gateSlider = new D1vGatePulseLengthSlider();
+	static_cast<D1vGatePulseLengthQuantity*>(gateSlider->quantity)->module = d1v;
+	gateSlider->box.size.x = 220.0f;
+	menu->addChild(gateSlider);
 }
 
 Model *modelD1v1de = createModel<D1v1de, D1v1deWidget>("D1v1de");

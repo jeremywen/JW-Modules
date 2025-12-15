@@ -71,6 +71,9 @@ struct EightSeq : Module,QuantizeUtils {
 
 	dsp::PulseGenerator gatePulse;
 
+	// Gate pulse length in seconds (for TRIGGER/RETRIGGER modes)
+	float gatePulseLenSec = 0.005f;
+
 	EightSeq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
@@ -131,6 +134,9 @@ struct EightSeq : Module,QuantizeUtils {
 		json_t *randomModeJ = json_integer((int) randomMode);
 		json_object_set_new(rootJ, "randomMode", randomModeJ);
 
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
 		return rootJ;
 	}
 
@@ -162,6 +168,13 @@ struct EightSeq : Module,QuantizeUtils {
 		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
 		if (randomModeJ)
 			randomMode = (RandomMode)json_integer_value(randomModeJ);
+
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
 	}
 
 	void onReset() override {
@@ -280,7 +293,7 @@ void EightSeq::process(const ProcessArgs &args) {
 		}
 		rndFloat0to1AtClockStep = random::uniform();
 		lights[STEPS_LIGHT + index].value = 1.0;
-		gatePulse.trigger(1e-1);
+		gatePulse.trigger(gatePulseLenSec);
 	}
 
 	bool pulse = gatePulse.process(1.0 / args.sampleRate);
@@ -545,6 +558,50 @@ struct EightSeqRandomModeItem : MenuItem {
 	}
 };
 
+// Context menu slider to control gate pulse length (ms)
+struct GatePulseLengthQuantity : Quantity {
+	EightSeq* eightSeq = nullptr;
+	void setValue(float value) override {
+		if (!eightSeq) return;
+		// value in seconds
+		eightSeq->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+	}
+	float getValue() override {
+		return eightSeq ? eightSeq->gatePulseLenSec : getDefaultValue();
+	}
+	float getMinValue() override {
+		return 0.001f; // 1 ms
+	}
+	float getMaxValue() override {
+		return 1.0f; // 1000 ms
+	}
+	float getDefaultValue() override { return 0.005f; }
+	float getDisplayValue() override {
+		return getValue() * 1000.f; // ms
+	}
+	void setDisplayValue(float displayValue) override {
+		setValue(displayValue / 1000.f);
+	}
+	int getDisplayPrecision() override {
+		return 0;
+	}
+	std::string getLabel() override {
+		return "Gate Pulse Length";
+	}
+	std::string getUnit() override {
+		return "ms";
+	}
+};
+
+struct GatePulseLengthSlider : ui::Slider {
+	GatePulseLengthSlider() {
+		quantity = new GatePulseLengthQuantity;
+	}
+	~GatePulseLengthSlider() {
+		delete quantity;
+	}
+};
+
 void EightSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
@@ -603,6 +660,16 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	randomMaxItem->eightSeq = eightSeq;
 	randomMaxItem->randomMode = EightSeq::FIRST_MAX;
 	menu->addChild(randomMaxItem);
+
+	// Gate pulse length slider
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Pulse Length";
+	menu->addChild(gatePulseLabel);
+
+	GatePulseLengthSlider* gateSlider = new GatePulseLengthSlider();
+	static_cast<GatePulseLengthQuantity*>(gateSlider->quantity)->eightSeq = eightSeq;
+	gateSlider->box.size.x = 220.0f;
+	menu->addChild(gateSlider);
 }
 
 Model *modelEightSeq = createModel<EightSeq, EightSeqWidget>("8Seq");

@@ -143,6 +143,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator mainClockPulse;
 
+	// Gate pulse length in seconds (for TRIGGER/RETRIGGER modes)
+	float gatePulseLenSec = 0.005f;
+
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
 
@@ -250,6 +253,9 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
 		return rootJ;
 	}
 
@@ -274,6 +280,13 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		json_t *gateModeJ = json_object_get(rootJ, "gateMode");
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
+
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
 		
 		gridChanged();
 	}
@@ -435,7 +448,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	}
 
 	void clockStep(){
-		mainClockPulse.trigger(1e-1);
+		mainClockPulse.trigger(gatePulseLenSec);
 		lifeCounter++;
 		rndFloat0to1AtClockStep = random::uniform();
 		for(int i=0;i<4;i++){
@@ -449,7 +462,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 
 			playHeads[i].ticksSinceDivision++;
 			if(playHeads[i].ticksSinceDivision % int(params[DIVISION_KNOB_PARAM + i].getValue()) == 0){
-				playHeads[i].gatePulse.trigger(1e-1);
+				playHeads[i].gatePulse.trigger(gatePulseLenSec);
 
 				if(curPlayMode == PM_FWD_LOOP){
 					seqPos++;
@@ -1154,6 +1167,31 @@ struct NoteSeqFuGateModeItem : MenuItem {
 	}
 };
 
+// Context menu slider to control gate pulse length (ms)
+struct NSFGatePulseLengthQuantity : Quantity {
+	NoteSeqFu* noteSeqFu = nullptr;
+	void setValue(float value) override {
+		if (!noteSeqFu) return;
+		noteSeqFu->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+	}
+	float getValue() override {
+		return noteSeqFu ? noteSeqFu->gatePulseLenSec : getDefaultValue();
+	}
+	float getMinValue() override { return 0.001f; }
+	float getMaxValue() override { return 1.0f; }
+	float getDefaultValue() override { return 0.005f; }
+	float getDisplayValue() override { return getValue() * 1000.f; }
+	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+	int getDisplayPrecision() override { return 0; }
+	std::string getLabel() override { return "Gate Pulse Length"; }
+	std::string getUnit() override { return "ms"; }
+};
+
+struct NSFGatePulseLengthSlider : ui::Slider {
+	NSFGatePulseLengthSlider() { quantity = new NSFGatePulseLengthQuantity; }
+	~NSFGatePulseLengthSlider() { delete quantity; }
+};
+
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	NoteSeqFu *noteSeqFu = dynamic_cast<NoteSeqFu*>(module);
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -1189,6 +1227,16 @@ void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	continuousItem->noteSeqFu = noteSeqFu;
 	continuousItem->gateMode = NoteSeqFu::CONTINUOUS;
 	menu->addChild(continuousItem);
+
+	// Gate pulse length slider
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Pulse Length";
+	menu->addChild(gatePulseLabel);
+
+	NSFGatePulseLengthSlider* gateSlider = new NSFGatePulseLengthSlider();
+	static_cast<NSFGatePulseLengthQuantity*>(gateSlider->quantity)->noteSeqFu = noteSeqFu;
+	gateSlider->box.size.x = 220.0f;
+	menu->addChild(gateSlider);
 }
 
 Model *modelNoteSeqFu = createModel<NoteSeqFu, NoteSeqFuWidget>("NoteSeqFu");

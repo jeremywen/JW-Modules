@@ -5,11 +5,14 @@
 
 struct RandomSound : Module {
 	enum ParamIds {
+		AMP_DECAY_PARAM,
+		FEEDBACK_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		TRIGGER_INPUT,
 		TRIGGER_RANDOMIZE,
+		DECAY_CV_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -42,32 +45,44 @@ struct RandomSound : Module {
 		float modPrevOut = 0.f;
 		float fmIndex = 0.1f;
 		Wave modWave = W_SINE;
+		// Routing
+		bool useFM = true; // true: FM, false: additive mix
 		// Envelopes
 		EnvStage envStage = ENV_IDLE;
 		float attackTime = 0.f;
 		float decayTime = 0.5f;
 		float envValue = 0.f;
+		bool ampExp = false; // exponential amplitude envelope
 		EnvStage pitchEnvStage = ENV_IDLE;
 		float pitchEnvValue = 0.f;
 		float pitchDecayTime = 0.2f;
+		bool pitchExp = false; // exponential pitch envelope
 		bool pitchUp = true;
 		float pitchOctavesMax = 4.0f;
 		EnvStage modEnvStage = ENV_IDLE;
 		float modEnvValue = 0.f;
 		float modDecayTime = 0.3f;
+		bool modAmpExp = false; // exponential mod amplitude envelope
 		EnvStage modPitchEnvStage = ENV_IDLE;
 		float modPitchEnvValue = 0.f;
 		float modPitchDecayTime = 0.25f;
 		bool modPitchUp = true;
 		float modPitchOctavesMax = 4.0f;
+		bool modPitchExp = false; // exponential mod pitch envelope
 	};
 	Voice voices[16];
 
 	RandomSound() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(AMP_DECAY_PARAM, 0.001f, 1.0f, 0.3f, "Amplitude Decay", "s");
+		configParam(FEEDBACK_PARAM, 0.0f, 1.0f, 0.2f, "Carrier Feedback");
 		configInput(TRIGGER_INPUT, "Trigger IN");
 		configInput(TRIGGER_RANDOMIZE, "Trigger Randomize");
+		configInput(DECAY_CV_INPUT, "Decay CV");
 		configOutput(VOLT_OUTPUT, "Random Sound (polyphonic)");
+		// Initialize voices' decay to current knob value so first randomization respects it
+		float initDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
+		for (int i = 0; i < 16; i++) voices[i].decayTime = initDecay;
 	}
 
 	~RandomSound() {
@@ -75,18 +90,24 @@ struct RandomSound : Module {
 
 	void onRandomize() override {
 		// Randomize all voices independently
+		float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
+		float fbMax = clamp(params[FEEDBACK_PARAM].getValue(), 0.0f, 1.0f);
 		for (int i = 0; i < channels && i < 16; i++) {
 			Voice &v = voices[i];
-			v.freq = 50.f + random::uniform() * 950.f;
-			v.feedback = random::uniform() * 0.9f;
+			// Carrier frequency: 20 Hz .. 2 kHz
+			v.freq = 20.f + random::uniform() * (2000.f - 20.f);
+			// Random per-voice carrier feedback scaled by global knob
+			v.feedback = random::uniform() * fbMax;
 			v.attackTime = 0.f;
-			v.decayTime  = 0.001f + random::uniform() * (1.0f - 0.001f);
+			// Set amplitude decay from knob so it is honored immediately after randomize
+			v.decayTime  = baseDecay;
 			v.pitchDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
 			v.pitchUp = random::uniform() < 0.5f;
 			v.pitchOctavesMax = random::uniform() * 4.0f;
 			int cw = int(random::uniform() * 4.0f); if (cw < 0) cw = 0; if (cw > 3) cw = 3;
 			v.carrierWave = (Wave)cw;
-			v.modFreq = 30.f + random::uniform() * 970.f;
+			// Modulator frequency: 20 Hz .. 2 kHz
+			v.modFreq = 20.f + random::uniform() * (2000.f - 20.f);
 			v.modFeedback = random::uniform() * 0.9f;
 			v.modDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
 			v.modPitchDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
@@ -95,6 +116,12 @@ struct RandomSound : Module {
 			v.fmIndex = 0.05f + random::uniform() * 0.45f;
 			int mw = int(random::uniform() * 4.0f); if (mw < 0) mw = 0; if (mw > 3) mw = 3;
 			v.modWave = (Wave)mw;
+			v.useFM = random::uniform() < 0.5f;
+			// Randomly choose exponential or linear envelopes
+			v.ampExp = random::uniform() < 0.5f;
+			v.pitchExp = random::uniform() < 0.5f;
+			v.modAmpExp = random::uniform() < 0.5f;
+			v.modPitchExp = random::uniform() < 0.5f;
 		}
 	}
 
@@ -107,6 +134,9 @@ struct RandomSound : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "channels", json_integer(channels));
+		// Persist global parameters explicitly as well
+		json_object_set_new(rootJ, "ampDecay", json_real(params[AMP_DECAY_PARAM].getValue()));
+		json_object_set_new(rootJ, "feedbackMax", json_real(params[FEEDBACK_PARAM].getValue()));
 		// Save voices
 		json_t *voicesJ = json_array();
 		for (int i = 0; i < 16; i++) {
@@ -133,6 +163,8 @@ struct RandomSound : Module {
 			json_object_set_new(vj, "modPrevOut", json_real(v.modPrevOut));
 			json_object_set_new(vj, "modWave", json_integer((int)v.modWave));
 			json_object_set_new(vj, "fmIndex", json_real(v.fmIndex));
+			json_object_set_new(vj, "useFM", json_integer(v.useFM ? 1 : 0));
+			json_object_set_new(vj, "ampExp", json_integer(v.ampExp ? 1 : 0));
 			json_object_set_new(vj, "modEnvValue", json_real(v.modEnvValue));
 			json_object_set_new(vj, "modDecayTime", json_real(v.modDecayTime));
 			json_object_set_new(vj, "modEnvStage", json_integer((int)v.modEnvStage));
@@ -140,6 +172,9 @@ struct RandomSound : Module {
 			json_object_set_new(vj, "modPitchDecayTime", json_real(v.modPitchDecayTime));
 			json_object_set_new(vj, "modPitchUp", json_integer(v.modPitchUp ? 1 : 0));
 			json_object_set_new(vj, "modPitchEnvStage", json_integer((int)v.modPitchEnvStage));
+			json_object_set_new(vj, "pitchExp", json_integer(v.pitchExp ? 1 : 0));
+			json_object_set_new(vj, "modAmpExp", json_integer(v.modAmpExp ? 1 : 0));
+			json_object_set_new(vj, "modPitchExp", json_integer(v.modPitchExp ? 1 : 0));
 			json_array_append_new(voicesJ, vj);
 		}
 		json_object_set_new(rootJ, "voices", voicesJ);
@@ -148,6 +183,8 @@ struct RandomSound : Module {
 
 	void dataFromJson(json_t *rootJ) override {
 		if (json_t *cj = json_object_get(rootJ, "channels")) channels = json_integer_value(cj);
+		if (json_t *x = json_object_get(rootJ, "ampDecay")) params[AMP_DECAY_PARAM].setValue(clamp((float)json_real_value(x), 0.001f, 1.0f));
+		if (json_t *x = json_object_get(rootJ, "feedbackMax")) params[FEEDBACK_PARAM].setValue(clamp((float)json_real_value(x), 0.0f, 1.0f));
 		if (json_t *voicesJ = json_object_get(rootJ, "voices")) {
 			int i = 0;
 			json_t *vj;
@@ -175,6 +212,8 @@ struct RandomSound : Module {
 				if (json_t *x = json_object_get(vj, "modPrevOut")) v.modPrevOut = json_real_value(x);
 				if (json_t *x = json_object_get(vj, "modWave")) v.modWave = (Wave)json_integer_value(x);
 				if (json_t *x = json_object_get(vj, "fmIndex")) v.fmIndex = json_real_value(x);
+				if (json_t *x = json_object_get(vj, "useFM")) v.useFM = json_integer_value(x) != 0;
+				if (json_t *x = json_object_get(vj, "ampExp")) v.ampExp = json_integer_value(x) != 0;
 				if (json_t *x = json_object_get(vj, "modEnvValue")) v.modEnvValue = json_real_value(x);
 				if (json_t *x = json_object_get(vj, "modDecayTime")) v.modDecayTime = clamp(json_real_value(x), 0.001f, 1.0f);
 				if (json_t *x = json_object_get(vj, "modEnvStage")) v.modEnvStage = (EnvStage)json_integer_value(x);
@@ -182,6 +221,9 @@ struct RandomSound : Module {
 				if (json_t *x = json_object_get(vj, "modPitchDecayTime")) v.modPitchDecayTime = clamp(json_real_value(x), 0.001f, 1.0f);
 				if (json_t *x = json_object_get(vj, "modPitchUp")) v.modPitchUp = json_integer_value(x) != 0;
 				if (json_t *x = json_object_get(vj, "modPitchEnvStage")) v.modPitchEnvStage = (EnvStage)json_integer_value(x);
+				if (json_t *x = json_object_get(vj, "pitchExp")) v.pitchExp = json_integer_value(x) != 0;
+				if (json_t *x = json_object_get(vj, "modAmpExp")) v.modAmpExp = json_integer_value(x) != 0;
+				if (json_t *x = json_object_get(vj, "modPitchExp")) v.modPitchExp = json_integer_value(x) != 0;
 			}
 		}
 	}
@@ -194,10 +236,18 @@ struct RandomSound : Module {
 
 		// Trigger envelopes on trigger input (all voices)
 		if (inTrig.process(inputs[TRIGGER_INPUT].getVoltage())) {
+			float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
+			// CV: 0-10V adds 0..1s
+			if (inputs[DECAY_CV_INPUT].isConnected()) {
+				float cv = inputs[DECAY_CV_INPUT].getVoltage();
+				baseDecay = clamp(baseDecay + cv / 10.f, 0.001f, 1.0f);
+			}
 			for (int i = 0; i < channels && i < 16; i++) {
 				Voice &v = voices[i];
 				v.envStage = ENV_DECAY;
 				v.envValue = 1.f;
+				// Set amplitude envelope decay from the overall knob
+				v.decayTime = baseDecay;
 				v.pitchEnvStage = ENV_DECAY;
 				v.pitchEnvValue = 1.f;
 				v.modEnvStage = ENV_DECAY;
@@ -214,25 +264,25 @@ struct RandomSound : Module {
 			if (vc.envStage == ENV_DECAY) {
 				vc.decayTime = clamp(vc.decayTime, 0.001f, 1.0f);
 				float dec = (vc.decayTime > 0.f) ? (1.f / (vc.decayTime * sr)) : 1.f;
-				vc.envValue -= dec;
+				if (vc.ampExp) vc.envValue -= dec * vc.envValue; else vc.envValue -= dec;
 				if (vc.envValue <= 0.f) { vc.envValue = 0.f; vc.envStage = ENV_IDLE; }
 			}
 			if (vc.pitchEnvStage == ENV_DECAY) {
 				vc.pitchDecayTime = clamp(vc.pitchDecayTime, 0.001f, 1.0f);
 				float pdec = (vc.pitchDecayTime > 0.f) ? (1.f / (vc.pitchDecayTime * sr)) : 1.f;
-				vc.pitchEnvValue -= pdec;
+				if (vc.pitchExp) vc.pitchEnvValue -= pdec * vc.pitchEnvValue; else vc.pitchEnvValue -= pdec;
 				if (vc.pitchEnvValue <= 0.f) { vc.pitchEnvValue = 0.f; vc.pitchEnvStage = ENV_IDLE; }
 			}
 			if (vc.modPitchEnvStage == ENV_DECAY) {
 				vc.modPitchDecayTime = clamp(vc.modPitchDecayTime, 0.001f, 1.0f);
 				float pdec = (vc.modPitchDecayTime > 0.f) ? (1.f / (vc.modPitchDecayTime * sr)) : 1.f;
-				vc.modPitchEnvValue -= pdec;
+				if (vc.modPitchExp) vc.modPitchEnvValue -= pdec * vc.modPitchEnvValue; else vc.modPitchEnvValue -= pdec;
 				if (vc.modPitchEnvValue <= 0.f) { vc.modPitchEnvValue = 0.f; vc.modPitchEnvStage = ENV_IDLE; }
 			}
 			if (vc.modEnvStage == ENV_DECAY) {
 				vc.modDecayTime = clamp(vc.modDecayTime, 0.001f, 1.0f);
 				float mdec = (vc.modDecayTime > 0.f) ? (1.f / (vc.modDecayTime * sr)) : 1.f;
-				vc.modEnvValue -= mdec;
+				if (vc.modAmpExp) vc.modEnvValue -= mdec * vc.modEnvValue; else vc.modEnvValue -= mdec;
 				if (vc.modEnvValue <= 0.f) { vc.modEnvValue = 0.f; vc.modEnvStage = ENV_IDLE; }
 			}
 			// Pitch multipliers
@@ -261,7 +311,10 @@ struct RandomSound : Module {
 			vc.modPrevOut = modS;
 			modS *= vc.modEnvValue;
 			// Carrier
-			vc.phase += 2.f * M_PI * (vc.freq * pitchMul) / sr + vc.fmIndex * modS;
+			// Advance carrier with optional FM
+			float phaseInc = 2.f * M_PI * (vc.freq * pitchMul) / sr;
+			if (vc.useFM) phaseInc += vc.fmIndex * modS;
+			vc.phase += phaseInc;
 			if (vc.phase > 2.f * M_PI) vc.phase -= 2.f * M_PI;
 			float carBasic = 0.f;
 			float carPhaseNorm = fmodf(vc.phase, 2.f * M_PI);
@@ -276,9 +329,11 @@ struct RandomSound : Module {
 					break;
 				}
 			}
-			float s = vc.amp * carBasic;
-			s = s + vc.feedback * vc.prevOut;
-			vc.prevOut = s;
+			float sCar = vc.amp * carBasic;
+			sCar = sCar + vc.feedback * vc.prevOut;
+			vc.prevOut = sCar;
+			// Output routing: FM (carrier only) or additive (carrier + mod)
+			float s = vc.useFM ? sCar : (sCar + modS);
 			float outV = s * vc.envValue;
 			if (outV > 10.f) outV = 10.f; else if (outV < -10.f) outV = -10.f;
 			outputs[VOLT_OUTPUT].setVoltage(outV, i);
@@ -304,9 +359,14 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	addInput(createInput<PJ301MPort>(Vec(10, 60), module, RandomSound::TRIGGER_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(10, 100), module, RandomSound::TRIGGER_RANDOMIZE));
-	addOutput(createOutput<PJ301MPort>(Vec(10, 140), module, RandomSound::VOLT_OUTPUT));
+	// Amplitude decay knob
+	addParam(createParam<SmallWhiteKnob>(Vec(10, 80), module, RandomSound::AMP_DECAY_PARAM));
+	// Carrier feedback amount (scales randomized per-voice feedback)
+	addParam(createParam<SmallWhiteKnob>(Vec(48, 120), module, RandomSound::FEEDBACK_PARAM));
+	addInput(createInput<PJ301MPort>(Vec(10, 160), module, RandomSound::DECAY_CV_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(10, 200), module, RandomSound::TRIGGER_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(10, 240), module, RandomSound::TRIGGER_RANDOMIZE));
+	addOutput(createOutput<PJ301MPort>(Vec(10, 280), module, RandomSound::VOLT_OUTPUT));
 
 }
 

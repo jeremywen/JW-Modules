@@ -89,6 +89,9 @@ struct GridSeq : Module,QuantizeUtils {
 
 	dsp::PulseGenerator gatePulse;
 
+	// Gate pulse length in seconds (for TRIGGER/RETRIGGER modes)
+	float gatePulseLenSec = 0.005f;
+
 	GridSeq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(RUN_PARAM, 0.0, 1.0, 0.0, "Run");
@@ -159,6 +162,9 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *randomModeJ = json_integer((int) randomMode);
 		json_object_set_new(rootJ, "randomMode", randomModeJ);
 
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
 		return rootJ;
 	}
 
@@ -190,6 +196,13 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
 		if (randomModeJ)
 			randomMode = (RandomMode)json_integer_value(randomModeJ);
+
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
 	}
 
 	void onReset() override {
@@ -343,7 +356,7 @@ void GridSeq::process(const ProcessArgs &args) {
 		index = posX + (posY * 4);
 		indexYX = posY + (posX * 4);
 		lights[STEPS_LIGHT + index].value = 1.0;
-		gatePulse.trigger(1e-1);
+		gatePulse.trigger(gatePulseLenSec);
 	}
 
 	lights[RESET_LIGHT].value -= lights[RESET_LIGHT].value / lightLambda / args.sampleRate;
@@ -623,6 +636,31 @@ struct GridSeqRandomModeItem : MenuItem {
 	}
 };
 
+// Context menu slider to control gate pulse length (ms)
+struct GridGatePulseLengthQuantity : Quantity {
+	GridSeq* gridSeq = nullptr;
+	void setValue(float value) override {
+		if (!gridSeq) return;
+		gridSeq->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+	}
+	float getValue() override {
+		return gridSeq ? gridSeq->gatePulseLenSec : getDefaultValue();
+	}
+	float getMinValue() override { return 0.001f; }
+	float getMaxValue() override { return 1.0f; }
+	float getDefaultValue() override { return 0.005f; }
+	float getDisplayValue() override { return getValue() * 1000.f; }
+	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+	int getDisplayPrecision() override { return 0; }
+	std::string getLabel() override { return "Gate Pulse Length"; }
+	std::string getUnit() override { return "ms"; }
+};
+
+struct GridGatePulseLengthSlider : ui::Slider {
+	GridGatePulseLengthSlider() { quantity = new GridGatePulseLengthQuantity; }
+	~GridGatePulseLengthSlider() { delete quantity; }
+};
+
 void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
@@ -681,6 +719,16 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	randomMaxItem->gridSeq = gridSeq;
 	randomMaxItem->randomMode = GridSeq::FIRST_MAX;
 	menu->addChild(randomMaxItem);
+
+	// Gate pulse length slider
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Pulse Length";
+	menu->addChild(gatePulseLabel);
+
+	GridGatePulseLengthSlider* gateSlider = new GridGatePulseLengthSlider();
+	static_cast<GridGatePulseLengthQuantity*>(gateSlider->quantity)->gridSeq = gridSeq;
+	gateSlider->box.size.x = 220.0f;
+	menu->addChild(gateSlider);
 }
 
 Model *modelGridSeq = createModel<GridSeq, GridSeqWidget>("GridSeq");

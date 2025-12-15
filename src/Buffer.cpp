@@ -200,54 +200,47 @@ struct Buffer : Module {
 		
 		// Read from buffer with crossfade at loop point
 		float wet = delayBuffer[readPos];
-		
-		// Apply crossfade near loop boundaries when frozen
-		if (frozen) {
-			// Use larger fade for shorter loops to smooth them out
-			int fadeLength = (int)(args.sampleRate * 0.010f); // 10ms crossfade
-			
-			// For very short loops (< 100ms), use up to 40% of loop for fading
-			// For longer loops, use standard 25% max
-			int maxFadePercent = (loopLength < args.sampleRate * 0.1f) ? 40 : 25;
-			fadeLength = std::min(fadeLength, loopLength * maxFadePercent / 100);
-			
-			// Ensure minimum fade length for smoothness
-			if (fadeLength < 32) fadeLength = std::min(32, loopLength / 3);
-			
-			if (playbackDirection == 1) {
-				// Forward playback
-				int distanceFromStart = (readPos - loopStart + bufferSize) % bufferSize;
-				int distanceFromEnd = loopLength - distanceFromStart;
-				
-				// Crossfade at the end
-				if (distanceFromEnd < fadeLength) {
-					float fadePos = (float)distanceFromEnd / (float)fadeLength;
-					int wrapReadPos = (loopStart + (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
-					float wrapSample = delayBuffer[wrapReadPos];
-					wet = wet * fadePos + wrapSample * (1.0f - fadePos);
-				}
-				// Fade in at the start
-				else if (distanceFromStart < fadeLength) {
-					float fadePos = (float)distanceFromStart / (float)fadeLength;
-					wet = wet * fadePos;
-				}
-			} else {
-				// Backward playback
-				int distanceFromStart = (loopStart - readPos + bufferSize) % bufferSize;
-				int distanceFromEnd = loopLength - distanceFromStart;
-				
-				// Crossfade at the end
-				if (distanceFromEnd < fadeLength) {
-					float fadePos = (float)distanceFromEnd / (float)fadeLength;
-					int wrapReadPos = (loopStart - (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
-					float wrapSample = delayBuffer[wrapReadPos];
-					wet = wet * fadePos + wrapSample * (1.0f - fadePos);
-				}
-				// Fade in at the start
-				else if (distanceFromStart < fadeLength) {
-					float fadePos = (float)distanceFromStart / (float)fadeLength;
-					wet = wet * fadePos;
-				}
+
+		// Apply crossfade near loop boundaries.
+		// Use a small fade when not frozen to reduce clicks (especially in reverse),
+		// and a larger adaptive fade when frozen.
+		int fadeLength = (int)(args.sampleRate * (frozen ? 0.010f : 0.005f)); // 10ms frozen, 5ms normal
+		int maxFadePercent = (loopLength < args.sampleRate * 0.1f) ? 40 : 25;
+		fadeLength = std::min(fadeLength, loopLength * maxFadePercent / 100);
+		if (fadeLength < 16) fadeLength = std::min(16, std::max(1, loopLength / 4));
+
+		if (playbackDirection == 1) {
+			// Forward playback
+			int distanceFromStart = (readPos - loopStart + bufferSize) % bufferSize;
+			int distanceFromEnd = loopLength - distanceFromStart;
+			// Crossfade at the end
+			if (distanceFromEnd < fadeLength) {
+				float fadePos = (float)distanceFromEnd / (float)fadeLength;
+				int wrapReadPos = (loopStart + (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				float wrapSample = delayBuffer[wrapReadPos];
+				wet = wet * fadePos + wrapSample * (1.0f - fadePos);
+			}
+			// Fade in at the start
+			else if (distanceFromStart < fadeLength) {
+				float fadePos = (float)distanceFromStart / (float)fadeLength;
+				wet = wet * fadePos;
+			}
+		}
+		else {
+			// Backward playback
+			int distanceFromStart = (loopStart - readPos + bufferSize) % bufferSize;
+			int distanceFromEnd = loopLength - distanceFromStart;
+			// Crossfade at the end
+			if (distanceFromEnd < fadeLength) {
+				float fadePos = (float)distanceFromEnd / (float)fadeLength;
+				int wrapReadPos = (loopStart - (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				float wrapSample = delayBuffer[wrapReadPos];
+				wet = wet * fadePos + wrapSample * (1.0f - fadePos);
+			}
+			// Fade in at the start
+			else if (distanceFromStart < fadeLength) {
+				float fadePos = (float)distanceFromStart / (float)fadeLength;
+				wet = wet * fadePos;
 			}
 		}
 		

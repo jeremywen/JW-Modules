@@ -52,6 +52,8 @@ struct Str1ker : Module {
 	dsp::SchmittTrigger resetTrigger;
 	dsp::PulseGenerator gatePulse;
 	dsp::PulseGenerator resetPulse;
+	// Gate pulse length in seconds for CLOCK_OUTPUT
+	float gatePulseLenSec = 0.005f;
 	#ifdef OSC_ON
 	IpEndpointName ipEndpointName = IpEndpointName(ADDRESS, oscPort);
 	UdpTransmitSocket transmitSocket = UdpTransmitSocket(ipEndpointName);
@@ -119,6 +121,8 @@ struct Str1ker : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "clockMult", json_integer(clockMult));
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 		return rootJ;
 	}
 
@@ -128,6 +132,12 @@ struct Str1ker : Module {
 		if (faderValJ) {
 			float faderVal = json_real_value(faderValJ);
 			params[FADER_PARAM].setValue(faderVal);
+		}
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
 		}
 	}
 
@@ -166,7 +176,7 @@ struct Str1ker : Module {
 			}
 		}
 		if (nextStep) {
-			gatePulse.trigger(1e-3);
+			gatePulse.trigger(gatePulseLenSec);
 			sendBpmOverOsc();
 		}
 
@@ -452,6 +462,40 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 		item->str1 = str1;
 		item->val = 16;
 		menu->addChild(item);
+	}
+
+	// Gate pulse length slider
+	{
+		MenuLabel *gatePulseLabel = new MenuLabel();
+		gatePulseLabel->text = "Gate Pulse Length";
+		menu->addChild(gatePulseLabel);
+
+		struct Str1kerGatePulseLengthQuantity : Quantity {
+			Str1ker* module = nullptr;
+			void setValue(float value) override {
+				if (!module) return;
+				module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+			}
+			float getValue() override { return module ? module->gatePulseLenSec : getDefaultValue(); }
+			float getMinValue() override { return 0.001f; }
+			float getMaxValue() override { return 1.0f; }
+			float getDefaultValue() override { return 0.005f; }
+			float getDisplayValue() override { return getValue() * 1000.f; }
+			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+			int getDisplayPrecision() override { return 0; }
+			std::string getLabel() override { return "Gate Pulse Length"; }
+			std::string getUnit() override { return "ms"; }
+		};
+
+		struct Str1kerGatePulseLengthSlider : ui::Slider {
+			Str1kerGatePulseLengthSlider() { quantity = new Str1kerGatePulseLengthQuantity; }
+			~Str1kerGatePulseLengthSlider() { delete quantity; }
+		};
+
+		Str1kerGatePulseLengthSlider* gateSlider = new Str1kerGatePulseLengthSlider();
+		static_cast<Str1kerGatePulseLengthQuantity*>(gateSlider->quantity)->module = str1;
+		gateSlider->box.size.x = 220.0f;
+		menu->addChild(gateSlider);
 	}
 	#ifdef OSC_ON
 	{	

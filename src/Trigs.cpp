@@ -96,6 +96,9 @@ struct Trigs : Module {
 	dsp::SchmittTrigger rotateRightTrig, rotateLeftTrig, flipHorizTrig, flipVertTrig;
 	dsp::PulseGenerator gatePulse[4];
 
+	// Gate pulse length in seconds (for outputs)
+	float gatePulseLenSec = 0.005f;
+
 	Trigs() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, 63.0, 0.0, "Start");
@@ -161,6 +164,9 @@ struct Trigs : Module {
 			json_array_append_new(cellsJ, cellJ);
 		}
 		json_object_set_new(rootJ, "cells", cellsJ);
+
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 		
 		return rootJ;
 	}
@@ -180,6 +186,13 @@ struct Trigs : Module {
 				if (cellJ)
 					cells[i] = json_integer_value(cellJ);
 			}
+		}
+
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
 		}
 	}
 
@@ -291,7 +304,7 @@ struct Trigs : Module {
 	} 
 
 	void clockStep(int seqIndex){
-		gatePulse[seqIndex].trigger(1e-3);
+		gatePulse[seqIndex].trigger(gatePulseLenSec);
 		rndFloat0to1AtClockStep = random::uniform();
 		
 		int curPlayMode = getPlayMode(seqIndex);
@@ -662,6 +675,41 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 }
 
 void TrigsWidget::appendContextMenu(Menu *menu) {
+	Trigs *trigs = dynamic_cast<Trigs*>(module);
+
+	// Gate pulse length slider
+	{
+		MenuLabel *gatePulseLabel = new MenuLabel();
+		gatePulseLabel->text = "Gate Pulse Length";
+		menu->addChild(gatePulseLabel);
+
+		struct TrigsGatePulseLengthQuantity : Quantity {
+			Trigs* module = nullptr;
+			void setValue(float value) override {
+				if (!module) return;
+				module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+			}
+			float getValue() override { return module ? module->gatePulseLenSec : getDefaultValue(); }
+			float getMinValue() override { return 0.001f; }
+			float getMaxValue() override { return 1.0f; }
+			float getDefaultValue() override { return 0.005f; }
+			float getDisplayValue() override { return getValue() * 1000.f; }
+			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+			int getDisplayPrecision() override { return 0; }
+			std::string getLabel() override { return "Gate Pulse Length"; }
+			std::string getUnit() override { return "ms"; }
+		};
+
+		struct TrigsGatePulseLengthSlider : ui::Slider {
+			TrigsGatePulseLengthSlider() { quantity = new TrigsGatePulseLengthQuantity; }
+			~TrigsGatePulseLengthSlider() { delete quantity; }
+		};
+
+		TrigsGatePulseLengthSlider* gateSlider = new TrigsGatePulseLengthSlider();
+		static_cast<TrigsGatePulseLengthQuantity*>(gateSlider->quantity)->module = trigs;
+		gateSlider->box.size.x = 220.0f;
+		menu->addChild(gateSlider);
+	}
 }
 
 

@@ -37,6 +37,11 @@ struct SimpleClock : Module {
 	int stepCount = 0;
 	const float lightLambda = 0.075;
 
+	// Gate pulse length in seconds for CLOCK_OUTPUT and divisions
+	float gatePulseLenSec = 0.005f;
+	// Reset pulse length in seconds for RESET_OUTPUT
+	float resetPulseLenSec = 0.01f;
+
 	SimpleClock() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(RUN_PARAM, 0.0, 1.0, 0.0, "Run");
@@ -57,6 +62,10 @@ struct SimpleClock : Module {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "clockMult", json_integer(clockMult));
 		json_object_set_new(rootJ, "running", json_boolean(running));
+		// gate pulse length
+		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+		// reset pulse length
+		json_object_set_new(rootJ, "resetPulseLenSec", json_real(resetPulseLenSec));
 		return rootJ;
 	}
 
@@ -67,6 +76,18 @@ struct SimpleClock : Module {
 		if (runningJ){
 			running = json_is_true(runningJ);
 		}
+		// gate pulse length
+		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
+		if (gatePulseLenSecJ) {
+			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
+		// reset pulse length
+		json_t *resetPulseLenSecJ = json_object_get(rootJ, "resetPulseLenSec");
+		if (resetPulseLenSecJ) {
+			resetPulseLenSec = (float) json_number_value(resetPulseLenSecJ);
+			resetPulseLenSec = clampfjw(resetPulseLenSec, 0.001f, 1.0f);
+		}
 	}
 
 	void onReset() override {
@@ -76,7 +97,7 @@ struct SimpleClock : Module {
 
 	void resetClock() {
 		phase = 0.0;
-		resetPulse.trigger(0.01);
+		resetPulse.trigger(resetPulseLenSec);
 		stepCount = 0;
 	}
 };
@@ -108,9 +129,9 @@ void SimpleClock::process(const ProcessArgs &args) {
 		stepCount = (stepCount + 1) % 256;
 		float probScaled = rescalefjw(params[PROB_PARAM].getValue(), -2, 6, 0, 1);
 		if(random::uniform() < probScaled){
-			resetPulse.trigger(0.01);
+			resetPulse.trigger(resetPulseLenSec);
 		}
-		gatePulse.trigger(1e-3);
+		gatePulse.trigger(gatePulseLenSec);
 	}
 
 	bool gpulse = running && gatePulse.process(1.0 / args.sampleRate);
@@ -229,6 +250,76 @@ void SimpleClockWidget::appendContextMenu(Menu *menu) {
 		item->sClock = sClock;
 		item->val = 16;
 		menu->addChild(item);
+	}
+
+	// Gate pulse length slider
+	{
+		MenuLabel *gatePulseLabel = new MenuLabel();
+		gatePulseLabel->text = "Gate Pulse Length";
+		menu->addChild(gatePulseLabel);
+	}
+
+	{
+		struct SCGatePulseLengthQuantity : Quantity {
+			SimpleClock* sClock = nullptr;
+			void setValue(float value) override {
+				if (!sClock) return;
+				sClock->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+			}
+			float getValue() override { return sClock ? sClock->gatePulseLenSec : getDefaultValue(); }
+			float getMinValue() override { return 0.001f; }
+			float getMaxValue() override { return 1.0f; }
+			float getDefaultValue() override { return 0.005f; }
+			float getDisplayValue() override { return getValue() * 1000.f; }
+			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+			int getDisplayPrecision() override { return 0; }
+			std::string getLabel() override { return "Gate Pulse Length"; }
+			std::string getUnit() override { return "ms"; }
+		};
+
+		struct SCGatePulseLengthSlider : ui::Slider {
+			SCGatePulseLengthSlider() { quantity = new SCGatePulseLengthQuantity; }
+			~SCGatePulseLengthSlider() { delete quantity; }
+		};
+
+		SCGatePulseLengthSlider* gateSlider = new SCGatePulseLengthSlider();
+		static_cast<SCGatePulseLengthQuantity*>(gateSlider->quantity)->sClock = sClock;
+		gateSlider->box.size.x = 220.0f;
+		menu->addChild(gateSlider);
+	}
+
+	// Reset pulse length slider
+	{
+		MenuLabel *resetPulseLabel = new MenuLabel();
+		resetPulseLabel->text = "Reset Pulse Length";
+		menu->addChild(resetPulseLabel);
+
+		struct SCResetPulseLengthQuantity : Quantity {
+			SimpleClock* sClock = nullptr;
+			void setValue(float value) override {
+				if (!sClock) return;
+				sClock->resetPulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
+			}
+			float getValue() override { return sClock ? sClock->resetPulseLenSec : getDefaultValue(); }
+			float getMinValue() override { return 0.001f; }
+			float getMaxValue() override { return 1.0f; }
+			float getDefaultValue() override { return 0.01f; }
+			float getDisplayValue() override { return getValue() * 1000.f; }
+			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+			int getDisplayPrecision() override { return 0; }
+			std::string getLabel() override { return "Reset Pulse Length"; }
+			std::string getUnit() override { return "ms"; }
+		};
+
+		struct SCResetPulseLengthSlider : ui::Slider {
+			SCResetPulseLengthSlider() { quantity = new SCResetPulseLengthQuantity; }
+			~SCResetPulseLengthSlider() { delete quantity; }
+		};
+
+		SCResetPulseLengthSlider* resetSlider = new SCResetPulseLengthSlider();
+		static_cast<SCResetPulseLengthQuantity*>(resetSlider->quantity)->sClock = sClock;
+		resetSlider->box.size.x = 220.0f;
+		menu->addChild(resetSlider);
 	}
 }
 Model *modelSimpleClock = createModel<SimpleClock, SimpleClockWidget>("SimpleClock");
