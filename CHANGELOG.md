@@ -20,7 +20,8 @@
   * Tree: added a jitter amount knob
   * XYPad: clears drawing on load preset
 
-  Added gate length slider to right click menu of all modules which output a trigger/gate
+  Added gate length slider to right click menu of all modules which output a trigger/gate.
+  This means you can now have fast clocks and sequencers without 
 
 ## v2.0.17 ~ 11-29-25
 
