@@ -589,33 +589,19 @@ void BouncyBallsWidget::appendContextMenu(Menu *menu) {
 	if (!bbs) return;
 
 	MenuLabel *gatePulseLabel = new MenuLabel();
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
 	gatePulseLabel->text = "Gate Pulse Length";
 	menu->addChild(gatePulseLabel);
 
-	struct BBGatePulseLengthQuantity : Quantity {
-		BouncyBalls* bbs = nullptr;
-		void setValue(float value) override {
-			if (!bbs) return;
-			bbs->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-		}
-		float getValue() override { return bbs ? bbs->gatePulseLenSec : getDefaultValue(); }
-		float getMinValue() override { return 0.001f; }
-		float getMaxValue() override { return 1.0f; }
-		float getDefaultValue() override { return 0.005f; }
-		float getDisplayValue() override { return getValue() * 1000.f; }
-		void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-		int getDisplayPrecision() override { return 0; }
-		std::string getLabel() override { return "Gate Pulse Length"; }
-		std::string getUnit() override { return "ms"; }
-	};
-
-	struct BBGatePulseLengthSlider : ui::Slider {
-		BBGatePulseLengthSlider() { quantity = new BBGatePulseLengthQuantity; }
-		~BBGatePulseLengthSlider() { delete quantity; }
-	};
-
-	BBGatePulseLengthSlider* gateSlider = new BBGatePulseLengthSlider();
-	static_cast<BBGatePulseLengthQuantity*>(gateSlider->quantity)->bbs = bbs;
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [bbs](){ return bbs->gatePulseLenSec; };
+		qp->setSeconds = [bbs](float v){ bbs->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.1f;
+		qp->label = "Gate Pulse Length";
+	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
 }

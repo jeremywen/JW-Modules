@@ -679,34 +679,20 @@ void TrigsWidget::appendContextMenu(Menu *menu) {
 
 	// Gate pulse length slider
 	{
+		MenuLabel *spacerLabelGate = new MenuLabel();
+		menu->addChild(spacerLabelGate);
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Pulse Length";
 		menu->addChild(gatePulseLabel);
 
-		struct TrigsGatePulseLengthQuantity : Quantity {
-			Trigs* module = nullptr;
-			void setValue(float value) override {
-				if (!module) return;
-				module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-			}
-			float getValue() override { return module ? module->gatePulseLenSec : getDefaultValue(); }
-			float getMinValue() override { return 0.001f; }
-			float getMaxValue() override { return 1.0f; }
-			float getDefaultValue() override { return 0.005f; }
-			float getDisplayValue() override { return getValue() * 1000.f; }
-			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-			int getDisplayPrecision() override { return 0; }
-			std::string getLabel() override { return "Gate Pulse Length"; }
-			std::string getUnit() override { return "ms"; }
-		};
-
-		struct TrigsGatePulseLengthSlider : ui::Slider {
-			TrigsGatePulseLengthSlider() { quantity = new TrigsGatePulseLengthQuantity; }
-			~TrigsGatePulseLengthSlider() { delete quantity; }
-		};
-
-		TrigsGatePulseLengthSlider* gateSlider = new TrigsGatePulseLengthSlider();
-		static_cast<TrigsGatePulseLengthQuantity*>(gateSlider->quantity)->module = trigs;
+		GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+		{
+			auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+			qp->getSeconds = [trigs](){ return trigs->gatePulseLenSec; };
+			qp->setSeconds = [trigs](float v){ trigs->gatePulseLenSec = v; };
+			qp->defaultSeconds = 0.1f;
+			qp->label = "Gate Pulse Length";
+		}
 		gateSlider->box.size.x = 220.0f;
 		menu->addChild(gateSlider);
 	}

@@ -731,7 +731,7 @@ struct NoteSeq16Display : LightWidget {
 				nvgStrokeWidth(args.vg, 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, 0, i * HW);
-				nvgLineTo(args.vg, box.size.x, i * HW);
+				nvgLineTo(args.vg, COLS * HW, i * HW);
 				nvgStroke(args.vg);
 			}
 
@@ -796,7 +796,7 @@ struct NoteSeq16Display : LightWidget {
 
 			nvgBeginPath(args.vg);
 			nvgRect(args.vg, thumbX, sbTop, thumbW, trackH);
-			NVGcolor thumbColor = hovered ? nvgRGB(90, 90, 90) : nvgRGB(70, 70, 70);
+			NVGcolor thumbColor = nvgRGB(255, 255, 255);
 			nvgFillColor(args.vg, thumbColor);
 			nvgFill(args.vg);
 		}
@@ -1049,12 +1049,24 @@ struct NS16GatePulseLengthQuantity : Quantity {
 	}
 	float getMinValue() override { return 0.001f; }
 	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override { return 0.005f; }
-	float getDisplayValue() override { return getValue() * 1000.f; }
+	float getDefaultValue() override { return 0.1f; }
+	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
 	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
 	int getDisplayPrecision() override { return 0; }
 	std::string getLabel() override { return "Gate Pulse Length"; }
 	std::string getUnit() override { return "ms"; }
+	std::string getDisplayValueString() override {
+		int ms = (int)std::round(getValue() * 1000.f);
+		return std::to_string(ms);
+	}
+	void setDisplayValueString(std::string s) override {
+		try {
+			int ms = std::stoi(s);
+			setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue()));
+		} catch (...) {
+			// ignore parse errors
+		}
+	}
 };
 
 struct NS16GatePulseLengthSlider : ui::Slider {
@@ -1101,12 +1113,20 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	menu->addChild(continuousItem);
 
 	// Gate pulse length slider
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Pulse Length";
 	menu->addChild(gatePulseLabel);
 
-	NS16GatePulseLengthSlider* gateSlider = new NS16GatePulseLengthSlider();
-	static_cast<NS16GatePulseLengthQuantity*>(gateSlider->quantity)->noteSeq16 = noteSeq16;
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [noteSeq16](){ return noteSeq16->gatePulseLenSec; };
+		qp->setSeconds = [noteSeq16](float v){ noteSeq16->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.1f;
+		qp->label = "Gate Pulse Length";
+	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
 }

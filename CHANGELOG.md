@@ -13,7 +13,7 @@
   * Bouncy Balls: balls now hit each other
   * NoteSeq: life counter resets on reset
   * NoteSeqFu: life counter resets on reset
-  * ThingThing: added a jitter amount knob
+  * Tree: added a jitter amount knob
   * XYPad: clears drawing on load preset
 
   Added gate length slider to right click menu of all module which output a trigger/gate

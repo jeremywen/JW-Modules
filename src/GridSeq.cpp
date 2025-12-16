@@ -667,11 +667,18 @@ struct GridGatePulseLengthQuantity : Quantity {
 	float getMinValue() override { return 0.001f; }
 	float getMaxValue() override { return 1.0f; }
 	float getDefaultValue() override { return 0.005f; }
-	float getDisplayValue() override { return getValue() * 1000.f; }
+	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
 	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
 	int getDisplayPrecision() override { return 0; }
 	std::string getLabel() override { return "Gate Pulse Length"; }
 	std::string getUnit() override { return "ms"; }
+	std::string getDisplayValueString() override {
+		int ms = (int)std::round(getValue() * 1000.f);
+		return std::to_string(ms);
+	}
+	void setDisplayValueString(std::string s) override {
+		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
+	}
 };
 
 struct GridGatePulseLengthSlider : ui::Slider {
@@ -771,12 +778,20 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(snakeDiagURItem);
 
 	// Gate pulse length slider
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Pulse Length";
 	menu->addChild(gatePulseLabel);
 
-	GridGatePulseLengthSlider* gateSlider = new GridGatePulseLengthSlider();
-	static_cast<GridGatePulseLengthQuantity*>(gateSlider->quantity)->gridSeq = gridSeq;
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [gridSeq](){ return gridSeq->gatePulseLenSec; };
+		qp->setSeconds = [gridSeq](float v){ gridSeq->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.005f;
+		qp->label = "Gate Pulse Length";
+	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
 }

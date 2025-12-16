@@ -1181,12 +1181,19 @@ struct NSFGatePulseLengthQuantity : Quantity {
 	}
 	float getMinValue() override { return 0.001f; }
 	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override { return 0.005f; }
-	float getDisplayValue() override { return getValue() * 1000.f; }
+	float getDefaultValue() override { return 0.1f; }
+	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
 	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
 	int getDisplayPrecision() override { return 0; }
 	std::string getLabel() override { return "Gate Pulse Length"; }
 	std::string getUnit() override { return "ms"; }
+	std::string getDisplayValueString() override {
+		int ms = (int)std::round(getValue() * 1000.f);
+		return std::to_string(ms);
+	}
+	void setDisplayValueString(std::string s) override {
+		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
+	}
 };
 
 struct NSFGatePulseLengthSlider : ui::Slider {
@@ -1231,12 +1238,20 @@ void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(continuousItem);
 
 	// Gate pulse length slider
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Pulse Length";
 	menu->addChild(gatePulseLabel);
 
-	NSFGatePulseLengthSlider* gateSlider = new NSFGatePulseLengthSlider();
-	static_cast<NSFGatePulseLengthQuantity*>(gateSlider->quantity)->noteSeqFu = noteSeqFu;
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [noteSeqFu](){ return noteSeqFu->gatePulseLenSec; };
+		qp->setSeconds = [noteSeqFu](float v){ noteSeqFu->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.1f;
+		qp->label = "Gate Pulse Length";
+	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
 }

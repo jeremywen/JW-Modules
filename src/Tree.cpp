@@ -251,8 +251,8 @@ TreeWidget::TreeWidget(Tree *module) {
 		this->display = display;
 	}
 
-	addChild(createWidget<Screw_J>(Vec(265, 365)));
-	addChild(createWidget<Screw_W>(Vec(280, 365)));
+	// addChild(createWidget<Screw_J>(Vec(265, 365)));
+	// addChild(createWidget<Screw_W>(Vec(280, 365)));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 360), module, Tree::ANGLE_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(20, 360), module, Tree::ANGLE_PARAM));

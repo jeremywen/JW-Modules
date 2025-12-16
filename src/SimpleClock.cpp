@@ -254,70 +254,42 @@ void SimpleClockWidget::appendContextMenu(Menu *menu) {
 
 	// Gate pulse length slider
 	{
+		MenuLabel *spacerLabelGate = new MenuLabel();
+		menu->addChild(spacerLabelGate);
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Pulse Length";
 		menu->addChild(gatePulseLabel);
 	}
 
 	{
-		struct SCGatePulseLengthQuantity : Quantity {
-			SimpleClock* sClock = nullptr;
-			void setValue(float value) override {
-				if (!sClock) return;
-				sClock->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-			}
-			float getValue() override { return sClock ? sClock->gatePulseLenSec : getDefaultValue(); }
-			float getMinValue() override { return 0.001f; }
-			float getMaxValue() override { return 1.0f; }
-			float getDefaultValue() override { return 0.005f; }
-			float getDisplayValue() override { return getValue() * 1000.f; }
-			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-			int getDisplayPrecision() override { return 0; }
-			std::string getLabel() override { return "Gate Pulse Length"; }
-			std::string getUnit() override { return "ms"; }
-		};
-
-		struct SCGatePulseLengthSlider : ui::Slider {
-			SCGatePulseLengthSlider() { quantity = new SCGatePulseLengthQuantity; }
-			~SCGatePulseLengthSlider() { delete quantity; }
-		};
-
-		SCGatePulseLengthSlider* gateSlider = new SCGatePulseLengthSlider();
-		static_cast<SCGatePulseLengthQuantity*>(gateSlider->quantity)->sClock = sClock;
+		GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+		{
+			auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+			qp->getSeconds = [sClock](){ return sClock->gatePulseLenSec; };
+			qp->setSeconds = [sClock](float v){ sClock->gatePulseLenSec = v; };
+			qp->defaultSeconds = 0.1f;
+			qp->label = "Gate Pulse Length";
+		}
 		gateSlider->box.size.x = 220.0f;
 		menu->addChild(gateSlider);
 	}
 
 	// Reset pulse length slider
 	{
+		MenuLabel *spacerLabelReset = new MenuLabel();
+		menu->addChild(spacerLabelReset);
 		MenuLabel *resetPulseLabel = new MenuLabel();
 		resetPulseLabel->text = "Reset Pulse Length";
 		menu->addChild(resetPulseLabel);
 
-		struct SCResetPulseLengthQuantity : Quantity {
-			SimpleClock* sClock = nullptr;
-			void setValue(float value) override {
-				if (!sClock) return;
-				sClock->resetPulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-			}
-			float getValue() override { return sClock ? sClock->resetPulseLenSec : getDefaultValue(); }
-			float getMinValue() override { return 0.001f; }
-			float getMaxValue() override { return 1.0f; }
-			float getDefaultValue() override { return 0.01f; }
-			float getDisplayValue() override { return getValue() * 1000.f; }
-			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-			int getDisplayPrecision() override { return 0; }
-			std::string getLabel() override { return "Reset Pulse Length"; }
-			std::string getUnit() override { return "ms"; }
-		};
-
-		struct SCResetPulseLengthSlider : ui::Slider {
-			SCResetPulseLengthSlider() { quantity = new SCResetPulseLengthQuantity; }
-			~SCResetPulseLengthSlider() { delete quantity; }
-		};
-
-		SCResetPulseLengthSlider* resetSlider = new SCResetPulseLengthSlider();
-		static_cast<SCResetPulseLengthQuantity*>(resetSlider->quantity)->sClock = sClock;
+		GatePulseMsSlider* resetSlider = new GatePulseMsSlider();
+		{
+			auto qp = static_cast<GatePulseMsQuantity*>(resetSlider->quantity);
+			qp->getSeconds = [sClock](){ return sClock->resetPulseLenSec; };
+			qp->setSeconds = [sClock](float v){ sClock->resetPulseLenSec = v; };
+			qp->defaultSeconds = 0.01f;
+			qp->label = "Reset Pulse Length";
+		}
 		resetSlider->box.size.x = 220.0f;
 		menu->addChild(resetSlider);
 	}

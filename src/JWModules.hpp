@@ -1,10 +1,22 @@
 #pragma once
 #include "rack.hpp"
 #include "QuantizeUtils.cpp"
+#include <functional>
+#include <algorithm>
 #define RIGHT_ARROW "▸"
 
 using namespace rack;
 extern Plugin *pluginInstance;
+
+inline int clampijw(int x, int minimum, int maximum) {
+	return clamp(x, minimum, maximum);
+}
+inline float clampfjw(float x, float minimum, float maximum) {
+	return fminf(fmaxf(x, minimum), maximum);
+}
+inline float rescalefjw(float x, float xMin, float xMax, float yMin, float yMax) {
+	return yMin + (x - xMin) / (xMax - xMin) * (yMax - yMin);
+}
 
 static constexpr int blackKeys[20] = 
                { 1,  3,  6,  8, 10, 
@@ -15,7 +27,6 @@ static constexpr int blackKeys[20] =
 inline bool isBlackKey(int indexFromBottom){
 	return std::find(std::begin(blackKeys), std::end(blackKeys), indexFromBottom) != std::end(blackKeys);
 }
-
 
 struct InputsOverrideItem : MenuItem {
 	QuantizeUtils *quantizeUtils;
@@ -196,6 +207,46 @@ struct JwVerticalSwitch : SVGSwitch {
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Vertical_0.svg")));
 		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Switch_Vertical_1.svg")));
 	}
+};
+
+////////////////////////////////////////////// SHARED QUANTITIES //////////////////////////////////////////////
+
+// Generic ms-based slider bound to a float seconds field via std::function
+struct GatePulseMsQuantity : Quantity {
+	std::function<void(float)> setSeconds;
+	std::function<float()> getSeconds;
+	float defaultSeconds = 0.005f;
+	std::string label = "Gate Pulse Length";
+	std::string unit = "ms";
+
+	void setValue(float value) override {
+		if (!setSeconds) return;
+		setSeconds(clampfjw(value, getMinValue(), getMaxValue()));
+	}
+	float getValue() override {
+		if (getSeconds) return getSeconds();
+		return defaultSeconds;
+	}
+	float getMinValue() override { return 0.001f; }
+	float getMaxValue() override { return 1.0f; }
+	float getDefaultValue() override { return defaultSeconds; }
+	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
+	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
+	int getDisplayPrecision() override { return 0; }
+	std::string getLabel() override { return label; }
+	std::string getUnit() override { return unit; }
+	std::string getDisplayValueString() override {
+		int ms = (int)std::round(getValue() * 1000.f);
+		return std::to_string(ms);
+	}
+	void setDisplayValueString(std::string s) override {
+		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
+	}
+};
+
+struct GatePulseMsSlider : ui::Slider {
+	GatePulseMsSlider() { quantity = new GatePulseMsQuantity; }
+	~GatePulseMsSlider() { delete quantity; }
 };
 
 struct BowlSwitch : SVGSwitch {
@@ -440,14 +491,3 @@ extern Model *modelTree;
 extern Model *modelTrigs;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
-
-inline int clampijw(int x, int minimum, int maximum) {
-	return clamp(x, minimum, maximum);
-}
-inline float clampfjw(float x, float minimum, float maximum) {
-	return fminf(fmaxf(x, minimum), maximum);
-}
-inline float rescalefjw(float x, float xMin, float xMax, float yMin, float yMax) {
-	return yMin + (x - xMin) / (xMax - xMin) * (yMax - yMin);
-}
-

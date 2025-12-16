@@ -466,34 +466,20 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 
 	// Gate pulse length slider
 	{
+		MenuLabel *spacerLabelGate = new MenuLabel();
+		menu->addChild(spacerLabelGate);
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Pulse Length";
 		menu->addChild(gatePulseLabel);
 
-		struct Str1kerGatePulseLengthQuantity : Quantity {
-			Str1ker* module = nullptr;
-			void setValue(float value) override {
-				if (!module) return;
-				module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-			}
-			float getValue() override { return module ? module->gatePulseLenSec : getDefaultValue(); }
-			float getMinValue() override { return 0.001f; }
-			float getMaxValue() override { return 1.0f; }
-			float getDefaultValue() override { return 0.005f; }
-			float getDisplayValue() override { return getValue() * 1000.f; }
-			void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-			int getDisplayPrecision() override { return 0; }
-			std::string getLabel() override { return "Gate Pulse Length"; }
-			std::string getUnit() override { return "ms"; }
-		};
-
-		struct Str1kerGatePulseLengthSlider : ui::Slider {
-			Str1kerGatePulseLengthSlider() { quantity = new Str1kerGatePulseLengthQuantity; }
-			~Str1kerGatePulseLengthSlider() { delete quantity; }
-		};
-
-		Str1kerGatePulseLengthSlider* gateSlider = new Str1kerGatePulseLengthSlider();
-		static_cast<Str1kerGatePulseLengthQuantity*>(gateSlider->quantity)->module = str1;
+		GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+		{
+			auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+			qp->getSeconds = [str1](){ return str1->gatePulseLenSec; };
+			qp->setSeconds = [str1](float v){ str1->gatePulseLenSec = v; };
+			qp->defaultSeconds = 0.1f;
+			qp->label = "Gate Pulse Length";
+		}
 		gateSlider->box.size.x = 220.0f;
 		menu->addChild(gateSlider);
 	}

@@ -563,13 +563,25 @@ struct GatePulseLengthQuantity : Quantity {
 	}
 	float getDefaultValue() override { return 0.005f; }
 	float getDisplayValue() override {
-		return getValue() * 1000.f; // ms
+		return std::round(getValue() * 1000.f); // integer ms to avoid scientific notation
 	}
 	void setDisplayValue(float displayValue) override {
 		setValue(displayValue / 1000.f);
 	}
 	int getDisplayPrecision() override {
 		return 0;
+	}
+	std::string getDisplayValueString() override {
+		int ms = (int) std::round(getValue() * 1000.f);
+		return string::f("%d", ms);
+	}
+	void setDisplayValueString(std::string s) override {
+		try {
+			int ms = std::stoi(s);
+			setDisplayValue((float) ms);
+		} catch (...) {
+			// ignore invalid input
+		}
 	}
 	std::string getLabel() override {
 		return "Gate Pulse Length";
@@ -655,12 +667,20 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(snakeColsItem);
 
 	// Gate pulse length slider
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Pulse Length";
 	menu->addChild(gatePulseLabel);
 
-	GatePulseLengthSlider* gateSlider = new GatePulseLengthSlider();
-	static_cast<GatePulseLengthQuantity*>(gateSlider->quantity)->eightSeq = eightSeq;
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [eightSeq](){ return eightSeq->gatePulseLenSec; };
+		qp->setSeconds = [eightSeq](float v){ eightSeq->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.005f;
+		qp->label = "Gate Pulse Length";
+	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
 }
