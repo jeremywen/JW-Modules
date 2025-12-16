@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.18 ~ 12-20-25
+## v2.0.20 ~ 12-20-25
 
   * Buffer: NEW MODULE
   * Random Sound: NEW MODULE
@@ -9,6 +9,7 @@
   * NoteSeq16: now has 256 steps and scrolls
   * GridSeq: now has snake options in right click menu
   * EightSeq: now has snake options in right click menu
+  * DivSeq: now has an option for the maximum random division
   * AbcdSeq: now has randomize column and row buttons
   * Bouncy Balls: balls now hit each other
   * NoteSeq: life counter resets on reset

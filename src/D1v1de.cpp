@@ -256,41 +256,7 @@ struct ColorMenuItem : MenuItem {
 	}
 };
 
-// Context menu slider to control CLOCK_OUTPUT pulse length (milliseconds)
-struct D1vGatePulseLengthQuantity : Quantity {
-	D1v1de* module = nullptr;
-	void setValue(float value) override {
-		if (!module) return;
-		module->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return module ? module->gatePulseLenSec : getDefaultValue();
-	}
-	float getMinValue() override { return 0.001f; } // 1 ms
-	float getMaxValue() override { return 1.0f; }   // 1000 ms
-	float getDefaultValue() override { return 0.1f; }
-	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
-	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-	int getDisplayPrecision() override { return 0; }
-	std::string getLabel() override { return "Gate Pulse Length"; }
-	std::string getUnit() override { return "ms"; }
-	std::string getDisplayValueString() override {
-		int ms = (int)std::round(getValue() * 1000.f);
-		return std::to_string(ms);
-	}
-	void setDisplayValueString(std::string s) override {
-		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
-	}
-};
-
-struct D1vGatePulseLengthSlider : ui::Slider {
-	D1vGatePulseLengthSlider() {
-		quantity = new D1vGatePulseLengthQuantity;
-	}
-	~D1vGatePulseLengthSlider() {
-		delete quantity;
-	}
-};
+// Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
 
 void D1v1deWidget::appendContextMenu(Menu *menu) {
 	{	

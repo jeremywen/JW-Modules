@@ -1037,42 +1037,7 @@ struct NoteSeq16GateModeItem : MenuItem {
 
 // Follow Playhead controlled by panel switch; no context menu item
 
-// Context menu slider to control gate pulse length (ms)
-struct NS16GatePulseLengthQuantity : Quantity {
-	NoteSeq16* noteSeq16 = nullptr;
-	void setValue(float value) override {
-		if (!noteSeq16) return;
-		noteSeq16->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return noteSeq16 ? noteSeq16->gatePulseLenSec : getDefaultValue();
-	}
-	float getMinValue() override { return 0.001f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override { return 0.1f; }
-	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
-	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-	int getDisplayPrecision() override { return 0; }
-	std::string getLabel() override { return "Gate Pulse Length"; }
-	std::string getUnit() override { return "ms"; }
-	std::string getDisplayValueString() override {
-		int ms = (int)std::round(getValue() * 1000.f);
-		return std::to_string(ms);
-	}
-	void setDisplayValueString(std::string s) override {
-		try {
-			int ms = std::stoi(s);
-			setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue()));
-		} catch (...) {
-			// ignore parse errors
-		}
-	}
-};
-
-struct NS16GatePulseLengthSlider : ui::Slider {
-	NS16GatePulseLengthSlider() { quantity = new NS16GatePulseLengthQuantity; }
-	~NS16GatePulseLengthSlider() { delete quantity; }
-};
+// Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
 
 void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	NoteSeq16 *noteSeq16 = dynamic_cast<NoteSeq16*>(module);

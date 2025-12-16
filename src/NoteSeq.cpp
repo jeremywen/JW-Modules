@@ -1196,37 +1196,7 @@ struct NoteSeqGateModeItem : MenuItem {
 	}
 };
 
-// Context menu slider to control gate pulse length (ms)
-struct NoteGatePulseLengthQuantity : Quantity {
-	NoteSeq* noteSeq = nullptr;
-	void setValue(float value) override {
-		if (!noteSeq) return;
-		noteSeq->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return noteSeq ? noteSeq->gatePulseLenSec : getDefaultValue();
-	}
-	float getMinValue() override { return 0.001f; }
-	float getMaxValue() override { return 1.0f; }
-	float getDefaultValue() override { return 0.1f; }
-	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
-	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }
-	int getDisplayPrecision() override { return 0; }
-	std::string getLabel() override { return "Gate Pulse Length"; }
-	std::string getUnit() override { return "ms"; }
-	std::string getDisplayValueString() override {
-		int ms = (int)std::round(getValue() * 1000.f);
-		return std::to_string(ms);
-	}
-	void setDisplayValueString(std::string s) override {
-		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
-	}
-};
-
-struct NoteGatePulseLengthSlider : ui::Slider {
-	NoteGatePulseLengthSlider() { quantity = new NoteGatePulseLengthQuantity; }
-	~NoteGatePulseLengthSlider() { delete quantity; }
-};
+// Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
 
 
 void NoteSeqWidget::appendContextMenu(Menu *menu) {

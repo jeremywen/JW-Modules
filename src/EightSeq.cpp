@@ -544,61 +544,6 @@ struct EightSeqPatternModeItem : MenuItem {
 	}
 };
 
-// Context menu slider to control gate pulse length (ms)
-struct GatePulseLengthQuantity : Quantity {
-	EightSeq* eightSeq = nullptr;
-	void setValue(float value) override {
-		if (!eightSeq) return;
-		// value in seconds
-		eightSeq->gatePulseLenSec = clampfjw(value, getMinValue(), getMaxValue());
-	}
-	float getValue() override {
-		return eightSeq ? eightSeq->gatePulseLenSec : getDefaultValue();
-	}
-	float getMinValue() override {
-		return 0.001f; // 1 ms
-	}
-	float getMaxValue() override {
-		return 1.0f; // 1000 ms
-	}
-	float getDefaultValue() override { return 0.005f; }
-	float getDisplayValue() override {
-		return std::round(getValue() * 1000.f); // integer ms to avoid scientific notation
-	}
-	void setDisplayValue(float displayValue) override {
-		setValue(displayValue / 1000.f);
-	}
-	int getDisplayPrecision() override {
-		return 0;
-	}
-	std::string getDisplayValueString() override {
-		int ms = (int) std::round(getValue() * 1000.f);
-		return string::f("%d", ms);
-	}
-	void setDisplayValueString(std::string s) override {
-		try {
-			int ms = std::stoi(s);
-			setDisplayValue((float) ms);
-		} catch (...) {
-			// ignore invalid input
-		}
-	}
-	std::string getLabel() override {
-		return "Gate Pulse Length";
-	}
-	std::string getUnit() override {
-		return "ms";
-	}
-};
-
-struct GatePulseLengthSlider : ui::Slider {
-	GatePulseLengthSlider() {
-		quantity = new GatePulseLengthQuantity;
-	}
-	~GatePulseLengthSlider() {
-		delete quantity;
-	}
-};
 
 void EightSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
