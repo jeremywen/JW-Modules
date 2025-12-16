@@ -455,6 +455,18 @@ struct ArrangeDisplay : LightWidget {
 	void onButton(const event::Button &e) override {
 		if (module && e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			e.consume(this);
+			// If Shift is held, move playhead to nearest column instead of toggling a cell
+			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+			if (shiftDown) {
+				int clickedCol = int(e.pos.x / CELLW);
+				int seqStart = module->getSeqStart();
+				int seqEnd = module->getSeqEnd();
+				clickedCol = clampijw(clickedCol, seqStart, seqEnd);
+				module->seqPos = clickedCol;
+				module->resetMode = false;
+				module->hitEnd = false;
+				return;
+			}
 			dragPos = e.pos;
 			currentlyTurningOn = !module->isCellOnByDisplayPos(e.pos.x, e.pos.y);
 			module->setCellOnByDisplayPos(e.pos.x, e.pos.y, currentlyTurningOn);

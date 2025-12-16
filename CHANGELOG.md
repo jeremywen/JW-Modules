@@ -2,14 +2,17 @@
 
 ## v2.0.20 ~ 12-20-25
 
-  * Buffer: NEW MODULE
-  * Random Sound: NEW MODULE
-  * Shift Reister Random: NEW MODULE
-  * Stereo Switch: NEW MODULE
+  * Buffer: NEW MODULE - records audio into a buffer and can be frozen on gate
+  * Random Sound: NEW MODULE - plays a random sound based on FM or Additive Synthesis of random wave forms and random frequencies
+  * Shift Reister Random: NEW MODULE - allows you to grab a random set of polyphonic voltage from a stream of notes
+  * Stereo Switch: NEW MODULE - allows you to have a stereo switch where certain steps can have a higher chance
   * NoteSeq16: now has 256 steps and scrolls
   * GridSeq: now has snake options in right click menu
   * EightSeq: now has snake options in right click menu
   * DivSeq: now has an option for the maximum random division
+  * Arrange: now you can shift click to move the playhead
+  * Arrange16: now you can shift click to move the playhead
+  * AbcdSeq: now accepts digits to play the column number
   * AbcdSeq: now has randomize column and row buttons
   * Bouncy Balls: balls now hit each other
   * NoteSeq: life counter resets on reset
@@ -17,7 +20,7 @@
   * Tree: added a jitter amount knob
   * XYPad: clears drawing on load preset
 
-  Added gate length slider to right click menu of all module which output a trigger/gate
+  Added gate length slider to right click menu of all modules which output a trigger/gate
 
 ## v2.0.17 ~ 11-29-25
 

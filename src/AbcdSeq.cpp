@@ -1,7 +1,7 @@
 #include "JWModules.hpp"
 
 std::string DEFAULT_TEXT = "AAAB";
-std::string POSSIBLE_CHARS = "ABCDORSabcdors";
+std::string POSSIBLE_CHARS = "ABCDORSabcdors12345678";
 
 struct AbcdSeq : Module,QuantizeUtils {
 	enum ParamIds {
@@ -92,6 +92,17 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool velocityAsProbability = false;
 	float clipboard[8] = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
 	float rndNumOnClockTick = 0.0f;
+	bool triggeredThisTick = false;
+	// Track last played index and suppression to avoid double-trigger on transitions
+	int lastIndexPlayed = -1;
+	bool suppressRepeatThisTick = false;
+
+	// When current text char is a digit 1–8, sweep through all rows A–D at that column
+	bool sweepingDigit = false;
+	int sweepRowIndex = 0;
+	// Defer next-character application until the next clock after finishing a sweep
+	bool pendingNextChar = false;
+	char pendingChar = 'A';
 
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
@@ -298,21 +309,80 @@ struct AbcdSeq : Module,QuantizeUtils {
         return rowLen;
     }
 
-    void moveToNextStep(){
+	void moveToNextStep(){
 		if(text.size() == 0){
 			//just default so we don't have to deal with the empty string
 			text = DEFAULT_TEXT;
 		}
+		// If we completed a sweep last tick, apply the pending next character state now
+		if (pendingNextChar) {
+			pendingNextChar = false;
+			char nextCharAfterSweep = pendingChar;
+			if (nextCharAfterSweep >= '1' && nextCharAfterSweep <= '8') {
+				int targetColNext = clampijw(nextCharAfterSweep - '1', 0, 7);
+				col = clampijw(targetColNext, 0, getCurrentRowLength() - 1);
+				sweepingDigit = true;
+				sweepRowIndex = 1; // will play B next
+				row = 0;
+				// Exclusive this tick
+				return;
+			} else {
+				row = getRowForChar(nextCharAfterSweep);
+				bool nextForward = isupper(nextCharAfterSweep);
+				col = nextForward ? 0 : getCurrentRowLength() - 1;
+				// Exclusive: play the starting cell of this row on this tick only
+				return;
+			}
+		}
         int rowLen = getCurrentRowLength();
         char currChar = text[charIdx];
-        bool goingForward = isupper(currChar);
+		bool goingForward = isupper(currChar);
         bool endOfRow = false;
 		eocOn = false;
 		for (int i = 0; i < 4; i++) {
 			eocRow[i] = false;
 		}
 
-        if(goingForward){
+		// Handle numeric sweep across all rows
+		if (sweepingDigit) {
+			// Play current sweep row at fixed column; clamp col to this row's length
+			// Defensive: ensure we don't replay Row A after digit start
+			if (sweepRowIndex == 0) {
+				sweepRowIndex = 1;
+			}
+			row = clampijw(sweepRowIndex, 0, 3);
+			// Ignore row step lengths during digit column sweeps; keep the selected column
+			sweepRowIndex++;
+			// After finishing D, advance text and stop sweeping
+			if (sweepRowIndex > 3) {
+				sweepingDigit = false;
+				charIdx++;
+				if (charIdx >= ((int)text.size())) {
+					charIdx = 0;
+				}
+				// Defer next-character application to the next tick to avoid overriding row D now
+				pendingNextChar = true;
+				pendingChar = text[charIdx];
+			}
+			// Prevent any further state changes this tick
+			return;
+		} else if (currChar >= '1' && currChar <= '8') {
+			// Start a new sweep: set column and begin at Row A
+			int targetCol = clampijw(currChar - '1', 0, 7);
+			col = clampijw(targetCol, 0, rowLen - 1);
+			sweepingDigit = true;
+			// Play Row A on this tick; next tick should move to Row B
+			sweepRowIndex = 1;
+			row = 0;
+			// If the previous tick already played this same cell (loop boundary), advance to Row B now
+			int prospectiveIndex = row * 8 + col;
+			if (lastIndexPlayed == prospectiveIndex) {
+				row = 1;            // play Row B on this tick
+				sweepRowIndex = 2;  // next tick will play Row C
+			}
+			// Digit start is exclusive for this tick; avoid further row/col changes
+			return;
+		} else if(goingForward){
             if(col+1 < rowLen){
                 col++;
             } else {
@@ -325,7 +395,7 @@ struct AbcdSeq : Module,QuantizeUtils {
                 endOfRow = true;
             }
         }
-        if(endOfRow){
+		if(endOfRow){
 			eocRow[row] = true;
             char nextChar = 'A';
             bool nextCharGoingForward =  true;
@@ -333,8 +403,17 @@ struct AbcdSeq : Module,QuantizeUtils {
 			nextChar = text[(charIdx + 1) % text.size()];
 			nextCharGoingForward = isupper(nextChar);
 			row = getRowForChar(nextChar);
-            col = nextCharGoingForward ? 0 : getCurrentRowLength() - 1;
-			charIdx++; 
+			// Set starting column of next row: respect digits 1–8, otherwise use direction
+			bool nextIsDigit = (nextChar >= '1' && nextChar <= '8');
+			if (nextIsDigit) {
+				int targetColNext = clampijw(nextChar - '1', 0, 7);
+				col = clampijw(targetColNext, 0, getCurrentRowLength() - 1);
+				// Do not start sweep yet; next step will see the digit and begin the sweep
+			} else {
+				col = nextCharGoingForward ? 0 : getCurrentRowLength() - 1;
+			}
+			// Advance to the next character (including digits) so the following step processes it
+			charIdx++;
 			if(charIdx >= ((int)text.size())){
 				charIdx = 0;
 				eocOn = true;
@@ -410,11 +489,20 @@ struct AbcdSeq : Module,QuantizeUtils {
         return 0;
     }
 
-    void resetRow(){
+	void resetRow(){
         charIdx = 0;
+		sweepingDigit = false;
+		sweepRowIndex = 0;
         if(text.size() > 0){
             row = getRowForChar(text[charIdx]);
-            col = isupper(text[charIdx]) ? 0 : getCurrentRowLength() - 1;
+			// If first char is numeric, jump to that column, otherwise set based on direction
+			if (text[charIdx] >= '1' && text[charIdx] <= '8') {
+				int targetCol = clampijw(text[charIdx] - '1', 0, 7);
+				col = clampijw(targetCol, 0, getCurrentRowLength() - 1);
+				// Do not begin sweep here; next step will start it when processing the digit
+			} else {
+				col = isupper(text[charIdx]) ? 0 : getCurrentRowLength() - 1;
+			}
         } else {
             row = 0;
         }
@@ -464,6 +552,8 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	}
     index = col + row * 8;
 	if (nextStep) {
+		// Reset per-tick trigger guard
+		triggeredThisTick = false;
 		if(resetMode){
 			resetMode = false;
 			eocOn = false;
@@ -472,8 +562,14 @@ void AbcdSeq::process(const ProcessArgs &args) {
             index = col + row * 8;
             // DEBUG("col=%i, index=%i", col, index);
 		}
-		lights[STEPS_LIGHT + index].value = 1.0;
-		gatePulse.trigger(gatePulseLenSec);
+		// Avoid double-triggering within a single tick; only suppress if repeating same index
+		if (!triggeredThisTick && !(suppressRepeatThisTick && lastIndexPlayed == index)) {
+			lights[STEPS_LIGHT + index].value = 1.0;
+			gatePulse.trigger(gatePulseLenSec);
+			lastIndexPlayed = index;
+			triggeredThisTick = true;
+		}
+		suppressRepeatThisTick = false;
 		rndNumOnClockTick = random::uniform();
 	}
 
@@ -905,7 +1001,12 @@ struct PresetChildMenuItem : MenuItem {
 		
 		AbcdSeqPresetItem *presetMenuItem4 = new AbcdSeqPresetItem();
 		presetMenuItem4->text = "AaBbCcDd";
-		presetMenuItem4->abcdSeq = abcdSeq;
+		MenuLabel *helpLabel6 = new MenuLabel();
+		helpLabel6->text = "Upper case forwards and lower case backwards.";
+
+		MenuLabel *helpLabel7 = new MenuLabel();
+		helpLabel7->text = "Digits 1–8 jump to that column (within current row).";
+		menu->addChild(helpLabel7);
 		menu->addChild(presetMenuItem4);
 		
 		AbcdSeqPresetItem *presetMenuItem5 = new AbcdSeqPresetItem();
@@ -943,6 +1044,10 @@ struct PossibleCharsMenuItem : MenuItem {
 		MenuLabel *helpLabel6 = new MenuLabel();
 		helpLabel6->text = "Upper case forwards and lower case backwards.";
 		menu->addChild(helpLabel6);
+
+		MenuLabel *helpLabel7 = new MenuLabel();
+		helpLabel7->text = "Digits 1–8 jump to that column.";
+		menu->addChild(helpLabel7);
 		return menu;
 	}
 };
