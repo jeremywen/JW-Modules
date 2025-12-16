@@ -6,12 +6,15 @@
 struct RandomSound : Module {
 	enum ParamIds {
 		AMP_DECAY_PARAM,
-		FEEDBACK_PARAM,
+		TRIGGER_BUTTON_PARAM,
+		RANDOMIZE_BUTTON_PARAM,
+		TRIG_RANDOMIZE_BUTTON_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
 		TRIGGER_INPUT,
 		TRIGGER_RANDOMIZE,
+		TRIG_RANDOMIZE_INPUT,
 		DECAY_CV_INPUT,
 		NUM_INPUTS
 	};
@@ -24,6 +27,11 @@ struct RandomSound : Module {
 	};
 	dsp::SchmittTrigger inTrig;
 	dsp::SchmittTrigger rndTrig;
+	dsp::SchmittTrigger btnTrig;
+	dsp::SchmittTrigger btnRndTrig;
+	dsp::SchmittTrigger btnTrigRndTrig;
+	dsp::SchmittTrigger trigRndInputTrig;
+	bool edgesPrimed = false;
 	// Polyphony support
 	int channels = 1;
 	// Per-channel synthesis state
@@ -75,14 +83,20 @@ struct RandomSound : Module {
 	RandomSound() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(AMP_DECAY_PARAM, 0.001f, 1.0f, 0.3f, "Amplitude Decay", "s");
-		configParam(FEEDBACK_PARAM, 0.0f, 1.0f, 0.2f, "Carrier Feedback");
-		configInput(TRIGGER_INPUT, "Trigger IN");
+		configButton(TRIGGER_BUTTON_PARAM, "Trigger Sound");
+		configButton(RANDOMIZE_BUTTON_PARAM, "Randomize Sound");
+		configButton(TRIG_RANDOMIZE_BUTTON_PARAM, "Trigger + Randomize");
+		configInput(TRIGGER_INPUT, "Trigger Sound");
 		configInput(TRIGGER_RANDOMIZE, "Trigger Randomize");
+		configInput(TRIG_RANDOMIZE_INPUT, "Trigger + Randomize");
 		configInput(DECAY_CV_INPUT, "Decay CV");
 		configOutput(VOLT_OUTPUT, "Random Sound (polyphonic)");
 		// Initialize voices' decay to current knob value so first randomization respects it
 		float initDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
-		for (int i = 0; i < 16; i++) voices[i].decayTime = initDecay;
+		for (int i = 0; i < 16; i++) {
+			voices[i].decayTime = initDecay;
+			voices[i].feedback = random::uniform() * 0.9f; // random initial carrier feedback
+		}
 	}
 
 	~RandomSound() {
@@ -91,13 +105,12 @@ struct RandomSound : Module {
 	void onRandomize() override {
 		// Randomize all voices independently
 		float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
-		float fbMax = clamp(params[FEEDBACK_PARAM].getValue(), 0.0f, 1.0f);
 		for (int i = 0; i < channels && i < 16; i++) {
 			Voice &v = voices[i];
 			// Carrier frequency: 20 Hz .. 2 kHz
 			v.freq = 20.f + random::uniform() * (2000.f - 20.f);
 			// Random per-voice carrier feedback scaled by global knob
-			v.feedback = random::uniform() * fbMax;
+			v.feedback = random::uniform() * 0.9f;
 			v.attackTime = 0.f;
 			// Set amplitude decay from knob so it is honored immediately after randomize
 			v.decayTime  = baseDecay;
@@ -136,7 +149,6 @@ struct RandomSound : Module {
 		json_object_set_new(rootJ, "channels", json_integer(channels));
 		// Persist global parameters explicitly as well
 		json_object_set_new(rootJ, "ampDecay", json_real(params[AMP_DECAY_PARAM].getValue()));
-		json_object_set_new(rootJ, "feedbackMax", json_real(params[FEEDBACK_PARAM].getValue()));
 		// Save voices
 		json_t *voicesJ = json_array();
 		for (int i = 0; i < 16; i++) {
@@ -184,7 +196,6 @@ struct RandomSound : Module {
 	void dataFromJson(json_t *rootJ) override {
 		if (json_t *cj = json_object_get(rootJ, "channels")) channels = json_integer_value(cj);
 		if (json_t *x = json_object_get(rootJ, "ampDecay")) params[AMP_DECAY_PARAM].setValue(clamp((float)json_real_value(x), 0.001f, 1.0f));
-		if (json_t *x = json_object_get(rootJ, "feedbackMax")) params[FEEDBACK_PARAM].setValue(clamp((float)json_real_value(x), 0.0f, 1.0f));
 		if (json_t *voicesJ = json_object_get(rootJ, "voices")) {
 			size_t i = 0;
 			json_t *vj;
@@ -226,16 +237,37 @@ struct RandomSound : Module {
 				if (json_t *x = json_object_get(vj, "modPitchExp")) v.modPitchExp = json_integer_value(x) != 0;
 			}
 		}
+		// Re-prime edge detectors after loading to avoid false first edges
+		edgesPrimed = false;
 	}
 
 	void process(const ProcessArgs &args) override {
-		// Randomize on randomize trigger
-		if (rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage())) {
+		// Prime edge detectors once to avoid treating constant-high as a rising edge on load
+		bool doRandomize = false;
+		bool doTrigger = false;
+		if (!edgesPrimed) {
+			// Consume initial states without acting
+			rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage());
+			inTrig.process(inputs[TRIGGER_INPUT].getVoltage());
+			trigRndInputTrig.process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage());
+			edgesPrimed = true;
+		} else {
+			doRandomize = rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage());
+			doTrigger = inTrig.process(inputs[TRIGGER_INPUT].getVoltage());
+		}
+		// Include buttons
+		bool trigRnd = btnTrigRndTrig.process(params[TRIG_RANDOMIZE_BUTTON_PARAM].getValue() * 10.f) ||
+		               trigRndInputTrig.process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage());
+		doRandomize = doRandomize || btnRndTrig.process(params[RANDOMIZE_BUTTON_PARAM].getValue() * 10.f) || trigRnd;
+		doTrigger = doTrigger || btnTrig.process(params[TRIGGER_BUTTON_PARAM].getValue() * 10.f) || trigRnd;
+
+		// Randomize on randomize trigger (input or button)
+		if (doRandomize) {
 			onRandomize();
 		}
 
-		// Trigger envelopes on trigger input (all voices)
-		if (inTrig.process(inputs[TRIGGER_INPUT].getVoltage())) {
+		// Trigger envelopes on trigger input or button (all voices)
+		if (doTrigger) {
 			float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
 			// CV: 0-10V adds 0..1s
 			if (inputs[DECAY_CV_INPUT].isConnected()) {
@@ -361,12 +393,17 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 
 	// Amplitude decay knob
 	addParam(createParam<SmallWhiteKnob>(Vec(10, 80), module, RandomSound::AMP_DECAY_PARAM));
-	// Carrier feedback amount (scales randomized per-voice feedback)
-	addParam(createParam<SmallWhiteKnob>(Vec(48, 120), module, RandomSound::FEEDBACK_PARAM));
-	addInput(createInput<PJ301MPort>(Vec(10, 160), module, RandomSound::DECAY_CV_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(10, 200), module, RandomSound::TRIGGER_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(10, 240), module, RandomSound::TRIGGER_RANDOMIZE));
-	addOutput(createOutput<PJ301MPort>(Vec(10, 280), module, RandomSound::VOLT_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 110), module, RandomSound::DECAY_CV_INPUT));
+	// Buttons next to jacks for convenience
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 200), module, RandomSound::TRIGGER_RANDOMIZE));
+	addParam(createParam<TinyButton>(Vec(25, 200), module, RandomSound::RANDOMIZE_BUTTON_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 240), module, RandomSound::TRIGGER_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 240), module, RandomSound::TRIGGER_BUTTON_PARAM));
+	// Combined trigger+randomize input and button
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 270), module, RandomSound::TRIG_RANDOMIZE_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 270), module, RandomSound::TRIG_RANDOMIZE_BUTTON_PARAM));
+	// Output
+	addOutput(createOutput<TinyPJ301MPort>(Vec(15, 300), module, RandomSound::VOLT_OUTPUT));
 
 }
 
