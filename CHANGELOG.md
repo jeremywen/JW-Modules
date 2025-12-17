@@ -19,6 +19,7 @@
   * NoteSeqFu: life counter resets on reset
   * Tree: added a jitter amount knob
   * XYPad: clears drawing on load preset
+  * Added 2hp and 4hp blanks
   * Got rid of all light panels and components because I hate updating panels and components and colors multiple times.  Now we just have dark.  Improved colors and made UIs more consistent.
   * Added gate length slider to right click menu of all modules which output a trigger/gate. This means you can now have fast clocks and sequencers without gates merging and sticking on.
 

@@ -19,6 +19,18 @@
 			"tags": ["Visual"]
 		},
 		{
+			"slug": "BlankPanel_2HP",
+			"name": "Blank Panel (2HP)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Visual"]
+		},
+		{
+			"slug": "BlankPanel_4HP",
+			"name": "Blank Panel (4HP)",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Visual"]
+		},
+		{
 			"slug": "BlankPanel_SM",
 			"name": "Blank Panel (Small)",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
@@ -74,7 +86,7 @@
 		},
 		{
 			"slug": "StereoSwitch",
-			"name": "Weighted Random Stereo Switch",
+			"name": "Stereo Switch",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Utility"]
 		},

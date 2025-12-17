@@ -459,6 +459,8 @@ extern Model *modelAdd5;
 extern Model *modelArrange;
 extern Model *modelArrange16;
 extern Model *modelBlankPanel1hp;
+extern Model *modelBlankPanel2hp;
+extern Model *modelBlankPanel4hp;
 extern Model *modelBlankPanelLarge;
 extern Model *modelBlankPanelMedium;
 extern Model *modelBlankPanelSmall;

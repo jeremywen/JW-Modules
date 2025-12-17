@@ -6,6 +6,8 @@ struct BlankPanel : Module {
 	}
 };
 struct BlankPanel1hpWidget : ModuleWidget { BlankPanel1hpWidget(Module *module); };
+struct BlankPanel2hpWidget : ModuleWidget { BlankPanel2hpWidget(Module *module); };
+struct BlankPanel4hpWidget : ModuleWidget { BlankPanel4hpWidget(Module *module); };
 struct BlankPanelSmallWidget : ModuleWidget { BlankPanelSmallWidget(Module *module); };
 struct BlankPanelMediumWidget : ModuleWidget { BlankPanelMediumWidget(Module *module); };
 struct BlankPanelLargeWidget : ModuleWidget { BlankPanelLargeWidget(Module *module); };
@@ -22,6 +24,32 @@ BlankPanel1hpWidget::BlankPanel1hpWidget(Module *module) {
 
 	addChild(createWidget<Screw_J>(Vec(1.4, 2)));
 	addChild(createWidget<Screw_W>(Vec(1.4, 365)));
+}
+
+BlankPanel2hpWidget::BlankPanel2hpWidget(Module *module) {
+	setModule(module);
+	box.size = Vec(15, 380);
+
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/BlankPanel2hp.svg"), 
+		asset::plugin(pluginInstance, "res/BlankPanel2hp.svg")
+	));
+
+	addChild(createWidget<Screw_J>(Vec(9, 2)));
+	addChild(createWidget<Screw_W>(Vec(9, 365)));
+}
+
+BlankPanel4hpWidget::BlankPanel4hpWidget(Module *module) {
+	setModule(module);
+	box.size = Vec(15, 380);
+
+	setPanel(createPanel(
+		asset::plugin(pluginInstance, "res/BlankPanel4hp.svg"), 
+		asset::plugin(pluginInstance, "res/BlankPanel4hp.svg")
+	));
+
+	addChild(createWidget<Screw_J>(Vec(18, 2)));
+	addChild(createWidget<Screw_W>(Vec(18, 365)));
 }
 
 BlankPanelSmallWidget::BlankPanelSmallWidget(Module *module) {
@@ -83,6 +111,8 @@ BlankPanelCBWidget::BlankPanelCBWidget(Module *module) {
 }
 
 Model *modelBlankPanel1hp = createModel<Module, BlankPanel1hpWidget>("BlankPanel_1HP");
+Model *modelBlankPanel2hp = createModel<Module, BlankPanel2hpWidget>("BlankPanel_2HP");
+Model *modelBlankPanel4hp = createModel<Module, BlankPanel4hpWidget>("BlankPanel_4HP");
 Model *modelBlankPanelSmall = createModel<Module, BlankPanelSmallWidget>("BlankPanel_SM");
 Model *modelBlankPanelMedium = createModel<Module, BlankPanelMediumWidget>("BlankPanel_MD");
 Model *modelBlankPanelLarge = createModel<Module, BlankPanelLargeWidget>("BlankPanel_LG");

@@ -18,6 +18,8 @@ void init(rack::Plugin *p) {
 	p->addModel(modelArrange);
 	p->addModel(modelArrange16);
 	p->addModel(modelBlankPanel1hp);
+	p->addModel(modelBlankPanel2hp);
+	p->addModel(modelBlankPanel4hp);
 	p->addModel(modelBlankPanelLarge);
 	p->addModel(modelBlankPanelMedium);
 	p->addModel(modelBlankPanelSmall);
