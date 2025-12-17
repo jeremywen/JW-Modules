@@ -42,6 +42,10 @@ struct Buffer : Module {
 	dsp::SchmittTrigger freezeEdge;
 	dsp::SchmittTrigger freezeButtonEdge;
 	bool freezeLatched = false;
+	// Cached loop when freeze engages (with zero-cross alignment)
+	bool wasFrozen = false;
+	int frozenLoopStart = 0;
+	int frozenLoopLength = 0;
 
 	Buffer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -62,6 +66,29 @@ struct Buffer : Module {
 	}
 
 	~Buffer() {
+	}
+
+	// Find the nearest zero crossing around index within +/- searchRadius
+	int findNearestZeroCrossing(int index, int searchRadius) {
+		int bestIdx = index;
+		float bestAbs = fabsf(delayBuffer[index]);
+		for (int d = 1; d <= searchRadius; ++d) {
+			int i1 = (index + d) % bufferSize;
+			int i0 = (i1 - 1 + bufferSize) % bufferSize;
+			if (delayBuffer[i1] * delayBuffer[i0] <= 0.f) {
+				float a = fabsf(delayBuffer[i1]);
+				if (a < bestAbs) { bestAbs = a; bestIdx = i1; }
+				break;
+			}
+			int j1 = (index - d + bufferSize) % bufferSize;
+			int j0 = (j1 - 1 + bufferSize) % bufferSize;
+			if (delayBuffer[j1] * delayBuffer[j0] <= 0.f) {
+				float a = fabsf(delayBuffer[j1]);
+				if (a < bestAbs) { bestAbs = a; bestIdx = j1; }
+				break;
+			}
+		}
+		return bestIdx;
 	}
 
 	void allocateBuffer() {
@@ -204,6 +231,21 @@ struct Buffer : Module {
 			loopLength = (startSamples - endSamples);
 		}
 		if (loopLength < 1) loopLength = 1;
+
+		// On freeze engagement, align start to nearest zero crossing and cache
+		if (frozen && !wasFrozen) {
+			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f)); // up to ~12ms
+			if (searchRadius < 8) searchRadius = 8;
+			frozenLoopStart = findNearestZeroCrossing(loopStart, searchRadius);
+			frozenLoopLength = loopLength;
+			wasFrozen = true;
+		}
+		else if (!frozen && wasFrozen) {
+			wasFrozen = false;
+		}
+
+		int activeLoopStart = frozen ? frozenLoopStart : loopStart;
+		int activeLoopLength = frozen ? frozenLoopLength : loopLength;
 		
 		// (moved) write happens after wet is computed
 		
@@ -217,15 +259,15 @@ struct Buffer : Module {
 		// Keep readPos within the loop boundaries
 		if (playbackDirection == 1) {
 			// Forward playback: check if we've passed the end
-			int distanceFromStart = (readPos - loopStart + bufferSize) % bufferSize;
-			if (distanceFromStart >= loopLength) {
-				readPos = loopStart;
+			int distanceFromStart = (readPos - activeLoopStart + bufferSize) % bufferSize;
+			if (distanceFromStart >= activeLoopLength) {
+				readPos = activeLoopStart;
 			}
 		} else {
 			// Backward playback: check if we've passed the end (which comes before start in time)
-			int distanceFromStart = (loopStart - readPos + bufferSize) % bufferSize;
-			if (distanceFromStart >= loopLength) {
-				readPos = loopStart;
+			int distanceFromStart = (activeLoopStart - readPos + bufferSize) % bufferSize;
+			if (distanceFromStart >= activeLoopLength) {
+				readPos = activeLoopStart;
 			}
 		}
 		
@@ -235,43 +277,50 @@ struct Buffer : Module {
 		// Apply crossfade near loop boundaries.
 		// Use a small fade when not frozen to reduce clicks (especially in reverse),
 		// and a larger adaptive fade when frozen.
-		int fadeLength = (int)(args.sampleRate * (frozen ? 0.010f : 0.005f)); // 10ms frozen, 5ms normal
-		int maxFadePercent = (loopLength < args.sampleRate * 0.1f) ? 40 : 25;
-		fadeLength = std::min(fadeLength, loopLength * maxFadePercent / 100);
-		if (fadeLength < 16) fadeLength = std::min(16, std::max(1, loopLength / 4));
+		// Use longer equal-power crossfades when frozen to minimize clicks
+		int fadeLength = (int)(args.sampleRate * (frozen ? 0.030f : 0.005f)); // 30ms frozen, 5ms normal
+		int maxFadePercent = (activeLoopLength < args.sampleRate * 0.1f) ? 40 : 25;
+		fadeLength = std::min(fadeLength, activeLoopLength * maxFadePercent / 100);
+		if (fadeLength < 32) fadeLength = std::min(32, std::max(1, activeLoopLength / 4));
 
 		if (playbackDirection == 1) {
 			// Forward playback
-			int distanceFromStart = (readPos - loopStart + bufferSize) % bufferSize;
-			int distanceFromEnd = loopLength - distanceFromStart;
+			int distanceFromStart = (readPos - activeLoopStart + bufferSize) % bufferSize;
+			int distanceFromEnd = activeLoopLength - distanceFromStart;
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
-				float fadePos = (float)distanceFromEnd / (float)fadeLength;
-				int wrapReadPos = (loopStart + (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				float t = (float)distanceFromEnd / (float)fadeLength; // 1 -> start of fade, 0 -> boundary
+				int wrapReadPos = (activeLoopStart + (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
 				float wrapSample = delayBuffer[wrapReadPos];
-				wet = wet * fadePos + wrapSample * (1.0f - fadePos);
+				float a = cosf(t * (float)M_PI * 0.5f);
+				float b = sinf(t * (float)M_PI * 0.5f);
+				wet = wet * a + wrapSample * b;
 			}
 			// Fade in at the start
 			else if (distanceFromStart < fadeLength) {
-				float fadePos = (float)distanceFromStart / (float)fadeLength;
-				wet = wet * fadePos;
+				float t = (float)distanceFromStart / (float)fadeLength; // 0 -> boundary, 1 -> end of fade region
+				float b = sinf(t * (float)M_PI * 0.5f);
+				wet = wet * b;
 			}
 		}
 		else {
 			// Backward playback
-			int distanceFromStart = (loopStart - readPos + bufferSize) % bufferSize;
-			int distanceFromEnd = loopLength - distanceFromStart;
+			int distanceFromStart = (activeLoopStart - readPos + bufferSize) % bufferSize;
+			int distanceFromEnd = activeLoopLength - distanceFromStart;
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
-				float fadePos = (float)distanceFromEnd / (float)fadeLength;
-				int wrapReadPos = (loopStart - (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				float t = (float)distanceFromEnd / (float)fadeLength;
+				int wrapReadPos = (activeLoopStart - (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
 				float wrapSample = delayBuffer[wrapReadPos];
-				wet = wet * fadePos + wrapSample * (1.0f - fadePos);
+				float a = cosf(t * (float)M_PI * 0.5f);
+				float b = sinf(t * (float)M_PI * 0.5f);
+				wet = wet * a + wrapSample * b;
 			}
 			// Fade in at the start
 			else if (distanceFromStart < fadeLength) {
-				float fadePos = (float)distanceFromStart / (float)fadeLength;
-				wet = wet * fadePos;
+				float t = (float)distanceFromStart / (float)fadeLength;
+				float b = sinf(t * (float)M_PI * 0.5f);
+				wet = wet * b;
 			}
 		}
 		
