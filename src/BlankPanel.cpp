@@ -48,8 +48,8 @@ BlankPanel4hpWidget::BlankPanel4hpWidget(Module *module) {
 		asset::plugin(pluginInstance, "res/BlankPanel4hp.svg")
 	));
 
-	addChild(createWidget<Screw_J>(Vec(18, 2)));
-	addChild(createWidget<Screw_W>(Vec(18, 365)));
+	addChild(createWidget<Screw_J>(Vec(24, 2)));
+	addChild(createWidget<Screw_W>(Vec(24, 365)));
 }
 
 BlankPanelSmallWidget::BlankPanelSmallWidget(Module *module) {
