@@ -236,8 +236,21 @@ struct Buffer : Module {
 		if (frozen && !wasFrozen) {
 			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f)); // up to ~12ms
 			if (searchRadius < 8) searchRadius = 8;
+			// Align loop start
 			frozenLoopStart = findNearestZeroCrossing(loopStart, searchRadius);
-			frozenLoopLength = loopLength;
+			// Compute and align loop end
+			int rawEndIdx = (playbackDirection == 1)
+				? (loopStart + loopLength) % bufferSize
+				: (loopStart - loopLength + bufferSize) % bufferSize;
+			int frozenLoopEnd = findNearestZeroCrossing(rawEndIdx, searchRadius);
+			// Recompute length according to direction
+			if (playbackDirection == 1) {
+				frozenLoopLength = (frozenLoopEnd - frozenLoopStart + bufferSize) % bufferSize;
+			}
+			else {
+				frozenLoopLength = (frozenLoopStart - frozenLoopEnd + bufferSize) % bufferSize;
+			}
+			if (frozenLoopLength < 1) frozenLoopLength = 1;
 			wasFrozen = true;
 		}
 		else if (!frozen && wasFrozen) {
@@ -246,6 +259,25 @@ struct Buffer : Module {
 
 		int activeLoopStart = frozen ? frozenLoopStart : loopStart;
 		int activeLoopLength = frozen ? frozenLoopLength : loopLength;
+
+		// While frozen, allow changing loop length (and end) via knobs/CV
+		// Keep the frozen start anchored, re-align the end to a nearby zero crossing
+		if (frozen) {
+			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f));
+			if (searchRadius < 8) searchRadius = 8;
+			int desiredLen = loopLength; // based on current knobs
+			if (desiredLen < 1) desiredLen = 1;
+			int desiredEndIdx = (playbackDirection == 1)
+				? (activeLoopStart + desiredLen) % bufferSize
+				: (activeLoopStart - desiredLen + bufferSize) % bufferSize;
+			int alignedEnd = findNearestZeroCrossing(desiredEndIdx, searchRadius);
+			int newLen = (playbackDirection == 1)
+				? (alignedEnd - activeLoopStart + bufferSize) % bufferSize
+				: (activeLoopStart - alignedEnd + bufferSize) % bufferSize;
+			if (newLen < 1) newLen = 1;
+			frozenLoopLength = newLen;
+			activeLoopLength = frozenLoopLength;
+		}
 		
 		// (moved) write happens after wet is computed
 		
@@ -290,7 +322,7 @@ struct Buffer : Module {
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
 				float t = (float)distanceFromEnd / (float)fadeLength; // 1 -> start of fade, 0 -> boundary
-				int wrapReadPos = (activeLoopStart + (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				int wrapReadPos = (activeLoopStart + (fadeLength - distanceFromEnd) + bufferSize) % bufferSize;
 				float wrapSample = delayBuffer[wrapReadPos];
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
@@ -310,7 +342,7 @@ struct Buffer : Module {
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
 				float t = (float)distanceFromEnd / (float)fadeLength;
-				int wrapReadPos = (activeLoopStart - (distanceFromEnd - fadeLength) + bufferSize) % bufferSize;
+				int wrapReadPos = (activeLoopStart - (fadeLength - distanceFromEnd) + bufferSize) % bufferSize;
 				float wrapSample = delayBuffer[wrapReadPos];
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
