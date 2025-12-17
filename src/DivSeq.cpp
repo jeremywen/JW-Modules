@@ -68,8 +68,6 @@ struct DivSeq : Module,QuantizeUtils {
 	enum GateMode { TRIGGER, RETRIGGER, CONTINUOUS };
 	GateMode gateMode = TRIGGER;
 
-	enum RandomMode { RANDOM, FIRST_MIN, FIRST_MAX };
-	RandomMode randomMode = RANDOM;
 
 	dsp::PulseGenerator gatePulse;
 
@@ -131,12 +129,12 @@ struct DivSeq : Module,QuantizeUtils {
 		json_t *gateModeJ = json_integer((int) gateMode);
 		json_object_set_new(rootJ, "gateMode", gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_integer((int) randomMode);
-		json_object_set_new(rootJ, "randomMode", randomModeJ);
 
 		// gate pulse length
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
+
+		// max division for randomization and param limits
+		json_object_set_new(rootJ, "divMax", json_integer(divMax));
 
 		return rootJ;
 	}
@@ -165,16 +163,27 @@ struct DivSeq : Module,QuantizeUtils {
 		if (gateModeJ)
 			gateMode = (GateMode)json_integer_value(gateModeJ);
 
-		// randomMode
-		json_t *randomModeJ = json_object_get(rootJ, "randomMode");
-		if (randomModeJ)
-			randomMode = (RandomMode)json_integer_value(randomModeJ);
 
 		// gate pulse length
 		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
 		if (gatePulseLenSecJ) {
 			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
 			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+		}
+
+		// divMax
+		if (json_t *divMaxJ = json_object_get(rootJ, "divMax")) {
+			divMax = std::max(1, (int) json_integer_value(divMaxJ));
+			// Update division param max values and clamp current
+			for (int i = 0; i < 16; i++) {
+				int pid = CELL_DIV_PARAM + i;
+				if (paramQuantities.size() > pid && paramQuantities[pid]) {
+					paramQuantities[pid]->maxValue = (float) divMax;
+				}
+				float cur = params[pid].getValue();
+				if (cur > divMax) params[pid].setValue((float) divMax);
+				if (cur < 1.0f) params[pid].setValue(1.0f);
+			}
 		}
 	}
 
@@ -208,7 +217,9 @@ struct DivSeq : Module,QuantizeUtils {
 
 	void randomizeDivsOnly(){
 		for (int i = 0; i < 16; i++) {
-			params[CELL_DIV_PARAM + i].setValue((int)(random::uniform()*64+1));
+			int maxD = std::max(1, divMax);
+			int v = (int)(random::uniform() * maxD) + 1; // 1..divMax
+			params[CELL_DIV_PARAM + i].setValue((float)v);
 		}
 	}
 
@@ -353,12 +364,14 @@ struct RandomizeDivs16SeqOnlyButton : TinyButton {
 		TinyButton::onButton(e);
 		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
 			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
+			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
 			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
 			for (int i = 0; i < 16; i++) {
 				if (shiftDown) {
 					wid->divKnobs[i]->getParamQuantity()->setValue(1);
 				} else {
-					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*64+1));
+					int maxD = std::max(1, mod ? mod->divMax : 64);
+					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*maxD + 1));
 				}
 			}
 		}
@@ -505,17 +518,6 @@ struct DivSeqGateModeItem : MenuItem {
 	}
 };
 
-struct DivSeqRandomModeItem : MenuItem {
-	DivSeq *divSeq;
-	DivSeq::RandomMode randomMode;
-	void onAction(const event::Action &e) override {
-		divSeq->randomMode = randomMode;
-	}
-	void step() override {
-		rightText = (divSeq->randomMode == randomMode) ? "✔" : "";
-		MenuItem::step();
-	}
-};
 
 void DivSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -551,30 +553,49 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->divSeq = divSeq;
 	menu->addChild(pitchMenuItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
+	// Max random division / param limit
+	MenuLabel *spacerLabel3 = new MenuLabel();
+	menu->addChild(spacerLabel3);
 
-	MenuLabel *randomModeLabel = new MenuLabel();
-	randomModeLabel->text = "Random Button Mode";
-	menu->addChild(randomModeLabel);
+	struct DivSeqMaxDivValueItem : MenuItem {
+		DivSeq *module;
+		int maxDiv;
+		void onAction(const event::Action &e) override {
+			module->divMax = std::max(1, maxDiv);
+			for (int i = 0; i < 16; i++) {
+				int pid = DivSeq::CELL_DIV_PARAM + i;
+				if (module->paramQuantities.size() > pid && module->paramQuantities[pid]) {
+					module->paramQuantities[pid]->maxValue = (float) module->divMax;
+				}
+				float cur = module->params[pid].getValue();
+				if (cur > module->divMax) module->params[pid].setValue((float) module->divMax);
+				if (cur < 1.0f) module->params[pid].setValue(1.0f);
+			}
+		}
+	};
 
-	DivSeqRandomModeItem *randomItem = new DivSeqRandomModeItem();
-	randomItem->text = "Random";
-	randomItem->divSeq = divSeq;
-	randomItem->randomMode = DivSeq::RANDOM;
-	menu->addChild(randomItem);
+	struct DivSeqMaxDivItem : MenuItem {
+		DivSeq *module;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+			int options[] = {4, 8, 16, 32, 64, 128, 256};
+			for (int opt : options) {
+				DivSeqMaxDivValueItem *item = new DivSeqMaxDivValueItem;
+				item->text = string::f("%d", opt);
+				item->rightText = CHECKMARK(module->divMax == opt);
+				item->module = module;
+				item->maxDiv = opt;
+				menu->addChild(item);
+			}
+			return menu;
+		}
+	};
 
-	DivSeqRandomModeItem *randomMinItem = new DivSeqRandomModeItem();
-	randomMinItem->text = "First is Minimum";
-	randomMinItem->divSeq = divSeq;
-	randomMinItem->randomMode = DivSeq::FIRST_MIN;
-	menu->addChild(randomMinItem);
-
-	DivSeqRandomModeItem *randomMaxItem = new DivSeqRandomModeItem();
-	randomMaxItem->text = "First is Maximum";
-	randomMaxItem->divSeq = divSeq;
-	randomMaxItem->randomMode = DivSeq::FIRST_MAX;
-	menu->addChild(randomMaxItem);
+	DivSeqMaxDivItem *maxDivItem = new DivSeqMaxDivItem;
+	maxDivItem->text = "Max Division";
+	maxDivItem->rightText = string::f("%d", divSeq->divMax) + " " + RIGHT_ARROW;
+	maxDivItem->module = divSeq;
+	menu->addChild(maxDivItem);
 }
 
 Model *modelDivSeq = createModel<DivSeq, DivSeqWidget>("DivSeq");
