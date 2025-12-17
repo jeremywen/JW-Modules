@@ -102,6 +102,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger flipHorizTrig, flipVertTrig;
+	dsp::SchmittTrigger rotateTrig;
 	dsp::PulseGenerator gatePulse;
 
 	// Gate pulse length in seconds (for TRIGGER/RETRIGGER modes)
@@ -259,6 +260,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 		if (flipVertTrig.process(inputs[FLIP_INPUT].getVoltage())) { flipCells(DIR_VERT); }
 		if (shiftUpTrig.process(inputs[SHIFT_INPUT].getVoltage())) { shiftCells(DIR_UP); }
+		if (rotateTrig.process(inputs[ROTATE_INPUT].getVoltage())) { rotateSquaresAcross(DIR_RIGHT); }
 
 		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
 			resetMode = true;
@@ -454,6 +456,46 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	// rotate removed: behavior assumes square grid; not supported for rectangular grid
+
+	// Rotate each 16x16 square across the active sequence range.
+	// Direction is clockwise (DIR_RIGHT) or counter-clockwise (DIR_LEFT).
+	void rotateSquaresAcross(RotateDirection dir){
+		int seqStart = getSeqStart();
+		int seqEnd = getSeqEnd();
+		// Start at first full 16-column block at or after seqStart
+		int firstBlock = ((seqStart + 15) / 16) * 16;
+		// Copy current state to newCells as baseline
+		for(int i=0;i<CELLS;i++){
+			newCells[i] = cells[i];
+		}
+		for(int blockStart = firstBlock; blockStart + 15 <= seqEnd; blockStart += 16){
+			// Clear destination block region before writing rotation
+			for(int y=0; y<ROWS; y++){
+				for(int x=0; x<16; x++){
+					newCells[iFromXY(blockStart + x, y)] = false;
+				}
+			}
+			// Apply rotation mapping within 16x16 block
+			for(int y=0; y<ROWS; y++){
+				for(int x=0; x<16; x++){
+					bool on = cells[iFromXY(blockStart + x, y)];
+					int newX = blockStart + x;
+					int newY = y;
+					if(dir == DIR_RIGHT){
+						newX = blockStart + (15 - y);
+						newY = x;
+					}
+					else { // DIR_LEFT
+						newX = blockStart + y;
+						newY = 15 - x;
+					}
+					newCells[iFromXY(newX, newY)] = on;
+				}
+			}
+		}
+		// Commit changes
+		swapCells();
+	}
 
 	void flipCells(FlipDirection dir){
 		for(int x=0; x < COLS; x++){
@@ -1027,6 +1069,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 296), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	float bottomInpY = 338;
+	addInput(createInput<TinyPJ301MPort>(Vec(37, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(68, bottomInpY), module, NoteSeq16::FLIP_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(96, bottomInpY), module, NoteSeq16::SHIFT_INPUT));
 
@@ -1036,7 +1079,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
 	addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
 	// Follow Playhead switch
-	addParam(createParam<JwHorizontalSwitch>(Vec(36, bottomInpY), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(63, 278), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, NoteSeq16::EOC_OUTPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
