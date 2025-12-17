@@ -160,7 +160,7 @@ struct StereoSwitchWidget : ModuleWidget {
 
 StereoSwitchWidget::StereoSwitchWidget(StereoSwitch *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*7, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*6, RACK_GRID_HEIGHT);
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/StereoSwitch.svg"), 
@@ -174,44 +174,44 @@ StereoSwitchWidget::StereoSwitchWidget(StereoSwitch *module) {
 
 	// Left column (L), Right column (R)
 	// Indicator LEDs to the left of each pair
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 68), module, StereoSwitch::PAIR_LIGHT_1));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 65),  module, StereoSwitch::IN_L1));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 65), module, StereoSwitch::IN_R1));
-	addParam(createParam<JwTinyKnob>(Vec(75, 66), module, StereoSwitch::WEIGHT_1));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 98), module, StereoSwitch::PAIR_LIGHT_2));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 95),  module, StereoSwitch::IN_L2));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 95), module, StereoSwitch::IN_R2));
-	addParam(createParam<JwTinyKnob>(Vec(75, 96), module, StereoSwitch::WEIGHT_2));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 128), module, StereoSwitch::PAIR_LIGHT_3));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 125), module, StereoSwitch::IN_L3));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 125),module, StereoSwitch::IN_R3));
-	addParam(createParam<JwTinyKnob>(Vec(75, 126), module, StereoSwitch::WEIGHT_3));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 158), module, StereoSwitch::PAIR_LIGHT_4));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 155), module, StereoSwitch::IN_L4));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 155),module, StereoSwitch::IN_R4));
-	addParam(createParam<JwTinyKnob>(Vec(75, 156), module, StereoSwitch::WEIGHT_4));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 188), module, StereoSwitch::PAIR_LIGHT_5));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 185), module, StereoSwitch::IN_L5));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 185),module, StereoSwitch::IN_R5));
-	addParam(createParam<JwTinyKnob>(Vec(75, 186), module, StereoSwitch::WEIGHT_5));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 218), module, StereoSwitch::PAIR_LIGHT_6));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 215), module, StereoSwitch::IN_L6));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 215),module, StereoSwitch::IN_R6));
-	addParam(createParam<JwTinyKnob>(Vec(75, 216), module, StereoSwitch::WEIGHT_6));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 248), module, StereoSwitch::PAIR_LIGHT_7));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 245), module, StereoSwitch::IN_L7));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 245),module, StereoSwitch::IN_R7));
-	addParam(createParam<JwTinyKnob>(Vec(75, 246), module, StereoSwitch::WEIGHT_7));
-	addChild(createLight<SmallLight<RedLight>>(Vec(5, 278), module, StereoSwitch::PAIR_LIGHT_8));
-	addInput(createInput<TinyPJ301MPort>(Vec(20, 275), module, StereoSwitch::IN_L8));
-	addInput(createInput<TinyPJ301MPort>(Vec(50, 275),module, StereoSwitch::IN_R8));
-	addParam(createParam<JwTinyKnob>(Vec(75, 276), module, StereoSwitch::WEIGHT_8));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 59), module, StereoSwitch::PAIR_LIGHT_1));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 55),  module, StereoSwitch::IN_L1));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 55), module, StereoSwitch::IN_R1));
+	addParam(createParam<JwTinyKnob>(Vec(64, 55), module, StereoSwitch::WEIGHT_1));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 84), module, StereoSwitch::PAIR_LIGHT_2));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 80),  module, StereoSwitch::IN_L2));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 80), module, StereoSwitch::IN_R2));
+	addParam(createParam<JwTinyKnob>(Vec(64, 80), module, StereoSwitch::WEIGHT_2));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 109), module, StereoSwitch::PAIR_LIGHT_3));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 105), module, StereoSwitch::IN_L3));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 105),module, StereoSwitch::IN_R3));
+	addParam(createParam<JwTinyKnob>(Vec(64, 105), module, StereoSwitch::WEIGHT_3));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 134), module, StereoSwitch::PAIR_LIGHT_4));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 130), module, StereoSwitch::IN_L4));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 130),module, StereoSwitch::IN_R4));
+	addParam(createParam<JwTinyKnob>(Vec(64, 130), module, StereoSwitch::WEIGHT_4));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 159), module, StereoSwitch::PAIR_LIGHT_5));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 155), module, StereoSwitch::IN_L5));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 155),module, StereoSwitch::IN_R5));
+	addParam(createParam<JwTinyKnob>(Vec(64, 155), module, StereoSwitch::WEIGHT_5));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 184), module, StereoSwitch::PAIR_LIGHT_6));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 180), module, StereoSwitch::IN_L6));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 180),module, StereoSwitch::IN_R6));
+	addParam(createParam<JwTinyKnob>(Vec(64, 180), module, StereoSwitch::WEIGHT_6));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 209), module, StereoSwitch::PAIR_LIGHT_7));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 205), module, StereoSwitch::IN_L7));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 205),module, StereoSwitch::IN_R7));
+	addParam(createParam<JwTinyKnob>(Vec(64, 205), module, StereoSwitch::WEIGHT_7));
+	addChild(createLight<SmallLight<RedLight>>(Vec(5, 234), module, StereoSwitch::PAIR_LIGHT_8));
+	addInput(createInput<TinyPJ301MPort>(Vec(18, 230), module, StereoSwitch::IN_L8));
+	addInput(createInput<TinyPJ301MPort>(Vec(38, 230),module, StereoSwitch::IN_R8));
+	addParam(createParam<JwTinyKnob>(Vec(64, 230), module, StereoSwitch::WEIGHT_8));
 	
-	addInput(createInput<TinyPJ301MPort>(Vec(10, 310), module, StereoSwitch::TRIGGER_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(28, 310), module, StereoSwitch::UP_TRIG_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(46, 310), module, StereoSwitch::DOWN_TRIG_INPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(58, 310), module, StereoSwitch::OUT_L));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(88, 310), module, StereoSwitch::OUT_R));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 310), module, StereoSwitch::TRIGGER_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 270), module, StereoSwitch::UP_TRIG_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(60, 270), module, StereoSwitch::DOWN_TRIG_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(49.5, 310), module, StereoSwitch::OUT_L));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(67, 310), module, StereoSwitch::OUT_R));
 
 }
 

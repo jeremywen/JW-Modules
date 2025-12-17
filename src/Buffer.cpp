@@ -34,11 +34,11 @@ struct Buffer : Module {
 	int readPos = 0;
 	float delayTime = 0.5f;  // Current delay time in seconds
 	int playbackDirection = 1;  // 1 for forward, -1 for backward
-	float maxBufferSeconds = 15.0f;  // Maximum buffer size in seconds
+	float maxBufferSeconds = 1.0f;  // Maximum buffer size in seconds (default)
 
 	// Freeze behavior: gate vs toggle
 	enum FreezeMode { FM_GATE, FM_TOGGLE };
-	FreezeMode freezeMode = FM_GATE;
+	FreezeMode freezeMode = FM_TOGGLE;
 	dsp::SchmittTrigger freezeEdge;
 	dsp::SchmittTrigger freezeButtonEdge;
 	bool freezeLatched = false;
@@ -145,17 +145,19 @@ struct Buffer : Module {
 		// Freeze behavior: gate or toggle on rising edge
 		bool frozen = false;
 		float freezeV = inputs[FREEZE_INPUT].getVoltage();
+		// UI button toggles latched state in any mode
+		if (freezeButtonEdge.process(params[FREEZE_TOGGLE_PARAM].getValue())) {
+			freezeLatched = !freezeLatched;
+		}
 		if (freezeMode == FM_GATE) {
-			frozen = freezeV > 1.0f;
+			// Gate mode: gate OR latched button
+			frozen = (freezeV > 1.0f) || freezeLatched;
 		}
 		else {
+			// Toggle mode: input acts as a trigger to toggle
 			if (freezeEdge.process(freezeV)) {
 				freezeLatched = !freezeLatched;
 			}
-				// UI button toggles latched state when in Toggle mode
-				if (freezeButtonEdge.process(params[FREEZE_TOGGLE_PARAM].getValue())) {
-					freezeLatched = !freezeLatched;
-				}
 			frozen = freezeLatched;
 		}
 		
@@ -295,14 +297,7 @@ struct Buffer : Module {
 			writePos = (writePos + 1) % bufferSize;
 		}
 		else {
-			// While frozen, do not alter buffer contents via feedback
-			int writeIndex = (playbackDirection == 1)
-				? (readPos + 1) % bufferSize
-				: (readPos - 1 + bufferSize) % bufferSize;
-			float writeSample = delayBuffer[writeIndex];
-			if (writeSample > 10.f) writeSample = 10.f;
-			else if (writeSample < -10.f) writeSample = -10.f;
-			delayBuffer[writeIndex] = writeSample;
+			// Frozen: do not write to the buffer at all
 		}
 		outputs[AUDIO_OUTPUT].setVoltage(mixed);
 		// Update LED to reflect frozen state
@@ -377,19 +372,20 @@ BufferWidget::BufferWidget(Buffer *module) {
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(7, 40), module, Buffer::END_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(7, 75), module, Buffer::START_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(7, 110), module, Buffer::DRYWET_PARAM));
-	// Removed feedback parameter knob
+	addParam(createParam<SmallWhiteKnob>(Vec(9, 46), module, Buffer::START_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(14, 73), module, Buffer::START_CV_INPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 210), module, Buffer::FREEZE_INPUT));
-	addParam(createParam<TinyButton>(Vec(25, 210), module, Buffer::FREEZE_TOGGLE_PARAM));
-	addChild(createLight<SmallLight<BlueLight>>(Vec(15, 200), module, Buffer::FREEZE_LIGHT));
+	addParam(createParam<SmallWhiteKnob>(Vec(9, 114), module, Buffer::END_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(14, 141), module, Buffer::END_CV_INPUT));
+	
+	addChild(createLight<SmallLight<BlueLight>>(Vec(18, 193), module, Buffer::FREEZE_LIGHT));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 202), module, Buffer::FREEZE_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 202), module, Buffer::FREEZE_TOGGLE_PARAM));
+	
+	
+	addParam(createParam<SmallWhiteKnob>(Vec(9, 255), module, Buffer::DRYWET_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(14, 282), module, Buffer::DRYWET_CV_INPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 235), module, Buffer::START_CV_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(25, 235), module, Buffer::END_CV_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 260), module, Buffer::DRYWET_CV_INPUT));
-	// Removed feedback CV input jack
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 320), module, Buffer::AUDIO_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 320), module, Buffer::AUDIO_OUTPUT));
 
