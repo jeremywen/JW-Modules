@@ -9,6 +9,7 @@ struct Buffer : Module {
 		START_PARAM,
 		DRYWET_PARAM,
 		FREEZE_TOGGLE_PARAM,
+		WET_ON_FREEZE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -53,6 +54,7 @@ struct Buffer : Module {
 		configParam(START_PARAM, 0.0f, maxBufferSeconds, 0.0f, "Loop Start", "s");
         configParam(DRYWET_PARAM, 0.0f, 1.0f, 0.5f, "Dry/Wet");
 		configButton(FREEZE_TOGGLE_PARAM, "Freeze Toggle");
+		configParam(WET_ON_FREEZE_PARAM, 0.0f, 1.0f, 0.0f, "Wet on Freeze");
 		configInput(AUDIO_INPUT, "Audio IN");
 		configInput(FREEZE_INPUT, "Freeze Gate");
 		configInput(END_CV_INPUT, "End CV");
@@ -135,6 +137,7 @@ struct Buffer : Module {
 		json_object_set_new(rootJ, "maxBufferSeconds", json_real(maxBufferSeconds));
 		json_object_set_new(rootJ, "freezeMode", json_integer((int)freezeMode));
 		json_object_set_new(rootJ, "freezeLatched", json_integer(freezeLatched ? 1 : 0));
+		json_object_set_new(rootJ, "wetOnFreeze", json_integer(params[WET_ON_FREEZE_PARAM].getValue() > 0.5f ? 1 : 0));
 		return rootJ;
 	}
 
@@ -155,6 +158,9 @@ struct Buffer : Module {
 		}
 		if (json_t *flJ = json_object_get(rootJ, "freezeLatched")) {
 			freezeLatched = json_integer_value(flJ) != 0;
+		}
+		if (json_t *wofJ = json_object_get(rootJ, "wetOnFreeze")) {
+			params[WET_ON_FREEZE_PARAM].setValue(json_integer_value(wofJ) != 0 ? 1.0f : 0.0f);
 		}
 	}
 
@@ -362,6 +368,10 @@ struct Buffer : Module {
 			float cv = inputs[DRYWET_CV_INPUT].getVoltage();
 			dryWet = clamp(dryWet + cv / 10.f, 0.f, 1.f);
 		}
+		// Optional: force full wet when frozen and switch enabled
+		if (frozen && params[WET_ON_FREEZE_PARAM].getValue() > 0.5f) {
+			dryWet = 1.0f;
+		}
 		// Use equal-power crossfade to keep perceived loudness uniform
 		float t = dryWet;
 		float a = cosf(t * (float)M_PI * 0.5f); // dry gain
@@ -456,12 +466,14 @@ BufferWidget::BufferWidget(Buffer *module) {
 	addParam(createParam<SmallWhiteKnob>(Vec(9, 46), module, Buffer::START_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(14, 73), module, Buffer::START_CV_INPUT));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(9, 114), module, Buffer::END_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(14, 141), module, Buffer::END_CV_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(9, 104), module, Buffer::END_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(14, 131), module, Buffer::END_CV_INPUT));
 	
-	addChild(createLight<SmallLight<BlueLight>>(Vec(18, 193), module, Buffer::FREEZE_LIGHT));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 202), module, Buffer::FREEZE_INPUT));
-	addParam(createParam<TinyButton>(Vec(25, 202), module, Buffer::FREEZE_TOGGLE_PARAM));
+	addChild(createLight<SmallLight<BlueLight>>(Vec(18, 168), module, Buffer::FREEZE_LIGHT));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 179), module, Buffer::FREEZE_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 179), module, Buffer::FREEZE_TOGGLE_PARAM));
+	// Switch to force full wet while frozen
+	addParam(createParam<JwHorizontalSwitch>(Vec(13, 220), module, Buffer::WET_ON_FREEZE_PARAM));
 	
 	
 	addParam(createParam<SmallWhiteKnob>(Vec(9, 255), module, Buffer::DRYWET_PARAM));
