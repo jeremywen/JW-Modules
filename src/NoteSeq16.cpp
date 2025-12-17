@@ -139,6 +139,14 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		resetSeq();
 		resetMode = true;
 		clearCells();
+
+		// Ensure Length knob max reflects current maxLength (default 16)
+		if (paramQuantities.size() > LENGTH_KNOB_PARAM && paramQuantities[LENGTH_KNOB_PARAM]) {
+			paramQuantities[LENGTH_KNOB_PARAM]->maxValue = maxLength;
+			// Clamp initial value into range
+			float cur = params[LENGTH_KNOB_PARAM].getValue();
+			if (cur > maxLength) params[LENGTH_KNOB_PARAM].setValue((float)maxLength);
+		}
 	}
 
 	~NoteSeq16() {
@@ -204,6 +212,13 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		} else {
 			// For old patches without this field, default to 16
 			maxLength = 16;
+		}
+
+		// Ensure Length knob max tracks loaded maxLength and clamp value
+		if (paramQuantities.size() > LENGTH_KNOB_PARAM && paramQuantities[LENGTH_KNOB_PARAM]) {
+			paramQuantities[LENGTH_KNOB_PARAM]->maxValue = maxLength;
+			float cur = params[LENGTH_KNOB_PARAM].getValue();
+			if (cur > maxLength) params[LENGTH_KNOB_PARAM].setValue((float)maxLength);
 		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
@@ -1083,7 +1098,10 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 		int value;
 		void onAction(const event::Action &e) override {
 			module->maxLength = value;
-			// Clamp current length knob within new max
+			// Update length knob max and clamp current value within new max
+			if (module->paramQuantities.size() > NoteSeq16::LENGTH_KNOB_PARAM && module->paramQuantities[NoteSeq16::LENGTH_KNOB_PARAM]) {
+				module->paramQuantities[NoteSeq16::LENGTH_KNOB_PARAM]->maxValue = (float)value;
+			}
 			float cur = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue();
 			if (cur > value) module->params[NoteSeq16::LENGTH_KNOB_PARAM].setValue((float)value);
 		}
