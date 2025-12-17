@@ -21,6 +21,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Add5](#add5)
 * [Arrange](#arrange)
 * [Bouncy Balls](#bouncy-balls)
+* [Buffer](#buffer)
 * [D1v1de](#d1v1de)
 * [DivSeq](#divseq)
 * [FullScope](#fullscope)
@@ -32,7 +33,10 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Patterns](#patterns)
 * [Pres1t](#pres1t)
 * [Quantizer](#quantizer)
+* [RandomSound](#randomsound)
+* [ShiftRegRnd](#shiftregrnd)
 * [SimpleClock](#simpleclock)
+* [StereoSwitch](#stereoswitch)
 * [Str1ker](#str1ker)
 * [Thing Thing](#thing-thing)
 * [Timer](#timer)
@@ -42,6 +46,22 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [XY-Pad](#xy-pad)
 
 ----
+
+## Buffer
+
+Effect to freeze audio coming in.
+
+## RandomSound
+
+Generates up to 16 random sounds at once based on polyphony setting.
+
+## ShiftRegRnd
+
+Allows you to take a stream of notes and grab a random set of notes to make chords for example.
+
+## StereoSwitch
+
+A switch which has stereo inputs and outputs and can jump to a random input based on weighted values.
 
 ## Arrange
 
