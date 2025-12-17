@@ -17,7 +17,7 @@ BlankPanel1hpWidget::BlankPanel1hpWidget(Module *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/BlankPanel1hp.svg"), 
-		asset::plugin(pluginInstance, "res/dark/BlankPanel1hp.svg")
+		asset::plugin(pluginInstance, "res/BlankPanel1hp.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(1.4, 2)));
@@ -30,7 +30,7 @@ BlankPanelSmallWidget::BlankPanelSmallWidget(Module *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/BlankPanelSmall.svg"), 
-		asset::plugin(pluginInstance, "res/dark/BlankPanelSmall.svg")
+		asset::plugin(pluginInstance, "res/BlankPanelSmall.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
@@ -43,7 +43,7 @@ BlankPanelMediumWidget::BlankPanelMediumWidget(Module *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/BlankPanelMedium.svg"), 
-		asset::plugin(pluginInstance, "res/dark/BlankPanelMedium.svg")
+		asset::plugin(pluginInstance, "res/BlankPanelMedium.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
@@ -58,7 +58,7 @@ BlankPanelLargeWidget::BlankPanelLargeWidget(Module *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/BlankPanelLarge.svg"), 
-		asset::plugin(pluginInstance, "res/dark/BlankPanelLarge.svg")
+		asset::plugin(pluginInstance, "res/BlankPanelLarge.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

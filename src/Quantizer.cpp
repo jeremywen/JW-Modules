@@ -121,7 +121,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Quantizer.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Quantizer.svg")
+		asset::plugin(pluginInstance, "res/Quantizer.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

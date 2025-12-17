@@ -97,7 +97,7 @@ WavHeadWidget::WavHeadWidget(WavHead *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/WavHeadPanel.svg"), 
-		asset::plugin(pluginInstance, "res/dark/WavHeadPanel.svg")
+		asset::plugin(pluginInstance, "res/WavHeadPanel.svg")
 	));
 
 	for(int i=0; i<16; i++){

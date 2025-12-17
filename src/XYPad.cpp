@@ -819,7 +819,7 @@ XYPadWidget::XYPadWidget(XYPad *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/XYPad.svg"), 
-		asset::plugin(pluginInstance, "res/dark/XYPad.svg")
+		asset::plugin(pluginInstance, "res/XYPad.svg")
 	));
 
 	XYPadDisplay *display = new XYPadDisplay();

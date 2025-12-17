@@ -458,7 +458,7 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/BouncyBalls.svg"), 
-		asset::plugin(pluginInstance, "res/dark/BouncyBalls.svg")
+		asset::plugin(pluginInstance, "res/BouncyBalls.svg")
 	));
 
 	BouncyBallDisplay *display = new BouncyBallDisplay();

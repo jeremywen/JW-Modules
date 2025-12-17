@@ -390,7 +390,7 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/DivSeq.svg"), 
-		asset::plugin(pluginInstance, "res/dark/DivSeq.svg")
+		asset::plugin(pluginInstance, "res/DivSeq.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

@@ -1046,7 +1046,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/NoteSeq.svg"), 
-		asset::plugin(pluginInstance, "res/dark/NoteSeq.svg")
+		asset::plugin(pluginInstance, "res/NoteSeq.svg")
 	));
 
 	NoteSeqDisplay *display = new NoteSeqDisplay();

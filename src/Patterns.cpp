@@ -411,7 +411,7 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Patterns.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Patterns.svg")
+		asset::plugin(pluginInstance, "res/Patterns.svg")
 	));
 
 	PatternsDisplay *display = new PatternsDisplay();

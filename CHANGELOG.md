@@ -6,7 +6,7 @@
   * Random Sound: NEW MODULE - plays a random sound based on FM or Additive Synthesis of random wave forms and random frequencies
   * Shift Reister Random: NEW MODULE - allows you to grab a random set of polyphonic voltage from a stream of notes
   * Stereo Switch: NEW MODULE - allows you to have a stereo switch where certain steps can have a higher chance
-  * NoteSeq16: now has 256 steps and scrolls
+  * NoteSeq16: now has 256 steps and scrolls, right click menu has options for up to 256 steps, 16 is default for old patches
   * GridSeq: now has snake options in right click menu
   * EightSeq: now has snake options in right click menu
   * DivSeq: now has an option for the maximum random division
@@ -19,9 +19,8 @@
   * NoteSeqFu: life counter resets on reset
   * Tree: added a jitter amount knob
   * XYPad: clears drawing on load preset
-
-  Added gate length slider to right click menu of all modules which output a trigger/gate.
-  This means you can now have fast clocks and sequencers without 
+  * Got rid of all light panels and components because I hate updating panels and components and colors multiple times.  Now we just have dark.  Improved colors and made UIs more consistent.
+  * Added gate length slider to right click menu of all modules which output a trigger/gate. This means you can now have fast clocks and sequencers without gates merging and sticking on.
 
 ## v2.0.17 ~ 11-29-25
 

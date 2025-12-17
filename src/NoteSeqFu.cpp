@@ -1032,7 +1032,7 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/NoteSeqFu.svg"), 
-		asset::plugin(pluginInstance, "res/dark/NoteSeqFu.svg")
+		asset::plugin(pluginInstance, "res/NoteSeqFu.svg")
 	));
 
 	NoteSeqFuDisplay *display = new NoteSeqFuDisplay();

@@ -656,7 +656,7 @@ ArrangeWidget::ArrangeWidget(Arrange *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Arrange.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Arrange.svg")
+		asset::plugin(pluginInstance, "res/Arrange.svg")
 	));
 
 	ArrangeDisplay *display = new ArrangeDisplay();

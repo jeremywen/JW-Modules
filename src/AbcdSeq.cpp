@@ -808,7 +808,7 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/AbcdSeq.svg"), 
-		asset::plugin(pluginInstance, "res/dark/AbcdSeq.svg")
+		asset::plugin(pluginInstance, "res/AbcdSeq.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

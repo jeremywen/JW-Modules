@@ -385,23 +385,24 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/RandomSound.svg"), 
-		asset::plugin(pluginInstance, "res/dark/RandomSound.svg")
+		asset::plugin(pluginInstance, "res/RandomSound.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
 	// Amplitude decay knob
-	addParam(createParam<SmallWhiteKnob>(Vec(10, 80), module, RandomSound::AMP_DECAY_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 110), module, RandomSound::DECAY_CV_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(10, 70), module, RandomSound::AMP_DECAY_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 100), module, RandomSound::DECAY_CV_INPUT));
 	// Buttons next to jacks for convenience
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 200), module, RandomSound::TRIGGER_RANDOMIZE));
-	addParam(createParam<TinyButton>(Vec(25, 200), module, RandomSound::RANDOMIZE_BUTTON_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 240), module, RandomSound::TRIGGER_INPUT));
-	addParam(createParam<TinyButton>(Vec(25, 240), module, RandomSound::TRIGGER_BUTTON_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 145), module, RandomSound::TRIGGER_RANDOMIZE));
+	addParam(createParam<TinyButton>(Vec(25, 145), module, RandomSound::RANDOMIZE_BUTTON_PARAM));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 192), module, RandomSound::TRIGGER_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 192), module, RandomSound::TRIGGER_BUTTON_PARAM));
 	// Combined trigger+randomize input and button
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 270), module, RandomSound::TRIG_RANDOMIZE_INPUT));
-	addParam(createParam<TinyButton>(Vec(25, 270), module, RandomSound::TRIG_RANDOMIZE_BUTTON_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 242), module, RandomSound::TRIG_RANDOMIZE_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 242), module, RandomSound::TRIG_RANDOMIZE_BUTTON_PARAM));
 	// Output
 	addOutput(createOutput<TinyPJ301MPort>(Vec(15, 300), module, RandomSound::VOLT_OUTPUT));
 

@@ -141,20 +141,29 @@ ShiftRegRndWidget::ShiftRegRndWidget(ShiftRegRnd *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/ShiftRegRnd.svg"), 
-		asset::plugin(pluginInstance, "res/dark/ShiftRegRnd.svg")
+		asset::plugin(pluginInstance, "res/ShiftRegRnd.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 
-	addInput(createInput<PJ301MPort>(Vec(10, 70), module, ShiftRegRnd::VOLT_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(10, 120), module, ShiftRegRnd::TRIGGER_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(10, 170), module, ShiftRegRnd::TRIGGER_RANDOMIZE));
-	addOutput(createOutput<PJ301MPort>(Vec(10, 220), module, ShiftRegRnd::VOLT_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 77), module, ShiftRegRnd::VOLT_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 127), module, ShiftRegRnd::TRIGGER_INPUT));
+	
+	addInput(createInput<TinyPJ301MPort>(Vec(15, 245), module, ShiftRegRnd::TRIGGER_RANDOMIZE));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(15, 289), module, ShiftRegRnd::VOLT_OUTPUT));
 
-	// LED column showing voltage sign and magnitude (-10..+10V)
+	// 2x4 LED grid centered in the module showing voltage sign and magnitude (-10..+10V)
+	float cx = box.size.x * 0.45f;
+	float cy = 180.0f;
+	float dx = 16.0f; // horizontal spacing
+	float dy = 16.0f; // vertical spacing
 	for (int i = 0; i < 8; i++) {
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(34, 80 + i * 24), module, ShiftRegRnd::LED_BASE + i * 2));
+		int row = i % 4;      // 0..3
+		int col = i / 4;      // 0..1
+		float x = cx + (col == 0 ? -dx * 0.5f : dx * 0.5f);
+		float y = cy + (row - 1.5f) * dy;
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(x, y), module, ShiftRegRnd::LED_BASE + i * 2));
 	}
 
 }

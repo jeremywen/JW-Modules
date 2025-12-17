@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="90"
    height="380.00003"
    viewBox="0 0 23.8125 100.54167"
    version="1.1"
    id="svg8630"
-   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="MinMax.svg">
+   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   sodipodi:docname="MinMax.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs8624" />
   <sodipodi:namedview
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="39.854627"
-     inkscape:cy="134.99267"
+     inkscape:cx="39.648487"
+     inkscape:cy="135.1079"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -36,12 +36,14 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      units="px"
-     inkscape:window-width="916"
+     inkscape:window-width="920"
      inkscape:window-height="954"
      inkscape:window-x="323"
-     inkscape:window-y="86"
+     inkscape:window-y="58"
      inkscape:window-maximized="0"
-     inkscape:pagecheckerboard="true" />
+     inkscape:pagecheckerboard="true"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
   <metadata
      id="metadata8627">
     <rdf:RDF>
@@ -63,7 +65,7 @@
        inkscape:connector-curvature="0"
        id="path33449"
        d="M 44.541176,88.808436 H 68.353675 V 189.20454 H 44.541176 Z m 0,0"
-       style="fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.27602378" />
+       style="fill:#323232;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.27602378" />
     <path
        inkscape:connector-curvature="0"
        id="path38411"

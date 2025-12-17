@@ -166,7 +166,7 @@ MinMaxWidget::MinMaxWidget(MinMax *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/MinMax.svg"), 
-		asset::plugin(pluginInstance, "res/dark/MinMax.svg")
+		asset::plugin(pluginInstance, "res/MinMax.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

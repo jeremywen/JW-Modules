@@ -128,7 +128,7 @@ TimerWidget::TimerWidget(Timer *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Timer.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Timer.svg")
+		asset::plugin(pluginInstance, "res/Timer.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

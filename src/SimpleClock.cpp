@@ -168,7 +168,7 @@ SimpleClockWidget::SimpleClockWidget(SimpleClock *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/SimpleClock.svg"), 
-		asset::plugin(pluginInstance, "res/dark/SimpleClock.svg")
+		asset::plugin(pluginInstance, "res/SimpleClock.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

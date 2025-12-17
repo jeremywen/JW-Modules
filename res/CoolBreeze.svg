@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="90"
    height="380"
    viewBox="0 0 23.8125 100.54166"
    version="1.1"
    id="svg12553"
-   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="CoolBreeze.svg">
+   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   sodipodi:docname="CoolBreeze.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs12547" />
   <sodipodi:namedview
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="-2.4268514"
-     inkscape:cy="166.08799"
+     inkscape:cx="-2.5"
+     inkscape:cy="166.78571"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -36,17 +36,24 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      units="px"
-     inkscape:window-width="1188"
+     inkscape:window-width="1192"
      inkscape:window-height="964"
      inkscape:window-x="277"
-     inkscape:window-y="191"
+     inkscape:window-y="163"
      inkscape:window-maximized="0"
-     inkscape:snap-global="false">
+     inkscape:snap-global="false"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
        id="grid12870"
        originx="-20.372917"
-       originy="84.666661" />
+       originy="84.666661"
+       spacingy="1"
+       spacingx="1"
+       units="px"
+       visible="true" />
   </sodipodi:namedview>
   <metadata
      id="metadata12550">
@@ -69,7 +76,7 @@
        inkscape:connector-curvature="0"
        id="path33453"
        d="m 26.543497,161.45211 h 23.812499 v 100.3961 H 26.543497 Z m 0,0"
-       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.14416076" />
+       style="fill:#323232;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.14416076" />
     <path
        inkscape:connector-curvature="0"
        id="path911"

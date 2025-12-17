@@ -70,7 +70,7 @@ Add5Widget::Add5Widget(Add5 *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Add5.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Add5.svg")
+		asset::plugin(pluginInstance, "res/Add5.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

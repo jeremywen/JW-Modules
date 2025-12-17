@@ -67,7 +67,7 @@ CatWidget::CatWidget(Cat *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/WavHeadPanel.svg"), 
-		asset::plugin(pluginInstance, "res/dark/WavHeadPanel.svg")
+		asset::plugin(pluginInstance, "res/WavHeadPanel.svg")
 	));
 
 	widgetToMove = createWidget<CatScrew>(Vec(5, 250));

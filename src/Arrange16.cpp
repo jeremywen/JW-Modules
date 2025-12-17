@@ -656,7 +656,7 @@ Arrange16Widget::Arrange16Widget(Arrange16 *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Arrange16.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Arrange16.svg")
+		asset::plugin(pluginInstance, "res/Arrange16.svg")
 	));
 
 	Arrange16Display *display = new Arrange16Display();

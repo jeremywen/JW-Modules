@@ -250,7 +250,7 @@ OnePatternWidget::OnePatternWidget(OnePattern *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/OnePattern.svg"), 
-		asset::plugin(pluginInstance, "res/dark/OnePattern.svg")
+		asset::plugin(pluginInstance, "res/OnePattern.svg")
 	));
 
 	OnePatternDisplay *display = new OnePatternDisplay();

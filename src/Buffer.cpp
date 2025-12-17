@@ -8,7 +8,7 @@ struct Buffer : Module {
 		END_PARAM,
 		START_PARAM,
 		DRYWET_PARAM,
-		FEEDBACK_PARAM,
+		FREEZE_TOGGLE_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -17,7 +17,6 @@ struct Buffer : Module {
 		END_CV_INPUT,
 		START_CV_INPUT,
 		DRYWET_CV_INPUT,
-		FEEDBACK_CV_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -25,6 +24,7 @@ struct Buffer : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
+		FREEZE_LIGHT,
 		NUM_LIGHTS
 	};
 	
@@ -36,18 +36,24 @@ struct Buffer : Module {
 	int playbackDirection = 1;  // 1 for forward, -1 for backward
 	float maxBufferSeconds = 15.0f;  // Maximum buffer size in seconds
 
+	// Freeze behavior: gate vs toggle
+	enum FreezeMode { FM_GATE, FM_TOGGLE };
+	FreezeMode freezeMode = FM_GATE;
+	dsp::SchmittTrigger freezeEdge;
+	dsp::SchmittTrigger freezeButtonEdge;
+	bool freezeLatched = false;
+
 	Buffer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(END_PARAM, 0.001f, maxBufferSeconds, 0.5f, "Loop End", "s");
 		configParam(START_PARAM, 0.0f, maxBufferSeconds, 0.0f, "Loop Start", "s");
         configParam(DRYWET_PARAM, 0.0f, 1.0f, 0.5f, "Dry/Wet");
-        configParam(FEEDBACK_PARAM, 0.0f, 1.0f, 0.3f, "Feedback");
+		configButton(FREEZE_TOGGLE_PARAM, "Freeze Toggle");
 		configInput(AUDIO_INPUT, "Audio IN");
 		configInput(FREEZE_INPUT, "Freeze Gate");
 		configInput(END_CV_INPUT, "End CV");
 		configInput(START_CV_INPUT, "Start CV");
 		configInput(DRYWET_CV_INPUT, "Dry/Wet CV");
-		configInput(FEEDBACK_CV_INPUT, "Feedback CV");
 		configOutput(AUDIO_OUTPUT, "Audio OUT (Delayed)");
 		configBypass(AUDIO_INPUT, AUDIO_OUTPUT);
 		
@@ -100,6 +106,8 @@ struct Buffer : Module {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "maxBufferSeconds", json_real(maxBufferSeconds));
+		json_object_set_new(rootJ, "freezeMode", json_integer((int)freezeMode));
+		json_object_set_new(rootJ, "freezeLatched", json_integer(freezeLatched ? 1 : 0));
 		return rootJ;
 	}
 
@@ -114,6 +122,13 @@ struct Buffer : Module {
 			params[END_PARAM].setValue(clamp(endV, 0.001f, maxBufferSeconds));
 			params[START_PARAM].setValue(clamp(startV, 0.0f, maxBufferSeconds));
 		}
+		if (json_t *fmJ = json_object_get(rootJ, "freezeMode")) {
+			int m = json_integer_value(fmJ);
+			freezeMode = (m == (int)FM_TOGGLE) ? FM_TOGGLE : FM_GATE;
+		}
+		if (json_t *flJ = json_object_get(rootJ, "freezeLatched")) {
+			freezeLatched = json_integer_value(flJ) != 0;
+		}
 	}
 
 	void process(const ProcessArgs &args) override {
@@ -127,8 +142,22 @@ struct Buffer : Module {
 			readPos = (bufferSize + (readPos % bufferSize)) % bufferSize;
 		}
 		
-		// Check if freeze gate is high
-		bool frozen = inputs[FREEZE_INPUT].getVoltage() > 1.0f;
+		// Freeze behavior: gate or toggle on rising edge
+		bool frozen = false;
+		float freezeV = inputs[FREEZE_INPUT].getVoltage();
+		if (freezeMode == FM_GATE) {
+			frozen = freezeV > 1.0f;
+		}
+		else {
+			if (freezeEdge.process(freezeV)) {
+				freezeLatched = !freezeLatched;
+			}
+				// UI button toggles latched state when in Toggle mode
+				if (freezeButtonEdge.process(params[FREEZE_TOGGLE_PARAM].getValue())) {
+					freezeLatched = !freezeLatched;
+				}
+			frozen = freezeLatched;
+		}
 		
 		// Get input signal
 		float input = inputs[AUDIO_INPUT].getVoltage();
@@ -256,14 +285,9 @@ struct Buffer : Module {
 		float b = sinf(t * (float)M_PI * 0.5f); // wet gain
 		float mixed = input * a + wet * b;
 
-		// Now write to buffer
+		// Now write to buffer (no feedback applied)
 		if (!frozen) {
-			float fb = params[FEEDBACK_PARAM].getValue();
-			if (inputs[FEEDBACK_CV_INPUT].isConnected()) {
-				float fcv = inputs[FEEDBACK_CV_INPUT].getVoltage();
-				fb = clamp(fb + fcv / 10.f, 0.f, 1.f);
-			}
-			float writeSample = input + wet * fb;
+			float writeSample = input;
 			// Prevent runaway: soft limit to avoid clipping explosions
 			if (writeSample > 10.f) writeSample = 10.f;
 			else if (writeSample < -10.f) writeSample = -10.f;
@@ -271,24 +295,18 @@ struct Buffer : Module {
 			writePos = (writePos + 1) % bufferSize;
 		}
 		else {
-			// Include feedback while frozen by writing into the loop region along the read path.
-			// This recirculates the loop content and applies decay based on feedback.
-			float fb = params[FEEDBACK_PARAM].getValue();
-			if (inputs[FEEDBACK_CV_INPUT].isConnected()) {
-				float fcv = inputs[FEEDBACK_CV_INPUT].getVoltage();
-				fb = clamp(fb + fcv / 10.f, 0.f, 1.f);
-			}
-			// Determine the next index along the playback direction within the loop
+			// While frozen, do not alter buffer contents via feedback
 			int writeIndex = (playbackDirection == 1)
 				? (readPos + 1) % bufferSize
 				: (readPos - 1 + bufferSize) % bufferSize;
-			// Blend existing content with feedback from the current wet sample
-			float writeSample = delayBuffer[writeIndex] * (1.f - fb) + wet * fb;
+			float writeSample = delayBuffer[writeIndex];
 			if (writeSample > 10.f) writeSample = 10.f;
 			else if (writeSample < -10.f) writeSample = -10.f;
 			delayBuffer[writeIndex] = writeSample;
 		}
 		outputs[AUDIO_OUTPUT].setVoltage(mixed);
+		// Update LED to reflect frozen state
+		lights[FREEZE_LIGHT].setBrightness(frozen ? 1.0f : 0.0f);
 	}
 
 };
@@ -353,7 +371,7 @@ BufferWidget::BufferWidget(Buffer *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Buffer.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Buffer.svg")
+		asset::plugin(pluginInstance, "res/Buffer.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
@@ -362,15 +380,18 @@ BufferWidget::BufferWidget(Buffer *module) {
 	addParam(createParam<SmallWhiteKnob>(Vec(7, 40), module, Buffer::END_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(7, 75), module, Buffer::START_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(7, 110), module, Buffer::DRYWET_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(7, 145), module, Buffer::FEEDBACK_PARAM));
+	// Removed feedback parameter knob
 
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 210), module, Buffer::FREEZE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 210), module, Buffer::FREEZE_INPUT));
+	addParam(createParam<TinyButton>(Vec(25, 210), module, Buffer::FREEZE_TOGGLE_PARAM));
+	addChild(createLight<SmallLight<BlueLight>>(Vec(15, 200), module, Buffer::FREEZE_LIGHT));
+
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 235), module, Buffer::START_CV_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(25, 235), module, Buffer::END_CV_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(15, 260), module, Buffer::DRYWET_CV_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 285), module, Buffer::FEEDBACK_CV_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 310), module, Buffer::AUDIO_INPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 310), module, Buffer::AUDIO_OUTPUT));
+	// Removed feedback CV input jack
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 320), module, Buffer::AUDIO_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 320), module, Buffer::AUDIO_OUTPUT));
 
 }
 
@@ -384,6 +405,50 @@ void BufferWidget::appendContextMenu(Menu *menu) {
 	sizeItem->rightText = string::f("%.0fs", buffer->maxBufferSeconds) + " " + RIGHT_ARROW;
 	sizeItem->module = buffer;
 	menu->addChild(sizeItem);
+
+	// Freeze controls
+	MenuLabel *freezeLabel = new MenuLabel();
+	freezeLabel->text = "Freeze";
+	menu->addChild(freezeLabel);
+
+	struct FreezeModeValueItem : MenuItem {
+		Buffer *module;
+		Buffer::FreezeMode mode;
+		void onAction(const event::Action &e) override {
+			module->freezeMode = mode;
+		}
+		void step() override {
+			rightText = CHECKMARK(module->freezeMode == mode);
+			MenuItem::step();
+		}
+	};
+
+	struct FreezeModeItem : MenuItem {
+		Buffer *module;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+			FreezeModeValueItem *gateItem = new FreezeModeValueItem;
+			gateItem->text = "Gate";
+			gateItem->module = module;
+			gateItem->mode = Buffer::FM_GATE;
+			menu->addChild(gateItem);
+
+			FreezeModeValueItem *toggleItem = new FreezeModeValueItem;
+			toggleItem->text = "Toggle on trigger";
+			toggleItem->module = module;
+			toggleItem->mode = Buffer::FM_TOGGLE;
+			menu->addChild(toggleItem);
+			return menu;
+		}
+	};
+
+	FreezeModeItem *fmItem = new FreezeModeItem;
+	fmItem->text = "Freeze mode";
+	fmItem->rightText = RIGHT_ARROW;
+	fmItem->module = buffer;
+	menu->addChild(fmItem);
+
+	// UI provides a dedicated freeze toggle button and LED; no menu toggle needed.
 }
 
 Model *modelBuffer = createModel<Buffer, BufferWidget>("Buffer");

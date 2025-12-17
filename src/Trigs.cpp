@@ -624,7 +624,7 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Trigs.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Trigs.svg")
+		asset::plugin(pluginInstance, "res/Trigs.svg")
 	));
 
 	TrigsDisplay *display = new TrigsDisplay();

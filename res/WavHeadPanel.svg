@@ -38,7 +38,7 @@
      units="px"
      inkscape:window-width="1424"
      inkscape:window-height="962"
-     inkscape:window-x="0"
+     inkscape:window-x="49"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:snap-global="false"
@@ -76,6 +76,6 @@
        inkscape:connector-curvature="0"
        id="path33453"
        d="m 26.543497,161.45211 h 15.874999 v 100.3961 H 26.543497 Z m 0,0"
-       style="fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.11770677" />
+       style="fill:#333333;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.11770677" />
   </g>
 </svg>

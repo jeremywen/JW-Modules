@@ -326,7 +326,7 @@ Str1kerWidget::Str1kerWidget(Str1ker *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Str1ker.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Str1ker.svg")
+		asset::plugin(pluginInstance, "res/Str1ker.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

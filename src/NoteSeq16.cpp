@@ -98,6 +98,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	bool *newCells = new bool[CELLS];
 	ColNotes *colNotesCache = new ColNotes[COLS];
 	ColNotes *colNotesCache2 = new ColNotes[COLS];
+	int maxLength = 16; // clamp sequence length to one of {16,32,64,128,256}; default 16 for backwards compatibility
 	dsp::SchmittTrigger clockTrig, resetTrig, clearTrig;
 	dsp::SchmittTrigger rndTrig, shiftUpTrig, shiftDownTrig;
 	dsp::SchmittTrigger flipHorizTrig, flipVertTrig;
@@ -164,6 +165,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "channels", json_integer(channels));
+		json_object_set_new(rootJ, "maxLength", json_integer(maxLength));
 		
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
@@ -191,6 +193,17 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			channels = json_integer_value(channelsJ);
 		} else {
 			channels = 4;//hopefully this works for old patches
+		}
+
+		// maxLength (optional; defaults to COLS)
+		json_t *maxLengthJ = json_object_get(rootJ, "maxLength");
+		if (maxLengthJ) {
+			int ml = json_integer_value(maxLengthJ);
+			// allow only specific supported values; fallback to COLS
+			if (ml == 16 || ml == 32 || ml == 64 || ml == 128 || ml == 256) maxLength = ml; else maxLength = 16;
+		} else {
+			// For old patches without this field, default to 16
+			maxLength = 16;
 		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
@@ -396,8 +409,9 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	int getSeqLen(){
-		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, float(COLS - 1)));
-		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, float(COLS));
+		int ml = clampijw(maxLength, 1, COLS);
+		int inputOffset = int(rescalefjw(inputs[LENGTH_INPUT].getVoltage(), 0, 10.0, 0.0, float(ml - 1)));
+		int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, float(ml));
 		return len;
 	}
 
@@ -735,6 +749,16 @@ struct NoteSeq16Display : LightWidget {
 				nvgStroke(args.vg);
 			}
 
+			// blue division lines every 16 columns for visual grouping
+			nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));
+			nvgStrokeWidth(args.vg, 2);
+			for (int i = 0; i <= COLS; i += 16) {
+				nvgBeginPath(args.vg);
+				nvgMoveTo(args.vg, i * HW, 0);
+				nvgLineTo(args.vg, i * HW, box.size.y);
+				nvgStroke(args.vg);
+			}
+
 			if(module == NULL) return;
 
 			//cells
@@ -941,7 +965,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/NoteSeq16.svg"), 
-		asset::plugin(pluginInstance, "res/dark/NoteSeq16.svg")
+		asset::plugin(pluginInstance, "res/NoteSeq16.svg")
 	));
 
 	// Inline viewport with internal clipping and horizontal scroll
@@ -1052,6 +1076,42 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	
 	MenuLabel *spacerLabel2 = new MenuLabel();
 	menu->addChild(spacerLabel2);
+
+	// Max length submenu
+	struct NS16MaxLenValueItem : MenuItem {
+		NoteSeq16 *module;
+		int value;
+		void onAction(const event::Action &e) override {
+			module->maxLength = value;
+			// Clamp current length knob within new max
+			float cur = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue();
+			if (cur > value) module->params[NoteSeq16::LENGTH_KNOB_PARAM].setValue((float)value);
+		}
+		void step() override {
+			rightText = CHECKMARK(module->maxLength == value);
+			MenuItem::step();
+		}
+	};
+	struct NS16MaxLenItem : MenuItem {
+		NoteSeq16 *module;
+		Menu *createChildMenu() override {
+			Menu *menu = new Menu;
+			int options[5] = {16, 32, 64, 128, 256};
+			for (int i = 0; i < 5; i++) {
+				NS16MaxLenValueItem *item = new NS16MaxLenValueItem;
+				item->module = module;
+				item->value = options[i];
+				item->text = string::f("%d", options[i]);
+				menu->addChild(item);
+			}
+			return menu;
+		}
+	};
+	NS16MaxLenItem *maxLenItem = new NS16MaxLenItem;
+	maxLenItem->module = noteSeq16;
+	maxLenItem->text = "Max length";
+	maxLenItem->rightText = string::f("%d %s", noteSeq16->maxLength, RIGHT_ARROW);
+	menu->addChild(maxLenItem);
 
 	// Follow Playhead is controlled from the panel
 

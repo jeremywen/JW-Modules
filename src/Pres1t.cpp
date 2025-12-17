@@ -245,7 +245,7 @@ Pres1tWidget::Pres1tWidget(Pres1t *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Pres1t.svg"), 
-		asset::plugin(pluginInstance, "res/dark/Pres1t.svg")
+		asset::plugin(pluginInstance, "res/Pres1t.svg")
 	));
 
 	Pres1tDisplay *display = new Pres1tDisplay();

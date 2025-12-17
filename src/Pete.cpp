@@ -34,7 +34,7 @@ PeteWidget::PeteWidget(Pete *module) {
 	
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/PT.svg"), 
-		asset::plugin(pluginInstance, "res/dark/PT.svg")
+		asset::plugin(pluginInstance, "res/PT.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

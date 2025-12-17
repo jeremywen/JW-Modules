@@ -530,7 +530,7 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/GridSeq.svg"), 
-		asset::plugin(pluginInstance, "res/dark/GridSeq.svg")
+		asset::plugin(pluginInstance, "res/GridSeq.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));

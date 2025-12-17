@@ -416,7 +416,7 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/EightSeq.svg"), 
-		asset::plugin(pluginInstance, "res/dark/EightSeq.svg")
+		asset::plugin(pluginInstance, "res/EightSeq.svg")
 	));
 
 	addChild(createWidget<Screw_J>(Vec(16, 2)));
