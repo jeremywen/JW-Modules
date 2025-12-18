@@ -811,13 +811,14 @@ struct NoteSeq16Display : LightWidget {
 			nvgSave(args.vg);
 			nvgTranslate(args.vg, -scrollX, 0);
 
+			float gridH = ROWS * HW;
 			//grid
 			nvgStrokeColor(args.vg, nvgRGB(60, 70, 73));
 			for(int i=0;i<COLS+1;i++){
 				nvgStrokeWidth(args.vg, (i % 4 == 0) ? 2 : 1);
 				nvgBeginPath(args.vg);
 				nvgMoveTo(args.vg, i * HW, 0);
-				nvgLineTo(args.vg, i * HW, box.size.y);
+				nvgLineTo(args.vg, i * HW, gridH);
 				nvgStroke(args.vg);
 			}
 			for(int i=0;i<ROWS+1;i++){
@@ -860,7 +861,7 @@ struct NoteSeq16Display : LightWidget {
 			nvgStrokeColor(args.vg, nvgRGB(25, 150, 252));//blue
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, startX, 0);
-			nvgLineTo(args.vg, startX, box.size.y);
+			nvgLineTo(args.vg, startX, gridH);
 			nvgStroke(args.vg);
 
 			//seq length line
@@ -868,14 +869,14 @@ struct NoteSeq16Display : LightWidget {
 			nvgStrokeColor(args.vg, nvgRGB(255, 243, 9));//yellow
 			nvgBeginPath(args.vg);
 			nvgMoveTo(args.vg, endX, 0);
-			nvgLineTo(args.vg, endX, box.size.y);
+			nvgLineTo(args.vg, endX, gridH);
 			nvgStroke(args.vg);
 
 			//seq pos
 			int pos = module->resetMode ? module->getSeqStart() : module->seqPos;
 			nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
 			nvgBeginPath(args.vg);
-			nvgRect(args.vg, pos * HW, 0, HW, box.size.y);
+			nvgRect(args.vg, pos * HW, 0, HW, gridH);
 			nvgStroke(args.vg);
 
 			// restore transform so overlay scrollbar stays fixed
@@ -1052,7 +1053,8 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	NoteSeq16Display *display = new NoteSeq16Display();
 	display->module = module;
 	display->box.pos = Vec(3, 75);
-	display->box.size = Vec(188, 188);
+	// Reserve extra vertical space at bottom for the scrollbar so it doesn't cover the bottom row
+	display->box.size = Vec(188, 196);
 	addChild(display);
 	if(module != NULL){
 		module->displayWidth = display->box.size.x;
@@ -1086,10 +1088,10 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(playModeKnob);
 
 	//row 3
-	addParam(createParam<TinyButton>(Vec(8, 266), module, NoteSeq16::CLEAR_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 302), module, NoteSeq16::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(25, 297), module, NoteSeq16::RND_TRIG_BTN_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(51, 296), module, NoteSeq16::RND_AMT_KNOB_PARAM));
+	addParam(createParam<TinyButton>(Vec(8, 273), module, NoteSeq16::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 304), module, NoteSeq16::RND_TRIG_INPUT));
+	addParam(createParam<SmallButton>(Vec(25, 299), module, NoteSeq16::RND_TRIG_BTN_PARAM));
+	addParam(createParam<SmallWhiteKnob>(Vec(51, 299), module, NoteSeq16::RND_AMT_KNOB_PARAM));
 
 	float bottomInpY = 338;
 	addInput(createInput<TinyPJ301MPort>(Vec(37, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
@@ -1102,14 +1104,14 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
 	addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
 	// Follow Playhead switch
-	addParam(createParam<JwHorizontalSwitch>(Vec(63, 278), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(63, 281), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, NoteSeq16::EOC_OUTPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
-	float pitchParamYVal = 280;
+	float pitchParamYVal = 282;
 	float labelY = 160;
 
-	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(93, pitchParamYVal), module, NoteSeq16::NOTE_KNOB_PARAM));
+	NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(95, pitchParamYVal), module, NoteSeq16::NOTE_KNOB_PARAM));
 	CenteredLabel* const noteLabel = new CenteredLabel;
 	noteLabel->box.pos = Vec(53, labelY);
 	noteLabel->text = "";
@@ -1117,9 +1119,9 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addChild(noteLabel);
 	addParam(noteKnob);
 
-	addParam(createParam<JwSmallSnapKnob>(Vec(125, pitchParamYVal), module, NoteSeq16::OCTAVE_KNOB_PARAM));
+	addParam(createParam<JwSmallSnapKnob>(Vec(127, pitchParamYVal), module, NoteSeq16::OCTAVE_KNOB_PARAM));
 
-	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(156, pitchParamYVal), module, NoteSeq16::SCALE_KNOB_PARAM));
+	ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(158, pitchParamYVal), module, NoteSeq16::SCALE_KNOB_PARAM));
 	CenteredLabel* const scaleLabel = new CenteredLabel;
 	scaleLabel->box.pos = Vec(84, labelY);
 	scaleLabel->text = "";
