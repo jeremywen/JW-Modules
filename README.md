@@ -49,7 +49,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ## Buffer
 
-![buffer1](./doc/buffer1.png)
+![buffer2](./doc/buffer2.png)
 
 Effect to freeze audio coming in.
 
@@ -63,7 +63,7 @@ Effect to freeze audio coming in.
 
 ## RandomSound
 
-![rndsound1](./doc/rndsound1.png)
+![rndsound2](./doc/rndsound2.png)
 
 Generates up to 16 random sounds at once based on polyphony setting.
 
@@ -75,7 +75,7 @@ Generates up to 16 random sounds at once based on polyphony setting.
 
 ## ShiftRegRnd
 
-![shiftregrnd1](./doc/shiftregrnd1.png)
+![shiftregrnd2](./doc/shiftregrnd2.png)
 
 Allows you to take a stream of notes and grab a random set of notes to make chords for example.
 
@@ -86,7 +86,7 @@ Allows you to take a stream of notes and grab a random set of notes to make chor
 
 ## StereoSwitch
 
-![stereoswitch1](./doc/stereoswitch1.png)
+![stereoswitch2](./doc/stereoswitch2.png)
 
 A switch which has stereo inputs and outputs and can jump to a random input based on weighted values.
 
