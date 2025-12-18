@@ -216,7 +216,7 @@ struct GatePulseMsQuantity : Quantity {
 	std::function<void(float)> setSeconds;
 	std::function<float()> getSeconds;
 	float defaultSeconds = 0.005f;
-	std::string label = "Gate Pulse Length";
+	std::string label = "Gate Length";
 	std::string unit = "ms";
 
 	void setValue(float value) override {

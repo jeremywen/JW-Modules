@@ -1239,7 +1239,7 @@ void NoteSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabelGate = new MenuLabel();
 	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
-	gatePulseLabel->text = "Gate Pulse Length";
+	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);
 
 	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
@@ -1248,7 +1248,7 @@ void NoteSeqWidget::appendContextMenu(Menu *menu) {
 		qp->getSeconds = [noteSeq](){ return noteSeq->gatePulseLenSec; };
 		qp->setSeconds = [noteSeq](float v){ noteSeq->gatePulseLenSec = v; };
 		qp->defaultSeconds = 0.1f;
-		qp->label = "Gate Pulse Length";
+		qp->label = "Gate Length";
 	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);

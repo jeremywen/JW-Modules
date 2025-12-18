@@ -298,7 +298,7 @@ void D1v1deWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabelGate = new MenuLabel();
 	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
-	gatePulseLabel->text = "Gate Pulse Length";
+	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);
 
 	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
@@ -307,7 +307,7 @@ void D1v1deWidget::appendContextMenu(Menu *menu) {
 		qp->getSeconds = [d1v](){ return d1v->gatePulseLenSec; };
 		qp->setSeconds = [d1v](float v){ d1v->gatePulseLenSec = v; };
 		qp->defaultSeconds = 0.005f;
-		qp->label = "Gate Pulse Length";
+		qp->label = "Gate Length";
 	}
 	gateSlider->box.size.x = 220.0f;
 	menu->addChild(gateSlider);
