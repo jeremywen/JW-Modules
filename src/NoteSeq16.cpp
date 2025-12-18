@@ -223,12 +223,35 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
-		if (cellsJ) {
+		if (cellsJ && json_is_array(cellsJ)) {
+			// Clear current grid
 			for (int i = 0; i < CELLS; i++) {
-				json_t *cellJ = json_array_get(cellsJ, i);
-				if (cellJ)
-					cells[i] = json_integer_value(cellJ);
+				cells[i] = false;
 			}
+			size_t arrLen = json_array_size(cellsJ);
+			if (arrLen == (size_t)CELLS) {
+				// Current format (16 x 256), row-major by COLS stride
+				for (int i = 0; i < CELLS; i++) {
+					json_t *cellJ = json_array_get(cellsJ, i);
+					if (cellJ)
+						cells[i] = !!json_integer_value(cellJ);
+				}
+			}
+			else if (arrLen % ROWS == 0) {
+				// Legacy formats with fewer columns, e.g. 16x16. Map row-major (stride = oldCols) into current grid.
+				int oldCols = (int)(arrLen / ROWS);
+				oldCols = std::max(0, std::min(oldCols, COLS));
+				for (int y = 0; y < ROWS; y++) {
+					for (int x = 0; x < oldCols; x++) {
+						int iOld = y * oldCols + x;
+						json_t *cellJ = json_array_get(cellsJ, iOld);
+						if (!cellJ) continue;
+						bool on = !!json_integer_value(cellJ);
+						cells[iFromXY(x, y)] = on;
+					}
+				}
+			}
+			// else: unknown shape; leave cleared
 		}
 
 		// gateMode
