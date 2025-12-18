@@ -89,8 +89,8 @@ struct GridSeq : Module,QuantizeUtils {
 	GateMode gateMode = TRIGGER;
 
 	// René-like pattern modes
-	enum PatternMode { ROW_MAJOR, COL_MAJOR, SNAKE_ROWS, SNAKE_COLS, SNAKE_DIAG_DR, SNAKE_DIAG_UR };
-	PatternMode patternMode = ROW_MAJOR;
+	enum PatternMode { ROW_MAJOR, COL_MAJOR, SNAKE_ROWS, SNAKE_COLS, SNAKE_DIAG_DR, SNAKE_DIAG_UR, ROW_WRAP_STAY };
+	PatternMode patternMode = ROW_WRAP_STAY; // default: wrap horizontally and stay on same row (classic)
 
 	dsp::PulseGenerator gatePulse;
 
@@ -286,6 +286,7 @@ struct GridSeq : Module,QuantizeUtils {
 			posX = nx; posY = ny;
 		} else {
 			posX = (posX + 1) % 4;
+			// ROW_MAJOR advances to next row on wrap; ROW_WRAP_STAY stays on the same row
 			if (patternMode == ROW_MAJOR && posX == 0) posY = (posY + 1) % 4;
 		}
 	}
@@ -298,6 +299,7 @@ struct GridSeq : Module,QuantizeUtils {
 			handleMoveRight();
 		} else {
 			posX = (posX + 3) % 4;
+			// ROW_MAJOR moves to previous row on wrap; ROW_WRAP_STAY stays on the same row
 			if (patternMode == ROW_MAJOR && posX == 3) posY = (posY + 3) % 4;
 		}
 	}
@@ -710,6 +712,12 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *patternLabel = new MenuLabel();
 	patternLabel->text = "Pattern Mode";
 	menu->addChild(patternLabel);
+
+	GridSeqPatternModeItem *rowWrapStayItem = new GridSeqPatternModeItem();
+	rowWrapStayItem->text = "Row Wrap (Stay Row)";
+	rowWrapStayItem->gridSeq = gridSeq;
+	rowWrapStayItem->mode = GridSeq::ROW_WRAP_STAY;
+	menu->addChild(rowWrapStayItem);
 
 	GridSeqPatternModeItem *rowMajorItem = new GridSeqPatternModeItem();
 	rowMajorItem->text = "Row-Major";
