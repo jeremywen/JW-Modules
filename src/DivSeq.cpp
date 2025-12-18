@@ -177,7 +177,7 @@ struct DivSeq : Module,QuantizeUtils {
 			// Update division param max values and clamp current
 			for (int i = 0; i < 16; i++) {
 				int pid = CELL_DIV_PARAM + i;
-				if (paramQuantities.size() > pid && paramQuantities[pid]) {
+				if (pid >= 0 && (size_t)pid < paramQuantities.size() && paramQuantities[pid]) {
 					paramQuantities[pid]->maxValue = (float) divMax;
 				}
 				float cur = params[pid].getValue();
@@ -564,7 +564,7 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 			module->divMax = std::max(1, maxDiv);
 			for (int i = 0; i < 16; i++) {
 				int pid = DivSeq::CELL_DIV_PARAM + i;
-				if (module->paramQuantities.size() > pid && module->paramQuantities[pid]) {
+				if (pid >= 0 && (size_t)pid < module->paramQuantities.size() && module->paramQuantities[pid]) {
 					module->paramQuantities[pid]->maxValue = (float) module->divMax;
 				}
 				float cur = module->params[pid].getValue();
