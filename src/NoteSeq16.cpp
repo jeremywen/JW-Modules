@@ -1242,5 +1242,4 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	menu->addChild(gateSlider);
 }
 
-
 Model *modelNoteSeq16 = createModel<NoteSeq16, NoteSeq16Widget>("NoteSeq16");
