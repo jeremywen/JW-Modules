@@ -107,7 +107,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		RND_EUCLID,
 		RND_SIN_WAVE,
 		RND_LIFE_GLIDERS,
-		RND_CHORD_LIKE,
+		RND_CHORDS,
 		RND_MIRROR_X,
 		RND_MIRROR_Y,
 		NUM_RND_MODES
@@ -750,16 +750,21 @@ struct NoteSeq : Module,QuantizeUtils {
 				}
 				break;
 			}
-			case RND_CHORD_LIKE:{
-				// int chordCount = int(rndAmt * 20);
+			case RND_CHORDS:{
 				for(int x=0;x<COLS;x++){
 					if(random::uniform() < rndAmt){
 						int y = 20 - int(random::uniform() * 8);
 						int dist1 = 2 + int(random::uniform() * 8);
 						int dist2 = 2 + int(random::uniform() * 8);
+						int dist3 = 2 + int(random::uniform() * 8);
+						//default to 3 notes
 						setCellOn(x, y, true);
 						setCellOn(x, y-dist1, true);
 						setCellOn(x, y+dist2, true);
+						//sometimes 4th note
+						if(random::uniform() < 0.5){
+							setCellOn(x, y+dist3, true);
+						}
 					}
 				}
 				break;
@@ -999,7 +1004,7 @@ struct RndModeKnob : JwSmallSnapKnob {
 				case NoteSeq::RND_EUCLID:return "Euclid";
 				case NoteSeq::RND_SIN_WAVE:return "Sine";
 				case NoteSeq::RND_LIFE_GLIDERS:return "Gliders";
-				case NoteSeq::RND_CHORD_LIKE:return "Chord-Like";
+				case NoteSeq::RND_CHORDS:return "Chords";
 				case NoteSeq::RND_MIRROR_X:return "Mirror X";
 				case NoteSeq::RND_MIRROR_Y:return "Mirror Y";
 			}
