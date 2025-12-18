@@ -167,7 +167,7 @@ jobs:
 
   publish-nightly:
     name: Publish nightly
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     needs: [build, build-mac]
     steps:
