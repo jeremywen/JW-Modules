@@ -45,6 +45,8 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [WavHead](#wavhead)
 * [XY-Pad](#xy-pad)
 
+**Make sure to always see if there are options or functions inside the right click menus of all modules**
+
 ----
 
 ## Buffer
