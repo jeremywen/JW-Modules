@@ -478,6 +478,10 @@ struct ArrangeDisplay : LightWidget {
 
 	void onDragMove(const event::DragMove &e) override {
 		if(module == NULL) return;
+		bool shiftDown = (APP->window->getMods() & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+		if (shiftDown) {
+			return; // Do nothing if Shift is held
+		}
 		dragPos = dragPos.plus(e.mouseDelta.div(getAbsoluteZoom()));
 		module->setCellOnByDisplayPos(dragPos.x, dragPos.y, currentlyTurningOn);
 	}

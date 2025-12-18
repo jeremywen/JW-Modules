@@ -254,25 +254,30 @@ void BouncyBalls::process(const ProcessArgs &args) {
 		}
 
 		if(b.box.pos.x + b.box.size.x >= displayWidth){
-			b.vel.x *= -1;
+			// Clamp inside and reflect velocity to ensure we head back in-bounds
+			b.box.pos.x = std::max(0.f, displayWidth - b.box.size.x);
+			if (b.vel.x > 0.f) b.vel.x = -b.vel.x;
 			b.eastPulse.trigger(gatePulseLenSec);
 			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.x <= 0){
-			b.vel.x *= -1;
+			b.box.pos.x = 0.f;
+			if (b.vel.x < 0.f) b.vel.x = -b.vel.x;
 			b.westPulse.trigger(gatePulseLenSec);
 			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.y + b.box.size.y >= displayHeight){
-			b.vel.y *= -1;
+			b.box.pos.y = std::max(0.f, displayHeight - b.box.size.y);
+			if (b.vel.y > 0.f) b.vel.y = -b.vel.y;
 			b.southPulse.trigger(gatePulseLenSec);
 			b.edgePulse.trigger(gatePulseLenSec);
 		}
 
 		if(b.box.pos.y <= 0){
-			b.vel.y *= -1;
+			b.box.pos.y = 0.f;
+			if (b.vel.y < 0.f) b.vel.y = -b.vel.y;
 			b.northPulse.trigger(gatePulseLenSec);
 			b.edgePulse.trigger(gatePulseLenSec);
 		}
@@ -331,9 +336,11 @@ void BouncyBalls::process(const ProcessArgs &args) {
 		}
 
 		Vec newPos = b.box.pos.plus(b.vel.mult(params[SPEED_MULT_PARAM + i].getValue() + inputs[SPEED_MULT_INPUT + i].getVoltage()));
+		float maxX = std::max(0.f, displayWidth - b.box.size.x);
+		float maxY = std::max(0.f, displayHeight - b.box.size.y);
 		b.setPosition(
-			clampfjw(newPos.x, 0, displayWidth), 
-			clampfjw(newPos.y, 0, displayHeight)
+			clampfjw(newPos.x, 0.f, maxX),
+			clampfjw(newPos.y, 0.f, maxY)
 		);
 	}
 }
