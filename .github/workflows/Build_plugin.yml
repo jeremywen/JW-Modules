@@ -118,9 +118,9 @@ jobs:
           mkdir -p dist-${{ matrix.platform }}
           for file in dist/*.vcvplugin; do
             if [[ "${{ matrix.platform }}" == "x64" ]]; then
-              mv "$file" "dist-${{ matrix.platform }}/JWModules-${{ steps.get_version.outputs.version }}-mac-x64.vcvplugin"
+              mv "$file" "dist-${{ matrix.platform }}/JW-Modules-${{ steps.get_version.outputs.version }}-mac-x64.vcvplugin"
             else
-              mv "$file" "dist-${{ matrix.platform }}/JWModules-${{ steps.get_version.outputs.version }}-mac-arm64.vcvplugin"
+              mv "$file" "dist-${{ matrix.platform }}/JW-Modules-${{ steps.get_version.outputs.version }}-mac-arm64.vcvplugin"
             fi
           done
       - name: Upload artifact
