@@ -49,19 +49,53 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ## Buffer
 
+![buffer1](./doc/buffer1.png)
+
 Effect to freeze audio coming in.
+
+* **Start:** start of buffer
+* **End:** end of buffer
+* **Freeze:** gate or trigger freeze (see right click menu)
+* **Wet on Freeze:** will go fully wet when frozen
+* **Dry/Wet:** dry signal/buffer balance
+* **In:** signal in
+* **Out:** signal out
 
 ## RandomSound
 
+![rndsound1](./doc/rndsound1.png)
+
 Generates up to 16 random sounds at once based on polyphony setting.
+
+* **Decay:** the amplitude decay
+* **Randomize:** trigger randomize only
+* **Trigger:** trigger the sound only
+* **Rnd & Trig:** trigger and randomize
+* **Output:** polyphonic output signal
 
 ## ShiftRegRnd
 
+![shiftregrnd1](./doc/shiftregrnd1.png)
+
 Allows you to take a stream of notes and grab a random set of notes to make chords for example.
+
+* **Input:** voltage in
+* **Trigger IN:** trigger to add voltage at input
+* **Trigger Rnd:** randomize the voltages at the output
+* **Output:** polyphonic output
 
 ## StereoSwitch
 
+![stereoswitch1](./doc/stereoswitch1.png)
+
 A switch which has stereo inputs and outputs and can jump to a random input based on weighted values.
+
+* **Inputs:** stereo inputs
+* **Weight:** increase weight being of randomly chosen
+* **Up:** goes up one input row
+* **Down:** goes down one input row
+* **Rnd:** goes to random input row
+* **Outputs:** output stereo signal
 
 ## Arrange
 
