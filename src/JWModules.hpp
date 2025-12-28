@@ -95,7 +95,7 @@ struct CenteredLabel : Widget {
 		Widget::draw(args);
 		updateText();
 		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
-		nvgFillColor(args.vg, nvgRGB(25, 150, 252));
+		nvgFillColor(args.vg, nvgRGB(255, 255, 255));
 		nvgFontSize(args.vg, fontSize);
 		nvgText(args.vg, box.pos.x, box.pos.y, text.c_str(), NULL);
 	}

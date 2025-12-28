@@ -2,8 +2,10 @@
 
 ## v2.0.21 ~ 1-1-26
 
-  * max 10s pulse length
-  * white titles on modules for more contrast
+  * added reset to stereo switch
+  * added poly tag to random sound
+  * make max pulse length 10s 
+  * white labels on modules for more contrast
 
 ## v2.0.20 ~ 12-20-25
 

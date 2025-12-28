@@ -877,8 +877,8 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 
 	// Column randomize buttons above grid
 	for (int x = 0; x < 8; x++) {
-		int knobX = x * boxSizeX + 60;
-		RandomizeColNotesButton* cbtn = createParam<RandomizeColNotesButton>(Vec(knobX + 12, 48), module, AbcdSeq::RND_COL_PARAM + x);
+		int knobX = x * boxSizeX + 75;
+		RandomizeColNotesButton* cbtn = createParam<RandomizeColNotesButton>(Vec(knobX + 12, 49), module, AbcdSeq::RND_COL_PARAM + x);
 		cbtn->col = x;
 		addParam(cbtn);
 	}
@@ -886,7 +886,7 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
         int knobX = 0;
         int knobY = y * boxSizeY + 78;
 		// Row randomize button next to each row
-		RandomizeRowNotesButton* rbtn = createParam<RandomizeRowNotesButton>(Vec(42, knobY), module, AbcdSeq::RND_ROW_PARAM + y);
+		RandomizeRowNotesButton* rbtn = createParam<RandomizeRowNotesButton>(Vec(37, knobY + 20), module, AbcdSeq::RND_ROW_PARAM + y);
 		rbtn->row = y;
 		addParam(rbtn);
 		for (int x = 0; x < 8; x++) {

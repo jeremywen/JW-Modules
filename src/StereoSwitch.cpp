@@ -26,6 +26,7 @@ struct StereoSwitch : Module {
 		IN_L6, IN_R6,
 		IN_L7, IN_R7,
 		IN_L8, IN_R8,
+		RESET_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -47,6 +48,7 @@ struct StereoSwitch : Module {
 	dsp::SchmittTrigger trig;
 	dsp::SchmittTrigger upTrig;
 	dsp::SchmittTrigger downTrig;
+	dsp::SchmittTrigger resetTrig;
 	int currentPair = 0; // 0..7
 
 	StereoSwitch() {
@@ -63,6 +65,7 @@ struct StereoSwitch : Module {
 		configInput(TRIGGER_INPUT, "Trigger (random)");
 		configInput(UP_TRIG_INPUT, "Up trigger");
 		configInput(DOWN_TRIG_INPUT, "Down trigger");
+		configInput(RESET_INPUT, "Reset");
 		// Stereo input pairs
 		configInput(IN_L1, "In L1"); configInput(IN_R1, "In R1");
 		configInput(IN_L2, "In L2"); configInput(IN_R2, "In R2");
@@ -97,12 +100,22 @@ struct StereoSwitch : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-				// Update lights: only selected pair lit
-				for (int i = 0; i < 8; i++) {
-					lights[PAIR_LIGHT_1 + i].setBrightness(i == currentPair ? 1.0f : 0.0f);
-				}
+			// Update lights: only selected pair lit
+			for (int i = 0; i < 8; i++) {
+				lights[PAIR_LIGHT_1 + i].setBrightness(i == currentPair ? 1.0f : 0.0f);
+			}
 		// Directional triggers take precedence
 		bool didMove = false;
+		// Reset: go to last step unless UP is connected, then first
+		if (resetTrig.process(inputs[RESET_INPUT].getVoltage())) {
+			if (inputs[DOWN_TRIG_INPUT].isConnected()) {
+				currentPair = 0;
+			}
+			else {
+				currentPair = 7;
+			}
+			didMove = true;
+		}
 		if (upTrig.process(inputs[UP_TRIG_INPUT].getVoltage())) {
 			currentPair = (currentPair + 1) % 8;
 			didMove = true;
@@ -208,8 +221,9 @@ StereoSwitchWidget::StereoSwitchWidget(StereoSwitch *module) {
 	addParam(createParam<JwTinyKnob>(Vec(64, 230), module, StereoSwitch::WEIGHT_8));
 	
 	addInput(createInput<TinyPJ301MPort>(Vec(15, 310), module, StereoSwitch::TRIGGER_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(15, 270), module, StereoSwitch::UP_TRIG_INPUT));
-	addInput(createInput<TinyPJ301MPort>(Vec(60, 270), module, StereoSwitch::DOWN_TRIG_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(10, 270), module, StereoSwitch::UP_TRIG_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(35, 270), module, StereoSwitch::DOWN_TRIG_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(63, 270), module, StereoSwitch::RESET_INPUT));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(49.5, 310), module, StereoSwitch::OUT_L));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(67, 310), module, StereoSwitch::OUT_R));
 

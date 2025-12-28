@@ -11,45 +11,13 @@
    sodipodi:docname="GridSeq.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
-     id="defs12547">
-    <linearGradient
-       inkscape:collect="always"
-       id="linearGradient2770">
-      <stop
-         style="stop-color:#1996fc;stop-opacity:1;"
-         offset="0"
-         id="stop2766" />
-      <stop
-         style="stop-color:#1996fc;stop-opacity:0;"
-         offset="1"
-         id="stop2768" />
-    </linearGradient>
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient2770"
-       id="linearGradient2772"
-       x1="-56.190758"
-       y1="167.01156"
-       x2="-45.088196"
-       y2="167.01156"
-       gradientUnits="userSpaceOnUse" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient2770"
-       id="linearGradient2774"
-       x1="90.823311"
-       y1="167.39565"
-       x2="101.92587"
-       y2="167.39565"
-       gradientUnits="userSpaceOnUse" />
-  </defs>
+     id="defs12547" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -58,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8284273"
-     inkscape:cx="108.54088"
+     inkscape:cx="211.07136"
      inkscape:cy="187.20651"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -70,8 +38,8 @@
      units="px"
      inkscape:window-width="1392"
      inkscape:window-height="1212"
-     inkscape:window-x="0"
-     inkscape:window-y="30"
+     inkscape:window-x="837"
+     inkscape:window-y="250"
      inkscape:window-maximized="0"
      inkscape:snap-grids="false"
      showguides="false"
@@ -330,9 +298,9 @@
     </g>
     <g
        aria-label="DIRECTION INPUTS"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.00750089px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.07518755"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.0075px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.0751875"
        id="text3758"
-       transform="translate(0,-6.3499993)">
+       transform="translate(0,-7.4083325)">
       <path
          d="m 59.32275,172.93638 v 1.70493 h 0.358315 q 0.453769,0 0.663765,-0.20559 0.211465,-0.20559 0.211465,-0.64908 0,-0.44055 -0.211465,-0.64467 -0.209996,-0.20559 -0.663765,-0.20559 z m -0.296638,-0.24377 h 0.60943 q 0.637331,0 0.935438,0.2658 0.298107,0.26433 0.298107,0.82823 0,0.56685 -0.299575,0.83265 -0.299576,0.2658 -0.93397,0.2658 h -0.60943 z"
          id="path4577"
@@ -409,21 +377,6 @@
          inkscape:connector-curvature="0"
          style="fill:#ffffff;fill-opacity:1" />
     </g>
-    <rect
-       style="fill:url(#linearGradient2774);fill-opacity:1;stroke:none;stroke-width:0.04773502;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="rect4567"
-       width="11.102562"
-       height="1.4391894"
-       x="90.823311"
-       y="166.67606" />
-    <rect
-       y="166.29196"
-       x="-56.190758"
-       height="1.4391894"
-       width="11.102562"
-       id="rect4569"
-       style="fill:url(#linearGradient2772);fill-opacity:1;stroke:none;stroke-width:0.04773502;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       transform="scale(-1,1)" />
     <g
        aria-label="RUN"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.98113px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#fdfeff;fill-opacity:1;stroke:none;stroke-width:0.298585"
