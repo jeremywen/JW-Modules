@@ -228,7 +228,7 @@ struct GatePulseMsQuantity : Quantity {
 		return defaultSeconds;
 	}
 	float getMinValue() override { return 0.001f; }
-	float getMaxValue() override { return 1.0f; }
+	float getMaxValue() override { return 10.0f; }
 	float getDefaultValue() override { return defaultSeconds; }
 	float getDisplayValue() override { return std::round(getValue() * 1000.f); }
 	void setDisplayValue(float displayValue) override { setValue(displayValue / 1000.f); }

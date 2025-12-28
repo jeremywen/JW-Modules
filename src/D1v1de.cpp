@@ -309,7 +309,7 @@ void D1v1deWidget::appendContextMenu(Menu *menu) {
 		qp->defaultSeconds = 0.005f;
 		qp->label = "Gate Length";
 	}
-	gateSlider->box.size.x = 220.0f;
+	gateSlider->box.size.x = 175.0f;
 	menu->addChild(gateSlider);
 }
 

@@ -1227,7 +1227,7 @@ void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 		qp->defaultSeconds = 0.1f;
 		qp->label = "Gate Length";
 	}
-	gateSlider->box.size.x = 220.0f;
+	gateSlider->box.size.x = 175.0f;
 	menu->addChild(gateSlider);
 }
 
