@@ -5,7 +5,7 @@
   * added reset to stereo switch
   * added poly tag to random sound
   * make max pulse length 10s 
-  * white labels on modules for more contrast
+  * canged blue labels to white labels on modules for more contrast
 
 ## v2.0.20 ~ 12-20-25
 
