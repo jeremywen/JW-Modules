@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.21 ~ 1-1-26
+
+  * max 10s pulse length
+  * white titles on modules for more contrast
+
 ## v2.0.20 ~ 12-20-25
 
   * Buffer: NEW MODULE - records audio into a buffer and can be frozen on gate

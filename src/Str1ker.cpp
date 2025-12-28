@@ -137,7 +137,7 @@ struct Str1ker : Module {
 		json_t *gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
 		if (gatePulseLenSecJ) {
 			gatePulseLenSec = (float) json_number_value(gatePulseLenSecJ);
-			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 1.0f);
+			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 10.0f);
 		}
 	}
 

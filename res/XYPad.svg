@@ -7,7 +7,7 @@
    viewBox="0 0 95.25 100.54166"
    version="1.1"
    id="svg12553"
-   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
    sodipodi:docname="XYPad.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -26,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="181.78571"
+     inkscape:cx="-17.857143"
      inkscape:cy="185"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -39,7 +39,7 @@
      inkscape:window-width="1024"
      inkscape:window-height="757"
      inkscape:window-x="843"
-     inkscape:window-y="25"
+     inkscape:window-y="30"
      inkscape:window-maximized="0"
      inkscape:snap-global="false"
      inkscape:measure-start="0,0"
@@ -134,32 +134,32 @@
     </g>
     <g
        aria-label="XYPAD"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        id="text825"
        transform="matrix(0.78348996,0,0,0.78348996,8.9667805,35.802949)">
       <path
          d="m 36.519917,165.36392 h -0.630452 l -0.589112,-1.02112 -0.587044,1.02112 h -0.630452 l 0.905371,-1.56683 -0.880567,-1.51928 h 0.630453 l 0.562239,0.98185 0.564307,-0.98185 h 0.630452 l -0.876432,1.51928 z"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="path891"
          inkscape:connector-curvature="0" />
       <path
          d="m 36.590197,162.27781 h 0.657324 l 0.599447,1.24023 0.601513,-1.24023 h 0.657325 l -0.952914,1.87068 v 1.21543 H 37.54311 v -1.21543 z"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="path893"
          inkscape:connector-curvature="0" />
       <path
          d="m 40.06492,162.79044 v 0.90537 h 0.250114 q 0.299723,0 0.419613,-0.10129 0.121956,-0.10128 0.121956,-0.3514 0,-0.25011 -0.121956,-0.3514 -0.11989,-0.10128 -0.419613,-0.10128 z m -0.609782,-0.51263 h 0.837158 q 0.638721,0 0.917774,0.22737 0.28112,0.22738 0.28112,0.73794 0,0.51056 -0.28112,0.73794 -0.279053,0.22738 -0.917774,0.22738 H 40.06492 v 1.15548 h -0.609782 z"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="path895"
          inkscape:connector-curvature="0" />
       <path
          d="m 42.940196,162.83591 -0.287321,1.26297 h 0.576709 z m -0.37207,-0.5581 h 0.746208 l 0.833024,3.08611 h -0.609782 l -0.190169,-0.76274 h -0.816488 l -0.186035,0.76274 h -0.609782 z"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="path897"
          inkscape:connector-curvature="0" />
       <path
          d="m 45.106473,162.82764 v 1.98644 h 0.165364 q 0.359668,0 0.51263,-0.2253 0.152963,-0.22738 0.152963,-0.77102 0,-0.5395 -0.152963,-0.76481 -0.152962,-0.22531 -0.51263,-0.22531 z m -0.609782,-0.54983 h 0.65319 q 0.756543,0 1.089339,0.36173 0.332796,0.35967 0.332796,1.17822 0,0.82063 -0.332796,1.18443 -0.332796,0.36173 -1.089339,0.36173 h -0.65319 z"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#1996fc;fill-opacity:1;stroke-width:0.26458332"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.23333311px;font-family:monospace;-inkscape-font-specification:'monospace, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:0.26458332"
          id="path899"
          inkscape:connector-curvature="0" />
     </g>
