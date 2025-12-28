@@ -41,7 +41,7 @@
      id="namedview30"
      showgrid="false"
      inkscape:zoom="3.02"
-     inkscape:cx="176.49007"
+     inkscape:cx="560.92715"
      inkscape:cy="156.45695"
      inkscape:window-x="0"
      inkscape:window-y="30"
@@ -2505,27 +2505,6 @@
        d="m 611.78489,326.52147 h 2.88412 v 0.55339 h -2.22657 v 1.4388 h 2.12891 v 0.55339 h -2.12891 v 1.76106 h 2.28842 v 0.55339 h -2.94597 z"
        style="fill:#ffffff;fill-opacity:1" />
   </g>
-  <rect
-     style="fill:#2c5f89;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-     id="rect4671"
-     width="7.463901"
-     height="13.664251"
-     x="581.0061"
-     y="2.4796195" />
-  <rect
-     y="2.4796195"
-     x="571.18518"
-     height="13.664251"
-     width="7.463901"
-     id="rect4669"
-     style="fill:#5b2b87;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-  <rect
-     style="fill:#777223;fill-opacity:1;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-     id="rect4667"
-     width="7.463901"
-     height="13.664251"
-     x="561.3642"
-     y="2.4796195" />
   <g
      aria-label="MERGED"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333302px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none"
@@ -2619,13 +2598,6 @@
        id="path4648"
        inkscape:connector-curvature="0" />
   </g>
-  <rect
-     y="2.4796195"
-     x="551.54327"
-     height="13.664251"
-     width="7.463901"
-     id="rect4665"
-     style="fill:#b76b00;fill-opacity:0.19607843;stroke:none;stroke-width:1.00157475;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
   <g
      aria-label="CHAOS"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.33333302px;line-height:1.25;font-family:monospace;-inkscape-font-specification:'monospace, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none"

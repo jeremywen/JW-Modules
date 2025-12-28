@@ -9,7 +9,7 @@
    version="1.1"
    id="svg28"
    sodipodi:docname="OnePattern.svg"
-   inkscape:version="1.3 (0e150ed, 2023-07-21)"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -43,10 +43,10 @@
      id="namedview30"
      showgrid="false"
      inkscape:zoom="3.7736842"
-     inkscape:cx="44.386332"
+     inkscape:cx="44.253836"
      inkscape:cy="72.343096"
      inkscape:window-x="97"
-     inkscape:window-y="25"
+     inkscape:window-y="30"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg28"
      showguides="false"
@@ -791,34 +791,6 @@
        inkscape:connector-curvature="0"
        style="fill:#fafafa;fill-opacity:1" />
   </g>
-  <rect
-     style="fill:#b4aa00;fill-opacity:0.65284973;stroke:none;stroke-width:1.00157;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-     id="rect3053"
-     width="5.0470276"
-     height="16.486958"
-     x="16.400793"
-     y="17.482359" />
-  <rect
-     y="17.482359"
-     x="24.139568"
-     height="16.486958"
-     width="5.0470276"
-     id="rect3055"
-     style="fill:#b4aa00;fill-opacity:0.65284973;stroke:none;stroke-width:1.00157;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-  <rect
-     y="17.482359"
-     x="8.9984856"
-     height="16.486958"
-     width="5.0470276"
-     id="rect3051"
-     style="fill:#b4aa00;fill-opacity:0.65284973;stroke:none;stroke-width:1.00157;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-  <rect
-     style="fill:#b4aa00;fill-opacity:0.65284973;stroke:none;stroke-width:1.00157;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-     id="rect3057"
-     width="5.0470276"
-     height="16.486958"
-     x="31.878344"
-     y="17.482359" />
   <g
      transform="matrix(1.2697259,0,0,1.2697259,-5.9903019,10.582057)"
      id="text1383"
