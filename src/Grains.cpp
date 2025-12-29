@@ -885,6 +885,33 @@ struct WaveformDisplay : TransparentWidget {
 				}
 			}
 		}
+
+		// Info overlay: sample name, frames, length
+		{
+			// Compute name
+			std::string name;
+			if (module->samplePath.empty()) {
+				name = module->isRecording ? "recording" : "embedded";
+			} else {
+				name = module->samplePath;
+				size_t p = name.find_last_of("/\\");
+				if (p != std::string::npos) name = name.substr(p + 1);
+			}
+			size_t frames = module->sampleL.size();
+			double secs = (module->fileSampleRate > 0) ? (double)frames / (double)module->fileSampleRate : 0.0;
+			int secInt = (int)std::floor(secs + 0.5);
+			int minutes = secInt / 60;
+			int seconds = secInt % 60;
+			double mb = (double)(frames * 2ull * sizeof(float)) / 1048576.0;
+			char buf[256];
+			snprintf(buf, sizeof(buf), "%s  |  %.2f s @ %d Hz  |  %.2f MB",
+				name.c_str(), secs, module->fileSampleRate, mb);
+			// Draw at bottom-left
+			nvgFontSize(vg, 12.f);
+			nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+			nvgFillColor(vg, nvgRGBA(235, 235, 235, 220));
+			nvgText(vg, 8.f, h - 6.f, buf, nullptr);
+		}
 	}
 };
 
