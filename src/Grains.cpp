@@ -940,7 +940,8 @@ struct WaveformDisplay : TransparentWidget {
 		// Playback position line
 		nvgBeginPath(vg);
 		double N = (double)module->sampleL.size();
-		float px = (float)((N > 0.0) ? (module->playPos / N * w) : 0.f);
+		double denom = (N >= 2.0) ? (N - 1.0) : 1.0; // match setPosFromX() mapping
+		float px = (float)((N > 0.0) ? (module->playPos / denom * w) : 0.f);
 		if (px < 0.f) px = 0.f; if (px > w - 1.f) px = w - 1.f;
 		nvgMoveTo(vg, px, 0.f);
 		nvgLineTo(vg, px, h);
@@ -948,8 +949,8 @@ struct WaveformDisplay : TransparentWidget {
 		nvgStrokeWidth(vg, 2.0f);
 		nvgStroke(vg);
 
-		// Grain dots overlay (cloud of dots)
-		if (module) {
+		// Grain dots overlay (cloud of dots), hidden in normal playback
+		if (module && !module->normalPlayback) {
 			const size_t NL = module->sampleL.size();
 			const size_t NR = module->sampleR.size();
 			if (NL > 0) {
