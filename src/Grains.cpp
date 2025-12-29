@@ -1002,9 +1002,6 @@ struct WaveformDisplay : TransparentWidget {
 			}
 			size_t frames = module->sampleL.size();
 			double secs = (module->fileSampleRate > 0) ? (double)frames / (double)module->fileSampleRate : 0.0;
-			int secInt = (int)std::floor(secs + 0.5);
-			int minutes = secInt / 60;
-			int seconds = secInt % 60;
 			double mb = (double)(frames * 2ull * sizeof(float)) / 1048576.0;
 			char buf[256];
 			snprintf(buf, sizeof(buf), "%s  |  %.2f s @ %d Hz  |  %.2f MB",
