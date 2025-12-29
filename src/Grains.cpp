@@ -10,6 +10,9 @@
 #include <cstring>
 #include <dirent.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "osdialog.h"
 
 struct Grains : Module {
@@ -22,6 +25,7 @@ struct Grains : Module {
 		WINDOW_TYPE,
 		PAN_RANDOMNESS,
 		RANDOM_BUTTON,
+		REC_SWITCH,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -31,6 +35,8 @@ struct Grains : Module {
 		DENSITY_CV,
 		SPREAD_CV,
 		PAN_CV,
+		REC_TOGGLE,
+		REC_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -53,6 +59,7 @@ struct Grains : Module {
 	bool embedInPatch = false;
 	bool bufferDirty = false;
 	bool autoAdvance = false;
+	bool isRecording = false;
 
 	struct Grain {
 		double pos;
@@ -93,6 +100,8 @@ struct Grains : Module {
 		configInput(DENSITY_CV, "Grain Density CV (0–10V)");
 		configInput(SPREAD_CV, "Grain Spread CV (0–10V)");
 		configInput(PAN_CV, "Pan Randomness CV (0–10V)");
+		configInput(REC_TOGGLE, "Record Toggle (gate)");
+		configInput(REC_INPUT, "Record In (audio)");
 		configParam(GRAIN_SIZE_MS, 5.f, 2000.f, 50.f, "Grain size", " ms");
 		configParam(GRAIN_DENSITY, 0.f, 200.f, 20.f, "Grain density", " grains/s");
 		configParam(GRAIN_SPREAD_MS, 0.f, 2000.f, 30.f, "Grain spread", " ms");
@@ -101,6 +110,7 @@ struct Grains : Module {
 		configSwitch(WINDOW_TYPE, 0.f, 3.f, 0.f, "Window type");
 		configParam(PAN_RANDOMNESS, 0.f, 1.f, 0.f, "Pan randomness");
 		configButton(RANDOM_BUTTON, "Random sample");
+		configSwitch(REC_SWITCH, 0.f, 1.f, 0.f, "Record");
 		grains.resize(128);
 	}
 
@@ -232,6 +242,40 @@ std::vector<uint8_t> Grains::b64Decode(const std::string& str) {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void Grains::process(const ProcessArgs &args) {
+	// Handle recording toggle and capture first
+	bool recOn = params[REC_SWITCH].getValue() > 0.5f
+		|| (inputs[REC_TOGGLE].isConnected() && inputs[REC_TOGGLE].getVoltage() > 1.0f);
+	if (recOn && !isRecording) {
+		// Start a new recording session
+		isRecording = true;
+		sampleL.clear();
+		sampleR.clear();
+		fileSampleRate = (int)args.sampleRate;
+		samplePath.clear();
+		playPos = 0.0;
+		for (auto &g : grains) g.active = false;
+		spawnAccum = 0.0;
+		bufferDirty = false;
+		statusMsg = "Recording...";
+	}
+	else if (!recOn && isRecording) {
+		// Stop recording
+		isRecording = false;
+		bufferDirty = true;
+		for (auto &g : grains) g.active = false;
+		spawnAccum = 0.0;
+		playPos = 0.0;
+		statusMsg = "Recording stopped";
+	}
+
+	if (isRecording && inputs[REC_INPUT].isConnected()) {
+		// Append one frame; assume mono input, map ±5V to ±1
+		float v = inputs[REC_INPUT].getVoltage();
+		float s = std::max(-1.f, std::min(1.f, v / 5.f));
+		sampleL.push_back(s);
+		sampleR.push_back(s);
+	}
+
 	if (sampleL.empty()) {
 		outputs[OUT_L].setVoltage(0.f);
 		outputs[OUT_R].setVoltage(0.f);
@@ -540,7 +584,7 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 	// Status
 	std::string base = path;
 	{
-		size_t p = base.find_last_of('/');
+		size_t p = base.find_last_of("/\\");
 		if (p != std::string::npos) base = base.substr(p + 1);
 	}
 	statusMsg = "Loaded: " + base;
@@ -584,6 +628,7 @@ bool Grains::removeSilence(float threshold) {
 	}
 	bufferDirty = true;
 	return true;
+	isRecording = false;
 }
 
 // Zero out frames below threshold across entire sample to preserve length/pitch
@@ -612,19 +657,46 @@ bool Grains::normalizeSample() {
 // Load a random .wav from the same directory as the current samplePath
 bool Grains::loadRandomSiblingSample() {
 	if (samplePath.empty()) { statusMsg = "No current file"; return false; }
-	// Determine directory from current path
+	// Determine directory from current path (handle both '/' and '\\')
 	std::string dir;
 	{
-		size_t p = samplePath.find_last_of('/');
+		size_t p = samplePath.find_last_of("/\\");
 		if (p == std::string::npos) { statusMsg = "Folder not found"; return false; }
 		dir = samplePath.substr(0, p);
 	}
+	std::vector<std::string> wavs;
+#ifdef _WIN32
+	// Build pattern: dir\\*.wav
+	std::string pattern = dir;
+	if (!pattern.empty()) {
+		char last = pattern.back();
+		if (last != '/' && last != '\\') pattern += '\\';
+	}
+	pattern += "*.wav";
+	WIN32_FIND_DATAA ffd;
+	HANDLE hFind = FindFirstFileA(pattern.c_str(), &ffd);
+	if (hFind == INVALID_HANDLE_VALUE) {
+		statusMsg = "No WAVs in folder";
+		return false;
+	}
+	do {
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+		std::string name = ffd.cFileName;
+		// Full path
+		std::string full = dir;
+		char last = full.empty() ? '\\' : full.back();
+		if (last != '/' && last != '\\') full += '\\';
+		full += name;
+		wavs.push_back(full);
+	} while (FindNextFileA(hFind, &ffd));
+	FindClose(hFind);
+#else
 	DIR *dp = opendir(dir.c_str());
 	if (!dp) { statusMsg = "Folder not found"; return false; }
-	std::vector<std::string> wavs;
 	struct dirent *de;
 	while ((de = readdir(dp)) != nullptr) {
-		if (!de->d_name || de->d_name[0] == '.') continue;
+		// d_name is a fixed array in dirent; only check leading '.'
+		if (de->d_name[0] == '.') continue;
 		std::string name = de->d_name;
 		// Build full path
 		std::string full = dir + "/" + name;
@@ -638,25 +710,27 @@ bool Grains::loadRandomSiblingSample() {
 			struct stat st; if (stat(full.c_str(), &st) == 0 && S_ISREG(st.st_mode)) isFile = true;
 		}
 		if (!isFile) continue;
-		// Check extension
-		std::string ext;
+		// Check extension case-insensitive
 		size_t dot = name.find_last_of('.');
 		if (dot != std::string::npos) {
-			ext = name.substr(dot);
+			std::string ext = name.substr(dot);
 			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+			if (ext == ".wav") wavs.push_back(full);
 		}
-		if (ext == ".wav") wavs.push_back(full);
 	}
 	closedir(dp);
+#endif
 	if (wavs.empty()) { statusMsg = "No WAVs in folder"; return false; }
 	// Pick random index; try to avoid reloading the same file
 	size_t idx = (size_t) std::floor(random::uniform() * wavs.size());
 	if (wavs.size() > 1) {
-		// Extract current filename
-		std::string curName = samplePath.substr(samplePath.find_last_of('/') + 1);
+		// Extract current filename (handle both separators)
+		size_t p = samplePath.find_last_of("/\\");
+		std::string curName = (p == std::string::npos) ? samplePath : samplePath.substr(p + 1);
 		int guard = 8;
 		while (guard-- > 0) {
-			std::string pickName = wavs[idx].substr(wavs[idx].find_last_of('/') + 1);
+			size_t q = wavs[idx].find_last_of("/\\");
+			std::string pickName = (q == std::string::npos) ? wavs[idx] : wavs[idx].substr(q + 1);
 			if (pickName != curName) break;
 			idx = (size_t) std::floor(random::uniform() * wavs.size());
 		}
@@ -837,7 +911,10 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addChild(createWidget<Screw_J>(Vec(16, 365)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
-	
+
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 15), module, Grains::REC_INPUT));
+	addParam(createParam<CKSS>(Vec(80, 15), module, Grains::REC_SWITCH));
+	addInput(createInput<TinyPJ301MPort>(Vec(100, 15), module, Grains::REC_TOGGLE));
 	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
 
 	float topY = 342;
