@@ -8,6 +8,8 @@
 #include <atomic>
 #include <cmath>
 #include <cstring>
+#include <dirent.h>
+#include <sys/stat.h>
 #include "osdialog.h"
 
 struct Grains : Module {
@@ -19,6 +21,7 @@ struct Grains : Module {
 		GRAIN_GAIN,
 		WINDOW_TYPE,
 		PAN_RANDOMNESS,
+		RANDOM_BUTTON,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -71,6 +74,7 @@ struct Grains : Module {
 
 	// Helpers
 	bool loadSampleFromPath(const std::string &path);
+	bool loadRandomSiblingSample();
 	bool removeSilence(float threshold);
 	// bool trimSilenceEdges(float threshold); // removed
 	// bool suppressSilence(float threshold); // removed
@@ -96,6 +100,7 @@ struct Grains : Module {
 		configParam(GRAIN_GAIN, 0.f, 1.f, 0.8f, "Output gain");
 		configSwitch(WINDOW_TYPE, 0.f, 3.f, 0.f, "Window type");
 		configParam(PAN_RANDOMNESS, 0.f, 1.f, 0.f, "Pan randomness");
+		configButton(RANDOM_BUTTON, "Random sample");
 		grains.resize(128);
 	}
 
@@ -604,6 +609,61 @@ bool Grains::normalizeSample() {
 	return true;
 }
 
+// Load a random .wav from the same directory as the current samplePath
+bool Grains::loadRandomSiblingSample() {
+	if (samplePath.empty()) { statusMsg = "No current file"; return false; }
+	// Determine directory from current path
+	std::string dir;
+	{
+		size_t p = samplePath.find_last_of('/');
+		if (p == std::string::npos) { statusMsg = "Folder not found"; return false; }
+		dir = samplePath.substr(0, p);
+	}
+	DIR *dp = opendir(dir.c_str());
+	if (!dp) { statusMsg = "Folder not found"; return false; }
+	std::vector<std::string> wavs;
+	struct dirent *de;
+	while ((de = readdir(dp)) != nullptr) {
+		if (!de->d_name || de->d_name[0] == '.') continue;
+		std::string name = de->d_name;
+		// Build full path
+		std::string full = dir + "/" + name;
+		// Check if regular file when d_type is unknown
+		bool isFile = false;
+#ifdef DT_REG
+		if (de->d_type == DT_REG) isFile = true;
+		else
+#endif
+		{
+			struct stat st; if (stat(full.c_str(), &st) == 0 && S_ISREG(st.st_mode)) isFile = true;
+		}
+		if (!isFile) continue;
+		// Check extension
+		std::string ext;
+		size_t dot = name.find_last_of('.');
+		if (dot != std::string::npos) {
+			ext = name.substr(dot);
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+		}
+		if (ext == ".wav") wavs.push_back(full);
+	}
+	closedir(dp);
+	if (wavs.empty()) { statusMsg = "No WAVs in folder"; return false; }
+	// Pick random index; try to avoid reloading the same file
+	size_t idx = (size_t) std::floor(random::uniform() * wavs.size());
+	if (wavs.size() > 1) {
+		// Extract current filename
+		std::string curName = samplePath.substr(samplePath.find_last_of('/') + 1);
+		int guard = 8;
+		while (guard-- > 0) {
+			std::string pickName = wavs[idx].substr(wavs[idx].find_last_of('/') + 1);
+			if (pickName != curName) break;
+			idx = (size_t) std::floor(random::uniform() * wavs.size());
+		}
+	}
+	return loadSampleFromPath(wavs[idx]);
+}
+
 // Waveform display
 struct WaveformDisplay : TransparentWidget {
 	Grains *module = nullptr;
@@ -759,6 +819,9 @@ struct GrainsWidget : ModuleWidget {
 	~GrainsWidget(){ 
 	}
 	void appendContextMenu(Menu *menu) override;
+    void step() override;
+private:
+    bool randomBtnLatched = false;
 };
 
 GrainsWidget::GrainsWidget(Grains *module) {
@@ -775,6 +838,8 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 2)));
 	addChild(createWidget<Screw_W>(Vec(box.size.x-29, 365)));
 	
+	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
+
 	float topY = 342;
 	
 	addInput(createInput<TinyPJ301MPort>(Vec(85, topY), module, Grains::POSITION_INPUT));
@@ -799,6 +864,7 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	disp->box.pos = Vec(10, 40);
 	disp->box.size = Vec(box.size.x - 20, box.size.y - 100);
 	addChild(disp);
+
 
 };
 
@@ -906,6 +972,22 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	load->text = "Load WAV...";
 	load->grains = grains;
 	menu->addChild(load);
+}
+
+void GrainsWidget::step() {
+    ModuleWidget::step();
+    Grains *m = dynamic_cast<Grains*>(module);
+    if (!m) return;
+    float v = m->params[Grains::RANDOM_BUTTON].getValue();
+    if (v > 0.5f && !randomBtnLatched) {
+        // Trigger random load on UI thread; reset button immediately
+        m->loadRandomSiblingSample();
+        m->params[Grains::RANDOM_BUTTON].setValue(0.f);
+        randomBtnLatched = true;
+    }
+    else if (v <= 0.5f) {
+        randomBtnLatched = false;
+    }
 }
 
 
