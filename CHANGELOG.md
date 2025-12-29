@@ -3,6 +3,8 @@
 ## v2.0.21 ~ 1-1-26
 
   * Grains: NEW MODULE - my 40th module - a simple granular sampler
+  * Subtract5: NEW MODULE - subtracts 5 volts
+  * Stereo Switch Inverted: NEW MODULE - one pair of inputs and 8 pairs of outputs
   * added reset to stereo switch
   * added poly tag to random sound
   * make max pulse length 10s 

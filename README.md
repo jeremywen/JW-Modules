@@ -38,7 +38,9 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [ShiftRegRnd](#shiftregrnd)
 * [SimpleClock](#simpleclock)
 * [StereoSwitch](#stereoswitch)
+* [StereoSwitchInv](#stereoswitchinv)
 * [Str1ker](#str1ker)
+* [Subtract5](#subtract5)
 * [Thing Thing](#thing-thing)
 * [Timer](#timer)
 * [Tree](#tree)
@@ -110,14 +112,27 @@ Allows you to take a stream of notes and grab a random set of notes to make chor
 
 ![stereoswitch2](./doc/stereoswitch2.png)
 
-A switch which has stereo inputs and outputs and can jump to a random input based on weighted values.
+A switch which has 8 stereo inputs and 1 stereo output and can jump to a random input based on weighted values.
 
-* **Inputs:** stereo inputs
+* **Inputs:** 8 stereo inputs
+* **Outputs:** 1 output stereo signal
 * **Weight:** increase weight being of randomly chosen
 * **Up:** goes up one input row
 * **Down:** goes down one input row
 * **Rnd:** goes to random input row
-* **Outputs:** output stereo signal
+
+## StereoSwitchInv
+
+![stereoswitch2](./doc/ssi.png)
+
+A switch which has 1 stereo input and 8 stereo outputs and can jump to a random output based on weighted values.
+
+* **Inputs:** 1 stereo input
+* **Outputs:** 8 stereo outputs
+* **Weight:** increase weight being of randomly chosen
+* **Up:** goes up one input row
+* **Down:** goes down one input row
+* **Rnd:** goes to random input row
 
 ## Arrange
 
@@ -873,6 +888,12 @@ Change the playback mode by right clicking the module and selecting the playback
 ![Add5](./doc/add5-img1.png)
 
 Adds 5 volts to a signal.  Goes well with Vult Caudal.
+
+## Subtract5
+
+![Subtract5](./doc/s5.png)
+
+Subtracts 5 volts from a signal.  Goes well with Unipolor lfos
 
 ## MinMax
 

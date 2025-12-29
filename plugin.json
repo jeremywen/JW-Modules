@@ -67,6 +67,12 @@
 			"tags": ["Utility", "Poly"]
 		},
 		{
+			"slug": "Subtract5",
+			"name": "Subtract5",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Utility", "Poly"]
+		},
+		{
 			"slug": "Grains",
 			"name": "Grains",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
@@ -93,6 +99,12 @@
 		{
 			"slug": "StereoSwitch",
 			"name": "Stereo Switch",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Utility"]
+		},
+		{
+			"slug": "StereoSwitchInv",
+			"name": "Stereo Switch Inverted",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": ["Utility"]
 		},

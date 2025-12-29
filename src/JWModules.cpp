@@ -46,7 +46,9 @@ void init(rack::Plugin *p) {
 	p->addModel(modelShiftRegRnd);
 	p->addModel(modelSimpleClock);
 	p->addModel(modelStereoSwitch);
+	p->addModel(modelStereoSwitchInv);
 	p->addModel(modelStr1ker);
+	p->addModel(modelSubtract5);
 	p->addModel(modelThingThing);
 	p->addModel(modelTimer);
 	p->addModel(modelTree);
