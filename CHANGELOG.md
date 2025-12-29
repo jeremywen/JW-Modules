@@ -1,5 +1,7 @@
 # Change Log
 
+Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
+
 ## v2.0.21 ~ 1-1-26
 
   * Grains: NEW MODULE - my 40th module - a simple granular sampler
