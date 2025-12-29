@@ -472,6 +472,7 @@ extern Model *modelD1v1de;
 extern Model *modelDivSeq;
 extern Model *modelEightSeq;
 extern Model *modelFullScope;
+extern Model *modelGrains;
 extern Model *modelGridSeq;
 extern Model *modelMinMax;
 extern Model *modelNoteSeq;
