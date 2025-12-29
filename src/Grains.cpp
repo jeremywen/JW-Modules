@@ -1045,7 +1045,7 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(45, 15), module, Grains::REC_INPUT));
 	addParam(createParam<CKSS>(Vec(80, 15), module, Grains::REC_SWITCH));
 	addInput(createInput<TinyPJ301MPort>(Vec(100, 15), module, Grains::REC_TOGGLE));
-	addChild(createLight<SmallLight<RedLight>>(Vec(125, 18), module, Grains::REC_LIGHT));
+	addChild(createLight<SmallLight<RedLight>>(Vec(120, 21), module, Grains::REC_LIGHT));
 	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
 
 	float topY = 342;
