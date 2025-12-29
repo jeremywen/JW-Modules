@@ -2,7 +2,7 @@
 
 ## v2.0.21 ~ 1-1-26
 
-  * Grains: NEW MODULE - simple granular sampler
+  * Grains: NEW MODULE - my 40th module - a simple granular sampler
   * added reset to stereo switch
   * added poly tag to random sound
   * make max pulse length 10s 

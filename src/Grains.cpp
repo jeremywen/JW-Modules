@@ -60,6 +60,7 @@ struct Grains : Module {
 	bool bufferDirty = false;
 	bool autoAdvance = false;
 	bool isRecording = false;
+	bool normalPlayback = false;
 
 	struct Grain {
 		double pos;
@@ -86,6 +87,7 @@ struct Grains : Module {
 	// bool trimSilenceEdges(float threshold); // removed
 	// bool suppressSilence(float threshold); // removed
 	bool normalizeSample();
+	bool saveBufferToWav(const std::string &path);
 	// Base64 helpers for embedding samples in patch JSON
 	static std::string b64Encode(const uint8_t* data, size_t len);
 	static std::vector<uint8_t> b64Decode(const std::string& str);
@@ -124,8 +126,10 @@ struct Grains : Module {
 		json_object_set_new(rootJ, "embed", json_boolean(embedInPatch));
 		json_object_set_new(rootJ, "autoAdvance", json_boolean(autoAdvance));
 		json_object_set_new(rootJ, "playPos", json_real(playPos));
-		// Always embed if buffer was modified so patch reflects edits
-		if ((embedInPatch || bufferDirty) && !sampleL.empty()) {
+		json_object_set_new(rootJ, "normalPlayback", json_boolean(normalPlayback));
+		// Always embed if buffer was modified OR there is no file path (recorded/embedded)
+		// This ensures duplication and patch save/load preserve recorded audio.
+		if ((embedInPatch || bufferDirty || samplePath.empty()) && !sampleL.empty()) {
 			// Serialize float32 arrays L/R as base64
 			std::vector<uint8_t> bytesL(sampleL.size() * 4);
 			std::vector<uint8_t> bytesR(sampleR.size() * 4);
@@ -165,7 +169,9 @@ struct Grains : Module {
 		json_t *embRJ = json_object_get(rootJ, "embeddedR");
 		json_t *rateJ = json_object_get(rootJ, "rate");
 		json_t *autoAdvJ = json_object_get(rootJ, "autoAdvance");
+		json_t *normalJ = json_object_get(rootJ, "normalPlayback");
 		if (autoAdvJ && json_is_boolean(autoAdvJ)) autoAdvance = json_boolean_value(autoAdvJ);
+		if (normalJ && json_is_boolean(normalJ)) normalPlayback = json_boolean_value(normalJ);
 		if (embLJ && json_is_string(embLJ) && embRJ && json_is_string(embRJ)) {
 			std::string b64L = json_string_value(embLJ);
 			std::string b64R = json_string_value(embRJ);
@@ -328,6 +334,25 @@ void Grains::process(const ProcessArgs &args) {
 	}
 	double gain = params[GRAIN_GAIN].getValue();
 
+	// Normal playback mode: directly read the sample at playPos
+	if (normalPlayback) {
+		int i0 = (int)playPos;
+		if (i0 < 0) i0 = 0;
+		if (i0 >= (int)sampleL.size()) i0 = (int)sampleL.size() - 1;
+		int i1 = std::min(i0 + 1, (int)sampleL.size() - 1);
+		double frac = playPos - (double)i0;
+		double sL = (1.0 - frac) * (double)sampleL[i0] + frac * (double)sampleL[i1];
+		double sR = (1.0 - frac) * (double)sampleR[i0] + frac * (double)sampleR[i1];
+		outputs[OUT_L].setVoltage((float)(sL * gain * 5.0));
+		outputs[OUT_R].setVoltage((float)(sR * gain * 5.0));
+		if (autoAdvance && !inputs[POSITION_INPUT].isConnected()) {
+			double step = pitch * (double)fileSampleRate / srHost;
+			playPos += step;
+			if (playPos >= (double)sampleL.size()) playPos = 0.0;
+		}
+		return;
+	}
+
 	spawnAccum += density / srHost;
 	while (spawnAccum >= 1.0) {
 		spawnAccum -= 1.0;
@@ -412,6 +437,21 @@ static uint16_t readU16(std::ifstream &in) {
 	uint8_t b[2];
 	in.read((char*)b, 2);
 	return (uint16_t)b[0] | ((uint16_t)b[1] << 8);
+}
+
+static void writeU32(std::ofstream &out, uint32_t v) {
+	char b[4];
+	b[0] = (char)(v & 0xFF);
+	b[1] = (char)((v >> 8) & 0xFF);
+	b[2] = (char)((v >> 16) & 0xFF);
+	b[3] = (char)((v >> 24) & 0xFF);
+	out.write(b, 4);
+}
+static void writeU16(std::ofstream &out, uint16_t v) {
+	char b[2];
+	b[0] = (char)(v & 0xFF);
+	b[1] = (char)((v >> 8) & 0xFF);
+	out.write(b, 2);
 }
 
 bool Grains::loadSampleFromPath(const std::string &path) {
@@ -652,6 +692,64 @@ bool Grains::normalizeSample() {
 	if (embedInPatch) samplePath.clear();
 	bufferDirty = true;
 	return true;
+}
+
+// Save current buffer to a stereo PCM16 WAV file
+bool Grains::saveBufferToWav(const std::string &path) {
+	if (sampleL.empty()) { statusMsg = "No sample loaded"; return false; }
+	size_t frames = std::min(sampleL.size(), sampleR.size());
+	if (frames == 0) { statusMsg = "No audio frames"; return false; }
+	uint16_t numChannels = 2;
+	uint16_t bitsPerSample = 16;
+	uint32_t sRate = (fileSampleRate > 0) ? (uint32_t)fileSampleRate : 44100u;
+	uint16_t bytesPerSample = bitsPerSample / 8; // 2
+	uint16_t blockAlign = numChannels * bytesPerSample; // 4
+	uint32_t byteRate = sRate * blockAlign;
+	uint32_t dataSize = (uint32_t)(frames * blockAlign);
+
+	std::ofstream out(path, std::ios::binary);
+	if (!out.good()) { statusMsg = "Could not write file"; return false; }
+
+	// RIFF header
+	out.write("RIFF", 4);
+	writeU32(out, 36u + dataSize); // file size minus 8
+	out.write("WAVE", 4);
+	// fmt chunk
+	out.write("fmt ", 4);
+	writeU32(out, 16u); // PCM fmt chunk size
+	writeU16(out, 1u); // PCM
+	writeU16(out, numChannels);
+	writeU32(out, sRate);
+	writeU32(out, byteRate);
+	writeU16(out, blockAlign);
+	writeU16(out, bitsPerSample);
+	// data chunk
+	out.write("data", 4);
+	writeU32(out, dataSize);
+	// samples
+	for (size_t i = 0; i < frames; ++i) {
+		float fl = std::max(-1.f, std::min(1.f, sampleL[i]));
+		float fr = std::max(-1.f, std::min(1.f, sampleR[i]));
+		int sl = (int)std::lround(fl * 32767.0f);
+		int sr = (int)std::lround(fr * 32767.0f);
+		if (sl < -32768) sl = -32768; if (sl > 32767) sl = 32767;
+		if (sr < -32768) sr = -32768; if (sr > 32767) sr = 32767;
+		writeU16(out, (uint16_t)(uint16_t)(sl & 0xFFFF));
+		writeU16(out, (uint16_t)(uint16_t)(sr & 0xFFFF));
+	}
+	out.flush();
+	bool ok = out.good();
+	out.close();
+	if (ok) {
+		// Update status
+		std::string base = path;
+		size_t p = base.find_last_of("/\\");
+		if (p != std::string::npos) base = base.substr(p + 1);
+		statusMsg = "Saved: " + base;
+	} else {
+		statusMsg = "Write error";
+	}
+	return ok;
 }
 
 // Load a random .wav from the same directory as the current samplePath
@@ -998,6 +1096,17 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	advItem->text = "Auto-Advance Position";
 	advItem->grains = grains;
 	menu->addChild(advItem);
+
+	// Toggle normal playback (bypass grains)
+	struct NormalPlaybackItem : MenuItem {
+		Grains *grains;
+		void onAction(const event::Action &e) override { if (grains) grains->normalPlayback = !grains->normalPlayback; }
+		void step() override { rightText = (grains && grains->normalPlayback) ? "✔" : ""; MenuItem::step(); }
+	};
+	NormalPlaybackItem *normPlayItem = new NormalPlaybackItem();
+	normPlayItem->text = "Normal Playback (no grains)";
+	normPlayItem->grains = grains;
+	menu->addChild(normPlayItem);
 	// Silence threshold slider
 	struct SilenceThresholdQuantity : Quantity {
 		std::function<void(float)> setFn;
@@ -1076,6 +1185,29 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	load->text = "Load WAV...";
 	load->grains = grains;
 	menu->addChild(load);
+
+	// Save buffer as WAV
+	struct SaveWavItem : MenuItem {
+		Grains *grains;
+		void onAction(const event::Action &e) override {
+			if (!grains) return;
+			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+			char *path = osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters);
+			osdialog_filters_free(filters);
+			if (path) {
+				std::string p = path;
+				free(path);
+				// Ensure .wav extension
+				auto hasExt = [](const std::string &s){ if (s.size() < 4) return false; std::string ext = s.substr(s.size()-4); std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); return ext == ".wav"; };
+				if (!hasExt(p)) p += ".wav";
+				grains->saveBufferToWav(p);
+			}
+		}
+	};
+	SaveWavItem *save = new SaveWavItem();
+	save->text = "Save Buffer as WAV...";
+	save->grains = grains;
+	menu->addChild(save);
 }
 
 void GrainsWidget::step() {

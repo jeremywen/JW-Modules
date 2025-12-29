@@ -25,6 +25,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [D1v1de](#d1v1de)
 * [DivSeq](#divseq)
 * [FullScope](#fullscope)
+* [Grains](#grains)
 * [GridSeq](#gridseq)
 * [MinMax](#minmax)
 * [NoteSeq](#noteSeq)
@@ -48,6 +49,25 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
 ----
+
+## Grains
+
+![grains](./doc/grains.png)
+
+A granular sampler which can record
+
+* **Input:** signal to record
+* **Record Switch:** turn on/off recording
+* **Record Input:** turn on/off recording
+* **Random file in same directory:** switches to another file
+* **Position:** playhead position
+* **Pitch:** playback pitch
+* **Size:** grain size
+* **Density:** grain density
+* **Spread:** grain spread
+* **Window:** window grain shape
+* **Rnd Pan:** how much to randomize the grain panning
+* **Outputs:** signal out
 
 ## Buffer
 
