@@ -45,6 +45,7 @@ struct Grains : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
+		REC_LIGHT,
 		NUM_LIGHTS
 	};
 
@@ -285,6 +286,7 @@ void Grains::process(const ProcessArgs &args) {
 	if (sampleL.empty()) {
 		outputs[OUT_L].setVoltage(0.f);
 		outputs[OUT_R].setVoltage(0.f);
+        lights[REC_LIGHT].setBrightness(0.0f);
 		return;
 	}
 
@@ -425,6 +427,8 @@ void Grains::process(const ProcessArgs &args) {
 		playPos += step;
 		if (playPos >= (double)sampleL.size()) playPos = 0.0;
 	}
+	// Update recording LED
+	lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
 };
 
 // Minimal WAV loader: supports PCM16 and Float32, mono/stereo (mixed to mono)
@@ -1041,6 +1045,7 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(45, 15), module, Grains::REC_INPUT));
 	addParam(createParam<CKSS>(Vec(80, 15), module, Grains::REC_SWITCH));
 	addInput(createInput<TinyPJ301MPort>(Vec(100, 15), module, Grains::REC_TOGGLE));
+	addChild(createLight<SmallLight<RedLight>>(Vec(125, 18), module, Grains::REC_LIGHT));
 	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
 
 	float topY = 342;
