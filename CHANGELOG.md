@@ -4,7 +4,7 @@ Support my work on these free modules by becoming a patreon here https://www.pat
 
 ## v2.0.22 ~ 1-7-26
 
-  * SampleGrid: NEW MODULE - a 16 sample player with random loading, shuffling slicing
+  * SampleGrid: NEW MODULE - a 16 sample player with random loading, shuffling, and slicing
 
 ## v2.0.21 ~ 1-2-26
 
