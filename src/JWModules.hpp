@@ -484,6 +484,7 @@ extern Model *modelPete;
 extern Model *modelPres1t;
 extern Model *modelQuantizer;
 extern Model *modelRandomSound;
+extern Model *modelSampleGrid;
 extern Model *modelShiftRegRnd;
 extern Model *modelSimpleClock;
 extern Model *modelStereoSwitch;

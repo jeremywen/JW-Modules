@@ -79,6 +79,12 @@
 			"tags": ["Sampler", "Granular"]
 		},
 		{
+			"slug": "SampleGrid",
+			"name": "Sample Grid",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": ["Sampler", "Poly"]
+		},
+		{
 			"slug": "Buffer",
 			"name": "Buffer",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",

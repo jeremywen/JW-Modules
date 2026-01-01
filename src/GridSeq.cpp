@@ -670,6 +670,61 @@ struct GridSeqPatternModeItem : MenuItem {
 	}
 };
 
+// Submenu wrapper for pattern mode options
+struct GridSeqPatternSubMenuItem : MenuItem {
+	GridSeq *gridSeq = nullptr;
+	Menu *createChildMenu() override {
+		Menu *submenu = new Menu;
+		// Row Wrap Stay
+		auto *rowWrapStayItem = new GridSeqPatternModeItem();
+		rowWrapStayItem->text = "Row Wrap (Stay Row)";
+		rowWrapStayItem->gridSeq = gridSeq;
+		rowWrapStayItem->mode = GridSeq::ROW_WRAP_STAY;
+		submenu->addChild(rowWrapStayItem);
+		// Row-Major
+		auto *rowMajorItem = new GridSeqPatternModeItem();
+		rowMajorItem->text = "Row-Major";
+		rowMajorItem->gridSeq = gridSeq;
+		rowMajorItem->mode = GridSeq::ROW_MAJOR;
+		submenu->addChild(rowMajorItem);
+		// Column-Major
+		auto *colMajorItem = new GridSeqPatternModeItem();
+		colMajorItem->text = "Column-Major";
+		colMajorItem->gridSeq = gridSeq;
+		colMajorItem->mode = GridSeq::COL_MAJOR;
+		submenu->addChild(colMajorItem);
+		// Snake Rows
+		auto *snakeRowsItem = new GridSeqPatternModeItem();
+		snakeRowsItem->text = "Snake Rows";
+		snakeRowsItem->gridSeq = gridSeq;
+		snakeRowsItem->mode = GridSeq::SNAKE_ROWS;
+		submenu->addChild(snakeRowsItem);
+		// Snake Columns
+		auto *snakeColsItem = new GridSeqPatternModeItem();
+		snakeColsItem->text = "Snake Columns";
+		snakeColsItem->gridSeq = gridSeq;
+		snakeColsItem->mode = GridSeq::SNAKE_COLS;
+		submenu->addChild(snakeColsItem);
+		// Snake Diagonal Down-Right
+		auto *snakeDiagDRItem = new GridSeqPatternModeItem();
+		snakeDiagDRItem->text = "Snake Diagonal Down-Right";
+		snakeDiagDRItem->gridSeq = gridSeq;
+		snakeDiagDRItem->mode = GridSeq::SNAKE_DIAG_DR;
+		submenu->addChild(snakeDiagDRItem);
+		// Snake Diagonal Up-Right
+		auto *snakeDiagURItem = new GridSeqPatternModeItem();
+		snakeDiagURItem->text = "Snake Diagonal Up-Right";
+		snakeDiagURItem->gridSeq = gridSeq;
+		snakeDiagURItem->mode = GridSeq::SNAKE_DIAG_UR;
+		submenu->addChild(snakeDiagURItem);
+		return submenu;
+	}
+	void step() override {
+		rightText = "\u25B6"; // triangle indicating submenu
+		MenuItem::step();
+	}
+};
+
 void GridSeqWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
@@ -713,47 +768,10 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	patternLabel->text = "Pattern Mode";
 	menu->addChild(patternLabel);
 
-	GridSeqPatternModeItem *rowWrapStayItem = new GridSeqPatternModeItem();
-	rowWrapStayItem->text = "Row Wrap (Stay Row)";
-	rowWrapStayItem->gridSeq = gridSeq;
-	rowWrapStayItem->mode = GridSeq::ROW_WRAP_STAY;
-	menu->addChild(rowWrapStayItem);
-
-	GridSeqPatternModeItem *rowMajorItem = new GridSeqPatternModeItem();
-	rowMajorItem->text = "Row-Major";
-	rowMajorItem->gridSeq = gridSeq;
-	rowMajorItem->mode = GridSeq::ROW_MAJOR;
-	menu->addChild(rowMajorItem);
-
-	GridSeqPatternModeItem *colMajorItem = new GridSeqPatternModeItem();
-	colMajorItem->text = "Column-Major";
-	colMajorItem->gridSeq = gridSeq;
-	colMajorItem->mode = GridSeq::COL_MAJOR;
-	menu->addChild(colMajorItem);
-
-	GridSeqPatternModeItem *snakeRowsItem = new GridSeqPatternModeItem();
-	snakeRowsItem->text = "Snake Rows";
-	snakeRowsItem->gridSeq = gridSeq;
-	snakeRowsItem->mode = GridSeq::SNAKE_ROWS;
-	menu->addChild(snakeRowsItem);
-
-	GridSeqPatternModeItem *snakeColsItem = new GridSeqPatternModeItem();
-	snakeColsItem->text = "Snake Columns";
-	snakeColsItem->gridSeq = gridSeq;
-	snakeColsItem->mode = GridSeq::SNAKE_COLS;
-	menu->addChild(snakeColsItem);
-
-	GridSeqPatternModeItem *snakeDiagDRItem = new GridSeqPatternModeItem();
-	snakeDiagDRItem->text = "Snake Diagonal Down-Right";
-	snakeDiagDRItem->gridSeq = gridSeq;
-	snakeDiagDRItem->mode = GridSeq::SNAKE_DIAG_DR;
-	menu->addChild(snakeDiagDRItem);
-
-	GridSeqPatternModeItem *snakeDiagURItem = new GridSeqPatternModeItem();
-	snakeDiagURItem->text = "Snake Diagonal Up-Right";
-	snakeDiagURItem->gridSeq = gridSeq;
-	snakeDiagURItem->mode = GridSeq::SNAKE_DIAG_UR;
-	menu->addChild(snakeDiagURItem);
+	GridSeqPatternSubMenuItem *patternSub = new GridSeqPatternSubMenuItem();
+	patternSub->text = "Select Pattern";
+	patternSub->gridSeq = gridSeq;
+	menu->addChild(patternSub);
 
 	// Gate pulse length slider
 	MenuLabel *spacerLabelGate = new MenuLabel();

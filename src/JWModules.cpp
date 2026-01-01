@@ -43,6 +43,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelPres1t);
 	p->addModel(modelQuantizer);
 	p->addModel(modelRandomSound);
+	p->addModel(modelSampleGrid);
 	p->addModel(modelShiftRegRnd);
 	p->addModel(modelSimpleClock);
 	p->addModel(modelStereoSwitch);
