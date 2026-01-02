@@ -44,6 +44,9 @@ struct SampleGrid : Module {
 		VOLT_MAX_INPUT,
 		VOCT_INPUT,
 		GATE_INPUT,
+		SHUFFLE_INPUT,
+		REVERSE_RND_INPUT,
+		RND_MUTES_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -72,6 +75,9 @@ struct SampleGrid : Module {
 	dsp::SchmittTrigger gateTriggers[16];
 
 	dsp::SchmittTrigger gateInTrigger;
+	dsp::SchmittTrigger shuffleInTrigger;
+	dsp::SchmittTrigger reverseRandomInTrigger;
+	dsp::SchmittTrigger rndMutesInTrigger;
 
 	int index = 0;
 	int indexYX = 0;
@@ -556,6 +562,9 @@ struct SampleGrid : Module {
 		configInput(VOLT_MAX_INPUT, "Range");
 		configInput(VOCT_INPUT, "V/Oct Select");
 		configInput(GATE_INPUT, "Gate In");
+		configInput(SHUFFLE_INPUT, "Shuffle Trigger");
+		configInput(REVERSE_RND_INPUT, "Reverse Random Trigger");
+		configInput(RND_MUTES_INPUT, "Randomize Mutes Trigger");
 		configOutput(AUDIO_OUTPUT, "Audio");
 	}
 
@@ -937,6 +946,17 @@ void SampleGrid::process(const ProcessArgs &args) {
 			handleMoveUp();
 		}
 	}
+
+	// Bottom control trigger inputs
+	if (shuffleInTrigger.process(inputs[SHUFFLE_INPUT].getVoltage())) {
+		shuffleSamples();
+	}
+	if (reverseRandomInTrigger.process(inputs[REVERSE_RND_INPUT].getVoltage())) {
+		randomReverseSamples();
+	}
+	if (rndMutesInTrigger.process(inputs[RND_MUTES_INPUT].getVoltage())) {
+		randomizeGateStates();
+	}
 	if (nextStep) {
 		if(resetMode){
 			resetMode = false;
@@ -1302,11 +1322,16 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 
 	addInput(createInput<PJ301MPort>(Vec(19, 207), module, SampleGrid::VOCT_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(19, 250), module, SampleGrid::GATE_INPUT));
-	addParam(createParam<SmallButton>(Vec(74, 338), module, SampleGrid::RND_SAMPLES_PARAM));
-	addParam(createParam<SmallButton>(Vec(132, 338), module, SampleGrid::SPLIT_SAMPLE_PARAM));
-	addParam(createParam<SmallButton>(Vec(173, 338), module, SampleGrid::SHUFFLE_SAMPLES_PARAM));
-	addParam(createParam<SmallButton>(Vec(214, 338), module, SampleGrid::REVERSE_RANDOM_PARAM));
-	addParam(createParam<SmallButton>(Vec(258, 338), module, SampleGrid::RND_MUTES_PARAM));
+
+	addParam(createParam<SmallButton>(Vec(71, 335), module, SampleGrid::RND_SAMPLES_PARAM));
+	addParam(createParam<SmallButton>(Vec(128, 335), module, SampleGrid::SPLIT_SAMPLE_PARAM));
+	addParam(createParam<SmallButton>(Vec(169, 335), module, SampleGrid::SHUFFLE_SAMPLES_PARAM));
+	addParam(createParam<SmallButton>(Vec(210, 335), module, SampleGrid::REVERSE_RANDOM_PARAM));
+	addParam(createParam<SmallButton>(Vec(250, 335), module, SampleGrid::RND_MUTES_PARAM));
+	// Trigger inputs below control buttons
+	addInput(createInput<TinyPJ301MPort>(Vec(174, 360), module, SampleGrid::SHUFFLE_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(215, 360), module, SampleGrid::REVERSE_RND_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(255, 360), module, SampleGrid::RND_MUTES_INPUT));
 	
 	///// OUTPUTS /////
 	addOutput(createOutput<PJ301MPort>(Vec(19, 300), module, SampleGrid::AUDIO_OUTPUT));
