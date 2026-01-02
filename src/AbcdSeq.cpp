@@ -116,11 +116,11 @@ struct AbcdSeq : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
-		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_CV_PARAM, 0.0, 1.0, 0.0, "Random CV\n(Shift + Click to Init Defaults)");
-		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities\n(Shift + Click to Init Defaults)");
-		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text\n(Shift + Click to Init Defaults)");
-		configParam(RND_LENGTHS_PARAM, 0.0, 1.0, 0.0, "Random Lengths\n(Shift + Click to Init Defaults)");
+		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates");
+		configParam(RND_CV_PARAM, 0.0, 1.0, 0.0, "Random CV");
+		configParam(RND_VELS_PARAM, 0.0, 1.0, 0.0, "Random Velocities");
+		configParam(RND_TEXT_PARAM, 0.0, 1.0, 0.0, "Random Text");
+		configParam(RND_LENGTHS_PARAM, 0.0, 1.0, 0.0, "Random Lengths");
 				// Row/Column randomize buttons (parameters to attach UI buttons)
 				for (int y = 0; y < 4; y++) {
 					configParam(RND_ROW_PARAM + y, 0.0, 1.0, 0.0, std::string("Randomize Row ") + char('A' + y));

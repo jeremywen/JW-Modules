@@ -80,9 +80,9 @@ struct EightSeq : Module,QuantizeUtils {
 		configParam(ROOT_NOTE_PARAM, 0.0, QuantizeUtils::NUM_NOTES-1, QuantizeUtils::NOTE_C, "Root Note");
 		configParam(SCALE_PARAM, 0.0, QuantizeUtils::NUM_SCALES-1, QuantizeUtils::MINOR, "Scale");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 8.0, 8.0, "Length");
-		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates (Shift + Click to Init Defaults)");
-		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes\n(Shift + Click to Init Defaults)");
-		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities\n(Shift + Click to Init Defaults)");
+		configParam(RND_GATES_PARAM, 0.0, 1.0, 0.0, "Random Gates");
+		configParam(RND_NOTES_PARAM, 0.0, 1.0, 0.0, "Random Notes");
+		configParam(RND_PROBS_PARAM, 0.0, 1.0, 0.0, "Random Probabilities");
 		configParam(VOLT_MAX_PARAM, 0.0, 10.0, 2.0, "Range");
 		configParam(OCTAVE_PARAM, -5.0, 7.0, -1.0, "Octave");
 		configParam(PROB_ON_SWITCH_PARAM, 0.0, 1.0, 1.0, "Probability Switch");
