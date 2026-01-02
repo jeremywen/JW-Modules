@@ -1295,7 +1295,7 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						nvgStrokeWidth(vg, 1.0f);
 						for (int xi = 0; xi <= (int)ww; ++xi) {
 							float t = (float)xi / ww;
-							float s = std::sinf(t * 2.f * PI);
+							float s = std::sin(t * 2.f * PI);
 							float y = wy + wh * (0.5f - 0.45f * s);
 							if (xi == 0) nvgMoveTo(vg, wx + xi, y);
 							else nvgLineTo(vg, wx + xi, y);
