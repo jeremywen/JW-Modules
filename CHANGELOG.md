@@ -2,12 +2,12 @@
 
 Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
 
-## v2.0.24 ~ 1-7-26
+## v2.0.24 ~ 1-?-26
 
   * SampleGrid: NEW MODULE - a 16 sample player with random loading, shuffling, and slicing
   * changes mouse button events on a button to be handled by triggers in process method
 
-## v2.0.21 ~ 1-2-26
+## v2.0.21 ~ 1-?-26
 
   * Grains: NEW MODULE - my 40th module - a simple granular sampler
   * Subtract5: NEW MODULE - subtracts 5 volts
