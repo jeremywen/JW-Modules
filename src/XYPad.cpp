@@ -78,6 +78,8 @@ struct XYPad : Module {
 	int curPlayMode = FWD_LOOP;
 	int lastRandomShape = RND_STEPS;
 	dsp::SchmittTrigger autoBtnTrigger;
+	dsp::SchmittTrigger rndShapesTrigger;
+	dsp::SchmittTrigger rndVariationTrigger;
 	std::vector<Vec> points;
 	long curPointIdx = 0;
 
@@ -414,6 +416,16 @@ struct XYPad : Module {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void XYPad::process(const ProcessArgs &args) {
+	// Process-time triggers for randomization buttons
+	if (rndShapesTrigger.process(params[RND_SHAPES_PARAM].getValue())) {
+		randomizeShape();
+		params[RND_SHAPES_PARAM].setValue(0.0f);
+	}
+	if (rndVariationTrigger.process(params[RND_VARIATION_PARAM].getValue())) {
+		makeShape(lastRandomShape);
+		params[RND_VARIATION_PARAM].setValue(0.0f);
+	}
+
 	if (autoBtnTrigger.process(params[AUTO_PLAY_PARAM].getValue())) {
 		autoPlayOn = !autoPlayOn;
 		if(autoPlayOn){ 
@@ -787,31 +799,7 @@ struct XYPadWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomShapeButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			if(e.action == GLFW_PRESS){
-				TinyButton::onButton(e);
-				XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
-				XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
-				xyPad->randomizeShape();
-			}
-		}
-	}
-};
-
-struct RandomVariationButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			if(e.action == GLFW_PRESS){
-				TinyButton::onButton(e);
-				XYPadWidget *xyw = this->getAncestorOfType<XYPadWidget>();
-				XYPad *xyPad = dynamic_cast<XYPad*>(xyw->module);
-				xyPad->makeShape(xyPad->lastRandomShape);
-			}
-		}
-	}
-};
+// Random shape/variation buttons converted to process-time triggers; using plain TinyButton in widget.
 
 XYPadWidget::XYPadWidget(XYPad *module) {
 		setModule(module);
@@ -837,8 +825,8 @@ XYPadWidget::XYPadWidget(XYPad *module) {
 
 	addChild(createWidget<Screw_J>(Vec(40, 20)));
 	addChild(createWidget<Screw_W>(Vec(55, 20)));
-	addParam(createParam<RandomShapeButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM));
-	addParam(createParam<RandomVariationButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM));
+	addParam(createParam<TinyButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM));
+	addParam(createParam<TinyButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM));
 	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM));
 	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM));
 	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM));

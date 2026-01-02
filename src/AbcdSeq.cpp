@@ -72,6 +72,8 @@ struct AbcdSeq : Module,QuantizeUtils {
 	dsp::SchmittTrigger rndGatesTrigger;
 	dsp::SchmittTrigger rndVelsTrigger;
 	dsp::SchmittTrigger rndLengthsTrigger;
+	dsp::SchmittTrigger rndRowTriggers[4];
+	dsp::SchmittTrigger rndColTriggers[8];
 	dsp::SchmittTrigger gateTriggers[32];
 
 	std::string text = DEFAULT_TEXT;
@@ -442,6 +444,16 @@ struct AbcdSeq : Module,QuantizeUtils {
 		}
 	}
 
+	void randomizeColNotes(int colIdx) {
+		if (colIdx < 0 || colIdx > 7) {
+			return; // Invalid column index
+		}
+		for (int r = 0; r < 4; r++) {
+			int idx = r * 8 + colIdx;
+			params[CELL_NOTE_PARAM + idx].setValue(getOneRandomNote());
+		}
+	}
+
 	void copyRowNotes(int rowIdx) {
 		if (rowIdx < 0 || rowIdx > 3) {
 			return; // Invalid row index
@@ -525,24 +537,43 @@ void AbcdSeq::process(const ProcessArgs &args) {
 	}
 
 	if(running){
-		if (rndTextTrigger.process(inputs[RND_TEXT_INPUT].getVoltage())) {
+		if (rndTextTrigger.process(inputs[RND_TEXT_INPUT].getVoltage() + params[RND_TEXT_PARAM].getValue())) {
 			randomizeTextOnly();
+			params[RND_TEXT_PARAM].setValue(0.0f);
 		}
 
-		if (rndNotesTrigger.process(inputs[RND_CV_INPUT].getVoltage())) {
+		if (rndNotesTrigger.process(inputs[RND_CV_INPUT].getVoltage() + params[RND_CV_PARAM].getValue())) {
 			randomizeNotesOnly();
+			params[RND_CV_PARAM].setValue(0.0f);
 		}
 
-		if (rndLengthsTrigger.process(inputs[RND_LENGTHS_INPUT].getVoltage())) {
+		if (rndLengthsTrigger.process(inputs[RND_LENGTHS_INPUT].getVoltage() + params[RND_LENGTHS_PARAM].getValue())) {
 			randomizeLengthsOnly();
+			params[RND_LENGTHS_PARAM].setValue(0.0f);
 		}
 
-		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage())) {
+		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage() + params[RND_GATES_PARAM].getValue())) {
 			randomizeGateStates();
+			params[RND_GATES_PARAM].setValue(0.0f);
 		}
 
-		if (rndVelsTrigger.process(inputs[RND_VELS_INPUT].getVoltage())) {
+		if (rndVelsTrigger.process(inputs[RND_VELS_INPUT].getVoltage() + params[RND_VELS_PARAM].getValue())) {
 			randomizeVelsOnly();
+			params[RND_VELS_PARAM].setValue(0.0f);
+		}
+
+		// Row/Column randomize triggers
+		for (int y = 0; y < 4; y++) {
+			if (rndRowTriggers[y].process(params[RND_ROW_PARAM + y].getValue())) {
+				randomizeRowNotes(y);
+				params[RND_ROW_PARAM + y].setValue(0.0f);
+			}
+		}
+		for (int x = 0; x < 8; x++) {
+			if (rndColTriggers[x].process(params[RND_COL_PARAM + x].getValue())) {
+				randomizeColNotes(x);
+				params[RND_COL_PARAM + x].setValue(0.0f);
+			}
 		}
 
 		if (rightTrigger.process(inputs[CLOCK_INPUT].getVoltage())) {
@@ -654,137 +685,13 @@ struct AbcdSeqWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomizeNotesButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 32; i++) {
-                if(shiftDown){
-                    wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-                } else {
-                    wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
-                }
-			}
-		}
-	}
-};
+// UI randomization buttons for notes/vels/gates converted to process-time triggers.
+// Plain TinyButton is used in the widget; logic handled in process().
 
-struct RandomizeVelButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
-			// AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 32; i++) {
-                if(shiftDown){
-                    wid->divKnobs[i]->getParamQuantity()->setValue(5);
-                } else {
-                    wid->divKnobs[i]->getParamQuantity()->setValue(random::uniform() * 10);
-                }
-			}
-		}
-	}
-};
 
-struct RandomizeGatesButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			AbcdSeqWidget *gsw = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *gs = dynamic_cast<AbcdSeq*>(gsw->module);
-			for (int i = 0; i < 32; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gs->gateState[i] = true;
-				} else {
-					bool active = random::uniform() > 0.5;
-					gs->gateState[i] = active;
-				}
-			}
-		}
-	}
-};
+// Row/Column randomize buttons now use plain TinierButton; logic handled in process-time triggers.
 
-struct RandomizeTextButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			AbcdSeqWidget *sw = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *s = dynamic_cast<AbcdSeq*>(sw->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-            if(shiftDown){
-                sw->orderTextField->setText(DEFAULT_TEXT);
-            } else {
-			    s->randomizeTextOnly();
-            }
-		}
-	}
-};
-
-// Randomize a single row's notes
-struct RandomizeRowNotesButton : TinierButton {
-	int row = 0;
-	void onButton(const event::Button &e) override {
-		TinierButton::onButton(e);
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
-			if (!mod) return;
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int x = 0; x < 8; x++) {
-				int idx = row * 8 + x;
-				if (shiftDown) {
-					wid->seqKnobs[idx]->getParamQuantity()->setValue(3);
-				} else {
-					wid->seqKnobs[idx]->getParamQuantity()->setValue(mod->getOneRandomNote());
-				}
-			}
-		}
-	}
-};
-
-// Randomize a single column's notes
-struct RandomizeColNotesButton : TinierButton {
-	int col = 0;
-	void onButton(const event::Button &e) override {
-		TinierButton::onButton(e);
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			AbcdSeqWidget *wid = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *mod = dynamic_cast<AbcdSeq*>(wid->module);
-			if (!mod) return;
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int r = 0; r < 4; r++) {
-				int idx = r * 8 + col;
-				if (shiftDown) {
-					wid->seqKnobs[idx]->getParamQuantity()->setValue(3);
-				} else {
-					wid->seqKnobs[idx]->getParamQuantity()->setValue(mod->getOneRandomNote());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeLengthsButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			AbcdSeqWidget *sw = this->getAncestorOfType<AbcdSeqWidget>();
-			AbcdSeq *s = dynamic_cast<AbcdSeq*>(sw->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 4; i++) {
-				if (shiftDown) {
-					sw->lengthKnobs[i]->getParamQuantity()->setValue(4.0);
-				} else {
-					s->randomizeLengthsOnly();
-				}
-			}
-		}
-	}
-};
+// UI Randomize Text/Lengths buttons converted to process-time triggers; using plain TinyButton.
 
 struct OrderDisplay : LedDisplay {
     OrderTextField* textField;
@@ -855,19 +762,19 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(189, paramY), module, AbcdSeq::VOLT_MAX_PARAM));//RANGE
 	addInput(createInput<TinyPJ301MPort>(Vec(194, 345), module, AbcdSeq::VOLT_MAX_INPUT));//RANGE
 
-	addParam(createParam<RandomizeGatesButton>(Vec(230, paramY+10), module, AbcdSeq::RND_GATES_PARAM));
+	addParam(createParam<TinyButton>(Vec(230, paramY+10), module, AbcdSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, AbcdSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeNotesButton>(Vec(255, paramY+10), module, AbcdSeq::RND_CV_PARAM));
+	addParam(createParam<TinyButton>(Vec(255, paramY+10), module, AbcdSeq::RND_CV_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, AbcdSeq::RND_CV_INPUT));
 
-	addParam(createParam<RandomizeVelButton>(Vec(279, paramY+10), module, AbcdSeq::RND_VELS_PARAM));
+	addParam(createParam<TinyButton>(Vec(279, paramY+10), module, AbcdSeq::RND_VELS_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, AbcdSeq::RND_VELS_INPUT));
 
-	addParam(createParam<RandomizeTextButton>(Vec(304, paramY+10), module, AbcdSeq::RND_TEXT_PARAM));
+	addParam(createParam<TinyButton>(Vec(304, paramY+10), module, AbcdSeq::RND_TEXT_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(304, 345), module, AbcdSeq::RND_TEXT_INPUT));
 
-	addParam(createParam<RandomizeLengthsButton>(Vec(329, paramY+10), module, AbcdSeq::RND_LENGTHS_PARAM));
+	addParam(createParam<TinyButton>(Vec(329, paramY+10), module, AbcdSeq::RND_LENGTHS_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(329, 345), module, AbcdSeq::RND_LENGTHS_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
@@ -875,19 +782,17 @@ AbcdSeqWidget::AbcdSeqWidget(AbcdSeq *module) {
 	double boxSizeY = 61;
     int idx = 0;
 
-	// Column randomize buttons above grid
+	// Column randomize buttons above grid (plain TinierButton)
 	for (int x = 0; x < 8; x++) {
 		int knobX = x * boxSizeX + 75;
-		RandomizeColNotesButton* cbtn = createParam<RandomizeColNotesButton>(Vec(knobX + 12, 49), module, AbcdSeq::RND_COL_PARAM + x);
-		cbtn->col = x;
+		ParamWidget* cbtn = createParam<TinierButton>(Vec(knobX + 12, 49), module, AbcdSeq::RND_COL_PARAM + x);
 		addParam(cbtn);
 	}
 	for (int y = 0; y < 4; y++) {
         int knobX = 0;
         int knobY = y * boxSizeY + 78;
-		// Row randomize button next to each row
-		RandomizeRowNotesButton* rbtn = createParam<RandomizeRowNotesButton>(Vec(37, knobY + 20), module, AbcdSeq::RND_ROW_PARAM + y);
-		rbtn->row = y;
+		// Row randomize button next to each row (plain TinierButton)
+		ParamWidget* rbtn = createParam<TinierButton>(Vec(37, knobY + 20), module, AbcdSeq::RND_ROW_PARAM + y);
 		addParam(rbtn);
 		for (int x = 0; x < 8; x++) {
 			knobX = x * boxSizeX + 60;

@@ -246,16 +246,19 @@ void EightSeq::process(const ProcessArgs &args) {
 	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 8.0);
 	if(running){
 
-		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
+		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage() + params[RND_NOTES_PARAM].getValue())) {
 			randomizeNotesOnly();
+			params[RND_NOTES_PARAM].setValue(0.f);
 		}
 
-		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage())) {
+		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage() + params[RND_GATES_PARAM].getValue())) {
 			randomizeGateStates();
+			params[RND_GATES_PARAM].setValue(0.f);
 		}
 
-		if (rndProbsTrigger.process(inputs[RND_PROBS_INPUT].getVoltage())) {
+		if (rndProbsTrigger.process(inputs[RND_PROBS_INPUT].getVoltage() + params[RND_PROBS_PARAM].getValue())) {
 			randomizeProbsOnly();
+			params[RND_PROBS_PARAM].setValue(0.f);
 		}
 
 		if (rightTrigger.process(inputs[RIGHT_INPUT].getVoltage())) {
@@ -356,59 +359,7 @@ struct EightSeqWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomizeNotes8SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
-			EightSeq *mod = dynamic_cast<EightSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 8; i++) {
-				if (shiftDown) {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeProbs8SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			EightSeqWidget *wid = this->getAncestorOfType<EightSeqWidget>();
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 8; i++) {
-				if (shiftDown) {
-					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else {
-					wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeGates8SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			EightSeqWidget *gsw = this->getAncestorOfType<EightSeqWidget>();
-			EightSeq *gs = dynamic_cast<EightSeq*>(gsw->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 8; i++) {
-				if (shiftDown) {
-					gs->gateState[i] = true;
-				} else {
-					bool active = random::uniform() > 0.5;
-					gs->gateState[i] = active;
-				}
-			}
-		}
-	}
-};
+// Randomize buttons now handled in process() via triggers; use plain TinyButton widgets
 
 EightSeqWidget::EightSeqWidget(EightSeq *module) {
 	setModule(module);
@@ -460,13 +411,13 @@ EightSeqWidget::EightSeqWidget(EightSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(189, paramY), module, EightSeq::VOLT_MAX_PARAM));//RANGE
 	addInput(createInput<TinyPJ301MPort>(Vec(194, 345), module, EightSeq::VOLT_MAX_INPUT));//RANGE
 
-	addParam(createParam<RandomizeGates8SeqOnlyButton>(Vec(230, paramY+10), module, EightSeq::RND_GATES_PARAM));
+	addParam(createParam<TinyButton>(Vec(230, paramY+10), module, EightSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, EightSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeProbs8SeqOnlyButton>(Vec(255, paramY+10), module, EightSeq::RND_PROBS_PARAM));
+	addParam(createParam<TinyButton>(Vec(255, paramY+10), module, EightSeq::RND_PROBS_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, EightSeq::RND_PROBS_INPUT));
 
-	addParam(createParam<RandomizeNotes8SeqOnlyButton>(Vec(279, paramY+10), module, EightSeq::RND_NOTES_PARAM));
+	addParam(createParam<TinyButton>(Vec(279, paramY+10), module, EightSeq::RND_NOTES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, EightSeq::RND_NOTES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////

@@ -353,16 +353,19 @@ void GridSeq::process(const ProcessArgs &args) {
 
 	if(running){
 
-		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
+		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage() + params[RND_NOTES_PARAM].getValue())) {
 			randomizeNotesOnly();
+			params[RND_NOTES_PARAM].setValue(0.f);
 		}
 
-		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage())) {
+		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage() + params[RND_GATES_PARAM].getValue())) {
 			randomizeGateStates();
+			params[RND_GATES_PARAM].setValue(0.f);
 		}
 
-		if (rndProbsTrigger.process(inputs[RND_PROBS_INPUT].getVoltage())) {
+		if (rndProbsTrigger.process(inputs[RND_PROBS_INPUT].getVoltage() + params[RND_PROBS_PARAM].getValue())) {
 			randomizeProbsOnly();
+			params[RND_PROBS_PARAM].setValue(0.f);
 		}
 
 		if (repeatTrigger.process(inputs[REPEAT_INPUT].getVoltage() + params[REP_MOVE_BTN_PARAM].getValue())) {
@@ -473,58 +476,7 @@ struct GridSeqWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomizeNotesOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
-			GridSeq *mod = dynamic_cast<GridSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 16; i++) {
-				if (shiftDown) {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeProbsOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			GridSeqWidget *wid = this->getAncestorOfType<GridSeqWidget>();
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 16; i++) {
-				if (shiftDown) {
-					wid->probKnobs[i]->getParamQuantity()->setValue(1);
-				} else {
-					wid->probKnobs[i]->getParamQuantity()->setValue(random::uniform());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeGatesOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			GridSeqWidget *gsw = this->getAncestorOfType<GridSeqWidget>();
-			GridSeq *gs = dynamic_cast<GridSeq*>(gsw->module);
-			for (int i = 0; i < 16; i++) {
-				if ((e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
-					gs->gateState[i] = true;
-				} else {
-					bool active = random::uniform() > 0.5;
-					gs->gateState[i] = active;
-				}
-			}
-		}
-	}
-};
+// Randomize buttons now handled in process() via triggers; use plain TinyButton widgets
 
 GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	setModule(module);
@@ -591,13 +543,13 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(189, paramY), module, GridSeq::VOLT_MAX_PARAM));//RANGE
 	addInput(createInput<TinyPJ301MPort>(Vec(194, 345), module, GridSeq::VOLT_MAX_INPUT));//RANGE
 
-	addParam(createParam<RandomizeGatesOnlyButton>(Vec(230, paramY+10), module, GridSeq::RND_GATES_PARAM));
+	addParam(createParam<TinyButton>(Vec(230, paramY+10), module, GridSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, GridSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeProbsOnlyButton>(Vec(255, paramY+10), module, GridSeq::RND_PROBS_PARAM));
+	addParam(createParam<TinyButton>(Vec(255, paramY+10), module, GridSeq::RND_PROBS_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, GridSeq::RND_PROBS_INPUT));
 
-	addParam(createParam<RandomizeNotesOnlyButton>(Vec(279, paramY+10), module, GridSeq::RND_NOTES_PARAM));
+	addParam(createParam<TinyButton>(Vec(279, paramY+10), module, GridSeq::RND_NOTES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, GridSeq::RND_NOTES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////

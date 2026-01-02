@@ -82,6 +82,7 @@ struct BouncyBalls : Module {
 	float rate = 1.0 / APP->engine->getSampleRate();
 	// Gate pulse length in seconds for edge/paddle direction triggers
 	float gatePulseLenSec = 0.005f;
+	dsp::SchmittTrigger padOnTrigger;
 	
 	Ball *balls = new Ball[4];
 	Paddle paddle;
@@ -198,6 +199,13 @@ struct BouncyBalls : Module {
 };
 
 void BouncyBalls::process(const ProcessArgs &args) {	
+	// Process-time toggle for paddle visibility via button param
+	if (padOnTrigger.process(params[PAD_ON_PARAM].getValue())) {
+		paddle.visible = !paddle.visible;
+		lights[PAD_ON_LIGHT].value = paddle.visible ? 1.0 : 0.0;
+		params[PAD_ON_PARAM].setValue(0.0f);
+	}
+
 	for(int i=0; i<4; i++){
 		Ball &b = balls[i];
 		Vec velocity = Vec(params[VEL_X_PARAM + i].getValue() + inputs[VEL_X_INPUT + i].getVoltage(), 
@@ -445,19 +453,7 @@ struct BouncyBallsWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct PaddleVisibleButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if (e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT) {
-			BouncyBallsWidget *widg = this->getAncestorOfType<BouncyBallsWidget>();
-			if(widg->module){
-				BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(widg->module);
-				bbs->paddle.visible = !bbs->paddle.visible;
-				bbs->lights[BouncyBalls::PAD_ON_LIGHT].value = bbs->paddle.visible ? 1.0 : 0.0;
-			}
-		}
-	}
-};
+// Paddle visibility button converted to process-time trigger; using plain TinyButton.
 
 BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) {
 	setModule(module);
@@ -551,7 +547,7 @@ BouncyBallsWidget::BouncyBallsWidget(BouncyBalls *module) {
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 220), BouncyBalls::PAD_POS_X_INPUT, true);
 	addColoredPort(WHITE_INPUT_COLOR, Vec(38, 245), BouncyBalls::PAD_POS_Y_INPUT, true);
 
-	addParam(createParam<PaddleVisibleButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM));
+	addParam(createParam<TinyButton>(Vec(38, 270), module, BouncyBalls::PAD_ON_PARAM));
 	addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(38+3.75, 270+3.75), module, BouncyBalls::PAD_ON_LIGHT));
 
 	//scale and offset

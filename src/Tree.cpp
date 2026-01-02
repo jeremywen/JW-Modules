@@ -86,8 +86,9 @@ struct Tree : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		if (rndTrigger.process(inputs[RND_INPUT].getVoltage())) {
+		if (rndTrigger.process(inputs[RND_INPUT].getVoltage() + params[RND_PARAM].getValue())) {
 			generateRnd();
+			params[RND_PARAM].setValue(0.0f);
 		}
 	}
 };
@@ -207,16 +208,7 @@ struct TreeWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomizeButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			TreeWidget *tw = this->getAncestorOfType<TreeWidget>();
-			Tree *twm = dynamic_cast<Tree*>(tw->module);
-			twm->generateRnd();
-		}
-	}
-};
+// Randomize button converted to process-time trigger; using plain TinyButton in widget.
 
 TreeWidget::TreeWidget(Tree *module) {
 	setModule(module);
@@ -270,7 +262,7 @@ TreeWidget::TreeWidget(Tree *module) {
 	addParam(createParam<JwTinyKnob>(Vec(180, 360), module, Tree::HUE_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(205, 360), module, Tree::RND_INPUT));
-	addParam(createParam<RandomizeButton>(Vec(220, 360), module, Tree::RND_PARAM));
+	addParam(createParam<TinyButton>(Vec(220, 360), module, Tree::RND_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(245, 360), module, Tree::JITTER_AMT_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(260, 360), module, Tree::JITTER_AMT_PARAM));

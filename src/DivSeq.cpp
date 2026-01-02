@@ -255,16 +255,19 @@ void DivSeq::process(const ProcessArgs &args) {
 	int len = clampijw(params[LENGTH_KNOB_PARAM].getValue() + inputOffset, 1.0, 16.0);
 	if(running){
 
-		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage())) {
+		if (rndNotesTrigger.process(inputs[RND_NOTES_INPUT].getVoltage() + params[RND_NOTES_PARAM].getValue())) {
 			randomizeNotesOnly();
+			params[RND_NOTES_PARAM].setValue(0.0f);
 		}
 
-		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage())) {
+		if (rndGatesTrigger.process(inputs[RND_GATES_INPUT].getVoltage() + params[RND_GATES_PARAM].getValue())) {
 			randomizeGateStates();
+			params[RND_GATES_PARAM].setValue(0.0f);
 		}
 
-		if (rndDivsTrigger.process(inputs[RND_DIVS_INPUT].getVoltage())) {
+		if (rndDivsTrigger.process(inputs[RND_DIVS_INPUT].getVoltage() + params[RND_DIVS_PARAM].getValue())) {
 			randomizeDivsOnly();
+			params[RND_DIVS_PARAM].setValue(0.0f);
 		}
 
 		if (rightTrigger.process(inputs[RIGHT_INPUT].getVoltage())) {
@@ -341,61 +344,7 @@ struct DivSeqWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-struct RandomizeNotes16SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
-			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 16; i++) {
-				if (shiftDown) {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(3);
-				} else {
-					wid->seqKnobs[i]->getParamQuantity()->setValue(mod->getOneRandomNote());
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeDivs16SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			DivSeqWidget *wid = this->getAncestorOfType<DivSeqWidget>();
-			DivSeq *mod = dynamic_cast<DivSeq*>(wid->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 16; i++) {
-				if (shiftDown) {
-					wid->divKnobs[i]->getParamQuantity()->setValue(1);
-				} else {
-					int maxD = std::max(1, mod ? mod->divMax : 64);
-					wid->divKnobs[i]->getParamQuantity()->setValue((int)(random::uniform()*maxD + 1));
-				}
-			}
-		}
-	}
-};
-
-struct RandomizeGates16SeqOnlyButton : TinyButton {
-	void onButton(const event::Button &e) override {
-		TinyButton::onButton(e);
-		if(e.action == GLFW_PRESS && e.button == GLFW_MOUSE_BUTTON_LEFT){
-			DivSeqWidget *gsw = this->getAncestorOfType<DivSeqWidget>();
-			DivSeq *gs = dynamic_cast<DivSeq*>(gsw->module);
-			bool shiftDown = (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
-			for (int i = 0; i < 16; i++) {
-				if (shiftDown) {
-					gs->gateState[i] = true;
-				} else {
-					bool active = random::uniform() > 0.5;
-					gs->gateState[i] = active;
-				}
-			}
-		}
-	}
-};
+// UI randomization buttons converted to process-time triggers; using plain TinyButton.
 
 DivSeqWidget::DivSeqWidget(DivSeq *module) {
 	setModule(module);
@@ -448,13 +397,13 @@ DivSeqWidget::DivSeqWidget(DivSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(189, paramY), module, DivSeq::VOLT_MAX_PARAM));//RANGE
 	addInput(createInput<TinyPJ301MPort>(Vec(194, 345), module, DivSeq::VOLT_MAX_INPUT));//RANGE
 
-	addParam(createParam<RandomizeGates16SeqOnlyButton>(Vec(230, paramY+10), module, DivSeq::RND_GATES_PARAM));
+	addParam(createParam<TinyButton>(Vec(230, paramY+10), module, DivSeq::RND_GATES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(230, 345), module, DivSeq::RND_GATES_INPUT));
 
-	addParam(createParam<RandomizeDivs16SeqOnlyButton>(Vec(255, paramY+10), module, DivSeq::RND_DIVS_PARAM));
+	addParam(createParam<TinyButton>(Vec(255, paramY+10), module, DivSeq::RND_DIVS_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(255, 345), module, DivSeq::RND_DIVS_INPUT));
 
-	addParam(createParam<RandomizeNotes16SeqOnlyButton>(Vec(279, paramY+10), module, DivSeq::RND_NOTES_PARAM));
+	addParam(createParam<TinyButton>(Vec(279, paramY+10), module, DivSeq::RND_NOTES_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(279, 345), module, DivSeq::RND_NOTES_INPUT));
 
 	//// MAIN SEQUENCER KNOBS ////
