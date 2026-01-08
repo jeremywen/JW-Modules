@@ -5,6 +5,7 @@ Support my work on these free modules by becoming a patreon here https://www.pat
 ## v2.0.25 ~ 1-?-26
 
   * added position knob to grains
+  * added input for loading random samples
   * fixed posible crash in samplegrid
 
 ## v2.0.24 ~ 1-8-26
