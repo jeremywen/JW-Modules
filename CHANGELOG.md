@@ -4,6 +4,11 @@ Support my work on these free modules by becoming a patreon here https://www.pat
 
 ## v2.0.25 ~ 1-?-26
 
+  * added position knob to grains
+  * fixed posible crash in samplegrid
+
+## v2.0.24 ~ 1-8-26
+
   * SampleGrid: NEW MODULE - a 16 sample player with random loading, shuffling, and slicing
   * changes mouse button events on a button to be handled by triggers in process method
   * added position knob to grains
