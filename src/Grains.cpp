@@ -26,6 +26,7 @@ struct Grains : Module {
 		PAN_RANDOMNESS,
 		RANDOM_BUTTON,
 		REC_SWITCH,
+		POSITION_KNOB,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -98,6 +99,7 @@ struct Grains : Module {
 		configOutput(OUT_L, "Audio L");
 		configOutput(OUT_R, "Audio R");
 		configInput(POSITION_INPUT, "Position CV (0–10V)");
+		configParam(POSITION_KNOB, 0.f, 1.f, 0.f, "Position");
 		configInput(PITCH_INPUT, "Pitch CV (1V/Oct)");
 		configInput(SIZE_CV, "Grain Size CV (0–10V)");
 		configInput(DENSITY_CV, "Grain Density CV (0–10V)");
@@ -290,11 +292,16 @@ void Grains::process(const ProcessArgs &args) {
 		return;
 	}
 
+	// Position: knob is base, CV adds an offset (in 0..1 per 0..10V)
+	float f = std::max(0.f, std::min(1.f, params[POSITION_KNOB].getValue()));
 	if (inputs[POSITION_INPUT].isConnected()) {
 		float v = inputs[POSITION_INPUT].getVoltage();
-		float f = std::max(0.f, std::min(1.f, v / 10.f));
-		playPos = f * std::max(0.0, (double)sampleL.size() - 1.0);
+		float offset = v / 10.f; // allow negative CV to subtract
+		f += offset;
+		if (f < 0.f) f = 0.f;
+		if (f > 1.f) f = 1.f;
 	}
+	playPos = (double)f * std::max(0.0, (double)sampleL.size() - 1.0);
 
 	double srHost = args.sampleRate;
 	// Base params
@@ -1048,6 +1055,7 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	float topY = 342;
 	
 	addInput(createInput<TinyPJ301MPort>(Vec(85, topY), module, Grains::POSITION_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(105, topY), module, Grains::POSITION_KNOB));
 	addInput(createInput<TinyPJ301MPort>(Vec(141, topY), module, Grains::PITCH_INPUT));
 	addParam(createParam<JwTinyKnob>(Vec(161, topY), module, Grains::GRAIN_PITCH_SEMI));
 	

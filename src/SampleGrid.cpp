@@ -40,13 +40,14 @@ struct SampleGrid : Module {
 		RESET_INPUT,
 		RIGHT_INPUT, LEFT_INPUT, DOWN_INPUT, UP_INPUT,
 		REPEAT_INPUT,
-		RND_DIR_INPUT,		
+		RND_DIR_INPUT,
 		VOLT_MAX_INPUT,
 		VOCT_INPUT,
 		GATE_INPUT,
 		SHUFFLE_INPUT,
 		REVERSE_RND_INPUT,
 		RND_MUTES_INPUT,
+		RND_SAMPLES_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -75,6 +76,7 @@ struct SampleGrid : Module {
 	dsp::SchmittTrigger gateTriggers[16];
 
 	dsp::SchmittTrigger gateInTrigger;
+	dsp::SchmittTrigger rndSamplesInTrigger;
 	dsp::SchmittTrigger shuffleInTrigger;
 	dsp::SchmittTrigger reverseRandomInTrigger;
 	dsp::SchmittTrigger rndMutesInTrigger;
@@ -557,6 +559,7 @@ struct SampleGrid : Module {
 		configInput(DOWN_INPUT, "Down");
 		configInput(UP_INPUT, "Up");
 		configInput(RND_DIR_INPUT, "Random");
+		configInput(RND_SAMPLES_INPUT, "Load Random Samples Trigger");
 		configInput(REPEAT_INPUT, "Repeat");
 		configInput(RESET_INPUT, "Reset");
 		configInput(VOLT_MAX_INPUT, "Range");
@@ -566,6 +569,19 @@ struct SampleGrid : Module {
 		configInput(REVERSE_RND_INPUT, "Reverse Random Trigger");
 		configInput(RND_MUTES_INPUT, "Randomize Mutes Trigger");
 		configOutput(AUDIO_OUTPUT, "Audio");
+
+		// Ensure module starts with no loaded samples
+		for (int i = 0; i < 16; ++i) {
+			cellSamples[i].clear();
+			cellSamplePath[i].clear();
+			cellSampleRate[i] = 0;
+			cellStartFrac[i] = 0.f;
+			cellIsSlice[i] = false;
+			cellSliceStartFrac[i] = 0.f;
+			cellSliceEndFrac[i] = 1.f;
+			cellReversed[i] = false;
+		}
+		playingCell = -1;
 	}
 
 	void process(const ProcessArgs &args) override;
@@ -803,9 +819,22 @@ struct SampleGrid : Module {
 	}
 
 	void onReset() override {
+		// Reset gate states
 		for (int i = 0; i < 16; i++) {
 			gateState[i] = true;
 		}
+		// Clear all loaded samples and related metadata on initialize
+		for (int i = 0; i < 16; ++i) {
+			cellSamples[i].clear();
+			cellSamplePath[i].clear();
+			cellSampleRate[i] = 0;
+			cellStartFrac[i] = 0.f;
+			cellIsSlice[i] = false;
+			cellSliceStartFrac[i] = 0.f;
+			cellSliceEndFrac[i] = 1.f;
+			cellReversed[i] = false;
+		}
+		playingCell = -1;
 	}
 
 	void onRandomize() override {
@@ -948,6 +977,12 @@ void SampleGrid::process(const ProcessArgs &args) {
 	}
 
 	// Bottom control trigger inputs
+	if (rndSamplesInTrigger.process(inputs[RND_SAMPLES_INPUT].getVoltage())) {
+		// Avoid UI dialogs from audio thread; only load if directory is set
+		if (!sampleDir.empty()) {
+			loadRandomSamplesFromDir(sampleDir);
+		}
+	}
 	if (shuffleInTrigger.process(inputs[SHUFFLE_INPUT].getVoltage())) {
 		shuffleSamples();
 	}
@@ -1199,43 +1234,64 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 				}
 				void draw(const DrawArgs &args) override {
 					NVGcontext *vg = args.vg; const float w = box.size.x, h = box.size.y;
+					// Guard against degenerate sizes
+					if (w <= 0.f || h <= 0.f) return;
 					nvgBeginPath(vg); nvgRect(vg, 0, 0, w, h);
 					// Base background: solid black
 					nvgFillColor(vg, nvgRGBA(0, 0, 0, 255));
 					nvgFill(vg);
+					nvgStrokeColor(vg, nvgRGBA(200,200,200,160)); nvgStrokeWidth(vg, 1.f); nvgStroke(vg);
+
+					// If no module (browser preview), draw placeholder and exit
+					if (!module) {
+						nvgFontSize(vg, 10.f); nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+						nvgFillColor(vg, nvgRGBA(180,180,180,160)); nvgText(vg, w*0.5f, h*0.5f, "load", nullptr);
+						return;
+					}
+
 					// Highlight background when this cell's sample is playing
-					if (module && module->playingCell == cell) {
+					if (module->playingCell == cell) {
+						nvgBeginPath(vg); nvgRect(vg, 0, 0, w, h);
 						nvgFillColor(vg, nvgRGBA(255, 140, 0, 64));
 						nvgFill(vg);
 					}
-					nvgStrokeColor(vg, nvgRGBA(200,200,200,160)); nvgStrokeWidth(vg, 1.f); nvgStroke(vg);
-					if (!module) return; const auto &buf = module->cellSamples[cell];
-					if (buf.empty()) { nvgFontSize(vg, 10.f); nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-						nvgFillColor(vg, nvgRGBA(180,180,180,160)); nvgText(vg, w*0.5f, h*0.5f, "load", nullptr); return; }
-						nvgBeginPath(vg); nvgStrokeColor(vg, nvgRGB(25,150,252)); nvgStrokeWidth(vg, 1.0f);
-						const size_t N = buf.size();
-						for (int x = 0; x < (int)w; ++x) {
-							size_t i0 = (size_t)((double)x / (double)w * (double)N);
-							size_t span = std::max((size_t)1, (size_t)(N / (size_t)w));
-							float minV = 1.f, maxV = -1.f;
-							for (size_t i = i0; i < std::min(i0 + span, N); ++i) { float v = buf[i]; minV = std::min(minV, v); maxV = std::max(maxV, v); }
-							float y1 = h * (0.5f - 0.45f * maxV);
-							float y2 = h * (0.5f - 0.45f * minV);
-							nvgMoveTo(vg, (float)x, y1); nvgLineTo(vg, (float)x, y2);
-						}
-						nvgStroke(vg);
 
-						// Draw start position marker
-						float sx = module->cellStartFrac[cell] * w;
-						nvgBeginPath(vg);
-						nvgMoveTo(vg, sx, 0);
-						nvgLineTo(vg, sx, h);
-						nvgStrokeColor(vg, nvgRGBA(255, 200, 0, 200));
-						nvgStrokeWidth(vg, 1.0f);
-						nvgStroke(vg);
+					// Waveform rendering
+					const int ci = cell;
+					if (ci < 0 || ci >= 16) return;
+					const auto &buf = module->cellSamples[ci];
+					if (buf.empty()) {
+						nvgFontSize(vg, 10.f); nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+						nvgFillColor(vg, nvgRGBA(180,180,180,160)); nvgText(vg, w*0.5f, h*0.5f, "load", nullptr);
+						return;
+					}
+					nvgBeginPath(vg); nvgStrokeColor(vg, nvgRGB(25,150,252)); nvgStrokeWidth(vg, 1.0f);
+					const size_t N = buf.size();
+					const size_t wpx = (size_t)std::max(1.f, w);
+					for (size_t x = 0; x < wpx; ++x) {
+						size_t i0 = (size_t)((double)x / (double)wpx * (double)N);
+						i0 = std::min(i0, N ? (N - 1) : (size_t)0);
+						size_t span = std::max((size_t)1, N / wpx);
+						float minV = 1.f, maxV = -1.f;
+						const size_t iEnd = std::min(i0 + span, N);
+						for (size_t i = i0; i < iEnd; ++i) { float v = buf[i]; minV = std::min(minV, v); maxV = std::max(maxV, v); }
+						float y1 = h * (0.5f - 0.45f * maxV);
+						float y2 = h * (0.5f - 0.45f * minV);
+						nvgMoveTo(vg, (float)x, y1); nvgLineTo(vg, (float)x, y2);
+					}
+					nvgStroke(vg);
+
+					// Draw start position marker
+					float sx = clampfjw(module->cellStartFrac[ci], 0.f, 1.f) * w;
+					nvgBeginPath(vg);
+					nvgMoveTo(vg, sx, 0);
+					nvgLineTo(vg, sx, h);
+					nvgStrokeColor(vg, nvgRGBA(255, 200, 0, 200));
+					nvgStrokeWidth(vg, 1.0f);
+					nvgStroke(vg);
 
 					// If this cell would play on the current step but is muted, tint background red
-					if (module && module->running && module->index == cell) {
+					if (module->running && module->index == cell) {
 						if (!module->gateState[cell]) {
 							nvgBeginPath(vg);
 							nvgRect(vg, 0, 0, w, h);
@@ -1329,6 +1385,8 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 	addParam(createParam<SmallButton>(Vec(210, 335), module, SampleGrid::REVERSE_RANDOM_PARAM));
 	addParam(createParam<SmallButton>(Vec(250, 335), module, SampleGrid::RND_MUTES_PARAM));
 	// Trigger inputs below control buttons
+	// Trigger inputs below control buttons
+	addInput(createInput<TinyPJ301MPort>(Vec(75, 360), module, SampleGrid::RND_SAMPLES_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(174, 360), module, SampleGrid::SHUFFLE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(215, 360), module, SampleGrid::REVERSE_RND_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(255, 360), module, SampleGrid::RND_MUTES_INPUT));
