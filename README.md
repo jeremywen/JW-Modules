@@ -59,6 +59,12 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 a 16 sample player with random loading, shuffling, and slicing
 
+NOTE: clicking 'X' on a pad mutes it
+
+NOTE: clicking the sine wave on a pad loads a new sample
+
+NOTE: clicking the dice on a pad loads a randomd sample
+
 * **Right Arrow:** moves sequencer position right and plays that cell
 * **Left Arrow:** moves sequencer position left and plays that cell
 * **Down Arrow:** moves sequencer position down and plays that cell
