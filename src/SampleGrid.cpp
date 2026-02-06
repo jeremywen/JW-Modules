@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstring>
 #include "osdialog.h"
+#include "system.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 #ifdef _WIN32
@@ -134,6 +135,85 @@ struct SampleGrid : Module {
 
 	// Selected directory for random sample loading
 	std::string sampleDir;
+
+	// Track whether we loaded audio from patch storage so JSON path loading can be skipped
+	bool loadedFromPatchStorage = false;
+
+	// Write a mono PCM16 WAV file
+	static bool writeMonoWav(const std::string &path, const std::vector<float> &mono, int sRate) {
+		if (mono.empty()) return false;
+		uint16_t numChannels = 1;
+		uint16_t bitsPerSample = 16;
+		uint32_t sampleRate = (sRate > 0) ? (uint32_t)sRate : 44100u;
+		uint16_t bytesPerSample = bitsPerSample / 8; // 2
+		uint16_t blockAlign = numChannels * bytesPerSample; // 2
+		uint32_t byteRate = sampleRate * blockAlign;
+		uint32_t dataSize = (uint32_t)(mono.size() * blockAlign);
+		std::ofstream out(path, std::ios::binary);
+		if (!out.good()) return false;
+		auto wU32 = [&](uint32_t v){ char b[4]; b[0]=(char)(v & 0xFF); b[1]=(char)((v>>8)&0xFF); b[2]=(char)((v>>16)&0xFF); b[3]=(char)((v>>24)&0xFF); out.write(b,4); };
+		auto wU16 = [&](uint16_t v){ char b[2]; b[0]=(char)(v & 0xFF); b[1]=(char)((v>>8)&0xFF); out.write(b,2); };
+		// RIFF
+		out.write("RIFF", 4);
+		wU32(36u + dataSize);
+		out.write("WAVE", 4);
+		// fmt
+		out.write("fmt ", 4);
+		wU32(16u);
+		wU16(1u); // PCM
+		wU16(numChannels);
+		wU32(sampleRate);
+		wU32(byteRate);
+		wU16(blockAlign);
+		wU16(bitsPerSample);
+		// data
+		out.write("data", 4);
+		wU32(dataSize);
+		for (size_t i = 0; i < mono.size(); ++i) {
+			float f = std::max(-1.f, std::min(1.f, mono[i]));
+			int s = (int)std::lround(f * 32767.0f);
+			if (s < -32768) s = -32768; if (s > 32767) s = 32767;
+			wU16((uint16_t)(s & 0xFFFF));
+		}
+		out.flush();
+		bool ok = out.good();
+		out.close();
+		return ok;
+	}
+
+	void onAdd(const AddEvent& e) override {
+		Module::onAdd(e);
+		loadedFromPatchStorage = false;
+		std::string dir = getPatchStorageDirectory();
+		if (!dir.empty()) {
+			int loadedCount = 0;
+			for (int i = 0; i < 16; ++i) {
+				char name[32]; snprintf(name, sizeof(name), "cell_%02d.wav", i);
+				std::string p = rack::system::join(dir, std::string(name));
+				std::ifstream f(p, std::ios::binary);
+				if (f.good()) { f.close(); if (loadCellSample(i, p)) loadedCount++; }
+			}
+			if (loadedCount > 0) loadedFromPatchStorage = true;
+		}
+	}
+
+	void onSave(const SaveEvent& e) override {
+		Module::onSave(e);
+		std::string dir = createPatchStorageDirectory();
+		if (dir.empty()) return;
+		for (int i = 0; i < 16; ++i) {
+			char name[32]; snprintf(name, sizeof(name), "cell_%02d.wav", i);
+			std::string p = rack::system::join(dir, std::string(name));
+			if (cellSamples[i].empty()) {
+				// Ensure unloaded cells don't reload: remove any existing patch-storage file
+				rack::system::remove(p);
+			}
+			else {
+				int sr = (cellSampleRate[i] > 0) ? cellSampleRate[i] : 44100;
+				writeMonoWav(p, cellSamples[i], sr);
+			}
+		}
+	}
 
 	// Collect all WAV file paths in a directory (case-insensitive .wav)
 	bool collectWavsInDir(const std::string &dir, std::vector<std::string> &wavs) {
@@ -742,8 +822,9 @@ struct SampleGrid : Module {
 		}
 
 		// Per-cell sample paths load, reconstructing slices when flagged
+		// If we already loaded from patch storage in onAdd(), skip loading from external paths to let patch storage win.
 		json_t *pathsJ = json_object_get(rootJ, "cellSamplePaths");
-		if (pathsJ && json_is_array(pathsJ)) {
+		if (!loadedFromPatchStorage && pathsJ && json_is_array(pathsJ)) {
 			std::unordered_map<std::string, std::pair<std::vector<float>, int>> wavMonoCache;
 			for (int i = 0; i < 16; ++i) {
 				json_t *sJ = json_array_get(pathsJ, i);
@@ -1186,15 +1267,28 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							e.consume(this);
 							return;
 						}
-						// X click: toggle gate state (on/off)
+						// X click: unload (clear) this cell's sample
 						if (m.x >= xRx && m.x <= xRx + d && m.y >= xRy && m.y <= xRy + d) {
-							module->gateState[cell] = !module->gateState[cell];
+							module->cellSamples[cell].clear();
+							module->cellSamplePath[cell].clear();
+							module->cellSampleRate[cell] = 0;
+							module->cellStartFrac[cell] = 0.f;
+							module->cellIsSlice[cell] = false;
+							module->cellSliceStartFrac[cell] = 0.f;
+							module->cellSliceEndFrac[cell] = 1.f;
+							module->cellReversed[cell] = false;
+							if (module->playingCell == cell) {
+								module->playingCell = -1;
+							}
 							e.consume(this);
 							return;
 						}
-						// Folder click: choose directory for random samples
+						// Folder click: replace this cell's sample via file dialog
 						if (m.x >= folderRx && m.x <= folderRx + d && m.y >= folderRy && m.y <= folderRy + d) {
-							module->chooseSampleDir();
+							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
+							osdialog_filters_free(filters);
+							if (path) { std::string p = path; free(path); module->loadCellSample(cell, p); }
 							e.consume(this);
 							return;
 						}
@@ -1219,6 +1313,14 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 					else if (e.button == GLFW_MOUSE_BUTTON_LEFT && e.action == GLFW_RELEASE) {
 						// End dragging when mouse released
 						draggingStart = false;
+						e.consume(this);
+					}
+					// Right-click anywhere on waveform opens file dialog to replace the cell sample
+					else if (e.button == GLFW_MOUSE_BUTTON_RIGHT && e.action == GLFW_PRESS) {
+						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+						char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
+						osdialog_filters_free(filters);
+						if (path) { std::string p = path; free(path); module->loadCellSample(cell, p); }
 						e.consume(this);
 					}
 				}
@@ -1265,19 +1367,31 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						nvgFillColor(vg, nvgRGBA(180,180,180,160)); nvgText(vg, w*0.5f, h*0.5f, "load", nullptr);
 						return;
 					}
-					nvgBeginPath(vg); nvgStrokeColor(vg, nvgRGB(25,150,252)); nvgStrokeWidth(vg, 1.0f);
+					nvgBeginPath(vg);
+					nvgStrokeColor(vg, nvgRGB(25,150,252));
+					nvgStrokeWidth(vg, 1.0f);
 					const size_t N = buf.size();
-					const size_t wpx = (size_t)std::max(1.f, w);
-					for (size_t x = 0; x < wpx; ++x) {
-						size_t i0 = (size_t)((double)x / (double)wpx * (double)N);
-						i0 = std::min(i0, N ? (N - 1) : (size_t)0);
-						size_t span = std::max((size_t)1, N / wpx);
+					const size_t wpx = (size_t)std::max(1.0f, std::floor(w));
+					const size_t bucket = std::max<size_t>(1, (size_t)std::floor((double)N / (double)std::max<size_t>(1, wpx)));
+					for (size_t xpix = 0; xpix < wpx; ++xpix) {
+						size_t i0 = (size_t)std::floor((double)xpix * (double)N / (double)wpx);
+						if (i0 >= N) i0 = N - 1;
+						size_t iEnd = std::min(N, i0 + bucket);
 						float minV = 1.f, maxV = -1.f;
-						const size_t iEnd = std::min(i0 + span, N);
-						for (size_t i = i0; i < iEnd; ++i) { float v = buf[i]; minV = std::min(minV, v); maxV = std::max(maxV, v); }
+						for (size_t i = i0; i < iEnd; ++i) {
+							float v = buf[i];
+							if (v < -10.f) v = -10.f; if (v > 10.f) v = 10.f; // guard extreme ranges
+							minV = std::min(minV, v);
+							maxV = std::max(maxV, v);
+						}
+						// Clamp to visible [-1,1] range for drawing, ensure at least a hairline
+						minV = std::max(-1.f, std::min(1.f, minV));
+						maxV = std::max(-1.f, std::min(1.f, maxV));
+						if (maxV - minV < 1e-6f) { maxV += 0.01f; minV -= 0.01f; }
 						float y1 = h * (0.5f - 0.45f * maxV);
 						float y2 = h * (0.5f - 0.45f * minV);
-						nvgMoveTo(vg, (float)x, y1); nvgLineTo(vg, (float)x, y2);
+						nvgMoveTo(vg, (float)xpix, y1);
+						nvgLineTo(vg, (float)xpix, y2);
 					}
 					nvgStroke(vg);
 
@@ -1322,10 +1436,10 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						nvgCircle(vg, diceRx + d*0.5f, diceRy + d*0.5f, r);
 						nvgFill(vg);
 
-						// X icon top-right (toggle gate)
+						// X icon top-right (unload sample)
 						nvgBeginPath(vg);
 						nvgRoundedRect(vg, xRx, xRy, d, d, 2.f);
-						nvgFillColor(vg, module && !module->gateState[cell] ? nvgRGBA(255, 80, 80, 160) : nvgRGBA(245,245,245,200));
+						nvgFillColor(vg, module && module->cellSamples[cell].empty() ? nvgRGBA(200,200,200,140) : nvgRGBA(245,245,245,200));
 						nvgFill(vg);
 						nvgStrokeColor(vg, nvgRGBA(120,120,120,180)); nvgStrokeWidth(vg, 1.f); nvgStroke(vg);
 						nvgBeginPath(vg);

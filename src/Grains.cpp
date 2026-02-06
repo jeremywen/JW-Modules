@@ -14,6 +14,7 @@
 #include <windows.h>
 #endif
 #include "osdialog.h"
+#include "system.hpp"
 
 struct Grains : Module {
 	enum ParamIds {
@@ -27,6 +28,11 @@ struct Grains : Module {
 		RANDOM_BUTTON,
 		REC_SWITCH,
 		POSITION_KNOB,
+		REVERSE_AMOUNT,
+		AUTO_ADV_RATE,
+		RATE_AMOUNT,
+		AUTO_ADV_SWITCH,
+		SYNC_SWITCH,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -38,6 +44,9 @@ struct Grains : Module {
 		PAN_CV,
 		REC_TOGGLE,
 		REC_INPUT,
+		CLOCK_INPUT,
+		REVERSE_CV,
+		RATE_CV,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -63,6 +72,33 @@ struct Grains : Module {
 	bool autoAdvance = false;
 	bool isRecording = false;
 	bool normalPlayback = false;
+	bool syncGrains = false;
+	dsp::SchmittTrigger clockTrig;
+	// Live recording baseline tracking to minimize post-record visual shift
+	double recSumL = 0.0;
+	double recSumR = 0.0;
+	uint64_t recCount = 0;
+	// UI override: when dragging the playhead in the display, ignore knob/CV position writes
+	bool uiDraggingPlayhead = false;
+
+	// DC blocker state to suppress clicks/pops due to DC offsets
+	float dcYL = 0.f, dcYR = 0.f;      // previous HPF output per channel
+	float dcPrevXL = 0.f, dcPrevXR = 0.f; // previous input sample per channel
+	float dcR = 0.995f;                // HPF coefficient (close to 1)
+
+	// Output transition envelope to suppress clicks when switching record/playback
+	float playTransEnv = 1.f;      // current envelope value (0..1)
+	int playTransHold = 0;         // samples to hold at 0 before rising
+	int playTransRelRemain = 0;    // samples remaining in release (fade-out)
+	int playTransAtkRemain = 0;    // samples remaining in attack (fade-in)
+	float playTransRelStep = 0.f;  // per-sample decrement during release
+	float playTransAtkStep = 0.f;  // per-sample increment during attack
+
+	// Position jump de-click envelope (for sudden playhead jumps)
+	double lastPlayPosForJump = 0.0;
+	int posJumpRemain = 0;
+	float posJumpEnv = 1.f;
+	float posJumpStep = 0.f;
 
 	struct Grain {
 		double pos;
@@ -99,51 +135,51 @@ struct Grains : Module {
 		configOutput(OUT_L, "Audio L");
 		configOutput(OUT_R, "Audio R");
 		configInput(POSITION_INPUT, "Position CV (0–10V)");
-		configParam(POSITION_KNOB, 0.f, 1.f, 0.f, "Position");
+		configParam(POSITION_KNOB, 0.f, 1.f, 0.5f, "Position");
 		configInput(PITCH_INPUT, "Pitch CV (1V/Oct)");
 		configInput(SIZE_CV, "Grain Size CV (0–10V)");
-		configInput(DENSITY_CV, "Grain Density CV (0–10V)");
+		configInput(DENSITY_CV, "Grain Density CV (0–10V) Active if Rate is 0V");
+		configInput(RATE_CV, "Rate CV (0–10V) When > 0 Density is Rate");
 		configInput(SPREAD_CV, "Grain Spread CV (0–10V)");
 		configInput(PAN_CV, "Pan Randomness CV (0–10V)");
 		configInput(REC_TOGGLE, "Record Toggle (gate)");
 		configInput(REC_INPUT, "Record In (audio)");
+		configInput(CLOCK_INPUT, "Clock (gate)");
+		configInput(REVERSE_CV, "Reverse Amount CV (0–10V)");
 		configParam(GRAIN_SIZE_MS, 5.f, 2000.f, 50.f, "Grain size", " ms");
-		configParam(GRAIN_DENSITY, 0.f, 200.f, 20.f, "Grain density", " grains/s");
-		configParam(GRAIN_SPREAD_MS, 0.f, 2000.f, 30.f, "Grain spread", " ms");
+		configParam(GRAIN_DENSITY, 0.f, 200.f, 50.f, "Grain density (Active if Rate is 0)", " grains/s");
+		configParam(RATE_AMOUNT, 0.f, 200.f, 0.f, "Grain rate (When > 0 Density is Rate)", " grains/s");
+		configParam(AUTO_ADV_RATE, 0.f, 4.f, 1.f, "Auto-advance speed", " x");
+		configParam(GRAIN_SPREAD_MS, 0.f, 2000.f, 50.f, "Grain spread", " ms");
+		configSwitch(AUTO_ADV_SWITCH, 0.f, 1.f, 0.f, "Auto-advance");
+		configSwitch(SYNC_SWITCH, 0.f, 1.f, 0.f, "Sync to clock");
 		configParam(GRAIN_PITCH_SEMI, -24.f, 24.f, 0.f, "Pitch", " semitones");
 		configParam(GRAIN_GAIN, 0.f, 1.f, 0.8f, "Output gain");
-		configSwitch(WINDOW_TYPE, 0.f, 3.f, 0.f, "Window type");
+		configSwitch(WINDOW_TYPE, 0.f, 3.f, 0.f, "Window type",
+			{"Hann – smooth cosine taper",
+			 "Hamming – similar, slightly brighter",
+			 "Triangular – linear ramps",
+			 "Rectangular – sharp (soft 2% edges)"});
 		configParam(PAN_RANDOMNESS, 0.f, 1.f, 0.f, "Pan randomness");
+		configParam(REVERSE_AMOUNT, 0.f, 1.f, 0.f, "Reverse grains amount");
 		configButton(RANDOM_BUTTON, "Random sample");
 		configSwitch(REC_SWITCH, 0.f, 1.f, 0.f, "Record");
 		grains.resize(128);
 	}
 
 	void process(const ProcessArgs &args) override;
+	void onAdd(const AddEvent& e) override;
+	void onSave(const SaveEvent& e) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		if (!samplePath.empty()) {
 			json_object_set_new(rootJ, "path", json_string(samplePath.c_str()));
 		}
-		json_object_set_new(rootJ, "embed", json_boolean(embedInPatch));
 		json_object_set_new(rootJ, "autoAdvance", json_boolean(autoAdvance));
 		json_object_set_new(rootJ, "playPos", json_real(playPos));
 		json_object_set_new(rootJ, "normalPlayback", json_boolean(normalPlayback));
-		// Always embed if buffer was modified OR there is no file path (recorded/embedded)
-		// This ensures duplication and patch save/load preserve recorded audio.
-		if ((embedInPatch || bufferDirty || samplePath.empty()) && !sampleL.empty()) {
-			// Serialize float32 arrays L/R as base64
-			std::vector<uint8_t> bytesL(sampleL.size() * 4);
-			std::vector<uint8_t> bytesR(sampleR.size() * 4);
-			for (size_t i = 0; i < sampleL.size(); ++i) std::memcpy(&bytesL[i*4], &sampleL[i], 4);
-			for (size_t i = 0; i < sampleR.size(); ++i) std::memcpy(&bytesR[i*4], &sampleR[i], 4);
-			std::string b64L = b64Encode(bytesL.data(), bytesL.size());
-			std::string b64R = b64Encode(bytesR.data(), bytesR.size());
-			json_object_set_new(rootJ, "rate", json_integer(fileSampleRate));
-			json_object_set_new(rootJ, "embeddedL", json_string(b64L.c_str()));
-			json_object_set_new(rootJ, "embeddedR", json_string(b64R.c_str()));
-		}
+		json_object_set_new(rootJ, "syncGrains", json_boolean(syncGrains));
 
 		return rootJ;
 	}
@@ -166,36 +202,31 @@ struct Grains : Module {
 				playPos = std::min(std::max(0.0, savedPlayPos), maxPos);
 			}
 		}
-		json_t *embedJ = json_object_get(rootJ, "embed");
-		if (embedJ && json_is_boolean(embedJ)) embedInPatch = json_boolean_value(embedJ);
-		json_t *embLJ = json_object_get(rootJ, "embeddedL");
-		json_t *embRJ = json_object_get(rootJ, "embeddedR");
-		json_t *rateJ = json_object_get(rootJ, "rate");
-		json_t *autoAdvJ = json_object_get(rootJ, "autoAdvance");
-		json_t *normalJ = json_object_get(rootJ, "normalPlayback");
-		if (autoAdvJ && json_is_boolean(autoAdvJ)) autoAdvance = json_boolean_value(autoAdvJ);
-		if (normalJ && json_is_boolean(normalJ)) normalPlayback = json_boolean_value(normalJ);
-		if (embLJ && json_is_string(embLJ) && embRJ && json_is_string(embRJ)) {
-			std::string b64L = json_string_value(embLJ);
-			std::string b64R = json_string_value(embRJ);
-			auto bytesL = b64Decode(b64L);
-			auto bytesR = b64Decode(b64R);
-			if (!bytesL.empty() && bytesL.size() % 4 == 0 && !bytesR.empty() && bytesR.size() % 4 == 0) {
-				sampleL.resize(bytesL.size() / 4);
-				sampleR.resize(bytesR.size() / 4);
-				for (size_t i = 0; i < sampleL.size(); ++i) std::memcpy(&sampleL[i], &bytesL[i*4], 4);
-				for (size_t i = 0; i < sampleR.size(); ++i) std::memcpy(&sampleR[i], &bytesR[i*4], 4);
-				fileSampleRate = (rateJ && json_is_integer(rateJ)) ? (int)json_integer_value(rateJ) : fileSampleRate;
-				samplePath.clear();
-				statusMsg = "Loaded: embedded";
-				for (auto &g : grains) g.active = false;
-				spawnAccum = 0.0;
-				if (savedPlayPos >= 0.0) {
-					double maxPos = (!sampleL.empty()) ? (double)sampleL.size() - 1.0 : 0.0;
-					playPos = std::min(std::max(0.0, savedPlayPos), maxPos);
+		else {
+			// No external path saved; try to restore from patch storage (recorded clip)
+			std::string dir = getPatchStorageDirectory();
+			if (!dir.empty()) {
+				std::string p = rack::system::join(dir, "recording.wav");
+				std::ifstream f(p, std::ios::binary);
+				if (f.good()) {
+					f.close();
+					if (loadSampleFromPath(p)) {
+						// Clear path so we don't serialize a patch-storage absolute path
+						samplePath.clear();
+						if (savedPlayPos >= 0.0) {
+							double maxPos = (!sampleL.empty()) ? (double)sampleL.size() - 1.0 : 0.0;
+							playPos = std::min(std::max(0.0, savedPlayPos), maxPos);
+						}
+					}
 				}
 			}
 		}
+		json_t *autoAdvJ = json_object_get(rootJ, "autoAdvance");
+		json_t *normalJ = json_object_get(rootJ, "normalPlayback");
+		json_t *syncJ = json_object_get(rootJ, "syncGrains");
+		if (autoAdvJ && json_is_boolean(autoAdvJ)) autoAdvance = json_boolean_value(autoAdvJ);
+		if (normalJ && json_is_boolean(normalJ)) normalPlayback = json_boolean_value(normalJ);
+		if (syncJ && json_is_boolean(syncJ)) syncGrains = json_boolean_value(syncJ);
 	}
 
 
@@ -253,14 +284,29 @@ std::vector<uint8_t> Grains::b64Decode(const std::string& str) {
 void Grains::process(const ProcessArgs &args) {
 	// Handle recording toggle and capture first
 	bool recOn = params[REC_SWITCH].getValue() > 0.5f
-		|| (inputs[REC_TOGGLE].isConnected() && inputs[REC_TOGGLE].getVoltage() > 1.0f);
+		|| (inputs[REC_TOGGLE].isConnected() && inputs[REC_TOGGLE].getVoltage() > 0.5f);
 	if (recOn && !isRecording) {
 		// Start a new recording session
+		// Begin a short fade-out to avoid clicks on transition
+		playTransRelRemain = (int)std::round(0.008 * args.sampleRate); // ~8ms release
+		playTransRelStep = (playTransRelRemain > 0) ? (playTransEnv / (float)playTransRelRemain) : playTransEnv;
+		playTransHold = (int)std::round(0.01 * args.sampleRate); // ~10ms hold at 0
+		playTransAtkRemain = 0;
 		isRecording = true;
 		sampleL.clear();
 		sampleR.clear();
 		fileSampleRate = (int)args.sampleRate;
 		samplePath.clear();
+				// Reset DC blocker state to avoid pops when switching to monitor
+				dcYL = dcYR = 0.f; dcPrevXL = dcPrevXR = 0.f;
+		// Reset live recording accumulators
+		recSumL = 0.0; recSumR = 0.0; recCount = 0;
+		// Pre-reserve buffer to minimize reallocations during recording (reduces pops)
+		{
+			size_t reserveFrames = (size_t)std::max(1.0, std::round(args.sampleRate * 60.0)); // ~60s
+			sampleL.reserve(reserveFrames);
+			sampleR.reserve(reserveFrames);
+		}
 		playPos = 0.0;
 		for (auto &g : grains) g.active = false;
 		spawnAccum = 0.0;
@@ -269,39 +315,142 @@ void Grains::process(const ProcessArgs &args) {
 	}
 	else if (!recOn && isRecording) {
 		// Stop recording
+		// Begin a short fade-out to avoid clicks on transition
+		playTransRelRemain = (int)std::round(0.008 * args.sampleRate); // ~8ms release
+		playTransRelStep = (playTransRelRemain > 0) ? (playTransEnv / (float)playTransRelRemain) : playTransEnv;
+		playTransHold = (int)std::round(0.01 * args.sampleRate); // ~10ms hold at 0
+		playTransAtkRemain = 0;
 		isRecording = false;
 		bufferDirty = true;
 		for (auto &g : grains) g.active = false;
 		spawnAccum = 0.0;
-		playPos = 0.0;
+		// Remove DC bias from recorded buffers and align playhead to a near zero-cross
+		{
+			if (!sampleL.empty()) {
+				// Remove DC bias (mean) from L/R
+				double sumL = 0.0, sumR = 0.0; size_t N = sampleL.size();
+				for (size_t i = 0; i < N; ++i) { sumL += sampleL[i]; sumR += sampleR[i]; }
+				double meanL = sumL / (double)N; double meanR = sumR / (double)N;
+				for (size_t i = 0; i < N; ++i) { sampleL[i] = (float)(sampleL[i] - meanL); sampleR[i] = (float)(sampleR[i] - meanR); }
+				// Find a zero-cross near the start to avoid an initial pop
+				int bestIdx = 0; float bestAbs = std::abs(sampleL[0]);
+				int scan = std::min<int>(2048, (int)N - 1);
+				for (int i = 1; i <= scan; ++i) {
+					float a = sampleL[i - 1]; float b = sampleL[i];
+					if ((a <= 0.f && b >= 0.f) || (a >= 0.f && b <= 0.f)) { bestIdx = i; break; }
+					float ab = std::abs(b); if (ab < bestAbs) { bestAbs = ab; bestIdx = i; }
+				}
+				playPos = (double)bestIdx;
+				// Apply a short fade-in for the playhead jump to avoid a click
+				posJumpRemain = (int)std::round(0.003 * args.sampleRate); // ~3ms
+				posJumpEnv = 0.f;
+				posJumpStep = (posJumpRemain > 0) ? (1.f / (float)posJumpRemain) : 1.f;
+			}
+			else {
+				playPos = 0.0;
+			}
+		}
+		// Reset DC blocker state to avoid pops when switching to playback
+		dcYL = dcYR = 0.f; dcPrevXL = dcPrevXR = 0.f;
 		statusMsg = "Recording stopped";
 	}
 
 	if (isRecording && inputs[REC_INPUT].isConnected()) {
-		// Append one frame; assume mono input, map ±5V to ±1
+		// Append one frame; assume mono input, map ±5V to ±1 (Rack audio convention)
 		float v = inputs[REC_INPUT].getVoltage();
+		// Normalize from ±5V to ±1. If users send ±10V, the clamp still protects.
 		float s = std::max(-1.f, std::min(1.f, v / 5.f));
 		sampleL.push_back(s);
 		sampleR.push_back(s);
+		// Update live baseline trackers
+		recSumL += (double)s;
+		recSumR += (double)s;
+		recCount++;
 	}
 
-	if (sampleL.empty()) {
-		outputs[OUT_L].setVoltage(0.f);
-		outputs[OUT_R].setVoltage(0.f);
-        lights[REC_LIGHT].setBrightness(0.0f);
+	// During recording, always monitor REC_INPUT and do not play back the buffer to avoid clicks.
+	if (isRecording) {
+		if (inputs[REC_INPUT].isConnected()) {
+			float v = inputs[REC_INPUT].getVoltage();
+			float s = std::max(-1.f, std::min(1.f, v / 5.f));
+			// Simple DC blocker
+			double fc = 10.0;
+			double r = 1.0 - (2.0 * M_PI * fc / args.sampleRate);
+			if (r < 0.90) r = 0.90; if (r > 0.9999) r = 0.9999;
+			dcR = (float)r;
+			double y = (double)(s - (double)dcPrevXL) + (double)dcR * (double)dcYL;
+			dcPrevXL = s; dcYL = (float)y;
+			float og = (float)(params[GRAIN_GAIN].getValue() * playTransEnv * (double)posJumpEnv * 5.0);
+			outputs[OUT_L].setVoltage((float)(y * og));
+			outputs[OUT_R].setVoltage((float)(y * og));
+		}
+		else {
+			outputs[OUT_L].setVoltage(0.f);
+			outputs[OUT_R].setVoltage(0.f);
+		}
+		lights[REC_LIGHT].setBrightness(1.0f);
 		return;
 	}
 
+	// Read auto-advance state from the new front-panel switch
+	autoAdvance = params[AUTO_ADV_SWITCH].getValue() > 0.5f;
+	// Read sync-to-clock switch
+	syncGrains = params[SYNC_SWITCH].getValue() > 0.5f;
+
 	// Position: knob is base, CV adds an offset (in 0..1 per 0..10V)
-	float f = std::max(0.f, std::min(1.f, params[POSITION_KNOB].getValue()));
-	if (inputs[POSITION_INPUT].isConnected()) {
-		float v = inputs[POSITION_INPUT].getVoltage();
-		float offset = v / 10.f; // allow negative CV to subtract
-		f += offset;
-		if (f < 0.f) f = 0.f;
-		if (f > 1.f) f = 1.f;
+	// During auto-advance, ignore external position unless explicitly allowed with CV.
+	if (!uiDraggingPlayhead) {
+		bool cvConn = inputs[POSITION_INPUT].isConnected();
+		// If CV is connected, always follow external position; otherwise, follow knob only when not auto-advancing
+		if (cvConn || !autoAdvance) {
+			float f = std::max(0.f, std::min(1.f, params[POSITION_KNOB].getValue()));
+			if (cvConn) {
+				float v = inputs[POSITION_INPUT].getVoltage();
+				float offset = v / 10.f; // allow negative CV to subtract
+				f += offset;
+				if (f < 0.f) f = 0.f;
+				if (f > 1.f) f = 1.f;
+			}
+			double newPos = (double)f * std::max(0.0, (double)sampleL.size() - 1.0);
+			// Detect sudden jumps and trigger a short fade-in to de-click
+			double jumpThresh = std::max(64.0, 0.002 * (double)fileSampleRate); // >=64 frames or ~2ms
+			if (std::abs(newPos - lastPlayPosForJump) > jumpThresh) {
+				posJumpRemain = (int)std::round(0.003 * args.sampleRate); // ~3ms fade-in
+				posJumpEnv = 0.f;
+				posJumpStep = (posJumpRemain > 0) ? (1.f / (float)posJumpRemain) : 1.f;
+			}
+			playPos = newPos;
+		}
 	}
-	playPos = (double)f * std::max(0.0, (double)sampleL.size() - 1.0);
+
+	// Update position jump envelope
+	if (posJumpRemain > 0) {
+		posJumpEnv = std::min(1.f, posJumpEnv + posJumpStep);
+		posJumpRemain--;
+	}
+	lastPlayPosForJump = playPos;
+	// Update transition envelope: release -> hold -> attack
+	{
+		if (playTransRelRemain > 0) {
+			playTransEnv = std::max(0.f, playTransEnv - playTransRelStep);
+			playTransRelRemain--;
+		}
+		else if (playTransHold > 0) {
+			playTransEnv = 0.f;
+			playTransHold--;
+			if (playTransHold == 0) {
+				playTransAtkRemain = (int)std::round(0.012 * args.sampleRate); // ~12ms attack
+				playTransAtkStep = (playTransAtkRemain > 0) ? (1.f / (float)playTransAtkRemain) : 1.f;
+			}
+		}
+		else if (playTransAtkRemain > 0) {
+			playTransEnv = std::min(1.f, playTransEnv + playTransAtkStep);
+			playTransAtkRemain--;
+		}
+		else {
+			playTransEnv = 1.f;
+		}
+	}
 
 	double srHost = args.sampleRate;
 	// Base params
@@ -332,6 +481,19 @@ void Grains::process(const ProcessArgs &args) {
 			double v = inputs[DENSITY_CV].getVoltage();
 			density = std::max(denMin, std::min(denMax, density + v * (denMax - denMin) / 10.0));
 		}
+		// Dedicated rate control
+		double rateParam = params[RATE_AMOUNT].getValue(); // knob
+		double rate = rateParam;
+		if (inputs[RATE_CV].isConnected()) {
+			double v = inputs[RATE_CV].getVoltage();
+			rate = std::max(denMin, std::min(denMax, rateParam + v * (denMax - denMin) / 10.0));
+		}
+		// When not synced, rate sets density (grains/s). When synced, rate is interpreted as grains-per-clock multiple.
+		if (!syncGrains || !inputs[CLOCK_INPUT].isConnected()) {
+			if (inputs[RATE_CV].isConnected() || rateParam > 0.0) {
+				density = rate;
+			}
+		}
 		if (inputs[SPREAD_CV].isConnected()) {
 			double v = inputs[SPREAD_CV].getVoltage();
 			spreadMs = std::max(sprMin, std::min(sprMax, spreadMs + v * (sprMax - sprMin) / 10.0));
@@ -343,42 +505,137 @@ void Grains::process(const ProcessArgs &args) {
 	}
 	double gain = params[GRAIN_GAIN].getValue();
 
+	// Reverse amount: 0 = none reversed, 1 = all reversed (probability)
+	double reverseAmt = params[REVERSE_AMOUNT].getValue();
+	if (inputs[REVERSE_CV].isConnected()) {
+		double v = inputs[REVERSE_CV].getVoltage();
+		reverseAmt = std::max(0.0, std::min(1.0, reverseAmt + v / 10.0));
+	}
+
+	// Compute an effective playback size when recording to avoid reading the tail being written
+	int sizeL = (int)sampleL.size();
+	int effSize = sizeL;
+	if (isRecording && fileSampleRate > 0) {
+		int guard = std::max(1, (int)std::round(0.01 * (double)fileSampleRate)); // ~10ms tail guard
+		if (effSize > guard) effSize -= guard;
+	}
+
 	// Normal playback mode: directly read the sample at playPos
 	if (normalPlayback) {
 		int i0 = (int)playPos;
 		if (i0 < 0) i0 = 0;
-		if (i0 >= (int)sampleL.size()) i0 = (int)sampleL.size() - 1;
-		int i1 = std::min(i0 + 1, (int)sampleL.size() - 1);
+		if (i0 >= effSize) i0 = std::max(0, effSize - 1);
+		int i1 = std::min(i0 + 1, std::max(0, effSize - 1));
 		double frac = playPos - (double)i0;
 		double sL = (1.0 - frac) * (double)sampleL[i0] + frac * (double)sampleL[i1];
 		double sR = (1.0 - frac) * (double)sampleR[i0] + frac * (double)sampleR[i1];
-		outputs[OUT_L].setVoltage((float)(sL * gain * 5.0));
-		outputs[OUT_R].setVoltage((float)(sR * gain * 5.0));
+		// Gentle equal-power crossfade near wrap to suppress clicks when auto-advancing
+		if (autoAdvance && effSize > 1) {
+			int xfade = 256; // ~5.8ms at 44.1kHz
+			if (xfade > effSize - 1) xfade = effSize - 1;
+			double distToEnd = (double)(effSize - 1) - playPos;
+			if (distToEnd > 0.0 && distToEnd < (double)xfade) {
+				double w = distToEnd / (double)xfade; // 1->0 approaching wrap
+				double a = std::sin(0.5 * M_PI * w);
+				double b = std::cos(0.5 * M_PI * w);
+				// Head sample from wrapped position
+				double headPos = playPos - ((double)effSize - 1.0);
+				if (headPos < 0.0) headPos = 0.0; // clamp
+				int h0 = (int)headPos;
+				int h1 = std::min(h0 + 1, std::max(0, effSize - 1));
+				double hfrac = headPos - (double)h0;
+				double hL = (1.0 - hfrac) * (double)sampleL[h0] + hfrac * (double)sampleL[h1];
+				double hR = (1.0 - hfrac) * (double)sampleR[h0] + hfrac * (double)sampleR[h1];
+				sL = a * sL + b * hL;
+				sR = a * sR + b * hR;
+			}
+		}
+		// Apply simple DC blocker HPF to reduce pops from DC offsets
+		double srHost = args.sampleRate; // local sample rate
+		double fc = 10.0; // cutoff ~10 Hz
+		double r = 1.0 - (2.0 * M_PI * fc / srHost);
+		if (r < 0.90) r = 0.90; if (r > 0.9999) r = 0.9999;
+		dcR = (float)r;
+		double yL = (double)(sL - (double)dcPrevXL) + (double)dcR * (double)dcYL;
+		double yR = (double)(sR - (double)dcPrevXR) + (double)dcR * (double)dcYR;
+		dcPrevXL = (float)sL; dcPrevXR = (float)sR;
+		dcYL = (float)yL; dcYR = (float)yR;
+		float og = (float)(gain * playTransEnv * (double)posJumpEnv * 5.0);
+		outputs[OUT_L].setVoltage((float)(yL * og));
+		outputs[OUT_R].setVoltage((float)(yR * og));
 		if (autoAdvance && !inputs[POSITION_INPUT].isConnected()) {
-			double step = pitch * (double)fileSampleRate / srHost;
+			double advMul = std::max(0.0, (double)params[AUTO_ADV_RATE].getValue());
+			double step = pitch * (double)fileSampleRate / srHost * advMul;
 			playPos += step;
-			if (playPos >= (double)sampleL.size()) playPos = 0.0;
+			if (playPos >= (double)effSize) playPos = 0.0;
 		}
 		return;
 	}
 
-	spawnAccum += density / srHost;
-	while (spawnAccum >= 1.0) {
-		spawnAccum -= 1.0;
-		for (auto &g : grains) {
-			if (!g.active) {
-				double spreadFrames = spreadMs * (double)fileSampleRate / 1000.0;
-				double offset = (random::uniform() * 2.0 - 1.0) * spreadFrames;
-				double start = playPos + offset;
-				if (start < 0.0) start = 0.0;
-				if (start > (double)sampleL.size() - 1.0) start = (double)sampleL.size() - 1.0;
-				g.pos = start;
-				g.step = pitch * (double)fileSampleRate / srHost;
-				g.dur = (int)std::max(1.0, grainSizeMs * (double)fileSampleRate / 1000.0);
-				g.age = 0;
-				g.active = true;
-				g.pan = (float)((random::uniform() * 2.0 - 1.0) * panAmount);
-				break;
+	if (syncGrains && inputs[CLOCK_INPUT].isConnected()) {
+		// Compute grains-per-tick from Rate knob/CV as a multiplier of the clock.
+		int grainsPerTick = 1;
+		{
+			double rateParam = params[RATE_AMOUNT].getValue();
+			double rateVal = rateParam;
+			if (inputs[RATE_CV].isConnected()) {
+				double v = inputs[RATE_CV].getVoltage();
+				const double denMin = 0.0, denMax = 200.0;
+				rateVal = std::max(denMin, std::min(denMax, rateParam + v * (denMax - denMin) / 10.0));
+			}
+			if (inputs[RATE_CV].isConnected() || rateParam > 0.0) {
+				grainsPerTick = (int)std::lround(rateVal);
+				if (grainsPerTick <= 0) grainsPerTick = 1;
+				if (grainsPerTick > 32) grainsPerTick = 32; // guard against extreme bursts
+			} else {
+				grainsPerTick = 1;
+			}
+		}
+		// On rising clock edge, spawn N grains immediately (spread/jitter applies to start).
+		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage())) {
+			for (int n = 0; n < grainsPerTick; ++n) {
+				for (auto &g : grains) {
+					if (!g.active) {
+						double spreadFrames = spreadMs * (double)fileSampleRate / 1000.0;
+						double offset = (random::uniform() * 2.0 - 1.0) * spreadFrames;
+						double start = playPos + offset;
+						if (start < 0.0) start = 0.0;
+						if (start > (double)effSize - 1.0) start = std::max(0.0, (double)effSize - 1.0);
+						g.pos = start;
+						g.step = pitch * (double)fileSampleRate / srHost;
+						if (random::uniform() < reverseAmt) g.step = -g.step;
+						// Duration should be in host samples for a stable window length
+						g.dur = (int)std::max(1.0, grainSizeMs * srHost / 1000.0);
+						g.age = 0;
+						g.active = true;
+						g.pan = (float)((random::uniform() * 2.0 - 1.0) * panAmount);
+						break;
+					}
+				}
+			}
+		}
+	}
+	else {
+		spawnAccum += density / srHost;
+		while (spawnAccum >= 1.0) {
+			spawnAccum -= 1.0;
+			for (auto &g : grains) {
+				if (!g.active) {
+					double spreadFrames = spreadMs * (double)fileSampleRate / 1000.0;
+					double offset = (random::uniform() * 2.0 - 1.0) * spreadFrames;
+					double start = playPos + offset;
+					if (start < 0.0) start = 0.0;
+					if (start > (double)effSize - 1.0) start = std::max(0.0, (double)effSize - 1.0);
+					g.pos = start;
+					g.step = pitch * (double)fileSampleRate / srHost;
+					if (random::uniform() < reverseAmt) g.step = -g.step;
+					// Duration should be in host samples for a stable window length
+					g.dur = (int)std::max(1.0, grainSizeMs * srHost / 1000.0);
+					g.age = 0;
+					g.active = true;
+					g.pan = (float)((random::uniform() * 2.0 - 1.0) * panAmount);
+					break;
+				}
 			}
 		}
 	}
@@ -388,10 +645,12 @@ void Grains::process(const ProcessArgs &args) {
 	int wtype = (int) std::round(params[WINDOW_TYPE].getValue());
 	for (auto &g : grains) {
 		if (!g.active) continue;
-		int i0 = (int)g.pos;
+		// Clamp position within buffer to avoid abrupt hard-stops
+		double posClamped = g.pos;
+		if (posClamped < 0.0) posClamped = 0.0;
+		else if (posClamped > (double)effSize - 1.0) posClamped = std::max(0.0, (double)effSize - 1.0);
+		int i0 = (int)posClamped;
 		int i1 = std::min(i0 + 1, (int)sampleL.size() - 1);
-        // Guard against out-of-range indices if a new sample was loaded
-        if (i0 < 0 || i0 >= (int)sampleL.size()) { g.active = false; continue; }
 		double frac = g.pos - (double)i0;
 		double sL = (1.0 - frac) * (double)sampleL[i0] + frac * (double)sampleL[i1];
 		double sR = (1.0 - frac) * (double)sampleR[i0] + frac * (double)sampleR[i1];
@@ -409,9 +668,14 @@ void Grains::process(const ProcessArgs &args) {
 			case 2: // Triangular
 				w = 1.0 - std::abs(2.0 * t - 1.0);
 				break;
-			case 3: // Rectangular
-				w = 1.0;
+			case 3: // Rectangular (softened edges to reduce clicks)
+			{
+				double e = 0.02; // 2% edges
+				if (t < e) w = t / e;
+				else if (t > 1.0 - e) w = (1.0 - t) / e;
+				else w = 1.0;
 				break;
+			}
 		}
 		// Compute equal-power pan weights from g.pan in [-1,1]
 		double theta = (g.pan + 1.0) * 0.5 * 1.5707963267948966; // 0..pi/2
@@ -420,19 +684,37 @@ void Grains::process(const ProcessArgs &args) {
 		outL += sMono * w * wL;
 		outR += sMono * w * wR;
 		g.pos += g.step;
-		g.age++;
-		if (g.age >= g.dur || g.pos < 0.0 || g.pos >= (double)sampleL.size()) {
-			g.active = false;
+		// If grain hits buffer edges before its window ends, shorten its duration and clamp
+		if (g.pos < 0.0 || g.pos >= (double)effSize) {
+			int edgeFade = (int)std::round(0.002 * srHost); // ~2ms fade-out
+			int targetDur = g.age + edgeFade;
+			if (targetDur < g.dur) g.dur = targetDur;
+			if (g.pos < 0.0) g.pos = 0.0;
+			else if (g.pos >= (double)effSize) g.pos = std::max(0.0, (double)effSize - 1.0);
 		}
+		g.age++;
+		if (g.age >= g.dur) g.active = false;
 	}
 
-	outputs[OUT_L].setVoltage((float)(outL * gain * 5.0));
-	outputs[OUT_R].setVoltage((float)(outR * gain * 5.0));
+	// Apply DC blocker on granular output as well
+	double srHost2 = args.sampleRate;
+	double fc2 = 10.0;
+	double r2 = 1.0 - (2.0 * M_PI * fc2 / srHost2);
+	if (r2 < 0.90) r2 = 0.90; if (r2 > 0.9999) r2 = 0.9999;
+	dcR = (float)r2;
+	double yLg = (double)(outL - (double)dcPrevXL) + (double)dcR * (double)dcYL;
+	double yRg = (double)(outR - (double)dcPrevXR) + (double)dcR * (double)dcYR;
+	dcPrevXL = (float)outL; dcPrevXR = (float)outR;
+	dcYL = (float)yLg; dcYR = (float)yRg;
+	float og2 = (float)(gain * playTransEnv * (double)posJumpEnv * 5.0);
+	outputs[OUT_L].setVoltage((float)(yLg * og2));
+	outputs[OUT_R].setVoltage((float)(yRg * og2));
 
-    if (autoAdvance && !inputs[POSITION_INPUT].isConnected()) {
-		double step = (double)fileSampleRate / srHost;
+	if (autoAdvance && !inputs[POSITION_INPUT].isConnected()) {
+		double advMul = std::max(0.0, (double)params[AUTO_ADV_RATE].getValue());
+		double step = (double)fileSampleRate / srHost * advMul;
 		playPos += step;
-		if (playPos >= (double)sampleL.size()) playPos = 0.0;
+		if (playPos >= (double)effSize) playPos = 0.0;
 	}
 	// Update recording LED
 	lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
@@ -763,6 +1045,35 @@ bool Grains::saveBufferToWav(const std::string &path) {
 	return ok;
 }
 
+// Load any previously-saved audio from the patch storage directory
+void Grains::onAdd(const AddEvent& e) {
+	Module::onAdd(e);
+	std::string dir = getPatchStorageDirectory();
+	if (!dir.empty()) {
+		std::string path = rack::system::join(dir, "recording.wav");
+		std::ifstream f(path, std::ios::binary);
+		if (f.good()) {
+			f.close();
+			if (loadSampleFromPath(path)) {
+				// Avoid persisting the absolute path of patch-storage audio in JSON
+				samplePath.clear();
+			}
+		}
+	}
+}
+
+// Save current buffer as WAV into the patch storage directory
+void Grains::onSave(const SaveEvent& e) {
+	Module::onSave(e);
+	if (!sampleL.empty()) {
+		std::string dir = createPatchStorageDirectory();
+		if (!dir.empty()) {
+			std::string path = rack::system::join(dir, "recording.wav");
+			saveBufferToWav(path);
+		}
+	}
+}
+
 // Load a random .wav from the same directory as the current samplePath
 bool Grains::loadRandomSiblingSample() {
 	if (samplePath.empty()) { statusMsg = "No current file"; return false; }
@@ -853,13 +1164,26 @@ struct WaveformDisplay : TransparentWidget {
 	WaveformDisplay(Grains *m) { module = m; }
 	bool dragging = false;
 	float lastX = 0.f;
+	// Fixed time window to display during recording to prevent shifting/compression
+	float recordWindowSecs = 8.0f; // unused when drawing full buffer; keep for future
+	// Stable DC baseline during a recording session to prevent vertical shifting
+	bool prevRec = false; // kept for potential future use
+	double dcMeanL = 0.0;
+	double dcMeanR = 0.0;
+	// Compute once per recording session to avoid baseline drift
 	void setPosFromX(float x) {
 		if (!module || module->sampleL.empty()) return;
 		float w = box.size.x;
 		if (w <= 0.f) return;
 		if (x < 0.f) x = 0.f; if (x > w) x = w;
-		double N = (double)module->sampleL.size();
-		module->playPos = (double)x / (double)w * std::max(0.0, N - 1.0);
+		// Map drag across the full visible buffer (excluding guard during recording)
+		int fs = module->fileSampleRate > 0 ? module->fileSampleRate : 44100;
+		int guard = std::max(1, (int)std::round(0.01 * (double)fs));
+		double Nfull = (double)module->sampleL.size();
+		double Ndraw = Nfull;
+		if (module->isRecording && Nfull > (double)guard) Ndraw = Nfull - (double)guard;
+		double denom = std::max(1.0, Ndraw - 1.0);
+		module->playPos = (double)x / (double)w * denom;
 	}
 	void onButton(const event::Button &e) override {
 		if (!module) return;
@@ -868,10 +1192,12 @@ struct WaveformDisplay : TransparentWidget {
 				lastX = e.pos.x;
 				setPosFromX(lastX);
 				dragging = true;
+				module->uiDraggingPlayhead = true;
 				e.consume(this);
 			}
 			else if (e.action == GLFW_RELEASE) {
 				dragging = false;
+				module->uiDraggingPlayhead = false;
 				e.consume(this);
 			}
 		}
@@ -907,61 +1233,120 @@ struct WaveformDisplay : TransparentWidget {
 			return;
 		}
 		// Waveform
-		// Left channel
+		// Determine lengths; in recording, exclude tail-guard and draw the full visible buffer
+		size_t NLfull = module->sampleL.size();
+		int fs = module->fileSampleRate > 0 ? module->fileSampleRate : 44100;
+		int guard = std::max(1, (int)std::round(0.01 * (double)fs)); // ~10ms
+		size_t NLdraw = NLfull;
+		if (module->isRecording && NLfull > (size_t)guard) NLdraw = NLfull - (size_t)guard;
+		// Full segment indices
+		size_t winStart = 0;
+		size_t winEnd = NLdraw;
+
+		// Compute DC baseline from live accumulators during recording (cheap, stable)
+		if (module->isRecording) {
+			if (module->recCount > 0) {
+				dcMeanL = module->recSumL / (double)module->recCount;
+				dcMeanR = module->recSumR / (double)module->recCount;
+			}
+		}
+		else {
+			dcMeanL = 0.0; dcMeanR = 0.0;
+		}
+
+		// Left channel (bucketed min/max per pixel with clamping) over window
 		nvgBeginPath(vg);
 		nvgStrokeColor(vg, nvgRGB(25, 150, 252));
 		nvgStrokeWidth(vg, 1.5f);
-		const size_t NL = module->sampleL.size();
-		for (int x = 0; x < (int)w; ++x) {
-			size_t i0 = (size_t)((double)x / (double)w * (double)NL);
-			size_t span = std::max((size_t)1, (size_t)(NL / (size_t)w));
+		const size_t NL = NLdraw;
+		const size_t wpxL = (size_t)std::max(1.0f, std::floor(w));
+		const size_t bucketL = std::max<size_t>(1, (size_t)std::floor((double)NL / (double)std::max<size_t>(1, wpxL)));
+		for (size_t xpix = 0; xpix < wpxL; ++xpix) {
+			size_t i0 = (size_t)std::floor((double)xpix * (double)NL / (double)wpxL);
+			if (i0 >= NL) i0 = NL - 1;
+			size_t iEnd = std::min(NL, i0 + bucketL);
 			float minV = 1.f, maxV = -1.f;
-			for (size_t i = i0; i < std::min(i0 + span, NL); ++i) {
-				float v = module->sampleL[i];
+			for (size_t i = i0; i < iEnd; ++i) {
+				float v = module->sampleL[winStart + i];
+				if (module->isRecording) v -= (float)dcMeanL;
+				// Clamp to display range symmetrically
+				if (v < -1.f) v = -1.f; if (v > 1.f) v = 1.f;
 				minV = std::min(minV, v);
 				maxV = std::max(maxV, v);
 			}
-			float y1 = h * (0.5f - 0.45f * maxV);
-			float y2 = h * (0.5f - 0.45f * minV);
-			nvgMoveTo(vg, (float)x, y1);
-			nvgLineTo(vg, (float)x, y2);
+			minV = std::max(-1.f, std::min(1.f, minV));
+			maxV = std::max(-1.f, std::min(1.f, maxV));
+			if (maxV - minV < 1e-6f) { maxV += 0.01f; minV -= 0.01f; }
+			float y1 = h * (0.5f - 0.44f * maxV);
+			float y2 = h * (0.5f - 0.44f * minV);
+			nvgMoveTo(vg, (float)xpix, y1);
+			nvgLineTo(vg, (float)xpix, y2);
 		}
 		nvgStroke(vg);
-		// Right channel overlay
+		// Right channel overlay over window
 		nvgBeginPath(vg);
 		nvgStrokeColor(vg, nvgRGB(25, 150, 252));
 		nvgStrokeWidth(vg, 1.0f);
-		const size_t NR = module->sampleR.size();
-		for (int x = 0; x < (int)w; ++x) {
-			size_t i0 = (size_t)((double)x / (double)w * (double)NR);
-			size_t span = std::max((size_t)1, (size_t)(NR / (size_t)w));
+		const size_t NRfull = module->sampleR.size();
+		size_t NR = (winEnd <= NRfull) ? NLdraw : std::min(NLdraw, NRfull);
+		// Use stable DC baseline for R during recording
+		const size_t wpxR = (size_t)std::max(1.0f, std::floor(w));
+		const size_t bucketR = std::max<size_t>(1, (size_t)std::floor((double)NR / (double)std::max<size_t>(1, wpxR)));
+		for (size_t xpix = 0; xpix < wpxR; ++xpix) {
+			size_t i0 = (size_t)std::floor((double)xpix * (double)NR / (double)wpxR);
+			if (i0 >= NR) i0 = NR - 1;
+			size_t iEnd = std::min(NR, i0 + bucketR);
 			float minV = 1.f, maxV = -1.f;
-			for (size_t i = i0; i < std::min(i0 + span, NR); ++i) {
-				float v = module->sampleR[i];
+			for (size_t i = i0; i < iEnd; ++i) {
+				size_t idx = winStart + i;
+				if (idx >= NRfull) idx = NRfull - 1;
+				float v = module->sampleR[idx];
+				if (module->isRecording) v -= (float)dcMeanR;
+				// Clamp to display range symmetrically
+				if (v < -1.f) v = -1.f; if (v > 1.f) v = 1.f;
 				minV = std::min(minV, v);
 				maxV = std::max(maxV, v);
 			}
-			float y1 = h * (0.5f - 0.45f * maxV);
-			float y2 = h * (0.5f - 0.45f * minV);
-			nvgMoveTo(vg, (float)x, y1);
-			nvgLineTo(vg, (float)x, y2);
+			minV = std::max(-1.f, std::min(1.f, minV));
+			maxV = std::max(-1.f, std::min(1.f, maxV));
+			if (maxV - minV < 1e-6f) { maxV += 0.01f; minV -= 0.01f; }
+			float y1 = h * (0.5f - 0.44f * maxV);
+			float y2 = h * (0.5f - 0.44f * minV);
+			nvgMoveTo(vg, (float)xpix, y1);
+			nvgLineTo(vg, (float)xpix, y2);
 		}
 		nvgStroke(vg);
 
-		// Playback position line
+		// Playback position line (mapped within the full visible buffer)
 		nvgBeginPath(vg);
-		double N = (double)module->sampleL.size();
-		double denom = (N >= 2.0) ? (N - 1.0) : 1.0; // match setPosFromX() mapping
-		float px = (float)((N > 0.0) ? (module->playPos / denom * w) : 0.f);
+		double denom = (NLdraw >= 2) ? ((double)NLdraw - 1.0) : 1.0;
+		double clampedPos = (double)module->playPos;
+		if (clampedPos < (double)winStart) clampedPos = (double)winStart;
+		if (clampedPos > (double)(winEnd - 1)) clampedPos = (double)(winEnd - 1);
+		double rel = (NLdraw > 1) ? ((clampedPos - (double)winStart) / denom) : 0.0;
+		float px = (float)(rel * (double)w);
 		if (px < 0.f) px = 0.f; if (px > w - 1.f) px = w - 1.f;
 		nvgMoveTo(vg, px, 0.f);
 		nvgLineTo(vg, px, h);
 		nvgStrokeColor(vg, nvgRGBA(255, 255, 255, 200));
 		nvgStrokeWidth(vg, 2.0f);
 		nvgStroke(vg);
+		// Indicate the hidden tail-guard during recording so the end doesn't look chopped
+		if (module->isRecording && NLfull > (size_t)guard) {
+			// Shade a fraction of the right edge proportional to guard/total length
+			double guardFrac = (double)guard / (double)NLfull;
+			float shadeW = (float)(guardFrac * (double)w);
+			if (shadeW < 1.f) shadeW = 1.f;
+			nvgBeginPath(vg);
+			nvgRect(vg, w - shadeW, 0.f, shadeW, h);
+			nvgFillColor(vg, nvgRGBA(255, 255, 255, 24));
+			nvgFill(vg);
+		}
 
-		// Grain dots overlay (cloud of dots), hidden in normal playback
+		// Grain dots overlay (cloud of dots); show during recording too so grains are visible
 		if (module && !module->normalPlayback) {
+			bool recording = module->isRecording;
+			// Use full buffer for overlay mapping to align with display
 			const size_t NL = module->sampleL.size();
 			const size_t NR = module->sampleR.size();
 			if (NL > 0) {
@@ -980,7 +1365,7 @@ struct WaveformDisplay : TransparentWidget {
 					// Draw left dot (white)
 					nvgBeginPath(vg);
 					nvgCircle(vg, gx, gyL, 3.0f);
-					nvgFillColor(vg, nvgRGBA(255, 255, 255, 220));
+					nvgFillColor(vg, recording ? nvgRGBA(255, 255, 255, 180) : nvgRGBA(255, 255, 255, 220));
 					nvgFill(vg);
 					// Draw right dot (white) if R exists
 					if (NR == NL) {
@@ -989,7 +1374,7 @@ struct WaveformDisplay : TransparentWidget {
 						float gyR = h * (0.5f - 0.45f * (float)sR);
 						nvgBeginPath(vg);
 						nvgCircle(vg, gx, gyR, 3.0f);
-						nvgFillColor(vg, nvgRGBA(255, 255, 255, 220));
+						nvgFillColor(vg, recording ? nvgRGBA(255, 255, 255, 180) : nvgRGBA(255, 255, 255, 220));
 						nvgFill(vg);
 					}
 				}
@@ -1001,7 +1386,7 @@ struct WaveformDisplay : TransparentWidget {
 			// Compute name
 			std::string name;
 			if (module->samplePath.empty()) {
-				name = module->isRecording ? "recording" : "embedded";
+				name = module->isRecording ? "recording" : "patch storage";
 			} else {
 				name = module->samplePath;
 				size_t p = name.find_last_of("/\\");
@@ -1050,29 +1435,46 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addParam(createParam<CKSS>(Vec(80, 15), module, Grains::REC_SWITCH));
 	addInput(createInput<TinyPJ301MPort>(Vec(100, 15), module, Grains::REC_TOGGLE));
 	addChild(createLight<SmallLight<RedLight>>(Vec(120, 21), module, Grains::REC_LIGHT));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(150, 15), module, Grains::CLOCK_INPUT));
+	addParam(createParam<CKSS>(Vec(192, 15), module, Grains::SYNC_SWITCH));
 	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
+
+	addParam(createParam<CKSS>(Vec(410, 15), module, Grains::AUTO_ADV_SWITCH));	
+	addParam(createParam<JwTinyKnob>(Vec(445, 23), module, Grains::AUTO_ADV_RATE));
 
 	float topY = 342;
 	
-	addInput(createInput<TinyPJ301MPort>(Vec(85, topY), module, Grains::POSITION_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(105, topY), module, Grains::POSITION_KNOB));
-	addInput(createInput<TinyPJ301MPort>(Vec(141, topY), module, Grains::PITCH_INPUT));
-	addParam(createParam<JwTinyKnob>(Vec(161, topY), module, Grains::GRAIN_PITCH_SEMI));
+	addInput(createInput<TinyPJ301MPort>(Vec(35, topY), module, Grains::POSITION_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(55, topY), module, Grains::POSITION_KNOB));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(95, topY), module, Grains::PITCH_INPUT));
+	addParam(createParam<JwTinyKnob>(Vec(115, topY), module, Grains::GRAIN_PITCH_SEMI));
 	
-	addInput(createInput<TinyPJ301MPort>(Vec(200, topY), module, Grains::SIZE_CV));
-	addParam(createParam<JwTinyKnob>(Vec(220, topY), module, Grains::GRAIN_SIZE_MS));
-	addInput(createInput<TinyPJ301MPort>(Vec(259, topY), module, Grains::DENSITY_CV));
-	addParam(createParam<JwTinyKnob>(Vec(279, topY), module, Grains::GRAIN_DENSITY));
-	addInput(createInput<TinyPJ301MPort>(Vec(319, topY), module, Grains::SPREAD_CV));
-	addParam(createParam<JwTinyKnob>(Vec(339, topY), module, Grains::GRAIN_SPREAD_MS));
-	addParam(createParam<JwTinyKnob>(Vec(386, topY), module, Grains::WINDOW_TYPE));
-	addInput(createInput<TinyPJ301MPort>(Vec(438, topY), module, Grains::PAN_CV));
-	addParam(createParam<JwTinyKnob>(Vec(458, topY), module, Grains::PAN_RANDOMNESS));
+	addInput(createInput<TinyPJ301MPort>(Vec(152, topY), module, Grains::SIZE_CV));
+	addParam(createParam<JwTinyKnob>(Vec(172, topY), module, Grains::GRAIN_SIZE_MS));
 	
-	addOutput(createOutput<TinyPJ301MPort>(Vec(505, topY + 1), module, Grains::OUT_L));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(529, topY + 1), module, Grains::OUT_R));
+	addInput(createInput<TinyPJ301MPort>(Vec(215, topY), module, Grains::DENSITY_CV));
+	addParam(createParam<JwTinyKnob>(Vec(235, topY), module, Grains::GRAIN_DENSITY));
+	
+	addInput(createInput<TinyPJ301MPort>(Vec(270, topY), module, Grains::RATE_CV));
+	addParam(createParam<JwTinyKnob>(Vec(290, topY), module, Grains::RATE_AMOUNT));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(320, topY), module, Grains::SPREAD_CV));
+	addParam(createParam<JwTinyKnob>(Vec(340, topY), module, Grains::GRAIN_SPREAD_MS));
+
+	addParam(createParam<JwTinyKnob>(Vec(380, topY), module, Grains::WINDOW_TYPE));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(425, topY), module, Grains::REVERSE_CV));
+	addParam(createParam<JwTinyKnob>(Vec(445, topY), module, Grains::REVERSE_AMOUNT));
+	addInput(createInput<TinyPJ301MPort>(Vec(475, topY), module, Grains::PAN_CV));
+	addParam(createParam<JwTinyKnob>(Vec(495, topY), module, Grains::PAN_RANDOMNESS));
+	
+	addOutput(createOutput<TinyPJ301MPort>(Vec(522, topY + 1), module, Grains::OUT_L));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(541, topY + 1), module, Grains::OUT_R));
 	addParam(createParam<JwTinyKnob>(Vec(570, topY), module, Grains::GRAIN_GAIN));
-	
+
+
 	WaveformDisplay *disp = new WaveformDisplay(module);
 	disp->box.pos = Vec(10, 40);
 	disp->box.size = Vec(box.size.x - 20, box.size.y - 100);
@@ -1086,27 +1488,9 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(spacerLabel);
 
 	Grains *grains = dynamic_cast<Grains*>(module);
-	// Toggle embed in patch
-	struct EmbedInPatchItem : MenuItem {
-		Grains *grains;
-		void onAction(const event::Action &e) override { if (grains) grains->embedInPatch = !grains->embedInPatch; }
-		void step() override { rightText = (grains && grains->embedInPatch) ? "✔" : ""; MenuItem::step(); }
-	};
-	EmbedInPatchItem *embedItem = new EmbedInPatchItem();
-	embedItem->text = "Embed WAV in Patch";
-	embedItem->grains = grains;
-	menu->addChild(embedItem);
+	// Auto-advance moved to a front-panel switch
 
-	// Toggle auto advance
-	struct AutoAdvanceItem : MenuItem {
-		Grains *grains;
-		void onAction(const event::Action &e) override { if (grains) grains->autoAdvance = !grains->autoAdvance; }
-		void step() override { rightText = (grains && grains->autoAdvance) ? "✔" : ""; MenuItem::step(); }
-	};
-	AutoAdvanceItem *advItem = new AutoAdvanceItem();
-	advItem->text = "Auto-Advance Position";
-	advItem->grains = grains;
-	menu->addChild(advItem);
+	// Auto-advance CV override removed; front-panel switch governs behavior
 
 	// Toggle normal playback (bypass grains)
 	struct NormalPlaybackItem : MenuItem {

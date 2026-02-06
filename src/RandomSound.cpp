@@ -25,12 +25,12 @@ struct RandomSound : Module {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-	dsp::SchmittTrigger inTrig;
-	dsp::SchmittTrigger rndTrig;
+	dsp::SchmittTrigger inTrig[16];
+	dsp::SchmittTrigger rndTrig[16];
 	dsp::SchmittTrigger btnTrig;
 	dsp::SchmittTrigger btnRndTrig;
 	dsp::SchmittTrigger btnTrigRndTrig;
-	dsp::SchmittTrigger trigRndInputTrig;
+	dsp::SchmittTrigger trigRndInputTrig[16];
 	bool edgesPrimed = false;
 	// Polyphony support
 	int channels = 1;
@@ -103,23 +103,18 @@ struct RandomSound : Module {
 	}
 
 	void onRandomize() override {
-		// Randomize all voices independently
 		float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
 		for (int i = 0; i < channels && i < 16; i++) {
 			Voice &v = voices[i];
-			// Carrier frequency: 20 Hz .. 2 kHz
 			v.freq = 20.f + random::uniform() * (2000.f - 20.f);
-			// Random per-voice carrier feedback scaled by global knob
 			v.feedback = random::uniform() * 0.9f;
 			v.attackTime = 0.f;
-			// Set amplitude decay from knob so it is honored immediately after randomize
 			v.decayTime  = baseDecay;
 			v.pitchDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
 			v.pitchUp = random::uniform() < 0.5f;
 			v.pitchOctavesMax = random::uniform() * 4.0f;
 			int cw = int(random::uniform() * 4.0f); if (cw < 0) cw = 0; if (cw > 3) cw = 3;
 			v.carrierWave = (Wave)cw;
-			// Modulator frequency: 20 Hz .. 2 kHz
 			v.modFreq = 20.f + random::uniform() * (2000.f - 20.f);
 			v.modFeedback = random::uniform() * 0.9f;
 			v.modDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
@@ -130,12 +125,40 @@ struct RandomSound : Module {
 			int mw = int(random::uniform() * 4.0f); if (mw < 0) mw = 0; if (mw > 3) mw = 3;
 			v.modWave = (Wave)mw;
 			v.useFM = random::uniform() < 0.5f;
-			// Randomly choose exponential or linear envelopes
 			v.ampExp = random::uniform() < 0.5f;
 			v.pitchExp = random::uniform() < 0.5f;
 			v.modAmpExp = random::uniform() < 0.5f;
 			v.modPitchExp = random::uniform() < 0.5f;
 		}
+	}
+
+	void randomizeVoice(int i) {
+		if (i < 0 || i >= 16) return;
+		float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
+		Voice &v = voices[i];
+		v.freq = 20.f + random::uniform() * (2000.f - 20.f);
+		v.feedback = random::uniform() * 0.9f;
+		v.attackTime = 0.f;
+		v.decayTime  = baseDecay;
+		v.pitchDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
+		v.pitchUp = random::uniform() < 0.5f;
+		v.pitchOctavesMax = random::uniform() * 4.0f;
+		int cw = int(random::uniform() * 4.0f); if (cw < 0) cw = 0; if (cw > 3) cw = 3;
+		v.carrierWave = (Wave)cw;
+		v.modFreq = 20.f + random::uniform() * (2000.f - 20.f);
+		v.modFeedback = random::uniform() * 0.9f;
+		v.modDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
+		v.modPitchDecayTime = 0.001f + random::uniform() * (1.0f - 0.001f);
+		v.modPitchUp = random::uniform() < 0.5f;
+		v.modPitchOctavesMax = random::uniform() * 4.0f;
+		v.fmIndex = 0.05f + random::uniform() * 0.45f;
+		int mw = int(random::uniform() * 4.0f); if (mw < 0) mw = 0; if (mw > 3) mw = 3;
+		v.modWave = (Wave)mw;
+		v.useFM = random::uniform() < 0.5f;
+		v.ampExp = random::uniform() < 0.5f;
+		v.pitchExp = random::uniform() < 0.5f;
+		v.modAmpExp = random::uniform() < 0.5f;
+		v.modPitchExp = random::uniform() < 0.5f;
 	}
 
 	void onReset() override {
@@ -242,43 +265,35 @@ struct RandomSound : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
-		// Prime edge detectors once to avoid treating constant-high as a rising edge on load
-		bool doRandomize = false;
-		bool doTrigger = false;
+		int ch = channels;
 		if (!edgesPrimed) {
-			// Consume initial states without acting
-			rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage());
-			inTrig.process(inputs[TRIGGER_INPUT].getVoltage());
-			trigRndInputTrig.process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage());
-			edgesPrimed = true;
-		} else {
-			doRandomize = rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage());
-			doTrigger = inTrig.process(inputs[TRIGGER_INPUT].getVoltage());
-		}
-		// Include buttons
-		bool trigRnd = btnTrigRndTrig.process(params[TRIG_RANDOMIZE_BUTTON_PARAM].getValue() * 10.f) ||
-		               trigRndInputTrig.process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage());
-		doRandomize = doRandomize || btnRndTrig.process(params[RANDOMIZE_BUTTON_PARAM].getValue() * 10.f) || trigRnd;
-		doTrigger = doTrigger || btnTrig.process(params[TRIGGER_BUTTON_PARAM].getValue() * 10.f) || trigRnd;
-
-		// Randomize on randomize trigger (input or button)
-		if (doRandomize) {
-			onRandomize();
-		}
-
-		// Trigger envelopes on trigger input or button (all voices)
-		if (doTrigger) {
-			float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
-			// CV: 0-10V adds 0..1s
-			if (inputs[DECAY_CV_INPUT].isConnected()) {
-				float cv = inputs[DECAY_CV_INPUT].getVoltage();
-				baseDecay = clamp(baseDecay + cv / 10.f, 0.001f, 1.0f);
+			for (int i = 0; i < ch && i < 16; i++) {
+				rndTrig[i].process(inputs[TRIGGER_RANDOMIZE].getVoltage(i));
+				inTrig[i].process(inputs[TRIGGER_INPUT].getVoltage(i));
+				trigRndInputTrig[i].process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage(i));
 			}
-			for (int i = 0; i < channels && i < 16; i++) {
+			edgesPrimed = true;
+		}
+		bool rndBtn = btnRndTrig.process(params[RANDOMIZE_BUTTON_PARAM].getValue() * 10.f);
+		bool trigBtn = btnTrig.process(params[TRIGGER_BUTTON_PARAM].getValue() * 10.f);
+		bool trigRndBtn = btnTrigRndTrig.process(params[TRIG_RANDOMIZE_BUTTON_PARAM].getValue() * 10.f);
+		if (rndBtn) onRandomize();
+		for (int i = 0; i < ch && i < 16; i++) {
+			bool rndEdge = rndTrig[i].process(inputs[TRIGGER_RANDOMIZE].getVoltage(i));
+			bool trigEdge = inTrig[i].process(inputs[TRIGGER_INPUT].getVoltage(i));
+			bool trigRndEdge = trigRndInputTrig[i].process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage(i));
+			if (rndEdge || trigRndEdge) {
+				randomizeVoice(i);
+			}
+			if (trigEdge || trigBtn || trigRndBtn) {
+				float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
+				if (inputs[DECAY_CV_INPUT].isConnected()) {
+					float cv = (i < inputs[DECAY_CV_INPUT].getChannels()) ? inputs[DECAY_CV_INPUT].getVoltage(i) : 0.f;
+					baseDecay = clamp(baseDecay + cv / 10.f, 0.001f, 1.0f);
+				}
 				Voice &v = voices[i];
 				v.envStage = ENV_DECAY;
 				v.envValue = 1.f;
-				// Set amplitude envelope decay from the overall knob
 				v.decayTime = baseDecay;
 				v.pitchEnvStage = ENV_DECAY;
 				v.pitchEnvValue = 1.f;
@@ -289,8 +304,8 @@ struct RandomSound : Module {
 			}
 		}
 		float sr = args.sampleRate;
-		outputs[VOLT_OUTPUT].setChannels(channels);
-		for (int i = 0; i < channels && i < 16; i++) {
+		outputs[VOLT_OUTPUT].setChannels(ch);
+		for (int i = 0; i < ch && i < 16; i++) {
 			Voice &vc = voices[i];
 			// Advance envelopes
 			if (vc.envStage == ENV_DECAY) {

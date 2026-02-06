@@ -37,6 +37,32 @@ struct Buffer : Module {
 	int playbackDirection = 1;  // 1 for forward, -1 for backward
 	float maxBufferSeconds = 1.0f;  // Maximum buffer size in seconds (default)
 
+	// Smoothed dry/wet to avoid clicks on abrupt changes (e.g., on freeze)
+	float dryWetOut = 0.5f;
+
+	// Short envelope applied when freeze toggles to reduce pops
+	float transitionEnv = 1.0f;
+	int transitionFadeSamples = 0;
+	int transitionFadeRemaining = 0;
+
+	// DC blocker for wet signal to suppress clicks from DC steps
+	float hp_a = 0.99f; // coefficient computed from sample rate
+	float wetHP_y = 0.0f;
+	float wetHP_prevX = 0.0f;
+
+	// Generic de-click ramp for abrupt wet changes
+	float prevWetOut = 0.0f;
+	int declickTotalSamples = 0;
+	int declickRemainingSamples = 0;
+	float declickPrev = 0.0f;
+
+	// Track direction changes for additional envelope
+	int lastPlaybackDirection = 1;
+
+	// Pending realignment (non-freeze) applied exactly at wrap boundary
+	int pendingLoopStartNF = -1;
+	int pendingLoopLengthNF = -1;
+
 	// Freeze behavior: gate vs toggle
 	enum FreezeMode { FM_GATE, FM_TOGGLE };
 	FreezeMode freezeMode = FM_TOGGLE;
@@ -47,6 +73,7 @@ struct Buffer : Module {
 	bool wasFrozen = false;
 	int frozenLoopStart = 0;
 	int frozenLoopLength = 0;
+	int pendingFrozenLoopLength = -1;
 
 	Buffer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -102,6 +129,10 @@ struct Buffer : Module {
 		delayTime = params[END_PARAM].getValue();
 		int delaySamples = (int)(sampleRate * delayTime);
 		readPos = (writePos - delaySamples + bufferSize) % bufferSize;
+
+		// Compute high-pass coefficient for ~10 Hz cutoff
+		float fc = 10.0f;
+		hp_a = expf(-2.0f * (float)M_PI * fc / sampleRate);
 
 		// Update parameter ranges to reflect new seconds max
 		if (paramQuantities.size() > END_PARAM && paramQuantities[END_PARAM]) {
@@ -222,6 +253,12 @@ struct Buffer : Module {
 		} else {
 			playbackDirection = 1;   // Forward
 		}
+		// If direction flips, apply quick transition envelope
+		if (playbackDirection != lastPlaybackDirection) {
+			transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.008f));
+			transitionFadeRemaining = transitionFadeSamples;
+			lastPlaybackDirection = playbackDirection;
+		}
 		
 		// Calculate loop positions and length
 		int loopStart, loopLength;//, loopEnd;
@@ -257,17 +294,45 @@ struct Buffer : Module {
 				frozenLoopLength = (frozenLoopStart - frozenLoopEnd + bufferSize) % bufferSize;
 			}
 			if (frozenLoopLength < 1) frozenLoopLength = 1;
+			// Reset read head to start of frozen loop to avoid boundary jump click;
+			// fade-in at the start will smooth the transition.
+			readPos = frozenLoopStart;
+			// Start a short attack envelope (~10ms)
+			transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.015f));
+			transitionFadeRemaining = transitionFadeSamples;
 			wasFrozen = true;
 		}
 		else if (!frozen && wasFrozen) {
 			wasFrozen = false;
+			// Also apply a short envelope when leaving freeze
+			transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.012f));
+			transitionFadeRemaining = transitionFadeSamples;
 		}
 
 		int activeLoopStart = frozen ? frozenLoopStart : loopStart;
 		int activeLoopLength = frozen ? frozenLoopLength : loopLength;
 
+		// Pre-compute candidate zero-crossing alignment when not frozen,
+		// and apply it exactly at the wrap boundary to avoid mid-loop jumps.
+		if (!frozen) {
+			int searchRadius = std::min(bufferSize / 128, (int)(args.sampleRate * 0.006f)); // up to ~6ms
+			if (searchRadius < 4) searchRadius = 4;
+			int candidateStart = findNearestZeroCrossing(loopStart, searchRadius);
+			int rawEndIdxNF = (playbackDirection == 1)
+				? (loopStart + loopLength) % bufferSize
+				: (loopStart - loopLength + bufferSize) % bufferSize;
+			int candidateEnd = findNearestZeroCrossing(rawEndIdxNF, searchRadius);
+			int candidateLen = (playbackDirection == 1)
+				? (candidateEnd - candidateStart + bufferSize) % bufferSize
+				: (candidateStart - candidateEnd + bufferSize) % bufferSize;
+			if (candidateLen < 1) candidateLen = 1;
+			pendingLoopStartNF = candidateStart;
+			pendingLoopLengthNF = candidateLen;
+		}
+
 		// While frozen, allow changing loop length (and end) via knobs/CV
-		// Keep the frozen start anchored, re-align the end to a nearby zero crossing
+		// Keep the frozen start anchored, re-align the end to a nearby zero crossing.
+		// Defer applying the new length until the loop wraps to start to avoid mid-loop boundary moves.
 		if (frozen) {
 			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f));
 			if (searchRadius < 8) searchRadius = 8;
@@ -281,8 +346,7 @@ struct Buffer : Module {
 				? (alignedEnd - activeLoopStart + bufferSize) % bufferSize
 				: (activeLoopStart - alignedEnd + bufferSize) % bufferSize;
 			if (newLen < 1) newLen = 1;
-			frozenLoopLength = newLen;
-			activeLoopLength = frozenLoopLength;
+			pendingFrozenLoopLength = newLen; // apply on wrap
 		}
 		
 		// (moved) write happens after wet is computed
@@ -299,12 +363,41 @@ struct Buffer : Module {
 			// Forward playback: check if we've passed the end
 			int distanceFromStart = (readPos - activeLoopStart + bufferSize) % bufferSize;
 			if (distanceFromStart >= activeLoopLength) {
+				// Apply pending non-freeze alignment at wrap
+				if (!frozen && pendingLoopStartNF >= 0 && pendingLoopLengthNF > 0) {
+					activeLoopStart = pendingLoopStartNF;
+					activeLoopLength = pendingLoopLengthNF;
+					pendingLoopStartNF = -1;
+					pendingLoopLengthNF = -1;
+				}
+				// If frozen and have a pending frozen length update, apply it now at wrap
+				if (frozen && pendingFrozenLoopLength > 0) {
+					frozenLoopLength = pendingFrozenLoopLength;
+					activeLoopLength = frozenLoopLength;
+					pendingFrozenLoopLength = -1;
+					transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.015f));
+					transitionFadeRemaining = transitionFadeSamples;
+				}
 				readPos = activeLoopStart;
 			}
 		} else {
 			// Backward playback: check if we've passed the end (which comes before start in time)
 			int distanceFromStart = (activeLoopStart - readPos + bufferSize) % bufferSize;
 			if (distanceFromStart >= activeLoopLength) {
+				// Apply pending alignment on wrap
+				if (!frozen && pendingLoopStartNF >= 0 && pendingLoopLengthNF > 0) {
+					activeLoopStart = pendingLoopStartNF;
+					activeLoopLength = pendingLoopLengthNF;
+					pendingLoopStartNF = -1;
+					pendingLoopLengthNF = -1;
+				}
+				if (frozen && pendingFrozenLoopLength > 0) {
+					frozenLoopLength = pendingFrozenLoopLength;
+					activeLoopLength = frozenLoopLength;
+					pendingFrozenLoopLength = -1;
+					transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.015f));
+					transitionFadeRemaining = transitionFadeSamples;
+				}
 				readPos = activeLoopStart;
 			}
 		}
@@ -312,14 +405,28 @@ struct Buffer : Module {
 		// Read from buffer with crossfade at loop point
 		float wet = delayBuffer[readPos];
 
+		// Adaptive fade length based on boundary jump magnitude
+		int endPrev = (activeLoopStart + activeLoopLength - 1 + bufferSize) % bufferSize;
+		int endPrev2 = (endPrev - 1 + bufferSize) % bufferSize;
+		int endNext = activeLoopStart;
+		int startNext = (endNext + 1) % bufferSize;
+		// Consider amplitude and slope discontinuity across boundary
+		float ampJump = fabsf(delayBuffer[endNext] - delayBuffer[endPrev]);
+		float slopeEnd = delayBuffer[endPrev] - delayBuffer[endPrev2];
+		float slopeStart = delayBuffer[startNext] - delayBuffer[endNext];
+		float jumpMag = ampJump + 0.5f * fabsf(slopeEnd - slopeStart);
+		float baseMs = frozen ? 35.0f : 12.0f;
+		float addMs = std::min(45.0f, jumpMag * 12.0f); // up to +45ms if large discontinuity
+		int fadeLength = (int)(args.sampleRate * (baseMs + addMs) / 1000.0f);
+		int maxFadePercent = (activeLoopLength < args.sampleRate * 0.1f) ? 50 : 33;
+		fadeLength = std::min(fadeLength, activeLoopLength * maxFadePercent / 100);
+		if (fadeLength < 64) fadeLength = std::min(128, std::max(16, activeLoopLength / 4));
+
 		// Apply crossfade near loop boundaries.
 		// Use a small fade when not frozen to reduce clicks (especially in reverse),
 		// and a larger adaptive fade when frozen.
 		// Use longer equal-power crossfades when frozen to minimize clicks
-		int fadeLength = (int)(args.sampleRate * (frozen ? 0.030f : 0.005f)); // 30ms frozen, 5ms normal
-		int maxFadePercent = (activeLoopLength < args.sampleRate * 0.1f) ? 40 : 25;
-		fadeLength = std::min(fadeLength, activeLoopLength * maxFadePercent / 100);
-		if (fadeLength < 32) fadeLength = std::min(32, std::max(1, activeLoopLength / 4));
+		// (fadeLength computed adaptively above)
 
 		if (playbackDirection == 1) {
 			// Forward playback
@@ -328,11 +435,20 @@ struct Buffer : Module {
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
 				float t = (float)distanceFromEnd / (float)fadeLength; // 1 -> start of fade, 0 -> boundary
-				int wrapReadPos = (activeLoopStart + (fadeLength - distanceFromEnd) + bufferSize) % bufferSize;
-				float wrapSample = delayBuffer[wrapReadPos];
+				int offset = fadeLength - distanceFromEnd;
+				offset = std::max(0, std::min(fadeLength - 1, offset));
+				int wrapReadPos = (activeLoopStart + offset + bufferSize) % bufferSize;
+				// 3-tap low-pass around both current and wrap positions to soften high-frequency discontinuity
+				int currPrev = (readPos - 1 + bufferSize) % bufferSize;
+				int currNext = (readPos + 1) % bufferSize;
+				int wrapPrev = (wrapReadPos - 1 + bufferSize) % bufferSize;
+				int wrapNext = (wrapReadPos + 1) % bufferSize;
+				float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
+				float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
+				// Equal-power crossfade window
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
-				wet = wet * a + wrapSample * b;
+				wet = wetLP * a + wrapLP * b;
 			}
 			// Fade in at the start
 			else if (distanceFromStart < fadeLength) {
@@ -348,11 +464,19 @@ struct Buffer : Module {
 			// Crossfade at the end
 			if (distanceFromEnd < fadeLength) {
 				float t = (float)distanceFromEnd / (float)fadeLength;
-				int wrapReadPos = (activeLoopStart - (fadeLength - distanceFromEnd) + bufferSize) % bufferSize;
-				float wrapSample = delayBuffer[wrapReadPos];
+				int offset = fadeLength - distanceFromEnd;
+				offset = std::max(0, std::min(fadeLength - 1, offset));
+				int wrapReadPos = (activeLoopStart - offset + bufferSize) % bufferSize;
+				// 3-tap low-pass around both current and wrap positions
+				int currPrev = (readPos - 1 + bufferSize) % bufferSize;
+				int currNext = (readPos + 1) % bufferSize;
+				int wrapPrev = (wrapReadPos - 1 + bufferSize) % bufferSize;
+				int wrapNext = (wrapReadPos + 1) % bufferSize;
+				float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
+				float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
-				wet = wet * a + wrapSample * b;
+				wet = wetLP * a + wrapLP * b;
 			}
 			// Fade in at the start
 			else if (distanceFromStart < fadeLength) {
@@ -361,19 +485,62 @@ struct Buffer : Module {
 				wet = wet * b;
 			}
 		}
+
+		// Apply transition envelope when toggling freeze (attack-only to avoid pops)
+		if (transitionFadeRemaining > 0) {
+			float prog = (float)(transitionFadeSamples - transitionFadeRemaining) / (float)transitionFadeSamples;
+			transitionEnv = sinf(prog * (float)M_PI * 0.5f);
+			transitionFadeRemaining--;
+		}
+		else {
+			transitionEnv = 1.0f;
+		}
+		wet *= transitionEnv;
+
+		// High-pass filter the wet signal to suppress DC step pops
+		float hp_x = wet;
+		wetHP_y = hp_a * (wetHP_y + hp_x - wetHP_prevX);
+		wetHP_prevX = hp_x;
+		wet = wetHP_y;
+
+		// De-click smoothing: if wet jumps by a large amount, ramp over ~5–10ms
+		float jumpThresh = 0.6f; // volts
+		int rampSamples = std::max(1, (int)(args.sampleRate * 0.008f));
+		float diffWet = fabsf(wet - prevWetOut);
+		if (declickRemainingSamples <= 0 && diffWet > jumpThresh) {
+			declickPrev = prevWetOut;
+			declickTotalSamples = rampSamples;
+			declickRemainingSamples = declickTotalSamples;
+		}
+		float wetSmoothed = wet;
+		if (declickRemainingSamples > 0) {
+			float prog = (float)(declickTotalSamples - declickRemainingSamples) / (float)declickTotalSamples;
+			// Smooth ramp from previous output to current wet
+			wetSmoothed = declickPrev + prog * (wet - declickPrev);
+			declickRemainingSamples--;
+		}
+		prevWetOut = wetSmoothed;
+		wet = wetSmoothed;
 		
-		// Apply Dry/Wet mix (0-1), with CV (0-10V adds 0..1)
-		float dryWet = params[DRYWET_PARAM].getValue();
+		// Apply Dry/Wet mix (0-1), with CV (0-10V adds 0..1), smoothed to avoid clicks
+		float targetDW = params[DRYWET_PARAM].getValue();
 		if (inputs[DRYWET_CV_INPUT].isConnected()) {
 			float cv = inputs[DRYWET_CV_INPUT].getVoltage();
-			dryWet = clamp(dryWet + cv / 10.f, 0.f, 1.f);
+			targetDW = clamp(targetDW + cv / 10.f, 0.f, 1.f);
 		}
 		// Optional: force full wet when frozen and switch enabled
 		if (frozen && params[WET_ON_FREEZE_PARAM].getValue() > 0.5f) {
-			dryWet = 1.0f;
+			targetDW = 1.0f;
 		}
+		// Slew dry/wet over ~10ms to reduce pops
+		float dwStep = 1.0f / std::max(1.0f, args.sampleRate * 0.010f);
+		float diffDW = targetDW - dryWetOut;
+		if (diffDW > dwStep) dryWetOut += dwStep;
+		else if (diffDW < -dwStep) dryWetOut -= dwStep;
+		else dryWetOut = targetDW;
+
 		// Use equal-power crossfade to keep perceived loudness uniform
-		float t = dryWet;
+		float t = dryWetOut;
 		float a = cosf(t * (float)M_PI * 0.5f); // dry gain
 		float b = sinf(t * (float)M_PI * 0.5f); // wet gain
 		float mixed = input * a + wet * b;

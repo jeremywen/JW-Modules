@@ -480,18 +480,15 @@ struct NoteSeq16 : Module,QuantizeUtils {
 
 	// rotate removed: behavior assumes square grid; not supported for rectangular grid
 
-	// Rotate each 16x16 square across the active sequence range.
+	// Rotate each 16x16 square across the entire grid (ignore length/start).
 	// Direction is clockwise (DIR_RIGHT) or counter-clockwise (DIR_LEFT).
 	void rotateSquaresAcross(RotateDirection dir){
-		int seqStart = getSeqStart();
-		int seqEnd = getSeqEnd();
-		// Start at first full 16-column block at or after seqStart
-		int firstBlock = ((seqStart + 15) / 16) * 16;
 		// Copy current state to newCells as baseline
 		for(int i=0;i<CELLS;i++){
 			newCells[i] = cells[i];
 		}
-		for(int blockStart = firstBlock; blockStart + 15 <= seqEnd; blockStart += 16){
+		// Iterate over all 16-column blocks across the grid
+		for(int blockStart = 0; blockStart + 15 < COLS; blockStart += 16){
 			// Clear destination block region before writing rotation
 			for(int y=0; y<ROWS; y++){
 				for(int x=0; x<16; x++){

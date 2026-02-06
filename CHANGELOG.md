@@ -2,6 +2,19 @@
 
 Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
 
+## v2.0.26 ~ 2-?-26
+
+  * noteseq16: FIXED rotate
+  * buffer: reduced clicks
+  * samplegrid: FIXED replacing a sample
+  * samplegrid: x now unloads sample
+  * grains: reduced clicks on record and playback
+  * grains: added rate
+  * grains: added reverse
+  * grains: added clock input and sync
+  * grains: added auto-advance speed
+  * randomsound: now inputs use polyphony
+
 ## v2.0.25 ~ 1-?-26
 
   * added position knob to grains
