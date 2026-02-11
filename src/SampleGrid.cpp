@@ -1361,7 +1361,7 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 					// Waveform rendering
 					const int ci = cell;
 					if (ci < 0 || ci >= 16) return;
-					const auto &buf = module->cellSamples[ci];
+					std::vector<float> buf = module->cellSamples[ci];
 					if (buf.empty()) {
 						nvgFontSize(vg, 10.f); nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
 						nvgFillColor(vg, nvgRGBA(180,180,180,160)); nvgText(vg, w*0.5f, h*0.5f, "load", nullptr);
