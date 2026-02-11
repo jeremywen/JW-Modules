@@ -74,6 +74,10 @@ struct Grains : Module {
 	bool normalPlayback = false;
 	bool syncGrains = false;
 	dsp::SchmittTrigger clockTrig;
+	// Button param triggers processed in process()
+	dsp::SchmittTrigger randomBtnTrigger;
+	// UI-requested actions (executed on UI thread in widget step)
+	bool reqLoadRandomSibling = false;
 	// Live recording baseline tracking to minimize post-record visual shift
 	double recSumL = 0.0;
 	double recSumR = 0.0;
@@ -282,6 +286,11 @@ std::vector<uint8_t> Grains::b64Decode(const std::string& str) {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void Grains::process(const ProcessArgs &args) {
+	// Handle button params via triggers; defer heavy I/O to UI via flags
+	if (randomBtnTrigger.process(params[RANDOM_BUTTON].getValue())) {
+		// Request UI to perform random sibling load (avoids blocking audio thread)
+		reqLoadRandomSibling = true;
+	}
 	// Handle recording toggle and capture first
 	bool recOn = params[REC_SWITCH].getValue() > 0.5f
 		|| (inputs[REC_TOGGLE].isConnected() && inputs[REC_TOGGLE].getVoltage() > 0.5f);
@@ -1609,16 +1618,12 @@ void GrainsWidget::step() {
     ModuleWidget::step();
     Grains *m = dynamic_cast<Grains*>(module);
     if (!m) return;
-    float v = m->params[Grains::RANDOM_BUTTON].getValue();
-    if (v > 0.5f && !randomBtnLatched) {
-        // Trigger random load on UI thread; reset button immediately
-        m->loadRandomSiblingSample();
-        m->params[Grains::RANDOM_BUTTON].setValue(0.f);
-        randomBtnLatched = true;
-    }
-    else if (v <= 0.5f) {
-        randomBtnLatched = false;
-    }
+	// Consume UI-requested actions set from process() triggers
+	if (m->reqLoadRandomSibling) {
+		m->reqLoadRandomSibling = false;
+		m->loadRandomSiblingSample();
+		m->params[Grains::RANDOM_BUTTON].setValue(0.f);
+	}
 }
 
 

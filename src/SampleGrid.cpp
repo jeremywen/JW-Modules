@@ -82,6 +82,13 @@ struct SampleGrid : Module {
 	dsp::SchmittTrigger reverseRandomInTrigger;
 	dsp::SchmittTrigger rndMutesInTrigger;
 
+	// Button params handled as triggers in process()
+	dsp::SchmittTrigger rndSamplesParamTrigger;
+	dsp::SchmittTrigger shuffleSamplesParamTrigger;
+	dsp::SchmittTrigger splitSampleParamTrigger;
+	dsp::SchmittTrigger reverseRandomParamTrigger;
+	dsp::SchmittTrigger rndMutesParamTrigger;
+
 	int index = 0;
 	int indexYX = 0;
 	int posX = 0;
@@ -138,6 +145,18 @@ struct SampleGrid : Module {
 
 	// Track whether we loaded audio from patch storage so JSON path loading can be skipped
 	bool loadedFromPatchStorage = false;
+
+	// UI-requested actions (performed on audio thread in process())
+	bool reqShuffleSamples = false;
+	bool reqReverseRandom = false;
+	bool reqRandomizeMutes = false;
+	bool reqSplitSampleInteractive = false;
+	bool reqRandomSamplesInteractive = false;
+	// Per-cell UI requests to avoid UI-thread mutation races
+	bool reqClearCell[16] = {false};
+	bool reqLoadRandomCell[16] = {false};
+	bool reqLoadCellFromPath[16] = {false};
+	std::string pendingCellPath[16];
 
 	// Write a mono PCM16 WAV file
 	static bool writeMonoWav(const std::string &path, const std::vector<float> &mono, int sRate) {
@@ -1064,6 +1083,39 @@ void SampleGrid::process(const ProcessArgs &args) {
 			loadRandomSamplesFromDir(sampleDir);
 		}
 	}
+	// Button params as triggers
+	if (rndSamplesParamTrigger.process(params[RND_SAMPLES_PARAM].getValue())) {
+		if (!sampleDir.empty()) {
+			loadRandomSamplesFromDir(sampleDir);
+		} else {
+			reqRandomSamplesInteractive = true;
+		}
+	}
+	if (shuffleSamplesParamTrigger.process(params[SHUFFLE_SAMPLES_PARAM].getValue())) {
+		reqShuffleSamples = true;
+	}
+	if (reverseRandomParamTrigger.process(params[REVERSE_RANDOM_PARAM].getValue())) {
+		reqReverseRandom = true;
+	}
+	if (rndMutesParamTrigger.process(params[RND_MUTES_PARAM].getValue())) {
+		reqRandomizeMutes = true;
+	}
+	if (splitSampleParamTrigger.process(params[SPLIT_SAMPLE_PARAM].getValue())) {
+		reqSplitSampleInteractive = true;
+	}
+	// Apply any UI-requested operations on the audio thread to avoid races
+	if (reqShuffleSamples) {
+		reqShuffleSamples = false;
+		shuffleSamples();
+	}
+	if (reqReverseRandom) {
+		reqReverseRandom = false;
+		randomReverseSamples();
+	}
+	if (reqRandomizeMutes) {
+		reqRandomizeMutes = false;
+		randomizeGateStates();
+	}
 	if (shuffleInTrigger.process(inputs[SHUFFLE_INPUT].getVoltage())) {
 		shuffleSamples();
 	}
@@ -1072,6 +1124,37 @@ void SampleGrid::process(const ProcessArgs &args) {
 	}
 	if (rndMutesInTrigger.process(inputs[RND_MUTES_INPUT].getVoltage())) {
 		randomizeGateStates();
+	}
+	// Apply per-cell UI requests safely on audio thread
+	for (int i = 0; i < 16; ++i) {
+		if (reqClearCell[i]) {
+			reqClearCell[i] = false;
+			cellSamples[i].clear();
+			cellSamplePath[i].clear();
+			cellSampleRate[i] = 0;
+			cellStartFrac[i] = 0.f;
+			cellIsSlice[i] = false;
+			cellSliceStartFrac[i] = 0.f;
+			cellSliceEndFrac[i] = 1.f;
+			cellReversed[i] = false;
+			if (playingCell == i) playingCell = -1;
+		}
+		if (reqLoadCellFromPath[i]) {
+			std::string p = pendingCellPath[i];
+			pendingCellPath[i].clear();
+			reqLoadCellFromPath[i] = false;
+			if (!p.empty()) {
+				loadCellSample(i, p);
+			}
+		}
+		if (reqLoadRandomCell[i]) {
+			reqLoadRandomCell[i] = false;
+			// Pick path and load on audio thread to avoid UI races
+			std::string p;
+			if (pickRandomWavPath(p)) {
+				loadCellSample(i, p);
+			}
+		}
 	}
 	if (nextStep) {
 		if(resetMode){
@@ -1189,21 +1272,9 @@ void SampleGrid::process(const ProcessArgs &args) {
 }
 
 struct SampleGridWidget : ModuleWidget {
-	std::vector<ParamWidget*> probKnobs;
-	std::vector<ParamWidget*> gateButtons;
-	SampleGridWidget(SampleGrid *module);
-	~SampleGridWidget(){ 
-		probKnobs.clear(); 
-		gateButtons.clear(); 
-	}
-	void appendContextMenu(Menu *menu) override;
-	void step() override;
-private:
-	bool randomSamplesLatched = false;
-	bool shuffleSamplesLatched = false;
-	bool splitSampleLatched = false;
-	bool reverseRandomLatched = false;
-	bool randomizeMutesLatched = false;
+    SampleGridWidget(SampleGrid *module);
+    void appendContextMenu(Menu *menu) override;
+    void step() override;
 };
 
 SampleGridWidget::SampleGridWidget(SampleGrid *module) {
@@ -1261,25 +1332,15 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						const float folderRx = 2.f;
 						const float folderRy = h - d - 2.f;
 						Vec m = e.pos;
-						// Dice click: random sample for this cell
+						// Dice click: request random sample for this cell (handled in process())
 						if (m.x >= diceRx && m.x <= diceRx + d && m.y >= diceRy && m.y <= diceRy + d) {
-							module->loadRandomSampleForCell(cell);
+							module->reqLoadRandomCell[cell] = true;
 							e.consume(this);
 							return;
 						}
 						// X click: unload (clear) this cell's sample
 						if (m.x >= xRx && m.x <= xRx + d && m.y >= xRy && m.y <= xRy + d) {
-							module->cellSamples[cell].clear();
-							module->cellSamplePath[cell].clear();
-							module->cellSampleRate[cell] = 0;
-							module->cellStartFrac[cell] = 0.f;
-							module->cellIsSlice[cell] = false;
-							module->cellSliceStartFrac[cell] = 0.f;
-							module->cellSliceEndFrac[cell] = 1.f;
-							module->cellReversed[cell] = false;
-							if (module->playingCell == cell) {
-								module->playingCell = -1;
-							}
+							module->reqClearCell[cell] = true;
 							e.consume(this);
 							return;
 						}
@@ -1288,7 +1349,7 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							if (path) { std::string p = path; free(path); module->loadCellSample(cell, p); }
+							if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
 							e.consume(this);
 							return;
 						}
@@ -1306,7 +1367,7 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							if (path) { std::string p = path; free(path); module->loadCellSample(cell, p); }
+							if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
 						}
 						e.consume(this);
 					}
@@ -1320,7 +1381,7 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 						char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 						osdialog_filters_free(filters);
-						if (path) { std::string p = path; free(path); module->loadCellSample(cell, p); }
+						if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
 						e.consume(this);
 					}
 				}
@@ -1784,54 +1845,15 @@ void SampleGridWidget::step() {
 	ModuleWidget::step();
 	SampleGrid *m = dynamic_cast<SampleGrid*>(module);
 	if (!m) return;
-	float v = m->params[SampleGrid::RND_SAMPLES_PARAM].getValue();
-	if (v > 0.5f && !randomSamplesLatched) {
-		// Trigger random load; reset button immediately
+	// Handle interactive actions requested by process() via flags
+	if (m->reqRandomSamplesInteractive) {
+		m->reqRandomSamplesInteractive = false;
 		m->loadRandomSamplesInteractive();
 		m->params[SampleGrid::RND_SAMPLES_PARAM].setValue(0.f);
-		randomSamplesLatched = true;
 	}
-	else if (v <= 0.5f) {
-		randomSamplesLatched = false;
-	}
-
-	float sv = m->params[SampleGrid::SHUFFLE_SAMPLES_PARAM].getValue();
-	if (sv > 0.5f && !shuffleSamplesLatched) {
-		m->shuffleSamples();
-		m->params[SampleGrid::SHUFFLE_SAMPLES_PARAM].setValue(0.f);
-		shuffleSamplesLatched = true;
-	}
-	else if (sv <= 0.5f) {
-		shuffleSamplesLatched = false;
-	}
-
-	float sp = m->params[SampleGrid::SPLIT_SAMPLE_PARAM].getValue();
-	if (sp > 0.5f && !splitSampleLatched) {
+	if (m->reqSplitSampleInteractive) {
+		m->reqSplitSampleInteractive = false;
 		m->loadSplitSampleInteractive();
 		m->params[SampleGrid::SPLIT_SAMPLE_PARAM].setValue(0.f);
-		splitSampleLatched = true;
-	}
-	else if (sp <= 0.5f) {
-		splitSampleLatched = false;
-	}
-
-	float rr = m->params[SampleGrid::REVERSE_RANDOM_PARAM].getValue();
-	if (rr > 0.5f && !reverseRandomLatched) {
-		m->randomReverseSamples();
-		m->params[SampleGrid::REVERSE_RANDOM_PARAM].setValue(0.f);
-		reverseRandomLatched = true;
-	}
-	else if (rr <= 0.5f) {
-		reverseRandomLatched = false;
-	}
-
-	float rm = m->params[SampleGrid::RND_MUTES_PARAM].getValue();
-	if (rm > 0.5f && !randomizeMutesLatched) {
-		m->randomizeGateStates();
-		m->params[SampleGrid::RND_MUTES_PARAM].setValue(0.f);
-		randomizeMutesLatched = true;
-	}
-	else if (rm <= 0.5f) {
-		randomizeMutesLatched = false;
 	}
 }

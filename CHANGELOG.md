@@ -2,7 +2,11 @@
 
 Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
 
-## v2.0.27
+## v2.0.28 ~ 2-?-26
+
+  * SampleGrid: fix crash
+
+## v2.0.27 ~ 2-?-26
 
   * SampleGrid: fix crash
 
