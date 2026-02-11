@@ -2,6 +2,10 @@
 
 Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
 
+## v2.0.27
+
+  * SampleGrid: fix crash
+
 ## v2.0.26 ~ 2-?-26
 
   * noteseq16: FIXED rotate
