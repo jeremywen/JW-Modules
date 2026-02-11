@@ -433,6 +433,12 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 
 	void RandomSoundWidget::appendContextMenu(Menu *menu) {
 		RandomSound *rs = dynamic_cast<RandomSound*>(module);
+		if (!rs) {
+			MenuLabel *info = new MenuLabel();
+			info->text = "Module not active (browser preview)";
+			menu->addChild(info);
+			return;
+		}
 		MenuLabel *spacerLabel = new MenuLabel();
 		menu->addChild(spacerLabel);
 		struct RSChannelItem : MenuItem {

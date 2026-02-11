@@ -1149,10 +1149,13 @@ void SampleGrid::process(const ProcessArgs &args) {
 		}
 		if (reqLoadRandomCell[i]) {
 			reqLoadRandomCell[i] = false;
-			// Pick path and load on audio thread to avoid UI races
-			std::string p;
-			if (pickRandomWavPath(p)) {
-				loadCellSample(i, p);
+			// Only operate if a sample directory is set; never open dialogs here
+			if (!sampleDir.empty()) {
+				std::vector<std::string> wavs;
+				if (collectWavsInDir(sampleDir, wavs) && !wavs.empty()) {
+					size_t idx = (size_t)std::floor(random::uniform() * wavs.size());
+					loadCellSample(i, wavs[idx]);
+				}
 			}
 		}
 	}
@@ -1332,9 +1335,18 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						const float folderRx = 2.f;
 						const float folderRy = h - d - 2.f;
 						Vec m = e.pos;
-						// Dice click: request random sample for this cell (handled in process())
+						// Dice click: random sample for this cell
 						if (m.x >= diceRx && m.x <= diceRx + d && m.y >= diceRy && m.y <= diceRy + d) {
-							module->reqLoadRandomCell[cell] = true;
+							// If a directory is set, request a random load on audio thread.
+							// Otherwise, open a file dialog on UI and queue the chosen path.
+							if (module->sampleDir.empty()) {
+								osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+								char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
+								osdialog_filters_free(filters);
+								if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+							} else {
+								module->reqLoadRandomCell[cell] = true;
+							}
 							e.consume(this);
 							return;
 						}
@@ -1702,7 +1714,12 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(spacerLabel);
 
 	SampleGrid *sampleGrid = dynamic_cast<SampleGrid*>(module);
-	assert(sampleGrid);
+	if (!sampleGrid) {
+		MenuLabel *info = new MenuLabel();
+		info->text = "Module not active (browser preview)";
+		menu->addChild(info);
+		return;
+	}
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";
