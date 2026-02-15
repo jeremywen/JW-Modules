@@ -2,6 +2,10 @@
 
 Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
 
+## v2.0.31 ~ 2-?-26
+
+  * Grains: fix crash
+
 ## v2.0.30 ~ 2-?-26
 
   * SampleGrid: fix crash
