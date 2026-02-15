@@ -401,6 +401,14 @@ void Grains::process(const ProcessArgs &args) {
 		return;
 	}
 
+	// Guard: if no sample is loaded, output silence and avoid buffer access
+	if (sampleL.empty() || sampleR.empty()) {
+		outputs[OUT_L].setVoltage(0.f);
+		outputs[OUT_R].setVoltage(0.f);
+		lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
+		return;
+	}
+
 	// Read auto-advance state from the new front-panel switch
 	autoAdvance = params[AUTO_ADV_SWITCH].getValue() > 0.5f;
 	// Read sync-to-clock switch
