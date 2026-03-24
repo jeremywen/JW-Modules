@@ -502,6 +502,24 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->divSeq = divSeq;
 	menu->addChild(pitchMenuItem);
 
+	// Gate pulse length slider
+	MenuLabel *spacerLabelGate = new MenuLabel();
+	menu->addChild(spacerLabelGate);
+	MenuLabel *gatePulseLabel = new MenuLabel();
+	gatePulseLabel->text = "Gate Length";
+	menu->addChild(gatePulseLabel);
+
+	GatePulseMsSlider* gateSlider = new GatePulseMsSlider();
+	{
+		auto qp = static_cast<GatePulseMsQuantity*>(gateSlider->quantity);
+		qp->getSeconds = [divSeq](){ return divSeq->gatePulseLenSec; };
+		qp->setSeconds = [divSeq](float v){ divSeq->gatePulseLenSec = v; };
+		qp->defaultSeconds = 0.005f;
+		qp->label = "Gate Length";
+	}
+	gateSlider->box.size.x = 175.0f;
+	menu->addChild(gateSlider);
+
 	// Max random division / param limit
 	MenuLabel *spacerLabel3 = new MenuLabel();
 	menu->addChild(spacerLabel3);

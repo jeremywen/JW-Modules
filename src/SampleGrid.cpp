@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <cstring>
+#include <mutex>
 #include "osdialog.h"
 #include "system.hpp"
 #include <dirent.h>
@@ -152,6 +153,13 @@ struct SampleGrid : Module {
 	bool reqRandomizeMutes = false;
 	bool reqSplitSampleInteractive = false;
 	bool reqRandomSamplesInteractive = false;
+	bool reqRandomSamplesFromDir = false;
+	std::mutex pendingRandomSamplesMutex;
+	bool pendingRandomSamplesReady = false;
+	bool pendingRandomCellValid[16] = {false};
+	std::vector<float> pendingRandomCellSamples[16];
+	std::string pendingRandomCellPath[16];
+	int pendingRandomCellRate[16] = {0};
 	// Per-cell UI requests to avoid UI-thread mutation races
 	bool reqClearCell[16] = {false};
 	bool reqLoadRandomCell[16] = {false};
@@ -294,6 +302,69 @@ struct SampleGrid : Module {
 		return true;
 	}
 
+	// UI-thread loader: read/decode random samples, then stage for audio-thread swap.
+	bool prepareRandomSamplesFromDir(const std::string &dir) {
+		std::vector<std::string> wavs;
+		if (!collectWavsInDir(dir, wavs)) return false;
+
+		std::vector<float> stagedSamples[16];
+		std::string stagedPaths[16];
+		int stagedRates[16] = {0};
+		bool stagedValid[16] = {false};
+		bool anyLoaded = false;
+
+		for (int i = 0; i < 16; ++i) {
+			if (wavs.empty()) break;
+			size_t idx = (size_t)std::floor(random::uniform() * wavs.size());
+			const std::string &p = wavs[idx];
+			std::vector<float> mono;
+			int sRate = 0;
+			if (loadWavMonoToBuffer(p, mono, sRate)) {
+				stagedSamples[i] = std::move(mono);
+				stagedPaths[i] = p;
+				stagedRates[i] = sRate;
+				stagedValid[i] = true;
+				anyLoaded = true;
+			}
+		}
+
+		if (!anyLoaded) return false;
+
+		std::lock_guard<std::mutex> lock(pendingRandomSamplesMutex);
+		for (int i = 0; i < 16; ++i) {
+			pendingRandomCellValid[i] = stagedValid[i];
+			if (stagedValid[i]) {
+				pendingRandomCellSamples[i] = std::move(stagedSamples[i]);
+				pendingRandomCellPath[i] = stagedPaths[i];
+				pendingRandomCellRate[i] = stagedRates[i];
+			}
+		}
+		pendingRandomSamplesReady = true;
+		return true;
+	}
+
+	// Audio-thread apply: only move preloaded buffers, no disk I/O.
+	void applyPendingRandomSamples() {
+		if (!pendingRandomSamplesReady) return;
+		std::lock_guard<std::mutex> lock(pendingRandomSamplesMutex);
+		if (!pendingRandomSamplesReady) return;
+
+		for (int i = 0; i < 16; ++i) {
+			if (!pendingRandomCellValid[i]) continue;
+			cellSamples[i] = std::move(pendingRandomCellSamples[i]);
+			cellSamplePath[i] = std::move(pendingRandomCellPath[i]);
+			cellSampleRate[i] = pendingRandomCellRate[i];
+			cellIsSlice[i] = false;
+			cellSliceStartFrac[i] = 0.f;
+			cellSliceEndFrac[i] = 1.f;
+			cellReversed[i] = false;
+			pendingRandomCellValid[i] = false;
+			pendingRandomCellRate[i] = 0;
+		}
+
+		pendingRandomSamplesReady = false;
+	}
+
 	// Interactive: set dir if needed, then load random samples
 	bool loadRandomSamplesInteractive() {
 		std::string dir = sampleDir;
@@ -309,7 +380,7 @@ struct SampleGrid : Module {
 			}
 			sampleDir = dir;
 		}
-		return loadRandomSamplesFromDir(dir);
+		return prepareRandomSamplesFromDir(dir);
 	}
 
 	// Choose and set the directory used for random sample loading
@@ -1078,15 +1149,15 @@ void SampleGrid::process(const ProcessArgs &args) {
 
 	// Bottom control trigger inputs
 	if (rndSamplesInTrigger.process(inputs[RND_SAMPLES_INPUT].getVoltage())) {
-		// Avoid UI dialogs from audio thread; only load if directory is set
+		// Avoid UI dialogs and disk I/O from audio thread; queue UI-side loading.
 		if (!sampleDir.empty()) {
-			loadRandomSamplesFromDir(sampleDir);
+			reqRandomSamplesFromDir = true;
 		}
 	}
 	// Button params as triggers
 	if (rndSamplesParamTrigger.process(params[RND_SAMPLES_PARAM].getValue())) {
 		if (!sampleDir.empty()) {
-			loadRandomSamplesFromDir(sampleDir);
+			reqRandomSamplesFromDir = true;
 		} else {
 			reqRandomSamplesInteractive = true;
 		}
@@ -1103,6 +1174,10 @@ void SampleGrid::process(const ProcessArgs &args) {
 	if (splitSampleParamTrigger.process(params[SPLIT_SAMPLE_PARAM].getValue())) {
 		reqSplitSampleInteractive = true;
 	}
+
+	// Apply preloaded random-sample buffers prepared on the UI thread.
+	applyPendingRandomSamples();
+
 	// Apply any UI-requested operations on the audio thread to avoid races
 	if (reqShuffleSamples) {
 		reqShuffleSamples = false;
@@ -1845,7 +1920,7 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 			if (!sampleGrid) return;
 			if (sampleGrid->chooseSampleDir()) {
 				if (!sampleGrid->sampleDir.empty()) {
-					sampleGrid->loadRandomSamplesFromDir(sampleGrid->sampleDir);
+					sampleGrid->prepareRandomSamplesFromDir(sampleGrid->sampleDir);
 				}
 			}
 		}
@@ -1862,6 +1937,13 @@ void SampleGridWidget::step() {
 	ModuleWidget::step();
 	SampleGrid *m = dynamic_cast<SampleGrid*>(module);
 	if (!m) return;
+	if (m->reqRandomSamplesFromDir) {
+		m->reqRandomSamplesFromDir = false;
+		if (!m->sampleDir.empty()) {
+			m->prepareRandomSamplesFromDir(m->sampleDir);
+		}
+		m->params[SampleGrid::RND_SAMPLES_PARAM].setValue(0.f);
+	}
 	// Handle interactive actions requested by process() via flags
 	if (m->reqRandomSamplesInteractive) {
 		m->reqRandomSamplesInteractive = false;

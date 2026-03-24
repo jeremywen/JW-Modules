@@ -33,6 +33,7 @@ struct Grains : Module {
 		RATE_AMOUNT,
 		AUTO_ADV_SWITCH,
 		SYNC_SWITCH,
+		MONITOR_SWITCH,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -157,6 +158,7 @@ struct Grains : Module {
 		configParam(GRAIN_SPREAD_MS, 0.f, 2000.f, 50.f, "Grain spread", " ms");
 		configSwitch(AUTO_ADV_SWITCH, 0.f, 1.f, 0.f, "Auto-advance");
 		configSwitch(SYNC_SWITCH, 0.f, 1.f, 0.f, "Sync to clock");
+		configSwitch(MONITOR_SWITCH, 0.f, 1.f, 0.f, "Monitor input");
 		configParam(GRAIN_PITCH_SEMI, -24.f, 24.f, 0.f, "Pitch", " semitones");
 		configParam(GRAIN_GAIN, 0.f, 1.f, 0.8f, "Output gain");
 		configSwitch(WINDOW_TYPE, 0.f, 3.f, 0.f, "Window type",
@@ -377,9 +379,10 @@ void Grains::process(const ProcessArgs &args) {
 		recCount++;
 	}
 
-	// During recording, always monitor REC_INPUT and do not play back the buffer to avoid clicks.
+	// During recording, monitor switch enables direct REC_INPUT passthrough.
+	// If monitor is off, continue into granular processing of the recording buffer.
 	if (isRecording) {
-		if (inputs[REC_INPUT].isConnected()) {
+		if (params[MONITOR_SWITCH].getValue() > 0.5f && inputs[REC_INPUT].isConnected()) {
 			float v = inputs[REC_INPUT].getVoltage();
 			float s = std::max(-1.f, std::min(1.f, v / 5.f));
 			// Simple DC blocker
@@ -389,15 +392,22 @@ void Grains::process(const ProcessArgs &args) {
 			dcR = (float)r;
 			double y = (double)(s - (double)dcPrevXL) + (double)dcR * (double)dcYL;
 			dcPrevXL = s; dcYL = (float)y;
-			float og = (float)(params[GRAIN_GAIN].getValue() * playTransEnv * (double)posJumpEnv * 5.0);
+			float og = (float)(params[GRAIN_GAIN].getValue() * 5.0);
 			outputs[OUT_L].setVoltage((float)(y * og));
 			outputs[OUT_R].setVoltage((float)(y * og));
+			lights[REC_LIGHT].setBrightness(1.0f);
+			return;
 		}
-		else {
-			outputs[OUT_L].setVoltage(0.f);
-			outputs[OUT_R].setVoltage(0.f);
-		}
-		lights[REC_LIGHT].setBrightness(1.0f);
+	}
+
+	// Optional input monitor path (outside recording)
+	if (params[MONITOR_SWITCH].getValue() > 0.5f && inputs[REC_INPUT].isConnected()) {
+		float v = inputs[REC_INPUT].getVoltage();
+		float s = std::max(-1.f, std::min(1.f, v / 5.f));
+		float og = (float)(params[GRAIN_GAIN].getValue() * 5.0);
+		outputs[OUT_L].setVoltage(s * og);
+		outputs[OUT_R].setVoltage(s * og);
+		lights[REC_LIGHT].setBrightness(0.0f);
 		return;
 	}
 
@@ -1430,8 +1440,6 @@ struct GrainsWidget : ModuleWidget {
 	}
 	void appendContextMenu(Menu *menu) override;
     void step() override;
-private:
-    bool randomBtnLatched = false;
 };
 
 GrainsWidget::GrainsWidget(Grains *module) {
@@ -1453,8 +1461,9 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(100, 15), module, Grains::REC_TOGGLE));
 	addChild(createLight<SmallLight<RedLight>>(Vec(120, 21), module, Grains::REC_LIGHT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(150, 15), module, Grains::CLOCK_INPUT));
-	addParam(createParam<CKSS>(Vec(192, 15), module, Grains::SYNC_SWITCH));
+	addParam(createParam<CKSS>(Vec(150, 15), module, Grains::MONITOR_SWITCH));
+	addInput(createInput<TinyPJ301MPort>(Vec(197, 15), module, Grains::CLOCK_INPUT));
+	addParam(createParam<CKSS>(Vec(240, 15), module, Grains::SYNC_SWITCH));
 	addParam(createParam<SmallButton>(Vec(485, 10), module, Grains::RANDOM_BUTTON));
 
 	addParam(createParam<CKSS>(Vec(410, 15), module, Grains::AUTO_ADV_SWITCH));	

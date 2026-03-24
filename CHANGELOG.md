@@ -1,6 +1,10 @@
 # Change Log
 
-Support my work on these free modules by becoming a patreon here https://www.patreon.com/jeremywen
+## v2.0.32 ~ 3-24-26
+
+  * Sample Grid: fixed load random samples interupting audio playback
+  * DivSeq: added gate length context menu item
+  * Grains: added switch for monitoring the input
 
 ## v2.0.31 ~ 2-?-26
 
