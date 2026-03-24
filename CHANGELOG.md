@@ -1,10 +1,12 @@
 # Change Log
 
-## v2.0.32 ~ 3-24-26
+## v2.0.33 ~ 3-24-26
 
   * Sample Grid: fixed load random samples interupting audio playback
   * DivSeq: added gate length context menu item
   * Grains: added switch for monitoring the input
+  * NoteSeq16: knob updates when max length changes
+  * NoteSeq16: length now persists correctly
 
 ## v2.0.31 ~ 2-?-26
 

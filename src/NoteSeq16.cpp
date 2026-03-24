@@ -175,6 +175,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "channels", json_integer(channels));
 		json_object_set_new(rootJ, "maxLength", json_integer(maxLength));
+		json_object_set_new(rootJ, "lengthKnob", json_real(params[LENGTH_KNOB_PARAM].getValue()));
 		
 		json_t *cellsJ = json_array();
 		for (int i = 0; i < CELLS; i++) {
@@ -220,6 +221,15 @@ struct NoteSeq16 : Module,QuantizeUtils {
 			paramQuantities[LENGTH_KNOB_PARAM]->maxValue = maxLength;
 			float cur = params[LENGTH_KNOB_PARAM].getValue();
 			if (cur > maxLength) params[LENGTH_KNOB_PARAM].setValue((float)maxLength);
+		}
+
+		// Restore saved length knob after maxLength is applied.
+		// This avoids load-order clamping (e.g. saved 32 can get clamped to 16 before maxLength is read).
+		json_t *lengthKnobJ = json_object_get(rootJ, "lengthKnob");
+		if (lengthKnobJ && (json_is_real(lengthKnobJ) || json_is_integer(lengthKnobJ))) {
+			float savedLen = (float) json_number_value(lengthKnobJ);
+			savedLen = clampfjw(savedLen, 1.0f, (float)maxLength);
+			params[LENGTH_KNOB_PARAM].setValue(savedLen);
 		}
 
 		json_t *cellsJ = json_object_get(rootJ, "cells");
@@ -1162,13 +1172,19 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 		NoteSeq16 *module;
 		int value;
 		void onAction(const event::Action &e) override {
+			int oldMax = std::max(1, module->maxLength);
+			float cur = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue();
+			float norm = (oldMax > 1) ? (cur - 1.0f) / float(oldMax - 1) : 0.0f;
+			norm = clampfjw(norm, 0.0f, 1.0f);
+
 			module->maxLength = value;
 			// Update length knob max and clamp current value within new max
 			if (module->paramQuantities.size() > NoteSeq16::LENGTH_KNOB_PARAM && module->paramQuantities[NoteSeq16::LENGTH_KNOB_PARAM]) {
 				module->paramQuantities[NoteSeq16::LENGTH_KNOB_PARAM]->maxValue = (float)value;
 			}
-			float cur = module->params[NoteSeq16::LENGTH_KNOB_PARAM].getValue();
-			if (cur > value) module->params[NoteSeq16::LENGTH_KNOB_PARAM].setValue((float)value);
+
+			float remapped = 1.0f + norm * float(value - 1);
+			module->params[NoteSeq16::LENGTH_KNOB_PARAM].setValue(clampfjw(remapped, 1.0f, float(value)));
 		}
 		void step() override {
 			rightText = CHECKMARK(module->maxLength == value);
