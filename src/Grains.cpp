@@ -1509,6 +1509,25 @@ GrainsWidget::GrainsWidget(Grains *module) {
 
 };
 
+// Local helper for async dialog (load and save)
+static void loadWavPath(Grains *grains, char *path) {
+        if (path) {
+                std::string p = path;
+                free(path);
+                grains->loadSampleFromPath(p);
+        }
+}
+static void saveWavPath(Grains *grains, char *path) {
+	if (path) {
+		std::string p = path;
+		free(path);
+		// Ensure .wav extension
+		auto hasExt = [](const std::string &s){ if (s.size() < 4) return false; std::string ext = s.substr(s.size()-4); std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); return ext == ".wav"; };
+		if (!hasExt(p)) p += ".wav";
+		grains->saveBufferToWav(p);
+	}
+}
+
 void GrainsWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->addChild(spacerLabel);
