@@ -365,65 +365,95 @@ struct SampleGrid : Module {
 		pendingRandomSamplesReady = false;
 	}
 
-	// Interactive: set dir if needed, then load random samples
-	bool loadRandomSamplesInteractive() {
+	void setSampleDirHandler(char *path) {
 		std::string dir = sampleDir;
-		if (dir.empty()) {
-			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
-			if (!path) return false;
-			std::string p = path; free(path);
-			struct stat st; if (stat(p.c_str(), &st) == 0) {
-				if (S_ISDIR(st.st_mode)) dir = p;
-				else {
-					size_t q = p.find_last_of("/\\"); dir = (q == std::string::npos) ? std::string(".") : p.substr(0, q);
-				}
-			}
-			sampleDir = dir;
-		}
-		return prepareRandomSamplesFromDir(dir);
-	}
-
-	// Choose and set the directory used for random sample loading
-	bool chooseSampleDir() {
-		char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
-		if (!path) return false;
+		if (!path) return;
 		std::string p = path; free(path);
-		std::string dir;
 		struct stat st; if (stat(p.c_str(), &st) == 0) {
 			if (S_ISDIR(st.st_mode)) dir = p;
 			else {
 				size_t q = p.find_last_of("/\\"); dir = (q == std::string::npos) ? std::string(".") : p.substr(0, q);
 			}
 		}
-		if (!dir.empty()) { sampleDir = dir; return true; }
-		return false;
+		if (!dir.empty()) { sampleDir = dir; }
 	}
-
-	// Pick a single random WAV path from sampleDir, prompting to choose a directory if unset
-	bool pickRandomWavPath(std::string &outPath) {
+	
+	void prepareRandomSamplesFromDirHandler(char *path) {
+		setSampleDirHandler(path);
+		prepareRandomSamplesFromDir(sampleDir);
+	}
+	
+	// Interactive: set dir if needed, then load random samples
+	void loadRandomSamplesInteractive() {
+		INFO("loadRandomSamplesInteractive need to test.");
 		std::string dir = sampleDir;
 		if (dir.empty()) {
+			INFO("loadRandomSamplesInteractive test case 1.");
+#ifdef USING_CARDINAL_NOT_RACK
+			async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this](char* path) {
+				prepareRandomSamplesFromDirHandler(path);
+			});
+#else
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
-			if (!path) return false;
-			std::string p = path; free(path);
-			struct stat st; if (stat(p.c_str(), &st) == 0) {
-				if (S_ISDIR(st.st_mode)) dir = p;
-				else {
-					size_t q = p.find_last_of("/\\"); dir = (q == std::string::npos) ? std::string(".") : p.substr(0, q);
-				}
-			}
-			sampleDir = dir;
+			prepareRandomSamplesFromDirHandler(path);
+#endif
+		} else {
+			prepareRandomSamplesFromDir(dir); 
 		}
-		std::vector<std::string> wavs; if (!collectWavsInDir(dir, wavs)) return false;
-		size_t idx = (size_t)std::floor(random::uniform() * wavs.size());
-		outPath = wavs[idx];
-		return true;
+	}
+
+	// Choose and set the directory used for random sample loading
+	// TODO: This is now dead code!
+	void chooseSampleDir() {
+		INFO("chooseSampleDir. Test case 2.");
+#ifdef USING_CARDINAL_NOT_RACK
+		async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this](char* path) {
+			setSampleDirHandler(path);
+		});
+#else
+		char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
+		setSampleDirHandler(path);
+#endif		
+		return;
+	}
+
+	void pickRandomWavPathHandler(int idx, char * path) {
+		setSampleDirHandler(path);
+		std::string dir = sampleDir;
+		std::vector<std::string> wavs; if (!collectWavsInDir(dir, wavs)) return;
+		size_t idx_picked = (size_t)std::floor(random::uniform() * wavs.size());
+		std::string outPath = wavs[idx_picked];
+		loadCellSample(idx, outPath);
+	}
+	
+	// Pick a single random WAV path from sampleDir, prompting to choose a directory if unset
+	void pickRandomWavPath(int idx) {
+		std::string dir = sampleDir;
+		if (dir.empty()) {
+			INFO("pickRandomWavPath. Test case 3");  // this was tricky.  I must have gotten it wrong!
+#ifdef USING_CARDINAL_NOT_RACK
+			async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this, idx](char* path) {
+				pickRandomWavPathHandler(idx, path);
+			});
+#else
+			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
+			pickRandomWavPathHandler(idx, path);
+#endif	
+		} else {
+			std::vector<std::string> wavs; if (!collectWavsInDir(dir, wavs)) return;
+			size_t idx_picked = (size_t)std::floor(random::uniform() * wavs.size());
+			std::string outPath = wavs[idx_picked];
+			loadCellSample(idx, outPath);
+		}
+		return;
 	}
 
 	// Load a random sample into a specific cell
-	bool loadRandomSampleForCell(int idx) {
-		std::string p; if (!pickRandomWavPath(p)) return false;
-		return loadCellSample(idx, p);
+	void loadRandomSampleForCell(int idx) {
+	        // is this dead code?
+		//std::string p; 
+		pickRandomWavPath(idx);
+		return; // loadCellSample(idx, p);
 	}
 
 	// Load full mono WAV buffer (like loadCellSample but returning buffer and rate)
@@ -531,12 +561,26 @@ struct SampleGrid : Module {
 		return true;
 	}
 
-	bool loadSplitSampleInteractive() {
+	void loadSplitSampleInteractiveHandler(char *path) {
+		if (!path) return; 
+		std::string p = path; free(path);
+		loadSplitSampleAcrossCells(p);
+		return;
+	}
+	
+	void loadSplitSampleInteractive() {
+		INFO("loadSplitSampleInteractive test case 4.");
+#ifdef USING_CARDINAL_NOT_RACK
+		async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this](char* path) {
+			loadSplitSampleInteractiveHandler(path);
+		});
+#else
+
 		osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 		char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 		osdialog_filters_free(filters);
-		if (!path) return false; std::string p = path; free(path);
-		return loadSplitSampleAcrossCells(p);
+		loadSplitSampleInteractiveHandler(path);
+#endif
 	}
 
 	void shuffleSamples() {
@@ -1355,6 +1399,15 @@ struct SampleGridWidget : ModuleWidget {
     void step() override;
 };
 
+void replaceSampleHandler(SampleGrid *module, int cell, char *path){
+	if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+}
+
+void randomLoadHandler(SampleGrid *module, int cell, char *path) {
+	if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+	module->reqLoadRandomCell[cell] = true;
+}
+
 SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*20, RACK_GRID_HEIGHT);
@@ -1415,10 +1468,18 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							// If a directory is set, request a random load on audio thread.
 							// Otherwise, open a file dialog on UI and queue the chosen path.
 							if (module->sampleDir.empty()) {
+								INFO("dice click  test case 5");
+#ifdef USING_CARDINAL_NOT_RACK
+								async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+									randomLoadHandler(module, cell, path);
+								});
+#else
 								osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 								char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 								osdialog_filters_free(filters);
-								if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+								randomLoadHandler(module, cell, path);
+#endif
+								// if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
 							} else {
 								module->reqLoadRandomCell[cell] = true;
 							}
@@ -1433,10 +1494,17 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						}
 						// Folder click: replace this cell's sample via file dialog
 						if (m.x >= folderRx && m.x <= folderRx + d && m.y >= folderRy && m.y <= folderRy + d) {
+							INFO("replace via file dialog.  test case 6.");
+#ifdef USING_CARDINAL_NOT_RACK
+							async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+								replaceSampleHandler(module, cell, path);
+							});
+#else
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+							replaceSampleHandler(module, cell, path);
+#endif
 							e.consume(this);
 							return;
 						}
@@ -1451,10 +1519,17 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							lastX = x;
 						}
 						else {
+							INFO("open file dialog.  test case 7.");
+#ifdef USING_CARDINAL_NOT_RACK
+							async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
+								replaceSampleHandler(module, cell, path);
+							});
+#else
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+							replaceSampleHandler(module, cell, path);
+#endif
 						}
 						e.consume(this);
 					}
@@ -1465,10 +1540,17 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 					}
 					// Right-click anywhere on waveform opens file dialog to replace the cell sample
 					else if (e.button == GLFW_MOUSE_BUTTON_RIGHT && e.action == GLFW_PRESS) {
+						INFO("right click.  test case 8.");
+#ifdef USING_CARDINAL_NOT_RACK
+						async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+							replaceSampleHandler(module, cell, path);
+						});
+#else
 						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 						char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 						osdialog_filters_free(filters);
-						if (path) { std::string p = path; free(path); module->pendingCellPath[cell] = p; module->reqLoadCellFromPath[cell] = true; }
+						replaceSampleHandler(module, cell, path);
+#endif
 						e.consume(this);
 					}
 				}
@@ -1918,11 +2000,13 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 		SampleGrid *sampleGrid;
 		void onAction(const event::Action &e) override {
 			if (!sampleGrid) return;
-			if (sampleGrid->chooseSampleDir()) {
-				if (!sampleGrid->sampleDir.empty()) {
-					sampleGrid->prepareRandomSamplesFromDir(sampleGrid->sampleDir);
-				}
-			}
+			INFO("SampleGridChangeDirItem : MenuItem onAction  needs test!");
+			sampleGrid->loadRandomSamplesInteractive();  // instead?  I think so!
+			//if (sampleGrid->chooseSampleDir()) {  // ---gregh this return value is problematic.
+			//	if (!sampleGrid->sampleDir.empty()) {
+			//		sampleGrid->prepareRandomSamplesFromDir(sampleGrid->sampleDir); // this needs to be moved to a callback handler.
+			//	}
+			//}
 		}
 	};
 	SampleGridChangeDirItem *changeDirItem = new SampleGridChangeDirItem();
