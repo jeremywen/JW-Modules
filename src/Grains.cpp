@@ -1612,16 +1612,16 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
 #ifdef USING_CARDINAL_NOT_RACK
-                        async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
-		                loadWavPath(grains, path);
-	                });
+			async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
+				loadWavPath(grains, path);
+			});
 #else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 			osdialog_filters_free(filters);
 			loadWavPath(grains, path);
 #endif
-                }
+		}
 	};
 	LoadWavItem *load = new LoadWavItem();
 	load->text = "Load WAV...";
@@ -1634,16 +1634,16 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		void onAction(const event::Action &e) override {
 			if (!grains) return;
 #ifdef USING_CARDINAL_NOT_RACK
-                        async_dialog_filebrowser(true, NULL, NULL, "Save sample", [this](char* path) {
-		                saveWavPath(grains, path);
-	                });
+			async_dialog_filebrowser(true, NULL, NULL, "Save sample", [this](char* path) {
+				saveWavPath(grains, path);
+			});
 #else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters);
 			osdialog_filters_free(filters);
 			saveWavPath(grains, path);
 #endif
-                }
+		}
 	};
 	SaveWavItem *save = new SaveWavItem();
 	save->text = "Save Buffer as WAV...";
