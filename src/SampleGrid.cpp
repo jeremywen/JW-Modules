@@ -1980,7 +1980,6 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 		SampleGrid *sampleGrid;
 		void onAction(const event::Action &e) override {
 			if (!sampleGrid) return;
-			INFO("SampleGridChangeDirItem : MenuItem onAction  needs test!");
 			sampleGrid->loadRandomSamplesInteractive(true);
 		}
 	};
