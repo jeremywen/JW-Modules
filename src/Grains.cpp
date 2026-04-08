@@ -1186,9 +1186,9 @@ bool Grains::loadRandomSiblingSample() {
 }
 
 // Waveform display
-struct WaveformDisplay : TransparentWidget {
+struct GrainsWaveformDisplay : TransparentWidget {
 	Grains *module = nullptr;
-	WaveformDisplay(Grains *m) { module = m; }
+	GrainsWaveformDisplay(Grains *m) { module = m; }
 	bool dragging = false;
 	float lastX = 0.f;
 	// Fixed time window to display during recording to prevent shifting/compression
@@ -1501,13 +1501,32 @@ GrainsWidget::GrainsWidget(Grains *module) {
 	addParam(createParam<JwTinyKnob>(Vec(570, topY), module, Grains::GRAIN_GAIN));
 
 
-	WaveformDisplay *disp = new WaveformDisplay(module);
+	GrainsWaveformDisplay *disp = new GrainsWaveformDisplay(module);
 	disp->box.pos = Vec(10, 40);
 	disp->box.size = Vec(box.size.x - 20, box.size.y - 100);
 	addChild(disp);
 
 
 };
+
+// Local helper for async dialog (load and save)
+static void loadWavPath(Grains *grains, char *path) {
+        if (path) {
+                std::string p = path;
+                free(path);
+                grains->loadSampleFromPath(p);
+        }
+}
+static void saveWavPath(Grains *grains, char *path) {
+	if (path) {
+		std::string p = path;
+		free(path);
+		// Ensure .wav extension
+		auto hasExt = [](const std::string &s){ if (s.size() < 4) return false; std::string ext = s.substr(s.size()-4); std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); return ext == ".wav"; };
+		if (!hasExt(p)) p += ".wav";
+		grains->saveBufferToWav(p);
+	}
+}
 
 void GrainsWidget::appendContextMenu(Menu *menu) {
 	MenuLabel *spacerLabel = new MenuLabel();
@@ -1592,14 +1611,16 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	struct LoadWavItem : MenuItem {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
+#ifdef USING_CARDINAL_NOT_RACK
+			async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
+				loadWavPath(grains, path);
+			});
+#else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 			osdialog_filters_free(filters);
-			if (path) {
-				std::string p = path;
-				free(path);
-				grains->loadSampleFromPath(p);
-			}
+			loadWavPath(grains, path);
+#endif
 		}
 	};
 	LoadWavItem *load = new LoadWavItem();
@@ -1612,17 +1633,16 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
 			if (!grains) return;
+#ifdef USING_CARDINAL_NOT_RACK
+			async_dialog_filebrowser(true, NULL, NULL, "Save sample", [this](char* path) {
+				saveWavPath(grains, path);
+			});
+#else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters);
 			osdialog_filters_free(filters);
-			if (path) {
-				std::string p = path;
-				free(path);
-				// Ensure .wav extension
-				auto hasExt = [](const std::string &s){ if (s.size() < 4) return false; std::string ext = s.substr(s.size()-4); std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); return ext == ".wav"; };
-				if (!hasExt(p)) p += ".wav";
-				grains->saveBufferToWav(p);
-			}
+			saveWavPath(grains, path);
+#endif
 		}
 	};
 	SaveWavItem *save = new SaveWavItem();
