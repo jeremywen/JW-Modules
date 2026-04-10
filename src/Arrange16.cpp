@@ -587,7 +587,7 @@ struct RndModeKnob2 : JwSmallSnapKnob {
 	}
 };
 
-struct RowTextField : LedDisplayTextField {
+struct RowTextField16 : LedDisplayTextField {
 	Arrange16* module;
 	int i = -1;
 
@@ -607,10 +607,10 @@ struct RowTextField : LedDisplayTextField {
 	}
 };
 	
-struct RowDisplay : LedDisplay {
-    RowTextField* textField;
+struct RowDisplay16 : LedDisplay {
+    RowTextField16* textField;
 	void setModule(Arrange16* module, int i) {
-		textField = createWidget<RowTextField>(Vec(0, 0));
+		textField = createWidget<RowTextField16>(Vec(0, 0));
 		textField->module = module;
 		textField->i = i;
 		textField->text = "";
@@ -620,7 +620,7 @@ struct RowDisplay : LedDisplay {
 		textField->textOffset = Vec(-1, -2);
 		addChild(textField);
 	}
-    ~RowDisplay(){
+    ~RowDisplay16(){
 		if(textField){	
 			textField = nullptr;
 		}
@@ -748,7 +748,7 @@ Arrange16Widget::Arrange16Widget(Arrange16 *module) {
 			addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(225, outputRowTop + i * outputRowDist), module, Arrange16::MAIN_OUTPUT + i));
 		}
 
-		RowDisplay* rowDisplay = createWidget<RowDisplay>(Vec(20, outputRowTop + i * outputRowDist));
+		RowDisplay16* rowDisplay = createWidget<RowDisplay16>(Vec(20, outputRowTop + i * outputRowDist));
 		rowDisplay->box.size = Vec(36, 16);
 		rowDisplay->setModule(module, i);
 		addChild(rowDisplay);
