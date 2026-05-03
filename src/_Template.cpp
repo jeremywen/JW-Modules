@@ -1,6 +1,6 @@
 // #include "JWModules.hpp"
 
-// struct Grains : Module {
+// struct Temp123 : Module {
 // 	enum ParamIds {
 // 		NUM_PARAMS
 // 	};
@@ -14,7 +14,7 @@
 // 		NUM_LIGHTS
 // 	};
 
-// 	Grains() {
+// 	Temp123() {
 // 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 // 	}
 
@@ -38,23 +38,23 @@
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
 // // STEP
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
-// void Grains::process(const ProcessArgs &args) {
+// void Temp123::process(const ProcessArgs &args) {
 // };
 
-// struct GrainsWidget : ModuleWidget {
-// 	GrainsWidget(Grains *module);
-// 	~GrainsWidget(){ 
+// struct Temp123Widget : ModuleWidget {
+// 	Temp123Widget(Temp123 *module);
+// 	~Temp123Widget(){ 
 // 	}
 // 	void appendContextMenu(Menu *menu) override;
 // };
 
-// GrainsWidget::GrainsWidget(Grains *module) {
+// Temp123Widget::Temp123Widget(Temp123 *module) {
 // 	setModule(module);
 // 	box.size = Vec(RACK_GRID_WIDTH*40, RACK_GRID_HEIGHT);
 
 // 	setPanel(createPanel(
-// 		asset::plugin(pluginInstance, "res/Grains.svg"), 
-// 		asset::plugin(pluginInstance, "res/Grains.svg")
+// 		asset::plugin(pluginInstance, "res/Temp123.svg"), 
+// 		asset::plugin(pluginInstance, "res/Temp123.svg")
 // 	));
 
 // 	addChild(createWidget<Screw_J>(Vec(16, 2)));
@@ -64,13 +64,13 @@
 
 // };
 
-// void GrainsWidget::appendContextMenu(Menu *menu) {
+// void Temp123Widget::appendContextMenu(Menu *menu) {
 // 	MenuLabel *spacerLabel = new MenuLabel();
 // 	menu->addChild(spacerLabel);
 
-// 	Grains *grains = dynamic_cast<Grains*>(module);
+// 	Temp123 *temp123 = dynamic_cast<Temp123*>(module);
 // }
 
 
 
-// Model *modelGrains = createModel<Grains, GrainsWidget>("Grains");
+// Model *modelTemp123 = createModel<Temp123, Temp123Widget>("Temp123");
