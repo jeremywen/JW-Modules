@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="380" viewBox="0 0 160 380">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#242424"/>
+      <stop offset="100%" stop-color="#181818"/>
+    </linearGradient>
+    <linearGradient id="stripe" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.0"/>
+      <stop offset="50%" stop-color="#4fc3f7" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#4fc3f7" stop-opacity="0.0"/>
+    </linearGradient>
+    <style>
+      .title { font-family: "DejaVu Sans Mono", monospace; font-size: 16px; font-weight: 700; letter-spacing: 2px; fill: #f0f0f0; text-anchor: middle; }
+      .subtitle { font-family: "DejaVu Sans Mono", monospace; font-size: 8px; fill: #8bc9dd; text-anchor: middle; letter-spacing: 1px; }
+      .label { font-family: "DejaVu Sans Mono", monospace; font-size: 8px; fill: #cfcfcf; text-anchor: middle; }
+      .micro { font-family: "DejaVu Sans Mono", monospace; font-size: 6.5px; fill: #9ea4a8; text-anchor: middle; letter-spacing: 0.5px; }
+      .ring { fill: none; stroke: #5a5a5a; stroke-width: 0.8; }
+      .tinyring { fill: none; stroke: #666666; stroke-width: 0.6; }
+      .groupbox { fill: none; stroke: #3a3a3a; stroke-width: 0.8; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="160" height="380" fill="url(#bg)"/>
+  <rect x="0" y="0" width="160" height="2" fill="#4fc3f7"/>
+  <rect x="0" y="378" width="160" height="2" fill="#4fc3f7"/>
+  <rect x="0" y="30" width="160" height="18" fill="url(#stripe)"/>
+
+  <text class="title" x="80" y="24">GNITRAP</text>
+  <text class="subtitle" x="80" y="43">GLITCH DISSOLVE MODULATOR</text>
+
+  <!-- Main parameter section -->
+  <rect class="groupbox" x="8" y="50" width="144" height="128" rx="4"/>
+
+  <!-- Row 1: RATE, GLITCH, DISSOLVE -->
+  <circle class="ring" cx="32" cy="68" r="14"/>
+  <text class="label" x="32" y="50">RATE</text>
+  <circle class="tinyring" cx="32" cy="96" r="6"/>
+  <text class="micro" x="32" y="108">CV</text>
+
+  <circle class="ring" cx="80" cy="68" r="14"/>
+  <text class="label" x="80" y="50">GLITCH</text>
+  <circle class="tinyring" cx="80" cy="96" r="6"/>
+  <text class="micro" x="80" y="108">CV</text>
+
+  <circle class="ring" cx="128" cy="68" r="14"/>
+  <text class="label" x="128" y="50">DISSOLVE</text>
+  <circle class="tinyring" cx="128" cy="96" r="6"/>
+  <text class="micro" x="128" y="108">CV</text>
+
+  <!-- Row 2: DEPTH, CHANCE, SMEAR -->
+  <circle class="ring" cx="32" cy="135" r="14"/>
+  <text class="label" x="32" y="117">DEPTH</text>
+  <circle class="tinyring" cx="32" cy="163" r="6"/>
+  <text class="micro" x="32" y="175">CV</text>
+
+  <circle class="ring" cx="80" cy="135" r="14"/>
+  <text class="label" x="80" y="117">CHANCE</text>
+  <circle class="tinyring" cx="80" cy="163" r="6"/>
+  <text class="micro" x="80" y="175">CV</text>
+
+  <circle class="ring" cx="128" cy="135" r="14"/>
+  <text class="label" x="128" y="117">SMEAR</text>
+  <circle class="tinyring" cx="128" cy="163" r="6"/>
+  <text class="micro" x="128" y="175">CV</text>
+
+  <!-- Bottom small controls -->
+  <rect class="groupbox" x="8" y="186" width="144" height="56" rx="4"/>
+  <text class="micro" x="80" y="197">MIX / FILTER / MOD</text>
+
+  <circle class="tinyring" cx="32" cy="209" r="7"/>
+  <text class="micro" x="32" y="198">MIX</text>
+  <circle class="tinyring" cx="32" cy="232" r="6"/>
+  <text class="micro" x="32" y="244">CV</text>
+
+  <circle class="tinyring" cx="64" cy="209" r="7"/>
+  <text class="micro" x="64" y="198">FILTER</text>
+  <circle class="tinyring" cx="64" cy="232" r="6"/>
+  <text class="micro" x="64" y="244">CV</text>
+
+  <circle class="tinyring" cx="96" cy="209" r="7"/>
+  <text class="micro" x="96" y="198">SHAPE</text>
+
+  <circle class="tinyring" cx="128" cy="209" r="7"/>
+  <text class="micro" x="128" y="198">MODE</text>
+
+  <!-- Aux / filter mode -->
+  <rect class="groupbox" x="8" y="248" width="144" height="44" rx="4"/>
+  <text class="micro" x="80" y="259">AUX</text>
+  <text class="micro" x="96" y="272">HOLD</text>
+  <text class="micro" x="128" y="272">HP/LP</text>
+
+  <!-- Audio I/O section -->
+  <rect class="groupbox" x="8" y="301" width="144" height="67" rx="4"/>
+  <text class="micro" x="80" y="312">AUDIO IN / OUT</text>
+
+  <text class="micro" x="32" y="331">L IN</text>
+  <text class="micro" x="80" y="331">R IN</text>
+  <text class="micro" x="128" y="331">AUX</text>
+
+  <text class="micro" x="32" y="362">L OUT</text>
+  <text class="micro" x="80" y="362">R OUT</text>
+  <text class="micro" x="128" y="362">ENV</text>
+</svg>

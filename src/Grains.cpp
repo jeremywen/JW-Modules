@@ -74,6 +74,8 @@ struct Grains : Module {
 	bool isRecording = false;
 	bool normalPlayback = false;
 	bool syncGrains = false;
+	double pendingPlayPos = -1.0;
+	bool restoreFromPatchStorageOnAdd = false;
 	dsp::SchmittTrigger clockTrig;
 	// Button param triggers processed in process()
 	dsp::SchmittTrigger randomBtnTrigger;
@@ -195,6 +197,8 @@ struct Grains : Module {
 		double savedPlayPos = -1.0;
 		json_t *ppJ = json_object_get(rootJ, "playPos");
 		if (ppJ && (json_is_real(ppJ) || json_is_integer(ppJ))) savedPlayPos = json_number_value(ppJ);
+		pendingPlayPos = savedPlayPos;
+		restoreFromPatchStorageOnAdd = false;
 
 		json_t *pathJ = json_object_get(rootJ, "path");
 		if (pathJ && json_is_string(pathJ)) {
@@ -209,23 +213,8 @@ struct Grains : Module {
 			}
 		}
 		else {
-			// No external path saved; try to restore from patch storage (recorded clip)
-			std::string dir = getPatchStorageDirectory();
-			if (!dir.empty()) {
-				std::string p = rack::system::join(dir, "recording.wav");
-				std::ifstream f(p, std::ios::binary);
-				if (f.good()) {
-					f.close();
-					if (loadSampleFromPath(p)) {
-						// Clear path so we don't serialize a patch-storage absolute path
-						samplePath.clear();
-						if (savedPlayPos >= 0.0) {
-							double maxPos = (!sampleL.empty()) ? (double)sampleL.size() - 1.0 : 0.0;
-							playPos = std::min(std::max(0.0, savedPlayPos), maxPos);
-						}
-					}
-				}
-			}
+			// Patch storage requires a valid module ID, so defer this restore until onAdd().
+			restoreFromPatchStorageOnAdd = true;
 		}
 		json_t *autoAdvJ = json_object_get(rootJ, "autoAdvance");
 		json_t *normalJ = json_object_get(rootJ, "normalPlayback");
@@ -1075,6 +1064,9 @@ bool Grains::saveBufferToWav(const std::string &path) {
 // Load any previously-saved audio from the patch storage directory
 void Grains::onAdd(const AddEvent& e) {
 	Module::onAdd(e);
+	if (!restoreFromPatchStorageOnAdd) {
+		return;
+	}
 	std::string dir = getPatchStorageDirectory();
 	if (!dir.empty()) {
 		std::string path = rack::system::join(dir, "recording.wav");
@@ -1084,9 +1076,14 @@ void Grains::onAdd(const AddEvent& e) {
 			if (loadSampleFromPath(path)) {
 				// Avoid persisting the absolute path of patch-storage audio in JSON
 				samplePath.clear();
+				if (pendingPlayPos >= 0.0) {
+					double maxPos = (!sampleL.empty()) ? (double)sampleL.size() - 1.0 : 0.0;
+					playPos = std::min(std::max(0.0, pendingPlayPos), maxPos);
+				}
 			}
 		}
 	}
+	restoreFromPatchStorageOnAdd = false;
 }
 
 // Save current buffer as WAV into the patch storage directory

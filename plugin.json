@@ -177,6 +177,18 @@
 			]
 		},
 		{
+			"hidden": true,
+			"slug": "GlitchThing",
+			"name": "GlitchThing",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Effect",
+				"Delay",
+				"LFO",
+				"Random"
+			]
+		},
+		{
 			"slug": "Grains",
 			"name": "Grains",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
