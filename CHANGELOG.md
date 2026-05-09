@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.34 ~ 5-9-26
+
+  * fixed duplicating selected grains
+  * fixed shiftregrnd bad notes while filling up
+
 ## v2.0.33 ~ 3-24-26
 
   * Sample Grid: fixed load random samples interupting audio playback
