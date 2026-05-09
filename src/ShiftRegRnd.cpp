@@ -24,6 +24,7 @@ struct ShiftRegRnd : Module {
 	dsp::SchmittTrigger inTrig;
 	dsp::SchmittTrigger rndTrig;
 	float voltages[8] = {0.f};
+	int filledSlots = 0;
 	int channels = 1;
 	int randomIndices[16] = {0};
 
@@ -38,8 +39,9 @@ struct ShiftRegRnd : Module {
 	}
 
 	void updateRandomIndices() {
+		int available = clamp(filledSlots, 1, 8);
 		for(int i=0; i<channels; i++){
-			randomIndices[i] = int(random::uniform() * 8);
+			randomIndices[i] = int(random::uniform() * available);
 		}
 	}
 
@@ -53,6 +55,8 @@ struct ShiftRegRnd : Module {
 		for(int i=0; i<8; i++){
 			voltages[i] = 0.f;
 		}
+		filledSlots = 0;
+		updateRandomIndices();
 	}
 
 	void onSampleRateChange() override {
@@ -68,16 +72,14 @@ struct ShiftRegRnd : Module {
 		json_t *channelsJ = json_object_get(rootJ, "channels");
 		if (channelsJ){
 			channels = json_integer_value(channelsJ);
+			channels = clamp(channels, 1, 16);
 		}
+		updateRandomIndices();
 	}
 
 	void process(const ProcessArgs &args) override {
 		if (rndTrig.process(inputs[TRIGGER_RANDOMIZE].getVoltage())) {
 			updateRandomIndices();
-			// Output random voltages from the array for each channel
-			for(int i=0; i<channels; i++){
-				outputs[VOLT_OUTPUT].setVoltage(voltages[randomIndices[i]], i);
-			}
 		}
 		if (inTrig.process(inputs[TRIGGER_INPUT].getVoltage())) {
 			// Shift all voltages right
@@ -86,6 +88,8 @@ struct ShiftRegRnd : Module {
 			}
 			// Insert new voltage at position 0
 			voltages[0] = inputs[VOLT_INPUT].getVoltage();
+			if (filledSlots < 8)
+				filledSlots++;
 		}
 
 		// Update 8 LED color lights: green for +10V, red for -10V with gradient
@@ -98,6 +102,11 @@ struct ShiftRegRnd : Module {
 			lights[LED_BASE + i * 2 + 1].setSmoothBrightness(red, args.sampleTime);
 		}
 		outputs[VOLT_OUTPUT].setChannels(channels);
+		int available = clamp(filledSlots, 1, 8);
+		for (int i = 0; i < channels; i++) {
+			int idx = clamp(randomIndices[i], 0, available - 1);
+			outputs[VOLT_OUTPUT].setVoltage(voltages[idx], i);
+		}
 	}
 
 };
