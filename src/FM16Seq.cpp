@@ -833,7 +833,7 @@ struct FM16SeqWidget : ModuleWidget {
 
 		for (int i = 0; i < FM16Seq::STEPS; i++) {
 			float x = 30.f + (float)i * 32.f;
-			float y = 85.f;
+			float y = 80.f;
 			addParam(createParamCentered<TinyButton>(Vec(x, y), module, FM16Seq::STEP_SELECT_PARAM + i));
 			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(x - 6.f, y - 18.f), module, FM16Seq::STEP_PLAY_LIGHT + i));
 			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 18.f), module, FM16Seq::STEP_EDIT_LIGHT + i));

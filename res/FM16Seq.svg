@@ -20,12 +20,12 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="3.6036257"
-     inkscape:cx="382.25391"
-     inkscape:cy="217.97492"
-     inkscape:window-width="1480"
+     inkscape:zoom="1.8018128"
+     inkscape:cx="266.12087"
+     inkscape:cy="174.54643"
+     inkscape:window-width="1616"
      inkscape:window-height="1126"
-     inkscape:window-x="1885"
+     inkscape:window-x="1750"
      inkscape:window-y="736"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg52" />
@@ -61,7 +61,7 @@
      d="m 311.65357,108.25017 h 130 v 200 h -130 z" />
   <g
      id="g58"
-     transform="translate(11.156982,6)">
+     transform="translate(11.156982,-2)">
     <path
        d="m 21.37915,55 h -2.536132 v -0.48877 h 1.021972 v -3.746093 l -0.963867,0.481933 v -0.560547 l 1.042481,-0.536621 h 0.481933 v 4.361328 h 0.953613 z"
        id="text1"
@@ -386,4 +386,32 @@
      id="text72"
      style="font-size:6.66667px;font-family:Sans;-inkscape-font-specification:Sans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.002"
      aria-label="Mod" />
+  <rect
+     style="fill:#ffffff;stroke-width:1.002"
+     id="rect72"
+     width="1.6649898"
+     height="24.974848"
+     x="142.07913"
+     y="55.335011" />
+  <rect
+     style="fill:#ffffff;stroke-width:1.002"
+     id="rect72-4"
+     width="1.6649898"
+     height="24.974848"
+     x="269.8692"
+     y="55.335011" />
+  <rect
+     style="fill:#ffffff;stroke-width:1.002"
+     id="rect72-4-0"
+     width="1.6649898"
+     height="24.974848"
+     x="397.53922"
+     y="55.335011" />
+  <rect
+     style="fill:none;stroke:#ffffff;stroke-width:1.00916;stroke-opacity:1"
+     id="rect73"
+     width="508.92471"
+     height="218.10651"
+     x="16.653475"
+     y="98.237976" />
 </svg>
