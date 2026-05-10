@@ -55,7 +55,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 ## FM16SEQ
 
-![fm16seq](./doc/fm16seq.png)
+![fm16seq](./doc/fm16seq2.png)
 
 A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://lo-bit.club/fms
 
