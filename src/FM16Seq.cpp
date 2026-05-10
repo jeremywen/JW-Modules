@@ -42,16 +42,17 @@ struct FM16Seq : Module {
 		PLAY_MODE_KNOB_PARAM,
 		NUM_PARAMS
 	};
-	enum InputIds {
-		CLOCK_INPUT,
-		RESET_INPUT,
-		LENGTH_INPUT,
-		PITCH_INPUT,
-		FM_INDEX_INPUT,
-		MOD_RATIO_INPUT,
-		CAR_RATIO_INPUT,
-		NUM_INPUTS
-	};
+	   enum InputIds {
+		   CLOCK_INPUT,
+		   RESET_INPUT,
+		   LENGTH_INPUT,
+		   PITCH_INPUT,
+		   FM_INDEX_INPUT,
+		   MOD_RATIO_INPUT,
+		   CAR_RATIO_INPUT,
+		   MODE_CV_INPUT,
+		   NUM_INPUTS
+	   };
 	enum OutputIds {
 		AUDIO_OUTPUT,
 		NUM_OUTPUTS
@@ -227,6 +228,7 @@ struct FM16Seq : Module {
 		configInput(FM_INDEX_INPUT, "FM index CV (16 poly channels)");
 		configInput(MOD_RATIO_INPUT, "Mod ratio CV (16 poly channels)");
 		configInput(CAR_RATIO_INPUT, "Carrier ratio CV (16 poly channels)");
+		configInput(MODE_CV_INPUT, "Play mode CV (1V per mode)");
 
 		configOutput(AUDIO_OUTPUT, "Audio");
 		for (int i = 0; i < STEPS; i++) {
@@ -287,9 +289,13 @@ struct FM16Seq : Module {
 		return 0.001f + (knobValue * knobValue) * 4.0f;
 	}
 
-	int getPlayMode() {
-		return clampijw((int)params[PLAY_MODE_KNOB_PARAM].getValue(), 0, NUM_PLAY_MODES - 1);
-	}
+	   int getPlayMode() {
+		   float knob = params[PLAY_MODE_KNOB_PARAM].getValue();
+		   float cv = (inputs[MODE_CV_INPUT].isConnected() ? inputs[MODE_CV_INPUT].getVoltage() : 0.f);
+		   // 1V per mode step
+		   float value = knob + cv;
+		   return clampijw((int)std::round(value), 0, NUM_PLAY_MODES - 1);
+	   }
 
 	void onReset() override {
 		sequenceLength = 16;
@@ -853,8 +859,9 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(204.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
 
 		addParam(createParamCentered<JwPlayModeKnob>(Vec(485.f, 136.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
-        addParam(createParamCentered<JwSmallSnapKnob>(Vec(485.f, 210.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
-		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 240.f), module, FM16Seq::LENGTH_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 166.f), module, FM16Seq::MODE_CV_INPUT));
+        addParam(createParamCentered<JwSmallSnapKnob>(Vec(485.f, 222.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 252.f), module, FM16Seq::LENGTH_INPUT));
 
 		addInput(createInputCentered<PJ301MPort>(Vec(42.f, 344.f), module, FM16Seq::CLOCK_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(92.f, 344.f), module, FM16Seq::RESET_INPUT));
