@@ -56,14 +56,6 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-	enum PlayMode {
-		PM_FWD_LOOP,
-		PM_BWD_LOOP,
-		PM_FWD_BWD_LOOP,
-		PM_BWD_FWD_LOOP,
-		PM_RANDOM_POS,
-		NUM_PLAY_MODES
-	};
 	enum RndMode {
 		RND_BASIC,
 		RND_EUCLID,
@@ -115,7 +107,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, COLS - 1, 0.0, "Start");
 		configParam(LENGTH_KNOB_PARAM, 1.0, COLS, 16.0, "Length");
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
@@ -983,22 +975,6 @@ struct NS16HScrollBar : Widget {
 	}
 };
 
-struct PlayModeKnob : JwSmallSnapKnob {
-	PlayModeKnob(){}
-	std::string formatCurrentValue() override {
-		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getDisplayValue())){
-				case NoteSeq16::PM_FWD_LOOP:return "→";
-				case NoteSeq16::PM_BWD_LOOP:return "←";
-				case NoteSeq16::PM_FWD_BWD_LOOP:return "→←";
-				case NoteSeq16::PM_BWD_FWD_LOOP:return "←→";
-				case NoteSeq16::PM_RANDOM_POS:return "*";
-			}
-		}
-		return "";
-	}
-};
-
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
@@ -1086,7 +1062,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(108, 40), module, NoteSeq16::LENGTH_INPUT));
 	addParam(createParam<JwSmallSnapKnob>(Vec(125, 35), module, NoteSeq16::LENGTH_KNOB_PARAM));
 	
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(158, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
+	JwPlayModeKnob *playModeKnob = dynamic_cast<JwPlayModeKnob*>(createParam<JwPlayModeKnob>(Vec(158, 35), module, NoteSeq16::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(85.5, 35);
 	playModeLabel->text = "";

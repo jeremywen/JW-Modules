@@ -163,6 +163,52 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 	}
 };
 
+enum PlayMode {
+	PM_FWD_LOOP,
+	PM_BWD_LOOP,
+	PM_FWD_BWD_LOOP,
+	PM_BWD_FWD_LOOP,
+	PM_RANDOM_POS,
+	NUM_PLAY_MODES
+};
+
+inline std::string playModeName(int mode) {
+	switch (mode) {
+		case PM_FWD_LOOP: return "Forward";
+		case PM_BWD_LOOP: return "Backward";
+		case PM_FWD_BWD_LOOP: return "Forward-Backward";
+		case PM_BWD_FWD_LOOP: return "Backward-Forward";
+		case PM_RANDOM_POS: return "Random";
+		default: return "";
+	}
+}
+
+inline std::string playModeGlyph(int mode) {
+	switch (mode) {
+		case PM_FWD_LOOP: return "\u2192";
+		case PM_BWD_LOOP: return "\u2190";
+		case PM_FWD_BWD_LOOP: return "\u2192\u2190";
+		case PM_BWD_FWD_LOOP: return "\u2190\u2192";
+		case PM_RANDOM_POS: return "*";
+		default: return "";
+	}
+}
+
+struct JwPlayModeQuantity : ParamQuantity {
+	std::string getDisplayValueString() override {
+		return playModeName((int)getValue());
+	}
+};
+
+struct JwPlayModeKnob : JwSmallSnapKnob {
+	std::string formatCurrentValue() override {
+		if (getParamQuantity() != NULL) {
+			return playModeGlyph((int)getParamQuantity()->getDisplayValue());
+		}
+		return "";
+	}
+};
+
 struct JwTinyKnob : SvgKnob {
 	JwTinyKnob() {
 		minAngle = -0.83 * M_PI;

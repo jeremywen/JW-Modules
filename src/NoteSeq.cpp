@@ -94,14 +94,6 @@ struct NoteSeq : Module,QuantizeUtils {
 		GATES_LIGHT,
 		NUM_LIGHTS = GATES_LIGHT + POLY,
 	};
-	enum PlayMode {
-		PM_FWD_LOOP,
-		PM_BWD_LOOP,
-		PM_FWD_BWD_LOOP,
-		PM_BWD_FWD_LOOP,
-		PM_RANDOM_POS,
-		NUM_PLAY_MODES
-	};
 	enum RndMode {
 		RND_BASIC,
 		RND_EUCLID,
@@ -157,7 +149,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configParam(START_PARAM, 0.0, 31.0, 0.0, "Start");
 		configParam(STEP_BTN_PARAM, 0.0, 1.0, 0.0, "Step");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 32.0, 32.0, "Length");
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0, "Random Mode");
@@ -979,22 +971,6 @@ struct NoteSeqDisplay : LightWidget {
 	}
 };
 
-struct PlayModeKnob : JwSmallSnapKnob {
-	PlayModeKnob(){}
-	std::string formatCurrentValue() override {
-		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getDisplayValue())){
-				case NoteSeq::PM_FWD_LOOP:return "→";
-				case NoteSeq::PM_BWD_LOOP:return "←";
-				case NoteSeq::PM_FWD_BWD_LOOP:return "→←";
-				case NoteSeq::PM_BWD_FWD_LOOP:return "←→";
-				case NoteSeq::PM_RANDOM_POS:return "*";
-			}
-		}
-		return "";
-	}
-};
-
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
@@ -1079,7 +1055,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(96, 35), module, NoteSeq::LENGTH_KNOB_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(128, 40), module, NoteSeq::MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(144, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM));
+	JwPlayModeKnob *playModeKnob = dynamic_cast<JwPlayModeKnob*>(createParam<JwPlayModeKnob>(Vec(144, 35), module, NoteSeq::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(76.5, 35);
 	playModeLabel->text = "";

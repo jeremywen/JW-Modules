@@ -6,7 +6,6 @@ struct FM16Seq : Module {
 	static constexpr float TWO_PI = 6.28318530718f;
 
 	enum ParamIds {
-		RESET_BUTTON_PARAM,
 		MASTER_LEVEL_PARAM,
 		SEQUENCE_LENGTH_PARAM,
 		EDIT_ACTIVE_PARAM,
@@ -40,6 +39,7 @@ struct FM16Seq : Module {
 		INITIALIZE_LEVELS_PARAM,
 		INITIALIZE_FEEDBACK_PARAM,
 		INTEGER_RATIOS_PARAM,
+		PLAY_MODE_KNOB_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -147,6 +147,7 @@ struct FM16Seq : Module {
 
 	int stepIndex = 15;
 	bool pendingReset = true;
+	bool goingForward = true;
 	int latchedStep = 0;
 	int selectedStep = 0;
 	int sequenceLength = 16;
@@ -176,7 +177,6 @@ struct FM16Seq : Module {
 	FM16Seq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(RESET_BUTTON_PARAM, 0.f, 1.f, 0.f, "Reset");
 		configParam(MASTER_LEVEL_PARAM, 0.f, 1.f, 0.7f, "Master level");
 		configParam(SEQUENCE_LENGTH_PARAM, 1.f, 16.f, 16.f, "Sequence length");
 		paramQuantities[SEQUENCE_LENGTH_PARAM]->snapEnabled = true;
@@ -215,6 +215,8 @@ struct FM16Seq : Module {
 		configParam(INITIALIZE_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Initialize feedback");
 		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 0.f, "Integer ratios mode");
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
+		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
+		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -283,9 +285,15 @@ struct FM16Seq : Module {
 		return 0.001f + (knobValue * knobValue) * 4.0f;
 	}
 
+	int getPlayMode() {
+		return clampijw((int)params[PLAY_MODE_KNOB_PARAM].getValue(), 0, NUM_PLAY_MODES - 1);
+	}
+
 	void onReset() override {
 		sequenceLength = 16;
-		stepIndex = 15;
+		goingForward = true;
+		int pm = getPlayMode();
+		stepIndex = (pm == PM_BWD_LOOP || pm == PM_BWD_FWD_LOOP) ? 0 : 15;
 		latchedStep = 0;
 		selectedStep = 0;
 		pendingReset = true;
@@ -577,7 +585,7 @@ struct FM16Seq : Module {
 
 		// Clock and sequence logic
 		float clockValue = inputs[CLOCK_INPUT].getVoltage();
-		float resetValue = params[RESET_BUTTON_PARAM].getValue() + inputs[RESET_INPUT].getVoltage();
+		float resetValue = inputs[RESET_INPUT].getVoltage();
 
 		if (resetTrigger.process(resetValue)) {
 			pendingReset = true;
@@ -595,10 +603,46 @@ struct FM16Seq : Module {
 			}
 
 			if (pendingReset) {
-				stepIndex = sequenceLength - 1;
+				int pm = getPlayMode();
+				if (pm == PM_BWD_LOOP || pm == PM_BWD_FWD_LOOP) {
+					stepIndex = 0;
+					goingForward = false;
+				} else {
+					stepIndex = sequenceLength - 1;
+					goingForward = true;
+				}
 				pendingReset = false;
 			}
-			stepIndex = (stepIndex + 1) % sequenceLength;
+			// Advance step index according to play mode
+			{
+				int pm = getPlayMode();
+				if (pm == PM_FWD_LOOP) {
+					stepIndex = (stepIndex + 1) % sequenceLength;
+				} else if (pm == PM_BWD_LOOP) {
+					stepIndex = stepIndex > 0 ? stepIndex - 1 : sequenceLength - 1;
+				} else if (pm == PM_FWD_BWD_LOOP || pm == PM_BWD_FWD_LOOP) {
+					if (goingForward) {
+						if (stepIndex < sequenceLength - 1) {
+							stepIndex++;
+						} else {
+							goingForward = false;
+							stepIndex--;
+						}
+					} else {
+						if (stepIndex > 0) {
+							stepIndex--;
+						} else {
+							goingForward = true;
+							stepIndex++;
+						}
+					}
+					if (pm == PM_BWD_FWD_LOOP && !goingForward) {
+						// handled above via goingForward state
+					}
+				} else if (pm == PM_RANDOM_POS) {
+					stepIndex = (int)(random::uniform() * sequenceLength) % sequenceLength;
+				}
+			}
 
 			// Check if this step should trigger
 			if (stepData[stepIndex].division == 0) {
@@ -679,10 +723,14 @@ struct FM16Seq : Module {
 				engine.modPhase -= TWO_PI;
 			float feedbackOffset = 0.f;
 			if (modFeedback > 0.001f) {
-				feedbackOffset = modFeedback * engine.modFeedbackDelayedSample;
+				// Shape and scale feedback to keep high settings musical instead of noisy.
+				float feedbackAmount = modFeedback * modFeedback;
+				float feedbackSample = std::tanh(engine.modFeedbackDelayedSample * 1.5f);
+				feedbackOffset = feedbackAmount * feedbackSample * 2.0f;
 			}
 			float modSignal = std::sin(engine.modPhase + feedbackOffset) * modEnvValue;
-			engine.modFeedbackDelayedSample = modSignal * 5.f;
+			// Light damping on the feedback state to reduce high-frequency hash.
+			engine.modFeedbackDelayedSample += (modSignal - engine.modFeedbackDelayedSample) * 0.2f;
 
 			engine.carrierPhase += TWO_PI * (engine.baseFreq * carRatio) / args.sampleRate;
 			if (engine.carrierPhase > TWO_PI)
@@ -716,11 +764,11 @@ struct FM16SeqWidget : ModuleWidget {
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 365)));
 
 		for (int i = 0; i < FM16Seq::STEPS; i++) {
-			float x = 20.f + (float)i * 32.f;
-			float y = 56.f;
+			float x = 30.f + (float)i * 32.f;
+			float y = 85.f;
 			addParam(createParamCentered<TinyButton>(Vec(x, y), module, FM16Seq::STEP_SELECT_PARAM + i));
-			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(x - 6.f, y - 24.f), module, FM16Seq::STEP_PLAY_LIGHT + i));
-			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 24.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
+			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(x - 6.f, y - 18.f), module, FM16Seq::STEP_PLAY_LIGHT + i));
+			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 18.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
 		}
 
 		addParam(createParamCentered<JwSmallSnapKnob>(Vec(84.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
@@ -742,43 +790,43 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(164.f, 288.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(204.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
 
-		addParam(createParamCentered<SmallButton>(Vec(400.f, 344.f), module, FM16Seq::RESET_BUTTON_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(348.f, 344.f), module, FM16Seq::MASTER_LEVEL_PARAM));
-		addParam(createParamCentered<JwSmallSnapKnob>(Vec(310.f, 344.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
+		addParam(createParamCentered<JwPlayModeKnob>(Vec(485.f, 136.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
+        addParam(createParamCentered<JwSmallSnapKnob>(Vec(485.f, 210.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 240.f), module, FM16Seq::LENGTH_INPUT));
 
 		addInput(createInputCentered<PJ301MPort>(Vec(42.f, 344.f), module, FM16Seq::CLOCK_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(92.f, 344.f), module, FM16Seq::RESET_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(460.f, 344.f), module, FM16Seq::LENGTH_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(142.f, 344.f), module, FM16Seq::PITCH_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(192.f, 344.f), module, FM16Seq::FM_INDEX_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(242.f, 344.f), module, FM16Seq::MOD_RATIO_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(292.f, 344.f), module, FM16Seq::CAR_RATIO_INPUT));
-
+        
+        addParam(createParamCentered<SmallWhiteKnob>(Vec(485.f, 344.f), module, FM16Seq::MASTER_LEVEL_PARAM));
 		addOutput(createOutputCentered<PJ301MPort>(Vec(520.f, 344.f), module, FM16Seq::AUDIO_OUTPUT));
 
-		const float rndX = 334.f;
-		const float initX = 394.f;
+		const float rndX = 365.f;
+		const float initX = 410.f;
 		const float y0 = 136.f;
 		const float yStep = 24.f;
 
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_RATIOS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_ENVELOPES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 3.f), module, FM16Seq::RANDOMIZE_PITCHES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 4.f), module, FM16Seq::RANDOMIZE_INDEXES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_FEEDBACK_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 3.f), module, FM16Seq::RANDOMIZE_PITCHES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_ENVELOPES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
 
 		// Integer ratios mode switch next to randomize ratios button
-		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX + 20.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
+		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX - 30.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
 
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 0.f), module, FM16Seq::INITIALIZE_RATIOS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 2.f), module, FM16Seq::INITIALIZE_ENVELOPES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 3.f), module, FM16Seq::INITIALIZE_PITCHES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 4.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_FEEDBACK_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 3.f), module, FM16Seq::INITIALIZE_PITCHES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 2.f), module, FM16Seq::INITIALIZE_ENVELOPES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 	}
 };
 

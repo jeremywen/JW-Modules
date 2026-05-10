@@ -43,14 +43,6 @@ struct Arrange16 : Module {
 	enum LightIds {
 		NUM_LIGHTS,
 	};
-	enum PlayMode {
-		PM_FWD_LOOP,
-		PM_BWD_LOOP,
-		PM_FWD_BWD_LOOP,
-		PM_BWD_FWD_LOOP,
-		PM_RANDOM_POS,
-		NUM_PLAY_MODES
-	};
 	enum RndMode {
 		RND_BASIC,
 		RND_EUCLID,
@@ -90,7 +82,7 @@ struct Arrange16 : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, ARRANGE_COLS-1, 0.0, "Start");
 		configParam(LENGTH_KNOB_PARAM, 1.0, ARRANGE_COLS, ARRANGE_COLS, "Length");
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(RESET_BTN_PARAM, 0.0, 1.0, 0.0, "Reset");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_MODE_KNOB_PARAM, 0.0, NUM_RND_MODES - 1, 0.0, "Random Mode");
@@ -555,22 +547,6 @@ struct Arrange16Display : LightWidget {
 	}
 };
 
-struct PlayModeKnob2 : JwSmallSnapKnob {
-	PlayModeKnob2(){}
-	std::string formatCurrentValue() override {
-		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getDisplayValue())){
-				case Arrange16::PM_FWD_LOOP:return "→";
-				case Arrange16::PM_BWD_LOOP:return "←";
-				case Arrange16::PM_FWD_BWD_LOOP:return "→←";
-				case Arrange16::PM_BWD_FWD_LOOP:return "←→";
-				case Arrange16::PM_RANDOM_POS:return "*";
-			}
-		}
-		return "";
-	}
-};
-
 struct RndModeKnob2 : JwSmallSnapKnob {
 	RndModeKnob2(){}
 	std::string formatCurrentValue() override {
@@ -692,7 +668,7 @@ Arrange16Widget::Arrange16Widget(Arrange16 *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(225, topKnob), module, Arrange16::LENGTH_KNOB_PARAM));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(270, 20), module, Arrange16::MODE_INPUT));
-	PlayModeKnob2 *playModeKnob2 = dynamic_cast<PlayModeKnob2*>(createParam<PlayModeKnob2>(Vec(290, topKnob), module, Arrange16::PLAY_MODE_KNOB_PARAM));
+	JwPlayModeKnob *playModeKnob2 = dynamic_cast<JwPlayModeKnob*>(createParam<JwPlayModeKnob>(Vec(290, topKnob), module, Arrange16::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(145, 7);
 	playModeLabel->text = "";

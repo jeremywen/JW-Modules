@@ -53,14 +53,6 @@ struct Trigs : Module {
 	enum LightIds {
 		NUM_LIGHTS
 	};
-	enum PlayMode {
-		PM_FWD_LOOP,
-		PM_BWD_LOOP,
-		PM_FWD_BWD_LOOP,
-		PM_BWD_FWD_LOOP,
-		PM_RANDOM_POS,
-		NUM_PLAY_MODES
-	};
 	enum RndMode {
 		RND_BASIC,
 		RND_EUCLID,
@@ -103,7 +95,7 @@ struct Trigs : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(START_PARAM, 0.0, 63.0, 0.0, "Start");
 		configParam(LENGTH_KNOB_PARAM, 1.0, 64.0, 64.0, "Length");
-		configParam(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
+		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.0, NUM_PLAY_MODES - 1, 0.0, "Play Mode");
 		configParam(CLEAR_BTN_PARAM, 0.0, 1.0, 0.0, "Clear");
 		configParam(RND_TRIG_BTN_PARAM, 0.0, 1.0, 0.0, "Random Trigger");
 		configParam(RND_AMT_KNOB_PARAM, 0.0, 1.0, 0.1, "Random Amount");
@@ -554,22 +546,6 @@ struct TrigsDisplay : LightWidget {
 	}
 };
 
-struct PlayModeKnob : JwSmallSnapKnob {
-	PlayModeKnob(){}
-	std::string formatCurrentValue() override {
-		if(getParamQuantity() != NULL){
-			switch(int(getParamQuantity()->getDisplayValue())){
-				case Trigs::PM_FWD_LOOP:return "→";
-				case Trigs::PM_BWD_LOOP:return "←";
-				case Trigs::PM_FWD_BWD_LOOP:return "→←";
-				case Trigs::PM_BWD_FWD_LOOP:return "←→";
-				case Trigs::PM_RANDOM_POS:return "*";
-			}
-		}
-		return "";
-	}
-};
-
 struct RndModeKnob : JwSmallSnapKnob {
 	RndModeKnob(){}
 	std::string formatCurrentValue() override {
@@ -650,7 +626,7 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	addParam(createParam<JwSmallSnapKnob>(Vec(120, 35), module, Trigs::LENGTH_KNOB_PARAM));
 	
 	addInput(createInput<TinyPJ301MPort>(Vec(148, 40), module, Trigs::PLAY_MODE_INPUT));
-	PlayModeKnob *playModeKnob = dynamic_cast<PlayModeKnob*>(createParam<PlayModeKnob>(Vec(165, 35), module, Trigs::PLAY_MODE_KNOB_PARAM));
+	JwPlayModeKnob *playModeKnob = dynamic_cast<JwPlayModeKnob*>(createParam<JwPlayModeKnob>(Vec(165, 35), module, Trigs::PLAY_MODE_KNOB_PARAM));
 	CenteredLabel* const playModeLabel = new CenteredLabel;
 	playModeLabel->box.pos = Vec(85.5, 35);
 	playModeLabel->text = "";
