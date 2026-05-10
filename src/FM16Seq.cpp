@@ -40,6 +40,7 @@ struct FM16Seq : Module {
 		INITIALIZE_LEVELS_PARAM,
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
+		MANUAL_STEP_TRIGGER_PARAM,
 		NUM_PARAMS
 	};
 	   enum InputIds {
@@ -145,6 +146,7 @@ struct FM16Seq : Module {
 	dsp::SchmittTrigger resetTrigger;
 	dsp::SchmittTrigger stepSelectTrigger[STEPS];
 	dsp::SchmittTrigger actionTrigger[14];
+	dsp::SchmittTrigger manualStepTrigger;
 
 	int stepIndex = 15;
 	bool pendingReset = true;
@@ -220,6 +222,7 @@ struct FM16Seq : Module {
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
 		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
+		configParam(MANUAL_STEP_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Trigger selected step");
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -568,6 +571,18 @@ struct FM16Seq : Module {
 			saveEditorToSelectedStep();
 		}
 
+		bool manualTriggerPressed = manualStepTrigger.process(params[MANUAL_STEP_TRIGGER_PARAM].getValue());
+		if (manualTriggerPressed) {
+			for (int i = 0; i < STEPS; i++) {
+				if (engines[i].gateHeld) {
+					engines[i].carrierEnv.gateOff();
+					engines[i].modEnv.gateOff();
+					engines[i].gateHeld = false;
+				}
+			}
+			latchedStep = selectedStep;
+		}
+
 		// Update sequence length from knob + CV (1V per step)
 		float lengthControl = params[SEQUENCE_LENGTH_PARAM].getValue() + inputs[LENGTH_INPUT].getVoltage();
 		sequenceLength = (int) std::round(lengthControl);
@@ -678,6 +693,10 @@ struct FM16Seq : Module {
 		int carRatioChannels = inputs[CAR_RATIO_INPUT].getChannels();
 		int maxChannels = std::max({pitchChannels, fmIndexChannels, modRatioChannels, carRatioChannels, 1});
 		maxChannels = std::min(maxChannels, STEPS);
+
+		if (manualTriggerPressed) {
+			stepTriggered = true;
+		}
 
 		// When step triggers, gate on all engines
 		if (stepTriggered) {
@@ -857,6 +876,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(124.f, 288.f), module, FM16Seq::EDIT_MOD_DECAY_PARAM));
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(164.f, 288.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(204.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
+		addParam(createParamCentered<SmallButton>(Vec(252.f, 268.f), module, FM16Seq::MANUAL_STEP_TRIGGER_PARAM));
 
 		addParam(createParamCentered<JwPlayModeKnob>(Vec(485.f, 136.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 166.f), module, FM16Seq::MODE_CV_INPUT));
