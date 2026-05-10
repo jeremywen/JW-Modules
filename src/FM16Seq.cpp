@@ -216,7 +216,7 @@ struct FM16Seq : Module {
 		configParam(INITIALIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Initialize step divisions");
 		configParam(INITIALIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Initialize levels");
 
-		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 0.f, "Integer ratios mode");
+		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 1.f, "Integer ratios mode");
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
 		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
