@@ -61,6 +61,8 @@ A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://l
 
 Click the step buttons to edit the sequencer params for that step.
 
+Right click on module to see context menu and menu items for copying and pasting steps.
+
 * **Clock:** advances sequencer on trigger
 * **Rst:** resets sequencer on trigger
 * **Pitch:** polyphonic input to set pitch for each of the 16 steps
