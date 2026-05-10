@@ -498,6 +498,5 @@ extern Model *modelTrigs;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelRnbo;
-extern Model *modelGlitchThing;
 extern Model *modelFM16Seq;
 

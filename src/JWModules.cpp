@@ -57,6 +57,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);
 	p->addModel(modelRnbo);
-	p->addModel(modelGlitchThing);
 	p->addModel(modelFM16Seq);
 }
