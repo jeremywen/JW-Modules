@@ -59,6 +59,38 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://lo-bit.club/fms
 
+Click the step buttons to edit the sequencer params for that step.
+
+* **Clock:** advances sequencer on trigger
+* **Rst:** resets sequencer on trigger
+* **Pitch:** polyphonic input to set pitch for each of the 16 steps
+* **Index:** polyphonic input to set index for each of the 16 steps
+* **ModR:** polyphonic input to set modulator ratio for each of the 16 steps
+* **CarR:** polyphonic input to set carrier ratio for each of the 16 steps
+* **Length:** sequencer length
+* **Mode:** the order steps are played back
+* **Lvl:** master level
+* **Out:** main audio out
+
+Step Params
+
+* **Div:** division for step to trigger on, zero doesn't play step
+* **Pitch:** pitch for step
+* **FM Idx:** fm index for step
+* **Level:** level for step
+* **Car:** carrier ratio for step
+* **Mod:** modulator ratio for step
+* **Fdbk:** feedback for step
+* **Car Envelope:** carrier envelope for step
+* **Mod Envelope:** modulator envelope for step
+
+Randomize and Initialize
+
+* **RND** randomize param for all steps
+* **INIT** initialize params for all steps
+* **Int:** only use integers when randomizing
+
+
 ## SampleGrid
 
 ![samplegrid](./doc/samplegrid.png)

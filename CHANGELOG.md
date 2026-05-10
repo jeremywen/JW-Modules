@@ -3,7 +3,7 @@
 ## v2.0.35 ~ 5-10-26
 
   * New Module FM16SEQ
-  * Play mode knob tooltip is better now
+  * Play mode knob tooltip is better now for all modules
 
 ## v2.0.34 ~ 5-9-26
 
