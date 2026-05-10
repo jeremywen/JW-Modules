@@ -10,7 +10,7 @@
 	"sourceUrl": "https://github.com/jeremywen/JW-Modules",
 	"donateUrl": "https://www.paypal.me/jeremywen",
 	"changelogUrl": "https://github.com/jeremywen/JW-Modules/blob/master/CHANGELOG.md",
-	"version": "2.0.34",
+	"version": "2.0.35",
 	"modules": [
 		{
 			"slug": "0Cat",
@@ -396,7 +396,6 @@
 			]
 		},
 		{
-			"hidden": true,
 			"slug": "FM16Seq",
 			"name": "FM16Seq",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
