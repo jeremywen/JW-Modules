@@ -25,19 +25,19 @@ struct FM16Seq : Module {
 		EDIT_LEVEL_PARAM,
 		STEP_SELECT_PARAM,
 		RANDOMIZE_RATIOS_PARAM = STEP_SELECT_PARAM + STEPS,
-		RANDOMIZE_DIVISIONS_PARAM,
-		RANDOMIZE_ENVELOPES_PARAM,
-		RANDOMIZE_PITCHES_PARAM,
 		RANDOMIZE_INDEXES_PARAM,
-		RANDOMIZE_LEVELS_PARAM,
 		RANDOMIZE_FEEDBACK_PARAM,
+		RANDOMIZE_PITCHES_PARAM,
+		RANDOMIZE_ENVELOPES_PARAM,
+		RANDOMIZE_DIVISIONS_PARAM,
+		RANDOMIZE_LEVELS_PARAM,
 		INITIALIZE_RATIOS_PARAM,
-		INITIALIZE_DIVISIONS_PARAM,
-		INITIALIZE_ENVELOPES_PARAM,
-		INITIALIZE_PITCHES_PARAM,
 		INITIALIZE_INDEXES_PARAM,
-		INITIALIZE_LEVELS_PARAM,
 		INITIALIZE_FEEDBACK_PARAM,
+		INITIALIZE_PITCHES_PARAM,
+		INITIALIZE_ENVELOPES_PARAM,
+		INITIALIZE_DIVISIONS_PARAM,
+		INITIALIZE_LEVELS_PARAM,
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		NUM_PARAMS
@@ -199,20 +199,22 @@ struct FM16Seq : Module {
 		for (int i = 0; i < STEPS; i++) {
 			configParam(STEP_SELECT_PARAM + i, 0.f, 1.f, 0.f, string::f("Select step %d", i + 1));
 		}
+		// Keep action param/config ordering aligned with widget layout rows.
 		configParam(RANDOMIZE_RATIOS_PARAM, 0.f, 1.f, 0.f, "Randomize ratios");
-		configParam(RANDOMIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Randomize step divisions");
-		configParam(RANDOMIZE_ENVELOPES_PARAM, 0.f, 1.f, 0.f, "Randomize envelopes");
-		configParam(RANDOMIZE_PITCHES_PARAM, 0.f, 1.f, 0.f, "Randomize pitches");
 		configParam(RANDOMIZE_INDEXES_PARAM, 0.f, 1.f, 0.f, "Randomize indexes");
-		configParam(RANDOMIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Randomize levels");
 		configParam(RANDOMIZE_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Randomize feedback");
+		configParam(RANDOMIZE_PITCHES_PARAM, 0.f, 1.f, 0.f, "Randomize pitches");
+		configParam(RANDOMIZE_ENVELOPES_PARAM, 0.f, 1.f, 0.f, "Randomize envelopes");
+		configParam(RANDOMIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Randomize step divisions");
+		configParam(RANDOMIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Randomize levels");
 		configParam(INITIALIZE_RATIOS_PARAM, 0.f, 1.f, 0.f, "Initialize ratios");
-		configParam(INITIALIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Initialize step divisions");
-		configParam(INITIALIZE_ENVELOPES_PARAM, 0.f, 1.f, 0.f, "Initialize envelopes");
-		configParam(INITIALIZE_PITCHES_PARAM, 0.f, 1.f, 0.f, "Initialize pitches");
 		configParam(INITIALIZE_INDEXES_PARAM, 0.f, 1.f, 0.f, "Initialize indexes");
-		configParam(INITIALIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Initialize levels");
 		configParam(INITIALIZE_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Initialize feedback");
+		configParam(INITIALIZE_PITCHES_PARAM, 0.f, 1.f, 0.f, "Initialize pitches");
+		configParam(INITIALIZE_ENVELOPES_PARAM, 0.f, 1.f, 0.f, "Initialize envelopes");
+		configParam(INITIALIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Initialize step divisions");
+		configParam(INITIALIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Initialize levels");
+
 		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 0.f, "Integer ratios mode");
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
@@ -569,19 +571,19 @@ struct FM16Seq : Module {
 		integerRatiosMode = params[INTEGER_RATIOS_PARAM].getValue() > 0.5f;
 
 		if (actionTrigger[0].process(params[RANDOMIZE_RATIOS_PARAM].getValue())) randomizeRatiosOnly();
-		if (actionTrigger[1].process(params[RANDOMIZE_DIVISIONS_PARAM].getValue())) randomizeStepDivisionsOnly();
-		if (actionTrigger[2].process(params[RANDOMIZE_ENVELOPES_PARAM].getValue())) randomizeEnvelopesOnly();
+		if (actionTrigger[1].process(params[RANDOMIZE_INDEXES_PARAM].getValue())) randomizeIndexesOnly();
+		if (actionTrigger[2].process(params[RANDOMIZE_FEEDBACK_PARAM].getValue())) randomizeFeedbackOnly();
 		if (actionTrigger[3].process(params[RANDOMIZE_PITCHES_PARAM].getValue())) randomizePitchesOnly();
-		if (actionTrigger[4].process(params[RANDOMIZE_INDEXES_PARAM].getValue())) randomizeIndexesOnly();
-		if (actionTrigger[5].process(params[RANDOMIZE_LEVELS_PARAM].getValue())) randomizeLevelsOnly();
-		if (actionTrigger[6].process(params[RANDOMIZE_FEEDBACK_PARAM].getValue())) randomizeFeedbackOnly();
+		if (actionTrigger[4].process(params[RANDOMIZE_ENVELOPES_PARAM].getValue())) randomizeEnvelopesOnly();
+		if (actionTrigger[5].process(params[RANDOMIZE_DIVISIONS_PARAM].getValue())) randomizeStepDivisionsOnly();
+		if (actionTrigger[6].process(params[RANDOMIZE_LEVELS_PARAM].getValue())) randomizeLevelsOnly();
 		if (actionTrigger[7].process(params[INITIALIZE_RATIOS_PARAM].getValue())) initializeRatiosOnly();
-		if (actionTrigger[8].process(params[INITIALIZE_DIVISIONS_PARAM].getValue())) initializeStepDivisionsOnly();
-		if (actionTrigger[9].process(params[INITIALIZE_ENVELOPES_PARAM].getValue())) initializeEnvelopesOnly();
+		if (actionTrigger[8].process(params[INITIALIZE_INDEXES_PARAM].getValue())) initializeIndexesOnly();
+		if (actionTrigger[9].process(params[INITIALIZE_FEEDBACK_PARAM].getValue())) initializeFeedbackOnly();
 		if (actionTrigger[10].process(params[INITIALIZE_PITCHES_PARAM].getValue())) initializePitchesOnly();
-		if (actionTrigger[11].process(params[INITIALIZE_INDEXES_PARAM].getValue())) initializeIndexesOnly();
-		if (actionTrigger[12].process(params[INITIALIZE_LEVELS_PARAM].getValue())) initializeLevelsOnly();
-		if (actionTrigger[13].process(params[INITIALIZE_FEEDBACK_PARAM].getValue())) initializeFeedbackOnly();
+		if (actionTrigger[11].process(params[INITIALIZE_ENVELOPES_PARAM].getValue())) initializeEnvelopesOnly();
+		if (actionTrigger[12].process(params[INITIALIZE_DIVISIONS_PARAM].getValue())) initializeStepDivisionsOnly();
+		if (actionTrigger[13].process(params[INITIALIZE_LEVELS_PARAM].getValue())) initializeLevelsOnly();
 
 		// Clock and sequence logic
 		float clockValue = inputs[CLOCK_INPUT].getVoltage();
@@ -810,23 +812,23 @@ struct FM16SeqWidget : ModuleWidget {
 		const float yStep = 24.f;
 
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_RATIOS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 4.f), module, FM16Seq::RANDOMIZE_INDEXES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_FEEDBACK_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_INDEXES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_FEEDBACK_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 3.f), module, FM16Seq::RANDOMIZE_PITCHES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_ENVELOPES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 4.f), module, FM16Seq::RANDOMIZE_ENVELOPES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
 
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX - 30.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
 
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 0.f), module, FM16Seq::INITIALIZE_RATIOS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 4.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_FEEDBACK_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 2.f), module, FM16Seq::INITIALIZE_FEEDBACK_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 3.f), module, FM16Seq::INITIALIZE_PITCHES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 2.f), module, FM16Seq::INITIALIZE_ENVELOPES_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
-		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 4.f), module, FM16Seq::INITIALIZE_ENVELOPES_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 	}
 };
 
