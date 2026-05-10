@@ -751,7 +751,67 @@ struct FM16Seq : Module {
 };
 
 struct FM16SeqWidget : ModuleWidget {
-	FM16SeqWidget(FM16Seq* module) {
+
+	// Static clipboard for step copy/paste
+	static FM16Seq::StepData stepClipboard;
+
+   struct CopyStepMenuItem : MenuItem {
+	   FM16Seq* module;
+	   void onAction(const event::Action& e) override {
+		   if (!module) return;
+		   int src = module->selectedStep;
+		   stepClipboard = module->stepData[src];
+	   }
+   };
+
+   struct PasteStepMenuItem : MenuItem {
+	   FM16Seq* module;
+	   void onAction(const event::Action& e) override {
+		   if (!module) return;
+		   int dst = module->selectedStep;
+		   module->stepData[dst] = stepClipboard;
+		   module->loadEditorFromSelectedStep();
+	   }
+   };
+
+   struct CopyStepToAllMenuItem : MenuItem {
+	   FM16Seq* module;
+	   void onAction(const event::Action& e) override {
+		   if (!module) return;
+		   int src = module->selectedStep;
+		   FM16Seq::StepData srcData = module->stepData[src];
+		   for (int i = 0; i < FM16Seq::STEPS; i++) {
+			   if (i != src) module->stepData[i] = srcData;
+		   }
+		   module->loadEditorFromSelectedStep();
+	   }
+   };
+
+
+   void appendContextMenu(Menu* menu) override {
+	   ModuleWidget::appendContextMenu(menu);
+	   FM16Seq* m = dynamic_cast<FM16Seq*>(module);
+	   if (m) {
+		   menu->addChild(new MenuSeparator());
+
+		   CopyStepMenuItem* copyItem = new CopyStepMenuItem();
+		   copyItem->text = "Copy step";
+		   copyItem->module = m;
+		   menu->addChild(copyItem);
+
+		   PasteStepMenuItem* pasteItem = new PasteStepMenuItem();
+		   pasteItem->text = "Paste step";
+		   pasteItem->module = m;
+		   menu->addChild(pasteItem);
+
+		   CopyStepToAllMenuItem* item = new CopyStepToAllMenuItem();
+		   item->text = "Copy current step to all steps";
+		   item->module = m;
+		   menu->addChild(item);
+	   }
+   }
+
+   FM16SeqWidget(FM16Seq* module) {
 		setModule(module);
 		box.size = Vec(RACK_GRID_WIDTH * 36, RACK_GRID_HEIGHT);
 
@@ -831,5 +891,9 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 	}
 };
+
+
+// Define and initialize the static clipboard variable
+FM16Seq::StepData FM16SeqWidget::stepClipboard = FM16Seq::StepData{};
 
 Model* modelFM16Seq = createModel<FM16Seq, FM16SeqWidget>("FM16Seq");
