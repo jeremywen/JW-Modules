@@ -24,6 +24,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [Buffer](#buffer)
 * [D1v1de](#d1v1de)
 * [DivSeq](#divseq)
+* [FM16SEQ](#fm16seq)
 * [FullScope](#fullscope)
 * [Grains](#grains)
 * [GridSeq](#gridseq)
@@ -52,6 +53,11 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
 ----
+## FM16SEQ
+
+![fm16seq](./doc/fm16seq.png)
+
+A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://lo-bit.club/fms
 
 ## SampleGrid
 
