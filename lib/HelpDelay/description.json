@@ -1,0 +1,131 @@
+{
+  "parameters": [
+    {
+      "type": "ParameterTypeNumber",
+      "index": 0,
+      "name": "feedback",
+      "paramId": "feedback",
+      "minimum": 0,
+      "maximum": 0.99,
+      "exponent": 1,
+      "steps": 0,
+      "initialValue": 0.5,
+      "isEnum": false,
+      "enumValues": [],
+      "displayName": "",
+      "unit": "",
+      "order": 0,
+      "displayorder": "-",
+      "debug": false,
+      "visible": true,
+      "signalIndex": null,
+      "ioType": "IOTypeUndefined"
+    },
+    {
+      "type": "ParameterTypeNumber",
+      "index": 1,
+      "name": "drywet",
+      "paramId": "drywet",
+      "minimum": 0,
+      "maximum": 1,
+      "exponent": 1,
+      "steps": 0,
+      "initialValue": 0,
+      "isEnum": false,
+      "enumValues": [],
+      "displayName": "",
+      "unit": "",
+      "order": 0,
+      "displayorder": "-",
+      "debug": false,
+      "visible": true,
+      "signalIndex": null,
+      "ioType": "IOTypeUndefined"
+    },
+    {
+      "type": "ParameterTypeNumber",
+      "index": 2,
+      "name": "time",
+      "paramId": "time",
+      "minimum": 1,
+      "maximum": 1000,
+      "exponent": 1,
+      "steps": 0,
+      "initialValue": 250,
+      "isEnum": false,
+      "enumValues": [],
+      "displayName": "",
+      "unit": "",
+      "order": 0,
+      "displayorder": "-",
+      "debug": false,
+      "visible": true,
+      "signalIndex": null,
+      "ioType": "IOTypeUndefined"
+    },
+    {
+      "type": "ParameterTypeNumber",
+      "index": 3,
+      "name": "playbackrate",
+      "paramId": "playbackrate",
+      "minimum": -4,
+      "maximum": 4,
+      "exponent": 1,
+      "steps": 0,
+      "initialValue": 1,
+      "isEnum": false,
+      "enumValues": [],
+      "displayName": "",
+      "unit": "",
+      "order": 0,
+      "displayorder": "-",
+      "debug": false,
+      "visible": true,
+      "signalIndex": null,
+      "ioType": "IOTypeUndefined"
+    }
+  ],
+  "numParameters": 4,
+  "numSignalInParameters": 0,
+  "numSignalOutParameters": 0,
+  "numInputChannels": 1,
+  "numOutputChannels": 1,
+  "numMidiInputPorts": 0,
+  "numMidiOutputPorts": 0,
+  "transportUsed": true,
+  "externalDataRefs": [
+    {
+      "id": "helpdelay",
+      "type": "Float32Buffer",
+      "tag": "buffer~"
+    }
+  ],
+  "patcherSerial": 0,
+  "inports": [],
+  "outports": [],
+  "inlets": [
+    {
+      "type": "signal",
+      "index": 1,
+      "tag": "in1",
+      "meta": ""
+    }
+  ],
+  "outlets": [
+    {
+      "type": "signal",
+      "index": 1,
+      "tag": "out1",
+      "meta": ""
+    }
+  ],
+  "presetid": "rnbo",
+  "meta": {
+    "architecture": "x64",
+    "filename": "helpdelay.maxpat",
+    "rnboobjname": "rnbomatic",
+    "maxversion": "9.1.4",
+    "rnboversion": "1.4.3",
+    "name": "untitled"
+  }
+}

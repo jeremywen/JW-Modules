@@ -1,0 +1,16 @@
+{
+  "author": "Cycling '74",
+  "name": "@rnbo/unittestpatchers",
+  "dependencies": {},
+  "description": "C++ Unit test pacther generator for RNBO",
+  "scripts": {
+    "generate": "node generate.js"
+  },
+  "license": "ISC",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "@rnbo/utils": "1.4.0",
+    "@rnbo/xam": "1.4.0"
+  }
+}

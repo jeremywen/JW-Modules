@@ -1,0 +1,19 @@
+[
+  {
+    "name": "untitled",
+    "preset": {
+      "drywet": {
+        "value": 1
+      },
+      "feedback": {
+        "value": 0.99
+      },
+      "playbackrate": {
+        "value": 1.0310000000000001
+      },
+      "time": {
+        "value": 128
+      }
+    }
+  }
+]

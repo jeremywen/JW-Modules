@@ -13,10 +13,7 @@ ifdef OSC_ON
 		-O0 \
 		-Werror=implicit-function-declaration \
 		-Isrc \
-		-Ilib/oscpack \
-		-Ilib/rnbo \
-		-Ilib/rnbo/common \
-		-Ilib/rnbo/src
+		-Ilib/oscpack
 	SOURCES = \
 		$(wildcard lib/oscpack/ip/*.cpp) \
 		$(wildcard lib/oscpack/osc/*.cpp) \
@@ -33,10 +30,7 @@ ifndef OSC_ON
 		-Wno-deprecated-declarations \
 		-O0 \
 		-Werror=implicit-function-declaration \
-		-Isrc \
-		-Ilib/rnbo \
-		-Ilib/rnbo/common \
-		-Ilib/rnbo/src
+		-Isrc
 	SOURCES = \
 		$(wildcard src/*.cpp)
 	ifneq (, $(findstring mingw, $(MACHINE)))

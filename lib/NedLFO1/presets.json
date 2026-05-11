@@ -1,0 +1,16 @@
+[
+  {
+    "name": "untitled",
+    "preset": {
+      "chance": {
+        "value": 0.11000000000000001
+      },
+      "frequency": {
+        "value": 7
+      },
+      "type": {
+        "value": 5
+      }
+    }
+  }
+]

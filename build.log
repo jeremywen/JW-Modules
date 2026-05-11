@@ -1,0 +1,158 @@
+c++ -std=c++11 -stdlib=libc++  -DOSC_ON=1 -Wno-deprecated-declarations -O0 -Werror=implicit-function-declaration -Isrc -Ilib/oscpack -fPIC -I../../include -I../../dep/include -MMD -MP -g -O3 -funsafe-math-optimizations -fno-omit-frame-pointer -Wall -Wextra -Wno-unused-parameter -Wno-vla-extension -march=armv8-a+fp+simd -mmacosx-version-min=10.9  -c -o build/src/RnboNedRepeat.cpp.o src/RnboNedRepeat.cpp
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1247:12: warning: unused variable 'beatmult' [-Wunused-variable]
+ 1247 |     number beatmult = currbeattime * (currtimesig[1] / (number)4);
+      |            ^~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:1390:16: warning: variable 'counter_12' set but not used [-Wunused-but-set-variable]
+ 1390 |         number counter_12 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1391:16: warning: variable 'counter_13' set but not used [-Wunused-but-set-variable]
+ 1391 |         number counter_13 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1414:16: warning: variable 'index_repeat_44' set but not used [-Wunused-but-set-variable]
+ 1414 |         number index_repeat_44 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1459:16: warning: variable 'counter_12' set but not used [-Wunused-but-set-variable]
+ 1459 |         number counter_12 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1460:16: warning: variable 'counter_13' set but not used [-Wunused-but-set-variable]
+ 1460 |         number counter_13 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1483:16: warning: variable 'index_repeat_44' set but not used [-Wunused-but-set-variable]
+ 1483 |         number index_repeat_44 = 0;
+      |                ^
+src/../lib/NedRepeat/NedRepeat.cpp:1382:14: warning: unused variable 'repeat_dim_1_0' [-Wunused-variable]
+ 1382 |         auto repeat_dim_1_0 = this->dim(this->gen_01_repeat);
+      |              ^~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:131:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::gen_01_perform' requested here
+  131 |     this->gen_01_perform(
+      |           ^
+src/../lib/NedRepeat/NedRepeat.cpp:95:1: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::process' requested here
+   95 | rnbomatic()
+      | ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+src/../lib/NedRepeat/NedRepeat.cpp:2467:16: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::NedRepeat_rnbomatic' requested here
+ 2467 |     return new rnbomatic<EXTERNALENGINE>();
+      |                ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1383:14: warning: unused variable 'repeat_chans_2_1' [-Wunused-variable]
+ 1383 |         auto repeat_chans_2_1 = this->channels(this->gen_01_repeat);
+      |              ^~~~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:735:125: warning: comparison of integers of different signs: 'Int' (aka 'long') and 'const Index' (aka 'const unsigned long long') [-Wsign-compare]
+  735 |     if (bufferSize > 0 && (5 != 5 || (sampleIndex >= 0 && sampleIndex < bufferSize)) && (5 != 5 || (channel >= 0 && channel < bufferChannels))) {
+      |                                                                                                                     ~~~~~~~ ^ ~~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:1397:15: note: in instantiation of function template specialization 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::poke_default<RNBO::DataViewRef<double, RNBO::SampleBuffer>>' requested here
+ 1397 |         this->poke_default(this->gen_01_repeat, in1[(Index)i], mod_14_16, 0, 0);
+      |               ^
+src/../lib/NedRepeat/NedRepeat.cpp:131:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::gen_01_perform' requested here
+  131 |     this->gen_01_perform(
+      |           ^
+src/../lib/NedRepeat/NedRepeat.cpp:95:1: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::process' requested here
+   95 | rnbomatic()
+      | ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+src/../lib/NedRepeat/NedRepeat.cpp:2467:16: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::NedRepeat_rnbomatic' requested here
+ 2467 |     return new rnbomatic<EXTERNALENGINE>();
+      |                ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1451:14: warning: unused variable 'repeat_dim_1_0' [-Wunused-variable]
+ 1451 |         auto repeat_dim_1_0 = this->dim(this->gen_02_repeat);
+      |              ^~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:141:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::gen_02_perform' requested here
+  141 |     this->gen_02_perform(
+      |           ^
+src/../lib/NedRepeat/NedRepeat.cpp:95:1: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::process' requested here
+   95 | rnbomatic()
+      | ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+src/../lib/NedRepeat/NedRepeat.cpp:2467:16: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<RNBO::EXTERNALENGINE>::NedRepeat_rnbomatic' requested here
+ 2467 |     return new rnbomatic<EXTERNALENGINE>();
+      |                ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1452:14: warning: unused variable 'repeat_chans_2_1' [-Wunused-variable]
+ 1452 |         auto repeat_chans_2_1 = this->channels(this->gen_02_repeat);
+      |              ^~~~~~~~~~~~~~~~
+In file included from src/RnboNedRepeat.cpp:10:
+In file included from src/../lib/NedRepeat/NedRepeat.cpp:71:
+In file included from src/../lib/NedRepeat/rnbo/common/RNBO_Common.h:37:
+src/../lib/NedRepeat/rnbo/common/RNBO_MinimalEngine.h:270:22: warning: comparison of integers of different signs: 'long' and 'unsigned long' [-Wsign-compare]
+  270 |                 for (long i = 0; i < SIZE; i++) {
+      |                                  ~ ^ ~~~~
+src/../lib/NedRepeat/rnbo/common/RNBO_MinimalEngine.h:132:9: note: in instantiation of member function 'RNBO::MinimalEngine<>::insertEvent' requested here
+  132 |         insertEvent({ Clock, time, 0, clockIndex, UNUSEDPARAMINDEX, eventTarget, READY, false });
+      |         ^
+src/../lib/NedRepeat/NedRepeat.cpp:95:1: note: in instantiation of member function 'RNBO::MinimalEngine<>::scheduleClockEvent' requested here
+   95 | rnbomatic()
+      | ^
+src/RnboNedRepeat.cpp:7:19: note: expanded from macro 'rnbomatic'
+    7 | #define rnbomatic NedRepeat_rnbomatic
+      |                   ^
+src/RnboNedRepeat.cpp:54:25: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::NedRepeat_rnbomatic' requested here
+   54 |                 nedRepeatEngine = new RNBO::NedRepeat_rnbomatic<>();
+      |                                       ^
+In file included from src/RnboNedRepeat.cpp:10:
+In file included from src/../lib/NedRepeat/NedRepeat.cpp:71:
+In file included from src/../lib/NedRepeat/rnbo/common/RNBO_Common.h:37:
+src/../lib/NedRepeat/rnbo/common/RNBO_MinimalEngine.h:282:14: warning: comparison of integers of different signs: 'long' and 'unsigned long' [-Wsign-compare]
+  282 |                                 while (j < SIZE && _queue[j].state > DELETED) j++;
+      |                                        ~ ^ ~~~~
+src/../lib/NedRepeat/rnbo/common/RNBO_MinimalEngine.h:283:11: warning: comparison of integers of different signs: 'long' and 'unsigned long' [-Wsign-compare]
+  283 |                                 if (j >= SIZE) break;
+      |                                     ~ ^  ~~~~
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1382:14: warning: unused variable 'repeat_dim_1_0' [-Wunused-variable]
+ 1382 |         auto repeat_dim_1_0 = this->dim(this->gen_01_repeat);
+      |              ^~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:131:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::gen_01_perform' requested here
+  131 |     this->gen_01_perform(
+      |           ^
+src/RnboNedRepeat.cpp:115:20: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::process' requested here
+  115 |                 nedRepeatEngine->process(rnboInputs, 2, rnboOutputs, 2, 1);
+      |                                  ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1383:14: warning: unused variable 'repeat_chans_2_1' [-Wunused-variable]
+ 1383 |         auto repeat_chans_2_1 = this->channels(this->gen_01_repeat);
+      |              ^~~~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:735:125: warning: comparison of integers of different signs: 'Int' (aka 'long') and 'const Index' (aka 'const unsigned long long') [-Wsign-compare]
+  735 |     if (bufferSize > 0 && (5 != 5 || (sampleIndex >= 0 && sampleIndex < bufferSize)) && (5 != 5 || (channel >= 0 && channel < bufferChannels))) {
+      |                                                                                                                     ~~~~~~~ ^ ~~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:1397:15: note: in instantiation of function template specialization 'RNBO::NedRepeat_rnbomatic<>::poke_default<RNBO::DataViewRef<double, RNBO::SampleBuffer>>' requested here
+ 1397 |         this->poke_default(this->gen_01_repeat, in1[(Index)i], mod_14_16, 0, 0);
+      |               ^
+src/../lib/NedRepeat/NedRepeat.cpp:131:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::gen_01_perform' requested here
+  131 |     this->gen_01_perform(
+      |           ^
+src/RnboNedRepeat.cpp:115:20: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::process' requested here
+  115 |                 nedRepeatEngine->process(rnboInputs, 2, rnboOutputs, 2, 1);
+      |                                  ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1451:14: warning: unused variable 'repeat_dim_1_0' [-Wunused-variable]
+ 1451 |         auto repeat_dim_1_0 = this->dim(this->gen_02_repeat);
+      |              ^~~~~~~~~~~~~~
+src/../lib/NedRepeat/NedRepeat.cpp:141:11: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::gen_02_perform' requested here
+  141 |     this->gen_02_perform(
+      |           ^
+src/RnboNedRepeat.cpp:115:20: note: in instantiation of member function 'RNBO::NedRepeat_rnbomatic<>::process' requested here
+  115 |                 nedRepeatEngine->process(rnboInputs, 2, rnboOutputs, 2, 1);
+      |                                  ^
+In file included from src/RnboNedRepeat.cpp:10:
+src/../lib/NedRepeat/NedRepeat.cpp:1452:14: warning: unused variable 'repeat_chans_2_1' [-Wunused-variable]
+ 1452 |         auto repeat_chans_2_1 = this->channels(this->gen_02_repeat);
+      |              ^~~~~~~~~~~~~~~~
+20 warnings generated.
+c++ -std=c++11 -stdlib=libc++  -DOSC_ON=1 -Wno-deprecated-declarations -O0 -Werror=implicit-function-declaration -Isrc -Ilib/oscpack -fPIC -I../../include -I../../dep/include -MMD -MP -g -O3 -funsafe-math-optimizations -fno-omit-frame-pointer -Wall -Wextra -Wno-unused-parameter -Wno-vla-extension -march=armv8-a+fp+simd -mmacosx-version-min=10.9  -o plugin.dylib build/lib/oscpack/ip/IpEndpointName.cpp.o build/lib/oscpack/osc/OscOutboundPacketStream.cpp.o build/lib/oscpack/osc/OscPrintReceivedElements.cpp.o build/lib/oscpack/osc/OscReceivedElements.cpp.o build/lib/oscpack/osc/OscTypes.cpp.o build/src/_Template.cpp.o build/src/AbcdSeq.cpp.o build/src/Add5.cpp.o build/src/Arrange.cpp.o build/src/Arrange16.cpp.o build/src/BlankPanel.cpp.o build/src/BouncyBalls.cpp.o build/src/Buffer.cpp.o build/src/Cat.cpp.o build/src/D1v1de.cpp.o build/src/DivSeq.cpp.o build/src/EightSeq.cpp.o build/src/FM16Seq.cpp.o build/src/FullScope.cpp.o build/src/Grains.cpp.o build/src/GridSeq.cpp.o build/src/JWModules.cpp.o build/src/MinMax.cpp.o build/src/NoteSeq.cpp.o build/src/NoteSeq16.cpp.o build/src/NoteSeqFu.cpp.o build/src/OnePattern.cpp.o build/src/Patterns.cpp.o build/src/Pete.cpp.o build/src/Pres1t.cpp.o build/src/Quantizer.cpp.o build/src/QuantizeUtils.cpp.o build/src/RandomSound.cpp.o build/src/RnboHelpDelay.cpp.o build/src/RnboNedLFO1.cpp.o build/src/RnboNedRepeat.cpp.o build/src/SampleGrid.cpp.o build/src/ShiftRegRnd.cpp.o build/src/SimpleClock.cpp.o build/src/StereoSwitch.cpp.o build/src/StereoSwitchInv.cpp.o build/src/Str1ker.cpp.o build/src/Subtract5.cpp.o build/src/ThingThing.cpp.o build/src/Timer.cpp.o build/src/Tree.cpp.o build/src/Trigs.cpp.o build/src/WavHead.cpp.o build/src/XYPad.cpp.o build/lib/oscpack/ip/posix/NetworkingUtils.cpp.o build/lib/oscpack/ip/posix/UdpSocket.cpp.o -shared -L../.. -lRack -undefined dynamic_lookup 

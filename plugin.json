@@ -274,10 +274,32 @@
 			]
 		},
 		{
-			"hidden": true,
-			"slug": "Rnbo",
-			"name": "RNBO",
-			"description": "RNBO Patch Host",
+			"hidden": false,
+			"slug": "RnboHelpDelay",
+			"name": "RNBO Help Delay",
+			"description": "RNBO Help Delay patch",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Utility",
+				"Audio"
+			]
+		},
+		{
+			"hidden": false,
+			"slug": "RnboNedLFO1",
+			"name": "RNBO Ned LFO 1",
+			"description": "RNBO Ned LFO 1 patch",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Utility",
+				"Audio"
+			]
+		},
+		{
+			"hidden": false,
+			"slug": "RnboNedRepeat",
+			"name": "RNBO Ned Repeat",
+			"description": "RNBO Ned Repeat patch",
 			"manualUrl": "https://github.com/jeremywen/JW-Modules",
 			"tags": [
 				"Utility",
