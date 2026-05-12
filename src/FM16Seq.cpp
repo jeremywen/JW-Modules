@@ -41,6 +41,7 @@ struct FM16Seq : Module {
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		MANUAL_STEP_TRIGGER_PARAM,
+		RANDOMIZE_AMOUNT_PARAM,
 		NUM_PARAMS
 	};
 	   enum InputIds {
@@ -179,6 +180,14 @@ struct FM16Seq : Module {
 	ADSR carrierEnv;
 	ADSR modEnv;
 
+	float getRandomizeAmount() {
+		return clampfjw(params[RANDOMIZE_AMOUNT_PARAM].getValue(), 0.f, 1.f);
+	}
+
+	float randomizeTowards(float current, float randomTarget, float amount) {
+		return current + (randomTarget - current) * amount;
+	}
+
 	FM16Seq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
@@ -225,6 +234,7 @@ struct FM16Seq : Module {
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
 		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
 		configParam(MANUAL_STEP_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Trigger selected step");
+		configParam(RANDOMIZE_AMOUNT_PARAM, 0.f, 1.f, 1.f, "Randomize amount");
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -360,13 +370,18 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeRatiosOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
 			if (integerRatiosMode) {
-				stepData[i].carRatio = (float)(1 + rack::random::u32() % 8);
-				stepData[i].modRatio = (float)(1 + rack::random::u32() % 8);
+				float targetCar = (float)(1 + rack::random::u32() % 16);
+				float targetMod = (float)(1 + rack::random::u32() % 16);
+				stepData[i].carRatio = clampfjw(std::round(randomizeTowards(stepData[i].carRatio, targetCar, amount)), 1.f, 16.f);
+				stepData[i].modRatio = clampfjw(std::round(randomizeTowards(stepData[i].modRatio, targetMod, amount)), 1.f, 16.f);
 			} else {
-				stepData[i].carRatio = 0.5f + random::uniform() * 4.f;
-				stepData[i].modRatio = 0.5f + random::uniform() * 6.f;
+				float targetCar = 0.125f + random::uniform() * (16.f - 0.125f);
+				float targetMod = 0.125f + random::uniform() * (16.f - 0.125f);
+				stepData[i].carRatio = clampfjw(randomizeTowards(stepData[i].carRatio, targetCar, amount), 0.125f, 16.f);
+				stepData[i].modRatio = clampfjw(randomizeTowards(stepData[i].modRatio, targetMod, amount), 0.125f, 16.f);
 			}
 		}
 		loadEditorFromSelectedStep();
@@ -381,8 +396,11 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeStepDivisionsOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].division = (int) std::floor(random::uniform() * 5.f);
+			float target = std::floor(random::uniform() * 5.f);
+			float blended = randomizeTowards((float)stepData[i].division, target, amount);
+			stepData[i].division = clampijw((int)std::round(blended), 0, 4);
 			stepHits[i] = 0;
 		}
 		loadEditorFromSelectedStep();
@@ -397,15 +415,16 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeEnvelopesOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].carAttack = random::uniform();
-			stepData[i].carDecay = random::uniform();
-			stepData[i].carSustain = random::uniform();
-			stepData[i].carRelease = random::uniform();
-			stepData[i].modAttack = random::uniform();
-			stepData[i].modDecay = random::uniform();
-			stepData[i].modSustain = random::uniform();
-			stepData[i].modRelease = random::uniform();
+			stepData[i].carAttack = randomizeTowards(stepData[i].carAttack, random::uniform(), amount);
+			stepData[i].carDecay = randomizeTowards(stepData[i].carDecay, random::uniform(), amount);
+			stepData[i].carSustain = randomizeTowards(stepData[i].carSustain, random::uniform(), amount);
+			stepData[i].carRelease = randomizeTowards(stepData[i].carRelease, random::uniform(), amount);
+			stepData[i].modAttack = randomizeTowards(stepData[i].modAttack, random::uniform(), amount);
+			stepData[i].modDecay = randomizeTowards(stepData[i].modDecay, random::uniform(), amount);
+			stepData[i].modSustain = randomizeTowards(stepData[i].modSustain, random::uniform(), amount);
+			stepData[i].modRelease = randomizeTowards(stepData[i].modRelease, random::uniform(), amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -425,8 +444,10 @@ struct FM16Seq : Module {
 	}
 
 	void randomizePitchesOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].pitch = std::round((random::uniform() * 48.f) - 24.f);
+			float target = std::round((random::uniform() * 48.f) - 24.f);
+			stepData[i].pitch = clampfjw(std::round(randomizeTowards(stepData[i].pitch, target, amount)), -24.f, 24.f);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -439,8 +460,10 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeIndexesOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].fmIndex = random::uniform() * 4.f;
+			float target = random::uniform() * 10.f;
+			stepData[i].fmIndex = randomizeTowards(stepData[i].fmIndex, target, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -453,8 +476,10 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeLevelsOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].level = 0.2f + random::uniform() * 0.8f;
+			float target = random::uniform();
+			stepData[i].level = randomizeTowards(stepData[i].level, target, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -467,8 +492,9 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeFeedbackOnly() {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].modFeedback = random::uniform();
+			stepData[i].modFeedback = randomizeTowards(stepData[i].modFeedback, random::uniform(), amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -914,6 +940,7 @@ struct FM16SeqWidget : ModuleWidget {
 
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX - 30.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
+		addParam(createParamCentered<VCVSlider>(Vec(rndX - 30.f, y0 + 30.f + yStep * 3.0f), module, FM16Seq::RANDOMIZE_AMOUNT_PARAM));
 
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 0.f), module, FM16Seq::INITIALIZE_RATIOS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));

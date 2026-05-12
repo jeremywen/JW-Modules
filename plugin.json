@@ -274,7 +274,7 @@
 			]
 		},
 		{
-			"hidden": false,
+			"hidden": true,
 			"slug": "RnboHelpDelay",
 			"name": "RNBO Help Delay",
 			"description": "RNBO Help Delay patch",
@@ -285,7 +285,7 @@
 			]
 		},
 		{
-			"hidden": false,
+			"hidden": true,
 			"slug": "RnboNedLFO1",
 			"name": "RNBO Ned LFO 1",
 			"description": "RNBO Ned LFO 1 patch",
@@ -296,7 +296,7 @@
 			]
 		},
 		{
-			"hidden": false,
+			"hidden": true,
 			"slug": "RnboNedRepeat",
 			"name": "RNBO Ned Repeat",
 			"description": "RNBO Ned Repeat patch",
