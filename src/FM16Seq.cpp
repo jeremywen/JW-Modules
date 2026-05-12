@@ -197,8 +197,8 @@ struct FM16Seq : Module {
 		configParam(EDIT_ACTIVE_PARAM, 0.f, 4.f, 1.f, "Step division");
 		paramQuantities[EDIT_ACTIVE_PARAM]->snapEnabled = true;
 		configParam(EDIT_PITCH_PARAM, -24.f, 24.f, 0.f, "Pitch", " semitones");
-		configParam(EDIT_CAR_RATIO_PARAM, 0.125f, 16.f, 1.f, "Carrier ratio");
-		configParam(EDIT_MOD_RATIO_PARAM, 0.125f, 16.f, 2.f, "Mod ratio");
+		configParam(EDIT_CAR_RATIO_PARAM, 0.125f, 10.f, 1.f, "Carrier ratio");
+		configParam(EDIT_MOD_RATIO_PARAM, 0.125f, 10.f, 2.f, "Mod ratio");
 		configParam(EDIT_MOD_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Mod feedback");
 		configParam(EDIT_FM_INDEX_PARAM, 0.f, 10.f, 1.5f, "FM index");
 		configParam(EDIT_CAR_ATTACK_PARAM, 0.f, 1.f, 0.03f, "Carrier attack");
@@ -352,8 +352,8 @@ struct FM16Seq : Module {
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].division = (int) std::floor(random::uniform() * 5.f);
 			stepData[i].pitch = std::round((random::uniform() * 48.f) - 24.f);
-			stepData[i].carRatio = 0.5f + random::uniform() * 4.f;
-			stepData[i].modRatio = 0.5f + random::uniform() * 6.f;
+			stepData[i].carRatio = 0.125f + random::uniform() * (10.f - 0.125f);
+			stepData[i].modRatio = 0.125f + random::uniform() * (10.f - 0.125f);
 			stepData[i].modFeedback = random::uniform();
 			stepData[i].fmIndex = random::uniform() * 4.f;
 			stepData[i].carAttack = random::uniform();
@@ -373,15 +373,15 @@ struct FM16Seq : Module {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
 			if (integerRatiosMode) {
-				float targetCar = (float)(1 + rack::random::u32() % 16);
-				float targetMod = (float)(1 + rack::random::u32() % 16);
-				stepData[i].carRatio = clampfjw(std::round(randomizeTowards(stepData[i].carRatio, targetCar, amount)), 1.f, 16.f);
-				stepData[i].modRatio = clampfjw(std::round(randomizeTowards(stepData[i].modRatio, targetMod, amount)), 1.f, 16.f);
+				float targetCar = (float)(1 + rack::random::u32() % 10);
+				float targetMod = (float)(1 + rack::random::u32() % 10);
+				stepData[i].carRatio = clampfjw(std::round(randomizeTowards(stepData[i].carRatio, targetCar, amount)), 1.f, 10.f);
+				stepData[i].modRatio = clampfjw(std::round(randomizeTowards(stepData[i].modRatio, targetMod, amount)), 1.f, 10.f);
 			} else {
-				float targetCar = 0.125f + random::uniform() * (16.f - 0.125f);
-				float targetMod = 0.125f + random::uniform() * (16.f - 0.125f);
-				stepData[i].carRatio = clampfjw(randomizeTowards(stepData[i].carRatio, targetCar, amount), 0.125f, 16.f);
-				stepData[i].modRatio = clampfjw(randomizeTowards(stepData[i].modRatio, targetMod, amount), 0.125f, 16.f);
+				float targetCar = 0.125f + random::uniform() * (10.f - 0.125f);
+				float targetMod = 0.125f + random::uniform() * (10.f - 0.125f);
+				stepData[i].carRatio = clampfjw(randomizeTowards(stepData[i].carRatio, targetCar, amount), 0.125f, 10.f);
+				stepData[i].modRatio = clampfjw(randomizeTowards(stepData[i].modRatio, targetMod, amount), 0.125f, 10.f);
 			}
 		}
 		loadEditorFromSelectedStep();
@@ -564,8 +564,8 @@ struct FM16Seq : Module {
 					if (v) stepData[i].division = json_is_true(v) ? 1 : 0;
 				}
 				v = json_object_get(stepJ, "pitch"); if (v) stepData[i].pitch = (float)json_number_value(v);
-				v = json_object_get(stepJ, "carRatio"); if (v) stepData[i].carRatio = (float)json_number_value(v);
-				v = json_object_get(stepJ, "modRatio"); if (v) stepData[i].modRatio = (float)json_number_value(v);
+				v = json_object_get(stepJ, "carRatio"); if (v) stepData[i].carRatio = clampfjw((float)json_number_value(v), 0.125f, 10.f);
+				v = json_object_get(stepJ, "modRatio"); if (v) stepData[i].modRatio = clampfjw((float)json_number_value(v), 0.125f, 10.f);
 				v = json_object_get(stepJ, "modFeedback"); if (v) stepData[i].modFeedback = (float)json_number_value(v);
 				v = json_object_get(stepJ, "fmIndex"); if (v) stepData[i].fmIndex = (float)json_number_value(v);
 				v = json_object_get(stepJ, "carAttack"); if (v) stepData[i].carAttack = (float)json_number_value(v);
@@ -756,8 +756,8 @@ struct FM16Seq : Module {
 
 			float carRatio = s.carRatio + carRatioCV;
 			float modRatio = s.modRatio + modRatioCV;
-			carRatio = clampfjw(carRatio, 0.125f, 32.f);
-			modRatio = clampfjw(modRatio, 0.125f, 32.f);
+			carRatio = clampfjw(carRatio, 0.125f, 10.f);
+			modRatio = clampfjw(modRatio, 0.125f, 10.f);
 			float modFeedback = clampfjw(s.modFeedback, 0.f, 1.f);
 
 			float fmIndex = s.fmIndex + fmIndexCV;
