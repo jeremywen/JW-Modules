@@ -188,6 +188,23 @@ struct FM16Seq : Module {
 		return current + (randomTarget - current) * amount;
 	}
 
+	float quantizeIntegerRatioModeValue(float value) {
+		static const float allowed[] = {
+			0.125f, 0.25f, 0.5f,
+			1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f
+		};
+		float best = allowed[0];
+		float bestDist = std::abs(value - best);
+		for (size_t i = 1; i < sizeof(allowed) / sizeof(allowed[0]); i++) {
+			float d = std::abs(value - allowed[i]);
+			if (d < bestDist) {
+				bestDist = d;
+				best = allowed[i];
+			}
+		}
+		return best;
+	}
+
 	FM16Seq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
@@ -200,7 +217,7 @@ struct FM16Seq : Module {
 		configParam(EDIT_CAR_RATIO_PARAM, 0.125f, 10.f, 1.f, "Carrier ratio");
 		configParam(EDIT_MOD_RATIO_PARAM, 0.125f, 10.f, 2.f, "Mod ratio");
 		configParam(EDIT_MOD_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Mod feedback");
-		configParam(EDIT_FM_INDEX_PARAM, 0.f, 10.f, 1.5f, "FM index");
+		configParam(EDIT_FM_INDEX_PARAM, 0.f, 7.f, 1.5f, "FM index");
 		configParam(EDIT_CAR_ATTACK_PARAM, 0.f, 1.f, 0.03f, "Carrier attack");
 		configParam(EDIT_CAR_DECAY_PARAM, 0.f, 1.f, 0.2f, "Carrier decay");
 		configParam(EDIT_CAR_SUSTAIN_PARAM, 0.f, 1.f, 0.8f, "Carrier sustain");
@@ -229,7 +246,7 @@ struct FM16Seq : Module {
 		configParam(INITIALIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Initialize step divisions");
 		configParam(INITIALIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Initialize levels");
 
-		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 1.f, "Integer ratios mode");
+		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 1.f, "Musical ratios mode");
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
 		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
@@ -373,10 +390,16 @@ struct FM16Seq : Module {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
 			if (integerRatiosMode) {
-				float targetCar = (float)(1 + rack::random::u32() % 10);
-				float targetMod = (float)(1 + rack::random::u32() % 10);
-				stepData[i].carRatio = clampfjw(std::round(randomizeTowards(stepData[i].carRatio, targetCar, amount)), 1.f, 10.f);
-				stepData[i].modRatio = clampfjw(std::round(randomizeTowards(stepData[i].modRatio, targetMod, amount)), 1.f, 10.f);
+				static const float allowed[] = {
+					0.125f, 0.25f, 0.5f,
+					1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f
+				};
+				float targetCar = allowed[rack::random::u32() % (sizeof(allowed) / sizeof(allowed[0]))];
+				float targetMod = allowed[rack::random::u32() % (sizeof(allowed) / sizeof(allowed[0]))];
+				float blendedCar = randomizeTowards(stepData[i].carRatio, targetCar, amount);
+				float blendedMod = randomizeTowards(stepData[i].modRatio, targetMod, amount);
+				stepData[i].carRatio = quantizeIntegerRatioModeValue(blendedCar);
+				stepData[i].modRatio = quantizeIntegerRatioModeValue(blendedMod);
 			} else {
 				float targetCar = 0.125f + random::uniform() * (10.f - 0.125f);
 				float targetMod = 0.125f + random::uniform() * (10.f - 0.125f);
@@ -761,7 +784,7 @@ struct FM16Seq : Module {
 			float modFeedback = clampfjw(s.modFeedback, 0.f, 1.f);
 
 			float fmIndex = s.fmIndex + fmIndexCV;
-			fmIndex = clampfjw(fmIndex, 0.f, 20.f);
+			fmIndex = clampfjw(fmIndex, 0.f, 7.f);
 
 			float carAttack = envKnobToSeconds(s.carAttack);
 			float carDecay = envKnobToSeconds(s.carDecay);
