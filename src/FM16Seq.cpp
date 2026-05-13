@@ -184,8 +184,9 @@ struct FM16Seq : Module {
 		return clampfjw(params[RANDOMIZE_AMOUNT_PARAM].getValue(), 0.f, 1.f);
 	}
 
-	float randomizeTowards(float current, float randomTarget, float amount) {
-		return current + (randomTarget - current) * amount;
+	// Returns a random value between min and min + (max-min)*amount
+	float randomizeMaxPercent(float min, float max, float amount) {
+		return min + random::uniform() * ((max - min) * amount);
 	}
 
 	float quantizeIntegerRatioModeValue(float value) {
@@ -366,22 +367,23 @@ struct FM16Seq : Module {
 	}
 
 	void onRandomize() override {
+		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].division = (int) std::floor(random::uniform() * 5.f);
-			stepData[i].pitch = std::round((random::uniform() * 48.f) - 24.f);
-			stepData[i].carRatio = 0.125f + random::uniform() * (10.f - 0.125f);
-			stepData[i].modRatio = 0.125f + random::uniform() * (10.f - 0.125f);
-			stepData[i].modFeedback = random::uniform();
-			stepData[i].fmIndex = random::uniform() * 4.f;
-			stepData[i].carAttack = random::uniform();
-			stepData[i].carDecay = random::uniform();
-			stepData[i].carSustain = random::uniform();
-			stepData[i].carRelease = random::uniform();
-			stepData[i].modAttack = random::uniform();
-			stepData[i].modDecay = random::uniform();
-			stepData[i].modSustain = random::uniform();
-			stepData[i].modRelease = random::uniform();
-			stepData[i].level = 0.2f + random::uniform() * 0.8f;
+			stepData[i].division = (int)std::floor(randomizeMaxPercent(0.f, 5.f, amount));
+			stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
+			stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
+			stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
+			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
+			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -394,17 +396,15 @@ struct FM16Seq : Module {
 					0.125f, 0.25f, 0.5f,
 					1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f
 				};
-				float targetCar = allowed[rack::random::u32() % (sizeof(allowed) / sizeof(allowed[0]))];
-				float targetMod = allowed[rack::random::u32() % (sizeof(allowed) / sizeof(allowed[0]))];
-				float blendedCar = randomizeTowards(stepData[i].carRatio, targetCar, amount);
-				float blendedMod = randomizeTowards(stepData[i].modRatio, targetMod, amount);
-				stepData[i].carRatio = quantizeIntegerRatioModeValue(blendedCar);
-				stepData[i].modRatio = quantizeIntegerRatioModeValue(blendedMod);
+				int n = sizeof(allowed) / sizeof(allowed[0]);
+				int maxIdx = std::max(1, (int)std::ceil(amount * n)) - 1;
+				float targetCar = allowed[rack::random::u32() % (maxIdx + 1)];
+				float targetMod = allowed[rack::random::u32() % (maxIdx + 1)];
+				stepData[i].carRatio = targetCar;
+				stepData[i].modRatio = targetMod;
 			} else {
-				float targetCar = 0.125f + random::uniform() * (10.f - 0.125f);
-				float targetMod = 0.125f + random::uniform() * (10.f - 0.125f);
-				stepData[i].carRatio = clampfjw(randomizeTowards(stepData[i].carRatio, targetCar, amount), 0.125f, 10.f);
-				stepData[i].modRatio = clampfjw(randomizeTowards(stepData[i].modRatio, targetMod, amount), 0.125f, 10.f);
+				stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
+				stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
 			}
 		}
 		loadEditorFromSelectedStep();
@@ -421,9 +421,8 @@ struct FM16Seq : Module {
 	void randomizeStepDivisionsOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			float target = std::floor(random::uniform() * 5.f);
-			float blended = randomizeTowards((float)stepData[i].division, target, amount);
-			stepData[i].division = clampijw((int)std::round(blended), 0, 4);
+			int maxDiv = std::max(1, (int)std::ceil(amount * 5.f));
+			stepData[i].division = rack::random::u32() % maxDiv;
 			stepHits[i] = 0;
 		}
 		loadEditorFromSelectedStep();
@@ -440,14 +439,14 @@ struct FM16Seq : Module {
 	void randomizeEnvelopesOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].carAttack = randomizeTowards(stepData[i].carAttack, random::uniform(), amount);
-			stepData[i].carDecay = randomizeTowards(stepData[i].carDecay, random::uniform(), amount);
-			stepData[i].carSustain = randomizeTowards(stepData[i].carSustain, random::uniform(), amount);
-			stepData[i].carRelease = randomizeTowards(stepData[i].carRelease, random::uniform(), amount);
-			stepData[i].modAttack = randomizeTowards(stepData[i].modAttack, random::uniform(), amount);
-			stepData[i].modDecay = randomizeTowards(stepData[i].modDecay, random::uniform(), amount);
-			stepData[i].modSustain = randomizeTowards(stepData[i].modSustain, random::uniform(), amount);
-			stepData[i].modRelease = randomizeTowards(stepData[i].modRelease, random::uniform(), amount);
+			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -469,8 +468,7 @@ struct FM16Seq : Module {
 	void randomizePitchesOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			float target = std::round((random::uniform() * 48.f) - 24.f);
-			stepData[i].pitch = clampfjw(std::round(randomizeTowards(stepData[i].pitch, target, amount)), -24.f, 24.f);
+			stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -485,8 +483,7 @@ struct FM16Seq : Module {
 	void randomizeIndexesOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			float target = random::uniform() * 10.f;
-			stepData[i].fmIndex = randomizeTowards(stepData[i].fmIndex, target, amount);
+			stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -501,8 +498,7 @@ struct FM16Seq : Module {
 	void randomizeLevelsOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			float target = random::uniform();
-			stepData[i].level = randomizeTowards(stepData[i].level, target, amount);
+			stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -517,7 +513,7 @@ struct FM16Seq : Module {
 	void randomizeFeedbackOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].modFeedback = randomizeTowards(stepData[i].modFeedback, random::uniform(), amount);
+			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
