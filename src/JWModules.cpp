@@ -56,8 +56,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelTrigs);
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);
-	p->addModel(modelRnboHelpDelay);
-	p->addModel(modelRnboNedLFO1);
-	p->addModel(modelRnboNedRepeat);
 	p->addModel(modelFM16Seq);
 }

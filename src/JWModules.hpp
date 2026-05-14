@@ -543,8 +543,5 @@ extern Model *modelTree;
 extern Model *modelTrigs;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
-extern Model *modelRnboHelpDelay;
-extern Model *modelRnboNedLFO1;
-extern Model *modelRnboNedRepeat;
 extern Model *modelFM16Seq;
 

@@ -274,7 +274,7 @@
 			]
 		},
 		{
-			"hidden": true,
+			"hidden": false,
 			"slug": "RnboHelpDelay",
 			"name": "RNBO Help Delay",
 			"description": "RNBO Help Delay patch",
@@ -285,7 +285,29 @@
 			]
 		},
 		{
-			"hidden": true,
+			"hidden": false,
+			"slug": "RnboNedKick",
+			"name": "RNBO Ned Kick",
+			"description": "RNBO Ned Kick drum synthesizer",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Drum",
+				"Audio"
+			]
+		},
+		{
+			"hidden": false,
+			"slug": "RnboRandom8",
+			"name": "RNBO Random 8",
+			"description": "RNBO Random 8 voltage generator",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Random",
+				"Utility"
+			]
+		},
+		{
+			"hidden": false,
 			"slug": "RnboNedLFO1",
 			"name": "RNBO Ned LFO 1",
 			"description": "RNBO Ned LFO 1 patch",
@@ -296,7 +318,7 @@
 			]
 		},
 		{
-			"hidden": true,
+			"hidden": false,
 			"slug": "RnboNedRepeat",
 			"name": "RNBO Ned Repeat",
 			"description": "RNBO Ned Repeat patch",
