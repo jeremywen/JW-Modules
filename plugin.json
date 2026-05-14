@@ -10,7 +10,7 @@
 	"sourceUrl": "https://github.com/jeremywen/JW-Modules",
 	"donateUrl": "https://www.paypal.me/jeremywen",
 	"changelogUrl": "https://github.com/jeremywen/JW-Modules/blob/master/CHANGELOG.md",
-	"version": "2.0.35",
+	"version": "2.0.36",
 	"modules": [
 		{
 			"slug": "0Cat",
@@ -271,61 +271,6 @@
 				"Oscillator",
 				"Random",
 				"Poly"
-			]
-		},
-		{
-			"hidden": false,
-			"slug": "RnboHelpDelay",
-			"name": "RNBO Help Delay",
-			"description": "RNBO Help Delay patch",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": [
-				"Utility",
-				"Audio"
-			]
-		},
-		{
-			"hidden": false,
-			"slug": "RnboNedKick",
-			"name": "RNBO Ned Kick",
-			"description": "RNBO Ned Kick drum synthesizer",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": [
-				"Drum",
-				"Audio"
-			]
-		},
-		{
-			"hidden": false,
-			"slug": "RnboRandom8",
-			"name": "RNBO Random 8",
-			"description": "RNBO Random 8 voltage generator",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": [
-				"Random",
-				"Utility"
-			]
-		},
-		{
-			"hidden": false,
-			"slug": "RnboNedLFO1",
-			"name": "RNBO Ned LFO 1",
-			"description": "RNBO Ned LFO 1 patch",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": [
-				"Utility",
-				"Audio"
-			]
-		},
-		{
-			"hidden": false,
-			"slug": "RnboNedRepeat",
-			"name": "RNBO Ned Repeat",
-			"description": "RNBO Ned Repeat patch",
-			"manualUrl": "https://github.com/jeremywen/JW-Modules",
-			"tags": [
-				"Utility",
-				"Audio"
 			]
 		},
 		{

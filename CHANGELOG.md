@@ -1,6 +1,6 @@
 # Change Log
 
-## v2.0.35 ~ 5-10-26
+## v2.0.36 ~ 5-14-26
 
   * New Module FM16SEQ
   * Play mode knob tooltip is better now for all modules
