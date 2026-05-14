@@ -38,11 +38,13 @@ struct FM16Seq : Module {
 		INITIALIZE_ENVELOPES_PARAM,
 		INITIALIZE_DIVISIONS_PARAM,
 		INITIALIZE_LEVELS_PARAM,
+		RANDOMIZE_STEP_LENGTHS_PARAM,
+		INITIALIZE_STEP_LENGTHS_PARAM,
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		MANUAL_STEP_TRIGGER_PARAM,
 		RANDOMIZE_AMOUNT_PARAM,
-		NUM_PARAMS
+		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
 		   CLOCK_INPUT,
@@ -147,7 +149,7 @@ struct FM16Seq : Module {
 	dsp::SchmittTrigger clockTrigger;
 	dsp::SchmittTrigger resetTrigger;
 	dsp::SchmittTrigger stepSelectTrigger[STEPS];
-	dsp::SchmittTrigger actionTrigger[14];
+	dsp::SchmittTrigger actionTrigger[16];
 	dsp::SchmittTrigger manualStepTrigger;
 	dsp::SchmittTrigger manualStepGateTrigger;
 
@@ -170,6 +172,7 @@ struct FM16Seq : Module {
 		float carrierPhase = 0.f;
 		float modPhase = 0.f;
 		float modFeedbackDelayedSample = 0.f;
+		float stepElapsed = 0.f;
 		ADSR carrierEnv;
 		ADSR modEnv;
 		float baseFreq = 261.6256f;
@@ -179,6 +182,9 @@ struct FM16Seq : Module {
 
 	ADSR carrierEnv;
 	ADSR modEnv;
+	float clockElapsed = 0.f;
+	float clockInterval = 0.5f;
+	bool clockIntervalValid = false;
 
 	float getRandomizeAmount() {
 		return clampfjw(params[RANDOMIZE_AMOUNT_PARAM].getValue(), 0.f, 1.f);
@@ -246,6 +252,8 @@ struct FM16Seq : Module {
 		configParam(INITIALIZE_ENVELOPES_PARAM, 0.f, 1.f, 0.f, "Initialize envelopes");
 		configParam(INITIALIZE_DIVISIONS_PARAM, 0.f, 1.f, 0.f, "Initialize step divisions");
 		configParam(INITIALIZE_LEVELS_PARAM, 0.f, 1.f, 0.f, "Initialize levels");
+		configParam(RANDOMIZE_STEP_LENGTHS_PARAM, 0.f, 1.f, 0.f, "Randomize step lengths");
+		configParam(INITIALIZE_STEP_LENGTHS_PARAM, 0.f, 1.f, 0.f, "Initialize step lengths");
 
 		configParam(INTEGER_RATIOS_PARAM, 0.f, 1.f, 1.f, "Musical ratios mode");
 		paramQuantities[INTEGER_RATIOS_PARAM]->snapEnabled = true;
@@ -275,6 +283,7 @@ struct FM16Seq : Module {
 			stepData[i].modDecay = 0.12f;
 			stepData[i].modSustain = 0.0f;
 			stepData[i].modRelease = 0.1f;
+			stepData[i].level = 0.8f;
 			stepHits[i] = 0;
 		}
 		loadEditorFromSelectedStep();
@@ -342,6 +351,9 @@ struct FM16Seq : Module {
 		gateHeld = false;
 		carrierPhase = 0.f;
 		modPhase = 0.f;
+		clockElapsed = 0.f;
+		clockInterval = 0.5f;
+		clockIntervalValid = false;
 		carrierEnv = ADSR();
 		modEnv = ADSR();
 		for (int i = 0; i < STEPS; i++) {
@@ -665,15 +677,14 @@ struct FM16Seq : Module {
 		}
 
 		bool stepTriggered = false;
+		clockElapsed += args.sampleTime;
 		if (clockTrigger.process(clockValue)) {
-			// Release all gates on next clock tick
-			for (int i = 0; i < STEPS; i++) {
-				if (engines[i].gateHeld) {
-					engines[i].carrierEnv.gateOff();
-					engines[i].modEnv.gateOff();
-					engines[i].gateHeld = false;
-				}
+			if (clockIntervalValid) {
+				clockInterval = std::max(clockElapsed, 0.001f);
+			} else {
+				clockIntervalValid = true;
 			}
+			clockElapsed = 0.f;
 
 			if (pendingReset) {
 				int pm = getPlayMode();
@@ -754,6 +765,7 @@ struct FM16Seq : Module {
 				engines[ch].carrierEnv.gateOn();
 				engines[ch].modEnv.gateOn();
 				engines[ch].gateHeld = true;
+				engines[ch].stepElapsed = 0.f;
 			}
 		}
 
@@ -908,14 +920,14 @@ struct FM16SeqWidget : ModuleWidget {
 			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 18.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
 		}
 
-		addParam(createParamCentered<JwSmallSnapKnob>(Vec(84.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(146.f, 140.f), module, FM16Seq::EDIT_PITCH_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(208.f, 140.f), module, FM16Seq::EDIT_FM_INDEX_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(270.f, 140.f), module, FM16Seq::EDIT_LEVEL_PARAM));
-
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(112.f, 194.f), module, FM16Seq::EDIT_CAR_RATIO_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(174.f, 194.f), module, FM16Seq::EDIT_MOD_RATIO_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(236.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
+		addParam(createParamCentered<JwSmallSnapKnob>(Vec(72.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 140.f), module, FM16Seq::EDIT_PITCH_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 140.f), module, FM16Seq::EDIT_FM_INDEX_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(258.f, 140.f), module, FM16Seq::EDIT_LEVEL_PARAM));
+		
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(72.f, 194.f), module, FM16Seq::EDIT_CAR_RATIO_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 194.f), module, FM16Seq::EDIT_MOD_RATIO_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
 
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(84.f, 248.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(124.f, 248.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
@@ -946,7 +958,7 @@ struct FM16SeqWidget : ModuleWidget {
 
 		const float rndX = 365.f;
 		const float initX = 410.f;
-		const float y0 = 136.f;
+		const float y0 = 130.f;
 		const float yStep = 24.f;
 
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_RATIOS_PARAM));
