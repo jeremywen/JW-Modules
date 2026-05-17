@@ -40,6 +40,7 @@ struct FM16Seq : Module {
 		INITIALIZE_LEVELS_PARAM,
 		RANDOMIZE_STEP_LENGTHS_PARAM,
 		INITIALIZE_STEP_LENGTHS_PARAM,
+		EDIT_GATE_LENGTH_PARAM,
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		MANUAL_STEP_TRIGGER_PARAM,
@@ -84,6 +85,7 @@ struct FM16Seq : Module {
 		float modSustain = 0.0f;
 		float modRelease = 0.1f;
 		float level = 0.8f;
+		float gateLengthMs = 100.f; // Default 100 ms
 	};
 
 	struct ADSR {
@@ -153,7 +155,7 @@ struct FM16Seq : Module {
 	dsp::SchmittTrigger manualStepTrigger;
 	dsp::SchmittTrigger manualStepGateTrigger;
 
-	int stepIndex = 15;
+	int stepIndex = 0;
 	bool pendingReset = true;
 	bool goingForward = true;
 	int latchedStep = 0;
@@ -234,6 +236,7 @@ struct FM16Seq : Module {
 		configParam(EDIT_MOD_SUSTAIN_PARAM, 0.f, 1.f, 0.6f, "Mod sustain");
 		configParam(EDIT_MOD_RELEASE_PARAM, 0.f, 1.f, 0.2f, "Mod release");
 		configParam(EDIT_LEVEL_PARAM, 0.f, 1.f, 0.8f, "Step level");
+		configParam(EDIT_GATE_LENGTH_PARAM, 1.f, 5000.f, 100.f, "Gate length", " ms");
 		for (int i = 0; i < STEPS; i++) {
 			configParam(STEP_SELECT_PARAM + i, 0.f, 1.f, 0.f, string::f("Select step %d", i + 1));
 		}
@@ -306,6 +309,7 @@ struct FM16Seq : Module {
 		params[EDIT_MOD_SUSTAIN_PARAM].setValue(s.modSustain);
 		params[EDIT_MOD_RELEASE_PARAM].setValue(s.modRelease);
 		params[EDIT_LEVEL_PARAM].setValue(s.level);
+		params[EDIT_GATE_LENGTH_PARAM].setValue(s.gateLengthMs);
 	}
 
 	void saveEditorToSelectedStep() {
@@ -325,6 +329,7 @@ struct FM16Seq : Module {
 		s.modSustain = params[EDIT_MOD_SUSTAIN_PARAM].getValue();
 		s.modRelease = params[EDIT_MOD_RELEASE_PARAM].getValue();
 		s.level = params[EDIT_LEVEL_PARAM].getValue();
+		s.gateLengthMs = params[EDIT_GATE_LENGTH_PARAM].getValue();
 	}
 
 	float envKnobToSeconds(float knobValue) {
@@ -343,8 +348,8 @@ struct FM16Seq : Module {
 	void onReset() override {
 		sequenceLength = 16;
 		goingForward = true;
-		int pm = getPlayMode();
-		stepIndex = (pm == PM_BWD_LOOP || pm == PM_BWD_FWD_LOOP) ? 0 : 15;
+			   int pm = getPlayMode();
+			   stepIndex = (pm == PM_BWD_LOOP || pm == PM_BWD_FWD_LOOP) ? 0 : (sequenceLength - 1);
 		latchedStep = 0;
 		selectedStep = 0;
 		pendingReset = true;
@@ -381,21 +386,22 @@ struct FM16Seq : Module {
 	void onRandomize() override {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
-			stepData[i].division = (int)std::floor(randomizeMaxPercent(0.f, 5.f, amount));
-			stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
-			stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
-			stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
-			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
-			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
+		stepData[i].division = (int)std::floor(randomizeMaxPercent(0.f, 5.f, amount));
+		stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
+		stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
+		stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
+		stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
+		stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
+		stepData[i].gateLengthMs = randomizeMaxPercent(10.f, 1000.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
@@ -522,6 +528,21 @@ struct FM16Seq : Module {
 		loadEditorFromSelectedStep();
 	}
 
+	void randomizeStepLengthsOnly() {
+		float amount = getRandomizeAmount();
+		for (int i = 0; i < STEPS; i++) {
+			stepData[i].gateLengthMs = randomizeMaxPercent(1.f, 5000.f, amount);
+		}
+		loadEditorFromSelectedStep();
+	}
+
+	void initializeStepLengthsOnly() {
+		for (int i = 0; i < STEPS; i++) {
+			stepData[i].gateLengthMs = 100.f;
+		}
+		loadEditorFromSelectedStep();
+	}
+
 	void randomizeFeedbackOnly() {
 		float amount = getRandomizeAmount();
 		for (int i = 0; i < STEPS; i++) {
@@ -560,6 +581,7 @@ struct FM16Seq : Module {
 			json_object_set_new(stepJ, "modSustain", json_real(stepData[i].modSustain));
 			json_object_set_new(stepJ, "modRelease", json_real(stepData[i].modRelease));
 			json_object_set_new(stepJ, "level", json_real(stepData[i].level));
+						json_object_set_new(stepJ, "gateLengthMs", json_real(stepData[i].gateLengthMs));
 			json_array_append_new(stepsJ, stepJ);
 		}
 		json_object_set_new(rootJ, "steps", stepsJ);
@@ -569,7 +591,7 @@ struct FM16Seq : Module {
 	void dataFromJson(json_t* rootJ) override {
 		json_t* selectedStepJ = json_object_get(rootJ, "selectedStep");
 		if (selectedStepJ) {
-			selectedStep = clampijw((int)json_integer_value(selectedStepJ), 0, STEPS - 1);
+			   selectedStep = clampijw((int)json_integer_value(selectedStepJ), 0, sequenceLength - 1);
 		}
 		json_t* sequenceLengthJ = json_object_get(rootJ, "sequenceLength");
 		if (sequenceLengthJ) {
@@ -608,6 +630,7 @@ struct FM16Seq : Module {
 				v = json_object_get(stepJ, "modSustain"); if (v) stepData[i].modSustain = (float)json_number_value(v);
 				v = json_object_get(stepJ, "modRelease"); if (v) stepData[i].modRelease = (float)json_number_value(v);
 				v = json_object_get(stepJ, "level"); if (v) stepData[i].level = (float)json_number_value(v);
+							v = json_object_get(stepJ, "gateLengthMs"); if (v) stepData[i].gateLengthMs = (float)json_number_value(v);
 			}
 		}
 		loadEditorFromSelectedStep();
@@ -617,7 +640,7 @@ struct FM16Seq : Module {
 		bool stepChanged = false;
 
 		// Check for step selection changes.
-		for (int i = 0; i < STEPS; i++) {
+		for (int i = 0; i < sequenceLength; i++) {
 			if (stepSelectTrigger[i].process(params[STEP_SELECT_PARAM + i].getValue())) {
 				if (i != selectedStep) {
 					saveEditorToSelectedStep();
@@ -635,7 +658,7 @@ struct FM16Seq : Module {
 		bool manualGateTriggered = manualStepGateTrigger.process(inputs[MANUAL_STEP_GATE_INPUT].getVoltage());
 		bool manualTriggerEvent = manualTriggerPressed || manualGateTriggered;
 		if (manualTriggerEvent) {
-			for (int i = 0; i < STEPS; i++) {
+			for (int i = 0; i < sequenceLength; i++) {
 				if (engines[i].gateHeld) {
 					engines[i].carrierEnv.gateOff();
 					engines[i].modEnv.gateOff();
@@ -667,6 +690,8 @@ struct FM16Seq : Module {
 		if (actionTrigger[11].process(params[INITIALIZE_ENVELOPES_PARAM].getValue())) initializeEnvelopesOnly();
 		if (actionTrigger[12].process(params[INITIALIZE_DIVISIONS_PARAM].getValue())) initializeStepDivisionsOnly();
 		if (actionTrigger[13].process(params[INITIALIZE_LEVELS_PARAM].getValue())) initializeLevelsOnly();
+		if (actionTrigger[14].process(params[RANDOMIZE_STEP_LENGTHS_PARAM].getValue())) randomizeStepLengthsOnly();
+		if (actionTrigger[15].process(params[INITIALIZE_STEP_LENGTHS_PARAM].getValue())) initializeStepLengthsOnly();
 
 		// Clock and sequence logic
 		float clockValue = inputs[CLOCK_INPUT].getVoltage();
@@ -759,13 +784,27 @@ struct FM16Seq : Module {
 			stepTriggered = true;
 		}
 
-		// When step triggers, gate on all engines
+		// When step triggers, gate on all engines and reset gate timers
 		if (stepTriggered) {
 			for (int ch = 0; ch < maxChannels; ch++) {
 				engines[ch].carrierEnv.gateOn();
 				engines[ch].modEnv.gateOn();
 				engines[ch].gateHeld = true;
 				engines[ch].stepElapsed = 0.f;
+			}
+		}
+
+		// Gate length logic: close gate after gateLengthMs for each channel
+		for (int ch = 0; ch < maxChannels; ch++) {
+			FMEngine& engine = engines[ch];
+			if (engine.gateHeld) {
+				engine.stepElapsed += args.sampleTime * 1000.f; // ms
+				float gateLen = stepData[latchedStep].gateLengthMs;
+				if (engine.stepElapsed >= gateLen) {
+					engine.carrierEnv.gateOff();
+					engine.modEnv.gateOff();
+					engine.gateHeld = false;
+				}
 			}
 		}
 
@@ -924,10 +963,11 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 140.f), module, FM16Seq::EDIT_PITCH_PARAM));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 140.f), module, FM16Seq::EDIT_FM_INDEX_PARAM));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(258.f, 140.f), module, FM16Seq::EDIT_LEVEL_PARAM));
-		
+
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(72.f, 194.f), module, FM16Seq::EDIT_CAR_RATIO_PARAM));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 194.f), module, FM16Seq::EDIT_MOD_RATIO_PARAM));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(258.f, 194.f), module, FM16Seq::EDIT_GATE_LENGTH_PARAM));
 
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(84.f, 248.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
 		addParam(createParamCentered<JwTinyGrayKnob>(Vec(124.f, 248.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
@@ -968,6 +1008,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 4.f), module, FM16Seq::RANDOMIZE_ENVELOPES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 7.f), module, FM16Seq::RANDOMIZE_STEP_LENGTHS_PARAM));
 
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX - 30.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
@@ -980,6 +1021,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 4.f), module, FM16Seq::INITIALIZE_ENVELOPES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
+		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 7.f), module, FM16Seq::INITIALIZE_STEP_LENGTHS_PARAM));
 	}
 };
 
