@@ -55,7 +55,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 ## FM16SEQ
 
-![fm16seq](./doc/fm16seq2.png)
+![fm16seq](./doc/fm16seq3.png)
 
 A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://lo-bit.club/fms
 
@@ -69,8 +69,10 @@ Right click on module to see context menu and menu items for copying and pasting
 * **Index:** polyphonic input to set index for each of the 16 steps
 * **ModR:** polyphonic input to set modulator ratio for each of the 16 steps
 * **CarR:** polyphonic input to set carrier ratio for each of the 16 steps
-* **Length:** sequencer length
+* **Fdbk:** polyphonic input to set feedback for each of the 16 steps
+* **Len:** polyphonic input to set gate length for each of the 16 steps
 * **Mode:** the order steps are played back
+* **Len:** sequencer length
 * **Lvl:** master level
 * **Out:** main audio out
 
@@ -83,14 +85,16 @@ Step Params
 * **Car:** carrier ratio for step
 * **Mod:** modulator ratio for step
 * **Fdbk:** feedback for step
+* **Len:** gate length for step
 * **Car Envelope:** carrier envelope for step
 * **Mod Envelope:** modulator envelope for step
 
 Randomize and Initialize
 
-* **RND** randomize param for all steps
 * **INIT** initialize params for all steps
-* **Int:** only use integers when randomizing
+* **RND** randomize param for all steps
+* **RND MAX** the maximum range of randomization (for example only random low ratios)
+* **Int:** only use musical ratios when randomizing (0.125, 0.25, 0.5, 1, 2...)
 
 
 ## SampleGrid
