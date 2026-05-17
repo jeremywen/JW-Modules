@@ -60,6 +60,8 @@ struct FM16Seq : Module {
 		   LENGTH_INPUT,
 		   PITCH_INPUT,
 		   FM_INDEX_INPUT,
+		   FEEDBACK_INPUT,
+		   GATE_LENGTH_INPUT,
 		   MOD_RATIO_INPUT,
 		   CAR_RATIO_INPUT,
 		   MODE_CV_INPUT,
@@ -284,6 +286,8 @@ struct FM16Seq : Module {
 		configInput(LENGTH_INPUT, "Sequence length CV");
 		configInput(PITCH_INPUT, "V/Oct pitch (16 poly channels)");
 		configInput(FM_INDEX_INPUT, "FM index CV (16 poly channels)");
+		configInput(FEEDBACK_INPUT, "Mod feedback CV (10V full scale, 16 poly channels)");
+		configInput(GATE_LENGTH_INPUT, "Gate length CV (1V = 1000 ms, 16 poly channels)");
 		configInput(MOD_RATIO_INPUT, "Mod ratio CV (16 poly channels)");
 		configInput(CAR_RATIO_INPUT, "Carrier ratio CV (16 poly channels)");
 		configInput(MODE_CV_INPUT, "Play mode CV (1V per mode)");
@@ -663,7 +667,9 @@ struct FM16Seq : Module {
 		bool stepChanged = false;
 
 		// Check for step selection changes.
-		for (int i = 0; i < sequenceLength; i++) {
+		// Editing should always allow selecting any of the 16 stored steps,
+		// regardless of the current playback loop length.
+		for (int i = 0; i < STEPS; i++) {
 			if (stepSelectTrigger[i].process(params[STEP_SELECT_PARAM + i].getValue())) {
 				if (i != selectedStep) {
 					saveEditorToSelectedStep();
@@ -798,9 +804,11 @@ struct FM16Seq : Module {
 		// Get polyphonic input channel counts
 		int pitchChannels = inputs[PITCH_INPUT].getChannels();
 		int fmIndexChannels = inputs[FM_INDEX_INPUT].getChannels();
+		int feedbackChannels = inputs[FEEDBACK_INPUT].getChannels();
+		int gateLengthChannels = inputs[GATE_LENGTH_INPUT].getChannels();
 		int modRatioChannels = inputs[MOD_RATIO_INPUT].getChannels();
 		int carRatioChannels = inputs[CAR_RATIO_INPUT].getChannels();
-		int maxChannels = std::max({pitchChannels, fmIndexChannels, modRatioChannels, carRatioChannels, 1});
+		int maxChannels = std::max({pitchChannels, fmIndexChannels, feedbackChannels, gateLengthChannels, modRatioChannels, carRatioChannels, 1});
 		maxChannels = std::min(maxChannels, STEPS);
 
 		if (manualTriggerEvent) {
@@ -822,7 +830,8 @@ struct FM16Seq : Module {
 			FMEngine& engine = engines[ch];
 			if (engine.gateHeld) {
 				engine.stepElapsed += args.sampleTime * 1000.f; // ms
-				float gateLen = stepData[latchedStep].gateLengthMs;
+				float gateLengthCV = inputs[GATE_LENGTH_INPUT].getVoltage(ch);
+				float gateLen = clampfjw(stepData[latchedStep].gateLengthMs + gateLengthCV * 1000.f, 1.f, 5000.f);
 				if (engine.stepElapsed >= gateLen) {
 					engine.carrierEnv.gateOff();
 					engine.modEnv.gateOff();
@@ -840,6 +849,7 @@ struct FM16Seq : Module {
 			// Get CV values for this channel
 			float pitchVolts = inputs[PITCH_INPUT].getVoltage(ch);
 			float fmIndexCV = inputs[FM_INDEX_INPUT].getVoltage(ch);
+			float feedbackCV = inputs[FEEDBACK_INPUT].getVoltage(ch);
 			float modRatioCV = inputs[MOD_RATIO_INPUT].getVoltage(ch);
 			float carRatioCV = inputs[CAR_RATIO_INPUT].getVoltage(ch);
 
@@ -851,7 +861,7 @@ struct FM16Seq : Module {
 			float modRatio = s.modRatio + modRatioCV;
 			carRatio = clampfjw(carRatio, 0.125f, 10.f);
 			modRatio = clampfjw(modRatio, 0.125f, 10.f);
-			float modFeedback = clampfjw(s.modFeedback, 0.f, 1.f);
+			float modFeedback = clampfjw(s.modFeedback + feedbackCV * 0.1f, 0.f, 1.f);
 
 			float fmIndex = s.fmIndex + fmIndexCV;
 			fmIndex = clampfjw(fmIndex, 0.f, 7.f);
@@ -1009,12 +1019,14 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwSmallSnapKnob>(Vec(412.f, 344.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(442.f, 344.f), module, FM16Seq::LENGTH_INPUT));
 
-		addInput(createInputCentered<PJ301MPort>(Vec(42.f, 344.f), module, FM16Seq::CLOCK_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(92.f, 344.f), module, FM16Seq::RESET_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(142.f, 344.f), module, FM16Seq::PITCH_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(192.f, 344.f), module, FM16Seq::FM_INDEX_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(242.f, 344.f), module, FM16Seq::MOD_RATIO_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(292.f, 344.f), module, FM16Seq::CAR_RATIO_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(32.f, 344.f), module, FM16Seq::CLOCK_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(70.2857f, 344.f), module, FM16Seq::RESET_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(108.5714f, 344.f), module, FM16Seq::PITCH_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(146.8571f, 344.f), module, FM16Seq::FM_INDEX_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(185.1429f, 344.f), module, FM16Seq::MOD_RATIO_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(223.4286f, 344.f), module, FM16Seq::CAR_RATIO_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(261.7143f, 344.f), module, FM16Seq::FEEDBACK_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(300.f, 344.f), module, FM16Seq::GATE_LENGTH_INPUT));
         
         addParam(createParamCentered<SmallWhiteKnob>(Vec(485.f, 344.f), module, FM16Seq::MASTER_LEVEL_PARAM));
 		addOutput(createOutputCentered<PJ301MPort>(Vec(520.f, 344.f), module, FM16Seq::AUDIO_OUTPUT));
