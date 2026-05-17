@@ -187,6 +187,11 @@ struct FM16Seq : Module {
 		ADSR carrierEnv;
 		ADSR modEnv;
 		float baseFreq = 261.6256f;
+		float smoothedCarRatio = 1.f;
+		float smoothedModRatio = 2.f;
+		float smoothedFmIndex = 1.5f;
+		float smoothedModFeedback = 0.f;
+		float smoothedLevel = 0.8f;
 		bool gateHeld = false;
 	};
 	FMEngine engines[STEPS];
@@ -866,6 +871,16 @@ struct FM16Seq : Module {
 			float fmIndex = s.fmIndex + fmIndexCV;
 			fmIndex = clampfjw(fmIndex, 0.f, 7.f);
 
+			// Short parameter slew suppresses hard step-to-step discontinuities
+			// without low-pass filtering the final audio output.
+			const float paramSlewSec = 0.001f;
+			float paramAlpha = clampfjw(args.sampleTime / paramSlewSec, 0.f, 1.f);
+			engine.smoothedCarRatio += (carRatio - engine.smoothedCarRatio) * paramAlpha;
+			engine.smoothedModRatio += (modRatio - engine.smoothedModRatio) * paramAlpha;
+			engine.smoothedFmIndex += (fmIndex - engine.smoothedFmIndex) * paramAlpha;
+			engine.smoothedModFeedback += (modFeedback - engine.smoothedModFeedback) * paramAlpha;
+			engine.smoothedLevel += (s.level - engine.smoothedLevel) * paramAlpha;
+
 			float carAttack = envKnobToSeconds(s.carAttack);
 			float carDecay = envKnobToSeconds(s.carDecay);
 			float carSustain = s.carSustain;
@@ -879,13 +894,13 @@ struct FM16Seq : Module {
 			float carEnvValue = engine.carrierEnv.process(args.sampleRate, carAttack, carDecay, carSustain, carRelease);
 			float modEnvValue = engine.modEnv.process(args.sampleRate, modAttack, modDecay, modSustain, modRelease);
 
-			engine.modPhase += TWO_PI * (engine.baseFreq * modRatio) / args.sampleRate;
+			engine.modPhase += TWO_PI * (engine.baseFreq * engine.smoothedModRatio) / args.sampleRate;
 			if (engine.modPhase > TWO_PI)
 				engine.modPhase -= TWO_PI;
 			float feedbackOffset = 0.f;
-			if (modFeedback > 0.001f) {
+			if (engine.smoothedModFeedback > 0.001f) {
 				// Shape and scale feedback to keep high settings musical instead of noisy.
-				float feedbackAmount = modFeedback * modFeedback;
+				float feedbackAmount = engine.smoothedModFeedback * engine.smoothedModFeedback;
 				float feedbackSample = std::tanh(engine.modFeedbackDelayedSample * 1.5f);
 				feedbackOffset = feedbackAmount * feedbackSample * 2.0f;
 			}
@@ -893,18 +908,19 @@ struct FM16Seq : Module {
 			// Light damping on the feedback state to reduce high-frequency hash.
 			engine.modFeedbackDelayedSample += (modSignal - engine.modFeedbackDelayedSample) * 0.2f;
 
-			engine.carrierPhase += TWO_PI * (engine.baseFreq * carRatio) / args.sampleRate;
+			engine.carrierPhase += TWO_PI * (engine.baseFreq * engine.smoothedCarRatio) / args.sampleRate;
 			if (engine.carrierPhase > TWO_PI)
 				engine.carrierPhase -= TWO_PI;
 
-			float carrierSignal = std::sin(engine.carrierPhase + (modSignal * fmIndex * TWO_PI));
-			float stepLevel = s.level;
+			float carrierSignal = std::sin(engine.carrierPhase + (modSignal * engine.smoothedFmIndex * TWO_PI));
+			float stepLevel = engine.smoothedLevel;
 			float out = carrierSignal * carEnvValue * stepLevel * 5.0f;
 			mixedOut += out / (float)maxChannels;
 		}
 
 		float masterOut = mixedOut * params[MASTER_LEVEL_PARAM].getValue();
-		outputs[AUDIO_OUTPUT].setVoltage(clampfjw(masterOut, -5.f, 5.f));
+		float out = clampfjw(masterOut, -5.f, 5.f);
+		outputs[AUDIO_OUTPUT].setVoltage(out);
 		outputs[AUDIO_OUTPUT].setChannels(1);
 	}
 };
