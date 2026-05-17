@@ -1053,7 +1053,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 7.f), module, FM16Seq::INITIALIZE_STEP_LENGTHS_PARAM));
 
 		// Integer ratios mode switch next to randomize ratios button
-		addParam(createParamCentered<JwHorizontalSwitch>(Vec(495, 305), module, FM16Seq::INTEGER_RATIOS_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
 	}
 };
 
