@@ -70,7 +70,7 @@ Right click on module to see context menu and menu items for copying and pasting
 * **ModR:** polyphonic input to set modulator ratio for each of the 16 steps
 * **CarR:** polyphonic input to set carrier ratio for each of the 16 steps
 * **Fdbk:** polyphonic input to set feedback for each of the 16 steps
-* **Len:** polyphonic input to set gate length for each of the 16 steps
+* **G Len:** polyphonic input to set gate length for each of the 16 steps
 * **Mode:** the order steps are played back
 * **Len:** sequencer length
 * **Lvl:** master level
@@ -85,7 +85,7 @@ Step Params
 * **Car:** carrier ratio for step
 * **Mod:** modulator ratio for step
 * **Fdbk:** feedback for step
-* **Len:** gate length for step
+* **G Len:** gate length for step
 * **Car Envelope:** carrier envelope for step
 * **Mod Envelope:** modulator envelope for step
 
