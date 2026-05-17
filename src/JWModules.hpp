@@ -255,6 +255,28 @@ struct JwVerticalSwitch : SVGSwitch {
 	}
 };
 
+// Horizontal variant of the stock slider for per-row randomize amount controls.
+struct JwHorizontalVCVSlider : app::SvgSlider {
+	JwHorizontalVCVSlider() {
+		setBackgroundSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/HorizontalAmountSliderBg.svg")));
+		setHandleSvg(APP->window->loadSvg(asset::plugin(pluginInstance, "res/HorizontalAmountSliderHandle.svg")));
+		speed = 5.0f;
+
+		const float bgW = 120.f;
+		const float bgH = 20.f;
+		const float handleW = 18.f;
+		const float handleH = 18.f;
+
+		background->box.size = math::Vec(bgW, bgH);
+		handle->box.size = math::Vec(handleW, handleH);
+		setHandlePosCentered(
+			math::Vec(handleW / 2.f, bgH / 2.f),
+			math::Vec(bgW - handleW / 2.f, bgH / 2.f)
+		);
+		box.size = background->box.size;
+	}
+};
+
 ////////////////////////////////////////////// SHARED QUANTITIES //////////////////////////////////////////////
 
 // Generic ms-based slider bound to a float seconds field via std::function

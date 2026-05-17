@@ -44,7 +44,14 @@ struct FM16Seq : Module {
 		INTEGER_RATIOS_PARAM,
 		PLAY_MODE_KNOB_PARAM,
 		MANUAL_STEP_TRIGGER_PARAM,
-		RANDOMIZE_AMOUNT_PARAM,
+		RANDOMIZE_AMOUNT_RATIOS_PARAM,
+		RANDOMIZE_AMOUNT_INDEXES_PARAM,
+		RANDOMIZE_AMOUNT_FEEDBACK_PARAM,
+		RANDOMIZE_AMOUNT_PITCHES_PARAM,
+		RANDOMIZE_AMOUNT_ENVELOPES_PARAM,
+		RANDOMIZE_AMOUNT_DIVISIONS_PARAM,
+		RANDOMIZE_AMOUNT_LEVELS_PARAM,
+		RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
@@ -188,8 +195,8 @@ struct FM16Seq : Module {
 	float clockInterval = 0.5f;
 	bool clockIntervalValid = false;
 
-	float getRandomizeAmount() {
-		return clampfjw(params[RANDOMIZE_AMOUNT_PARAM].getValue(), 0.f, 1.f);
+	float getRandomizeAmount(int amountParamId) {
+		return clampfjw(params[amountParamId].getValue(), 0.f, 1.f);
 	}
 
 	// Returns a random value between min and min + (max-min)*amount
@@ -263,7 +270,14 @@ struct FM16Seq : Module {
 		configParam<JwPlayModeQuantity>(PLAY_MODE_KNOB_PARAM, 0.f, (float)(NUM_PLAY_MODES - 1), 0.f, "Play mode");
 		paramQuantities[PLAY_MODE_KNOB_PARAM]->snapEnabled = true;
 		configParam(MANUAL_STEP_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Trigger selected step");
-		configParam(RANDOMIZE_AMOUNT_PARAM, 0.f, 1.f, 1.f, "Randomize amount");
+		configParam(RANDOMIZE_AMOUNT_RATIOS_PARAM, 0.f, 1.f, 1.f, "Randomize ratios amount");
+		configParam(RANDOMIZE_AMOUNT_INDEXES_PARAM, 0.f, 1.f, 1.f, "Randomize indexes amount");
+		configParam(RANDOMIZE_AMOUNT_FEEDBACK_PARAM, 0.f, 1.f, 1.f, "Randomize feedback amount");
+		configParam(RANDOMIZE_AMOUNT_PITCHES_PARAM, 0.f, 1.f, 1.f, "Randomize pitches amount");
+		configParam(RANDOMIZE_AMOUNT_ENVELOPES_PARAM, 0.f, 1.f, 1.f, "Randomize envelopes amount");
+		configParam(RANDOMIZE_AMOUNT_DIVISIONS_PARAM, 0.f, 1.f, 1.f, "Randomize step divisions amount");
+		configParam(RANDOMIZE_AMOUNT_LEVELS_PARAM, 0.f, 1.f, 1.f, "Randomize levels amount");
+		configParam(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM, 0.f, 1.f, 1.f, "Randomize step lengths amount");
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -384,7 +398,16 @@ struct FM16Seq : Module {
 	}
 
 	void onRandomize() override {
-		float amount = getRandomizeAmount();
+		float amount = (
+			getRandomizeAmount(RANDOMIZE_AMOUNT_RATIOS_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_INDEXES_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_FEEDBACK_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_PITCHES_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_ENVELOPES_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_DIVISIONS_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_LEVELS_PARAM) +
+			getRandomizeAmount(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM)
+		) / 8.f;
 		for (int i = 0; i < STEPS; i++) {
 		stepData[i].division = (int)std::floor(randomizeMaxPercent(0.f, 5.f, amount));
 		stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
@@ -401,13 +424,13 @@ struct FM16Seq : Module {
 		stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
 		stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
 		stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
-		stepData[i].gateLengthMs = randomizeMaxPercent(10.f, 1000.f, amount);
+		stepData[i].gateLengthMs = randomizeMaxPercent(10.f, 5000.f, amount);
 		}
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeRatiosOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_RATIOS_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			if (integerRatiosMode) {
 				static const float allowed[] = {
@@ -437,7 +460,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeStepDivisionsOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_DIVISIONS_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			int maxDiv = std::max(1, (int)std::ceil(amount * 5.f));
 			stepData[i].division = rack::random::u32() % maxDiv;
@@ -455,7 +478,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeEnvelopesOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_ENVELOPES_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
 			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
@@ -484,7 +507,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizePitchesOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_PITCHES_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
 		}
@@ -499,7 +522,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeIndexesOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_INDEXES_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
 		}
@@ -514,7 +537,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeLevelsOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_LEVELS_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
 		}
@@ -529,7 +552,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeStepLengthsOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].gateLengthMs = randomizeMaxPercent(1.f, 5000.f, amount);
 		}
@@ -544,7 +567,7 @@ struct FM16Seq : Module {
 	}
 
 	void randomizeFeedbackOnly() {
-		float amount = getRandomizeAmount();
+		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_FEEDBACK_PARAM);
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
 		}
@@ -953,10 +976,10 @@ struct FM16SeqWidget : ModuleWidget {
 
 		for (int i = 0; i < FM16Seq::STEPS; i++) {
 			float x = 30.f + (float)i * 32.f;
-			float y = 80.f;
+			float y = 73.f;
 			addParam(createParamCentered<TinyButton>(Vec(x, y), module, FM16Seq::STEP_SELECT_PARAM + i));
-			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(x - 6.f, y - 18.f), module, FM16Seq::STEP_PLAY_LIGHT + i));
-			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 18.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
+			addChild(createLight<SmallLight<MyBlueValueLight>>(Vec(x - 6.f, y - 16.f), module, FM16Seq::STEP_PLAY_LIGHT + i));
+			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 16.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
 		}
 
 		addParam(createParamCentered<JwSmallSnapKnob>(Vec(72.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
@@ -981,10 +1004,10 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<SmallButton>(Vec(252.f, 253.f), module, FM16Seq::MANUAL_STEP_TRIGGER_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(252.f, 283.f), module, FM16Seq::MANUAL_STEP_GATE_INPUT));
 
-		addParam(createParamCentered<JwPlayModeKnob>(Vec(485.f, 136.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
-		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 166.f), module, FM16Seq::MODE_CV_INPUT));
-        addParam(createParamCentered<JwSmallSnapKnob>(Vec(485.f, 222.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
-		addInput(createInputCentered<PJ301MPort>(Vec(485.f, 252.f), module, FM16Seq::LENGTH_INPUT));
+		addParam(createParamCentered<JwPlayModeKnob>(Vec(342.f, 344.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(372.f, 344.f), module, FM16Seq::MODE_CV_INPUT));
+		addParam(createParamCentered<JwSmallSnapKnob>(Vec(412.f, 344.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(442.f, 344.f), module, FM16Seq::LENGTH_INPUT));
 
 		addInput(createInputCentered<PJ301MPort>(Vec(42.f, 344.f), module, FM16Seq::CLOCK_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(92.f, 344.f), module, FM16Seq::RESET_INPUT));
@@ -996,9 +1019,9 @@ struct FM16SeqWidget : ModuleWidget {
         addParam(createParamCentered<SmallWhiteKnob>(Vec(485.f, 344.f), module, FM16Seq::MASTER_LEVEL_PARAM));
 		addOutput(createOutputCentered<PJ301MPort>(Vec(520.f, 344.f), module, FM16Seq::AUDIO_OUTPUT));
 
-		const float rndX = 365.f;
-		const float initX = 410.f;
-		const float y0 = 130.f;
+		const float initX = 325.f;
+		const float rndX = 360.f;
+		const float y0 = 115.f;
 		const float yStep = 24.f;
 
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_RATIOS_PARAM));
@@ -1010,9 +1033,15 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 7.f), module, FM16Seq::RANDOMIZE_STEP_LENGTHS_PARAM));
 
-		// Integer ratios mode switch next to randomize ratios button
-		addParam(createParamCentered<JwHorizontalSwitch>(Vec(rndX - 30.f, y0 + yStep * 0.f), module, FM16Seq::INTEGER_RATIOS_PARAM));
-		addParam(createParamCentered<VCVSlider>(Vec(rndX - 30.f, y0 + 30.f + yStep * 3.0f), module, FM16Seq::RANDOMIZE_AMOUNT_PARAM));
+		const float amtX = 440.f;
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_AMOUNT_RATIOS_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_AMOUNT_INDEXES_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_AMOUNT_FEEDBACK_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 3.f), module, FM16Seq::RANDOMIZE_AMOUNT_PITCHES_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 4.f), module, FM16Seq::RANDOMIZE_AMOUNT_ENVELOPES_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_AMOUNT_DIVISIONS_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_AMOUNT_LEVELS_PARAM));
+		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 7.f), module, FM16Seq::RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM));
 
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 0.f), module, FM16Seq::INITIALIZE_RATIOS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));
@@ -1022,6 +1051,9 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 7.f), module, FM16Seq::INITIALIZE_STEP_LENGTHS_PARAM));
+
+		// Integer ratios mode switch next to randomize ratios button
+		addParam(createParamCentered<JwHorizontalSwitch>(Vec(495, 305), module, FM16Seq::INTEGER_RATIOS_PARAM));
 	}
 };
 
