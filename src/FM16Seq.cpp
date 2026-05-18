@@ -806,15 +806,17 @@ struct FM16Seq : Module {
 			lights[STEP_EDIT_LIGHT + i].value = (i == selectedStep) ? 1.f : 0.f;
 		}
 
-		// Get polyphonic input channel counts
-		int pitchChannels = inputs[PITCH_INPUT].getChannels();
-		int fmIndexChannels = inputs[FM_INDEX_INPUT].getChannels();
-		int feedbackChannels = inputs[FEEDBACK_INPUT].getChannels();
-		int gateLengthChannels = inputs[GATE_LENGTH_INPUT].getChannels();
-		int modRatioChannels = inputs[MOD_RATIO_INPUT].getChannels();
-		int carRatioChannels = inputs[CAR_RATIO_INPUT].getChannels();
-		int maxChannels = std::max({pitchChannels, fmIndexChannels, feedbackChannels, gateLengthChannels, modRatioChannels, carRatioChannels, 1});
-		maxChannels = std::min(maxChannels, STEPS);
+		// Poly channels are interpreted as per-step CV lanes.
+		// Only one sequencer step plays at a time, so read CV from the
+		// currently latched step channel and run a single active voice.
+		int cvChannel = clampijw(latchedStep, 0, STEPS - 1);
+		auto getStepCvVoltage = [&](int inputId) {
+			int channels = inputs[inputId].getChannels();
+			if (channels <= 1) {
+				return inputs[inputId].getVoltage(0);
+			}
+			return inputs[inputId].getVoltage(cvChannel);
+		};
 
 		if (manualTriggerEvent) {
 			stepTriggered = true;
@@ -822,20 +824,19 @@ struct FM16Seq : Module {
 
 		// When step triggers, gate on all engines and reset gate timers
 		if (stepTriggered) {
-			for (int ch = 0; ch < maxChannels; ch++) {
-				engines[ch].carrierEnv.gateOn();
-				engines[ch].modEnv.gateOn();
-				engines[ch].gateHeld = true;
-				engines[ch].stepElapsed = 0.f;
-			}
+			FMEngine& engine = engines[0];
+			engine.carrierEnv.gateOn();
+			engine.modEnv.gateOn();
+			engine.gateHeld = true;
+			engine.stepElapsed = 0.f;
 		}
 
 		// Gate length logic: close gate after gateLengthMs for each channel
-		for (int ch = 0; ch < maxChannels; ch++) {
-			FMEngine& engine = engines[ch];
+		{
+			FMEngine& engine = engines[0];
 			if (engine.gateHeld) {
 				engine.stepElapsed += args.sampleTime * 1000.f; // ms
-				float gateLengthCV = inputs[GATE_LENGTH_INPUT].getVoltage(ch);
+				float gateLengthCV = getStepCvVoltage(GATE_LENGTH_INPUT);
 				float gateLen = clampfjw(stepData[latchedStep].gateLengthMs + gateLengthCV * 1000.f, 1.f, 5000.f);
 				if (engine.stepElapsed >= gateLen) {
 					engine.carrierEnv.gateOff();
@@ -845,18 +846,17 @@ struct FM16Seq : Module {
 			}
 		}
 
-		// Process each FM engine for each input channel
+		// Process single active voice using step-indexed CV channel.
 		float mixedOut = 0.f;
-		for (int ch = 0; ch < maxChannels; ch++) {
-			FMEngine& engine = engines[ch];
+		{
+			FMEngine& engine = engines[0];
 			const StepData& s = stepData[latchedStep];
 
-			// Get CV values for this channel
-			float pitchVolts = inputs[PITCH_INPUT].getVoltage(ch);
-			float fmIndexCV = inputs[FM_INDEX_INPUT].getVoltage(ch);
-			float feedbackCV = inputs[FEEDBACK_INPUT].getVoltage(ch);
-			float modRatioCV = inputs[MOD_RATIO_INPUT].getVoltage(ch);
-			float carRatioCV = inputs[CAR_RATIO_INPUT].getVoltage(ch);
+			float pitchVolts = getStepCvVoltage(PITCH_INPUT);
+			float fmIndexCV = getStepCvVoltage(FM_INDEX_INPUT);
+			float feedbackCV = getStepCvVoltage(FEEDBACK_INPUT);
+			float modRatioCV = getStepCvVoltage(MOD_RATIO_INPUT);
+			float carRatioCV = getStepCvVoltage(CAR_RATIO_INPUT);
 
 			// Combine CV with stored step parameters
 			float baseFreqCV = pitchVolts + (s.pitch / 12.f);
@@ -915,7 +915,7 @@ struct FM16Seq : Module {
 			float carrierSignal = std::sin(engine.carrierPhase + (modSignal * engine.smoothedFmIndex * TWO_PI));
 			float stepLevel = engine.smoothedLevel;
 			float out = carrierSignal * carEnvValue * stepLevel * 5.0f;
-			mixedOut += out / (float)maxChannels;
+			mixedOut = out;
 		}
 
 		float masterOut = mixedOut * params[MASTER_LEVEL_PARAM].getValue();
