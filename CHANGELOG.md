@@ -1,8 +1,9 @@
 # Change Log
 
-## v2.0.36 ~ 5-14-26
+## v2.0.37 ~ 5-22-26
 
-  * New Module FM16SEQ
+  * New Module FM16SEQ: fm synth for every step, randomization options
+  * New Module FRACT: delay for fractions of a beat
   * added scales to all quantizers - this should not break existing patches
   * Play mode knob tooltip is better now for all modules
 
