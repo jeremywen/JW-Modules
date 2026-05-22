@@ -1,7 +1,7 @@
 #include "JWModules.hpp"
 #include <cmath>
 
-struct FM16Seq : Module {
+struct FM16Seq : Module, QuantizeUtils {
 	static constexpr int STEPS = 16;
 	static constexpr float TWO_PI = 6.28318530718f;
 
@@ -179,6 +179,9 @@ struct FM16Seq : Module {
 	float modPhase = 0.f;
 	StepData stepData[STEPS];
 	int stepHits[STEPS] = {};
+	bool pitchQuantizeEnabled = true;
+	int pitchQuantizeRoot = QuantizeUtils::NOTE_C;
+	int pitchQuantizeScale = QuantizeUtils::NONE;
 
 	// Polyphonic FM engines (one per channel)
 	struct FMEngine {
@@ -236,6 +239,18 @@ struct FM16Seq : Module {
 
 	bool randomizeDivisionsExcludeZero() {
 		return params[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM].value > 0.5f;
+	}
+
+	float quantizePitchSemitones(float semitones) {
+		float quantizedVolts = closestVoltageInScale(semitones / 12.f, pitchQuantizeRoot, pitchQuantizeScale);
+		return quantizedVolts * 12.f;
+	}
+
+	void quantizeStoredPitches() {
+		for (int i = 0; i < STEPS; i++) {
+			stepData[i].pitch = quantizePitchSemitones(stepData[i].pitch);
+		}
+		loadEditorFromSelectedStep();
 	}
 
 	template <typename Fn>
@@ -408,6 +423,9 @@ struct FM16Seq : Module {
 		clockElapsed = 0.f;
 		clockInterval = 0.5f;
 		clockIntervalValid = false;
+		pitchQuantizeEnabled = true;
+		pitchQuantizeRoot = QuantizeUtils::NOTE_C;
+		pitchQuantizeScale = QuantizeUtils::NONE;
 		carrierEnv = ADSR();
 		modEnv = ADSR();
 		for (int i = 0; i < STEPS; i++) {
@@ -632,6 +650,9 @@ struct FM16Seq : Module {
 		json_object_set_new(rootJ, "selectedStep", json_integer(selectedStep));
 		json_object_set_new(rootJ, "sequenceLength", json_integer(sequenceLength));
 		json_object_set_new(rootJ, "integerRatiosMode", json_boolean(integerRatiosMode));
+		json_object_set_new(rootJ, "pitchQuantizeEnabled", json_boolean(pitchQuantizeEnabled));
+		json_object_set_new(rootJ, "pitchQuantizeRoot", json_integer(pitchQuantizeRoot));
+		json_object_set_new(rootJ, "pitchQuantizeScale", json_integer(pitchQuantizeScale));
 		json_t* stepsJ = json_array();
 		for (int i = 0; i < STEPS; i++) {
 			json_t* stepJ = json_object();
@@ -669,6 +690,18 @@ struct FM16Seq : Module {
 		json_t* integerRatiosModeJ = json_object_get(rootJ, "integerRatiosMode");
 		if (integerRatiosModeJ) {
 			integerRatiosMode = json_is_true(integerRatiosModeJ);
+		}
+		json_t* pitchQuantizeEnabledJ = json_object_get(rootJ, "pitchQuantizeEnabled");
+		if (pitchQuantizeEnabledJ) {
+			pitchQuantizeEnabled = json_is_true(pitchQuantizeEnabledJ);
+		}
+		json_t* pitchQuantizeRootJ = json_object_get(rootJ, "pitchQuantizeRoot");
+		if (pitchQuantizeRootJ) {
+			pitchQuantizeRoot = clampijw((int)json_integer_value(pitchQuantizeRootJ), 0, QuantizeUtils::NUM_NOTES - 1);
+		}
+		json_t* pitchQuantizeScaleJ = json_object_get(rootJ, "pitchQuantizeScale");
+		if (pitchQuantizeScaleJ) {
+			pitchQuantizeScale = clampijw((int)json_integer_value(pitchQuantizeScaleJ), 0, QuantizeUtils::NUM_SCALES - 1);
 		}
 		json_t* stepsJ = json_object_get(rootJ, "steps");
 		if (stepsJ && json_is_array(stepsJ)) {
@@ -896,7 +929,8 @@ struct FM16Seq : Module {
 			float carRatioCV = getStepCvVoltage(CAR_RATIO_INPUT);
 
 			// Combine CV with stored step parameters
-			float baseFreqCV = pitchVolts + (s.pitch / 12.f);
+			float quantizedStepPitch = pitchQuantizeEnabled ? quantizePitchSemitones(s.pitch) : s.pitch;
+			float baseFreqCV = pitchVolts + (quantizedStepPitch / 12.f);
 			engine.baseFreq = 261.6256f * std::pow(2.f, baseFreqCV);
 
 			float carRatio = s.carRatio + carRatioCV;
@@ -967,6 +1001,88 @@ struct FM16SeqWidget : ModuleWidget {
 	// Static clipboard for step copy/paste
 	static FM16Seq::StepData stepClipboard;
 
+	struct QuantizePitchesMenuItem : MenuItem {
+		FM16Seq* module;
+		void onAction(const event::Action& e) override {
+			if (!module) return;
+			module->quantizeStoredPitches();
+		}
+	};
+
+	struct QuantizeEnabledMenuItem : MenuItem {
+		FM16Seq* module;
+		void onAction(const event::Action& e) override {
+			if (!module) return;
+			module->pitchQuantizeEnabled = !module->pitchQuantizeEnabled;
+		}
+		void step() override {
+			rightText = CHECKMARK(module && module->pitchQuantizeEnabled);
+			MenuItem::step();
+		}
+	};
+
+	struct RootNoteValueItem : MenuItem {
+		FM16Seq* module;
+		int note;
+		void onAction(const event::Action& e) override {
+			if (!module) return;
+			module->pitchQuantizeRoot = note;
+		}
+		void step() override {
+			rightText = CHECKMARK(module && module->pitchQuantizeRoot == note);
+			MenuItem::step();
+		}
+	};
+
+	struct RootNoteItem : MenuItem {
+		FM16Seq* module;
+		Menu* createChildMenu() override {
+			Menu* menu = new Menu;
+			if (!module) {
+				return menu;
+			}
+			for (int note = 0; note < QuantizeUtils::NUM_NOTES; note++) {
+				RootNoteValueItem* item = new RootNoteValueItem;
+				item->text = module->noteName(note);
+				item->module = module;
+				item->note = note;
+				menu->addChild(item);
+			}
+			return menu;
+		}
+	};
+
+	struct ScaleValueItem : MenuItem {
+		FM16Seq* module;
+		int scale;
+		void onAction(const event::Action& e) override {
+			if (!module) return;
+			module->pitchQuantizeScale = scale;
+		}
+		void step() override {
+			rightText = CHECKMARK(module && module->pitchQuantizeScale == scale);
+			MenuItem::step();
+		}
+	};
+
+	struct ScaleItem : MenuItem {
+		FM16Seq* module;
+		Menu* createChildMenu() override {
+			Menu* menu = new Menu;
+			if (!module) {
+				return menu;
+			}
+			for (int scale = 0; scale < QuantizeUtils::NUM_SCALES; scale++) {
+				ScaleValueItem* item = new ScaleValueItem;
+				item->text = module->scaleName(scale);
+				item->module = module;
+				item->scale = scale;
+				menu->addChild(item);
+			}
+			return menu;
+		}
+	};
+
    struct CopyStepMenuItem : MenuItem {
 	   FM16Seq* module;
 	   void onAction(const event::Action& e) override {
@@ -1020,6 +1136,30 @@ struct FM16SeqWidget : ModuleWidget {
 		   item->text = "Copy current step to all steps";
 		   item->module = m;
 		   menu->addChild(item);
+
+		   menu->addChild(new MenuSeparator());
+
+		   QuantizeEnabledMenuItem* quantizeEnabledItem = new QuantizeEnabledMenuItem();
+		   quantizeEnabledItem->text = "Enable pitch quantization";
+		   quantizeEnabledItem->module = m;
+		   menu->addChild(quantizeEnabledItem);
+
+		   QuantizePitchesMenuItem* quantizeItem = new QuantizePitchesMenuItem();
+		   quantizeItem->text = "Quantize stored pitches now";
+		   quantizeItem->module = m;
+		   menu->addChild(quantizeItem);
+
+		   RootNoteItem* rootItem = new RootNoteItem();
+		   rootItem->text = "Pitch quantize root note";
+		   rootItem->rightText = m->noteName(m->pitchQuantizeRoot) + " " + RIGHT_ARROW;
+		   rootItem->module = m;
+		   menu->addChild(rootItem);
+
+		   ScaleItem* scaleItem = new ScaleItem();
+		   scaleItem->text = "Pitch quantize scale";
+		   scaleItem->rightText = m->scaleName(m->pitchQuantizeScale) + " " + RIGHT_ARROW;
+		   scaleItem->module = m;
+		   menu->addChild(scaleItem);
 	   }
    }
 
