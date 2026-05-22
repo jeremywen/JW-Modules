@@ -5,31 +5,37 @@
 
 struct Buffer : Module {
 	enum ParamIds {
-		END_PARAM,
-		START_PARAM,
-		DRYWET_PARAM,
-		FREEZE_TOGGLE_PARAM,
-		WET_ON_FREEZE_PARAM,
-		NUM_PARAMS
+			END_PARAM = 0,
+			START_PARAM,
+			DRYWET_PARAM,
+			FREEZE_TOGGLE_PARAM,
+			WET_ON_FREEZE_PARAM,
+			FREEZE_CHANCE_PARAM,
+			NUM_PARAMS
 	};
 	enum InputIds {
-		AUDIO_INPUT,
-		FREEZE_INPUT,
-		END_CV_INPUT,
-		START_CV_INPUT,
-		DRYWET_CV_INPUT,
-		NUM_INPUTS
+			AUDIO_INPUT = 0,
+			FREEZE_INPUT,
+			END_CV_INPUT,
+			START_CV_INPUT,
+			DRYWET_CV_INPUT,
+			AUDIO_R_INPUT,
+			NUM_INPUTS,
+			AUDIO_L_INPUT = AUDIO_INPUT
 	};
 	enum OutputIds {
-		AUDIO_OUTPUT,
-		NUM_OUTPUTS
+			AUDIO_OUTPUT = 0,
+			AUDIO_R_OUTPUT,
+			NUM_OUTPUTS,
+			AUDIO_L_OUTPUT = AUDIO_OUTPUT
 	};
 	enum LightIds {
 		FREEZE_LIGHT,
 		NUM_LIGHTS
 	};
 	
-	std::vector<float> delayBuffer;
+	std::vector<float> delayBufferL;
+	std::vector<float> delayBufferR;
 	int bufferSize = 0;
 	int writePos = 0;
 	int readPos = 0;
@@ -47,14 +53,14 @@ struct Buffer : Module {
 
 	// DC blocker for wet signal to suppress clicks from DC steps
 	float hp_a = 0.99f; // coefficient computed from sample rate
-	float wetHP_y = 0.0f;
-	float wetHP_prevX = 0.0f;
+	float wetHP_y[2] = {0.0f, 0.0f};
+	float wetHP_prevX[2] = {0.0f, 0.0f};
 
 	// Generic de-click ramp for abrupt wet changes
-	float prevWetOut = 0.0f;
-	int declickTotalSamples = 0;
-	int declickRemainingSamples = 0;
-	float declickPrev = 0.0f;
+	float prevWetOut[2] = {0.0f, 0.0f};
+	int declickTotalSamples[2] = {0, 0};
+	int declickRemainingSamples[2] = {0, 0};
+	float declickPrev[2] = {0.0f, 0.0f};
 
 	// Track direction changes for additional envelope
 	int lastPlaybackDirection = 1;
@@ -67,13 +73,18 @@ struct Buffer : Module {
 	enum FreezeMode { FM_GATE, FM_TOGGLE };
 	FreezeMode freezeMode = FM_TOGGLE;
 	dsp::SchmittTrigger freezeEdge;
+	dsp::SchmittTrigger freezeGateEdge;
 	dsp::SchmittTrigger freezeButtonEdge;
+	bool freezeGateQualified = false;
 	bool freezeLatched = false;
 	// Cached loop when freeze engages (with zero-cross alignment)
 	bool wasFrozen = false;
 	int frozenLoopStart = 0;
 	int frozenLoopLength = 0;
 	int pendingFrozenLoopLength = -1;
+	float wrapXfadeFrom[2] = {0.0f, 0.0f};
+	int wrapXfadeSamples = 0;
+	int wrapXfadeRemaining = 0;
 
 	Buffer() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -82,13 +93,17 @@ struct Buffer : Module {
         configParam(DRYWET_PARAM, 0.0f, 1.0f, 0.5f, "Dry/Wet");
 		configButton(FREEZE_TOGGLE_PARAM, "Freeze Toggle");
 		configParam(WET_ON_FREEZE_PARAM, 0.0f, 1.0f, 0.0f, "Wet on Freeze");
-		configInput(AUDIO_INPUT, "Audio IN");
+		configParam(FREEZE_CHANCE_PARAM, 0.0f, 1.0f, 1.0f, "Freeze Chance", "%", 0.0f, 100.0f);
+		configInput(AUDIO_L_INPUT, "Audio L IN");
+		configInput(AUDIO_R_INPUT, "Audio R IN");
 		configInput(FREEZE_INPUT, "Freeze Gate");
 		configInput(END_CV_INPUT, "End CV");
 		configInput(START_CV_INPUT, "Start CV");
 		configInput(DRYWET_CV_INPUT, "Dry/Wet CV");
-		configOutput(AUDIO_OUTPUT, "Audio OUT (Delayed)");
-		configBypass(AUDIO_INPUT, AUDIO_OUTPUT);
+		configOutput(AUDIO_L_OUTPUT, "Audio L OUT (Delayed)");
+		configOutput(AUDIO_R_OUTPUT, "Audio R OUT (Delayed)");
+		configBypass(AUDIO_L_INPUT, AUDIO_L_OUTPUT);
+		configBypass(AUDIO_R_INPUT, AUDIO_R_OUTPUT);
 		
 		// Initialize buffer based on current sample rate
 		allocateBuffer();
@@ -98,21 +113,21 @@ struct Buffer : Module {
 	}
 
 	// Find the nearest zero crossing around index within +/- searchRadius
-	int findNearestZeroCrossing(int index, int searchRadius) {
+	int findNearestZeroCrossing(const std::vector<float>& buffer, int index, int searchRadius) {
 		int bestIdx = index;
-		float bestAbs = fabsf(delayBuffer[index]);
+		float bestAbs = fabsf(buffer[index]);
 		for (int d = 1; d <= searchRadius; ++d) {
 			int i1 = (index + d) % bufferSize;
 			int i0 = (i1 - 1 + bufferSize) % bufferSize;
-			if (delayBuffer[i1] * delayBuffer[i0] <= 0.f) {
-				float a = fabsf(delayBuffer[i1]);
+			if (buffer[i1] * buffer[i0] <= 0.f) {
+				float a = fabsf(buffer[i1]);
 				if (a < bestAbs) { bestAbs = a; bestIdx = i1; }
 				break;
 			}
 			int j1 = (index - d + bufferSize) % bufferSize;
 			int j0 = (j1 - 1 + bufferSize) % bufferSize;
-			if (delayBuffer[j1] * delayBuffer[j0] <= 0.f) {
-				float a = fabsf(delayBuffer[j1]);
+			if (buffer[j1] * buffer[j0] <= 0.f) {
+				float a = fabsf(buffer[j1]);
 				if (a < bestAbs) { bestAbs = a; bestIdx = j1; }
 				break;
 			}
@@ -123,7 +138,8 @@ struct Buffer : Module {
 	void allocateBuffer() {
 		float sampleRate = APP->engine->getSampleRate();
 		bufferSize = (int)(sampleRate * maxBufferSeconds);
-		delayBuffer.resize(bufferSize, 0.f);
+		delayBufferL.resize(bufferSize, 0.f);
+		delayBufferR.resize(bufferSize, 0.f);
 		// Reset positions safely within new buffer size
 		writePos = 0;
 		delayTime = params[END_PARAM].getValue();
@@ -133,6 +149,8 @@ struct Buffer : Module {
 		// Compute high-pass coefficient for ~10 Hz cutoff
 		float fc = 10.0f;
 		hp_a = expf(-2.0f * (float)M_PI * fc / sampleRate);
+		wrapXfadeSamples = std::max(1, (int)(sampleRate * 0.008f));
+		wrapXfadeRemaining = 0;
 
 		// Update parameter ranges to reflect new seconds max
 		if (paramQuantities.size() > END_PARAM && paramQuantities[END_PARAM]) {
@@ -150,13 +168,15 @@ struct Buffer : Module {
 
 	void onReset() override {
 		for(int i = 0; i < bufferSize; i++) {
-			delayBuffer[i] = 0.f;
+			delayBufferL[i] = 0.f;
+			delayBufferR[i] = 0.f;
 		}
 		writePos = 0;
 		delayTime = params[END_PARAM].getValue();
 		float sampleRate = APP->engine->getSampleRate();
 		int delaySamples = (int)(sampleRate * delayTime);
 		readPos = (writePos - delaySamples + bufferSize) % bufferSize;
+		wrapXfadeRemaining = 0;
 	}
 
 	void onSampleRateChange() override {
@@ -209,24 +229,39 @@ struct Buffer : Module {
 		// Freeze behavior: gate or toggle on rising edge
 		bool frozen = false;
 		float freezeV = inputs[FREEZE_INPUT].getVoltage();
+		float freezeChance = clamp(params[FREEZE_CHANCE_PARAM].getValue(), 0.0f, 1.0f);
+		auto chancePass = [&]() {
+			return random::uniform() <= freezeChance;
+		};
 		// UI button toggles latched state in any mode
 		if (freezeButtonEdge.process(params[FREEZE_TOGGLE_PARAM].getValue())) {
-			freezeLatched = !freezeLatched;
+			if (chancePass()) {
+				freezeLatched = !freezeLatched;
+			}
 		}
 		if (freezeMode == FM_GATE) {
-			// Gate mode: gate OR latched button
-			frozen = (freezeV > 1.0f) || freezeLatched;
+			// Gate mode: each gate-rise is probabilistically admitted for this high period.
+			if (freezeGateEdge.process(freezeV)) {
+				freezeGateQualified = chancePass();
+			}
+			if (freezeV <= 1.0f) {
+				freezeGateQualified = false;
+			}
+			frozen = freezeLatched || (freezeV > 1.0f && freezeGateQualified);
 		}
 		else {
 			// Toggle mode: input acts as a trigger to toggle
 			if (freezeEdge.process(freezeV)) {
-				freezeLatched = !freezeLatched;
+				if (chancePass()) {
+					freezeLatched = !freezeLatched;
+				}
 			}
 			frozen = freezeLatched;
 		}
 		
-		// Get input signal
-		float input = inputs[AUDIO_INPUT].getVoltage();
+		// Get stereo input signal (R falls back to L if unpatched)
+		float inputL = inputs[AUDIO_L_INPUT].getVoltage();
+		float inputR = inputs[AUDIO_R_INPUT].isConnected() ? inputs[AUDIO_R_INPUT].getVoltage() : inputL;
 		
 		// Calculate loop parameters (knob + CV)
 		float endTime = params[END_PARAM].getValue();
@@ -280,12 +315,12 @@ struct Buffer : Module {
 			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f)); // up to ~12ms
 			if (searchRadius < 8) searchRadius = 8;
 			// Align loop start
-			frozenLoopStart = findNearestZeroCrossing(loopStart, searchRadius);
+			frozenLoopStart = findNearestZeroCrossing(delayBufferL, loopStart, searchRadius);
 			// Compute and align loop end
 			int rawEndIdx = (playbackDirection == 1)
 				? (loopStart + loopLength) % bufferSize
 				: (loopStart - loopLength + bufferSize) % bufferSize;
-			int frozenLoopEnd = findNearestZeroCrossing(rawEndIdx, searchRadius);
+			int frozenLoopEnd = findNearestZeroCrossing(delayBufferL, rawEndIdx, searchRadius);
 			// Recompute length according to direction
 			if (playbackDirection == 1) {
 				frozenLoopLength = (frozenLoopEnd - frozenLoopStart + bufferSize) % bufferSize;
@@ -317,11 +352,11 @@ struct Buffer : Module {
 		if (!frozen) {
 			int searchRadius = std::min(bufferSize / 128, (int)(args.sampleRate * 0.006f)); // up to ~6ms
 			if (searchRadius < 4) searchRadius = 4;
-			int candidateStart = findNearestZeroCrossing(loopStart, searchRadius);
+			int candidateStart = findNearestZeroCrossing(delayBufferL, loopStart, searchRadius);
 			int rawEndIdxNF = (playbackDirection == 1)
 				? (loopStart + loopLength) % bufferSize
 				: (loopStart - loopLength + bufferSize) % bufferSize;
-			int candidateEnd = findNearestZeroCrossing(rawEndIdxNF, searchRadius);
+			int candidateEnd = findNearestZeroCrossing(delayBufferL, rawEndIdxNF, searchRadius);
 			int candidateLen = (playbackDirection == 1)
 				? (candidateEnd - candidateStart + bufferSize) % bufferSize
 				: (candidateStart - candidateEnd + bufferSize) % bufferSize;
@@ -341,7 +376,7 @@ struct Buffer : Module {
 			int desiredEndIdx = (playbackDirection == 1)
 				? (activeLoopStart + desiredLen) % bufferSize
 				: (activeLoopStart - desiredLen + bufferSize) % bufferSize;
-			int alignedEnd = findNearestZeroCrossing(desiredEndIdx, searchRadius);
+			int alignedEnd = findNearestZeroCrossing(delayBufferL, desiredEndIdx, searchRadius);
 			int newLen = (playbackDirection == 1)
 				? (alignedEnd - activeLoopStart + bufferSize) % bufferSize
 				: (activeLoopStart - alignedEnd + bufferSize) % bufferSize;
@@ -350,6 +385,8 @@ struct Buffer : Module {
 		}
 		
 		// (moved) write happens after wet is computed
+		int prevReadPos = readPos;
+		bool wrappedThisSample = false;
 		
 		// Advance read position in the appropriate direction
 		if (playbackDirection == 1) {
@@ -379,6 +416,7 @@ struct Buffer : Module {
 					transitionFadeRemaining = transitionFadeSamples;
 				}
 				readPos = activeLoopStart;
+				wrappedThisSample = true;
 			}
 		} else {
 			// Backward playback: check if we've passed the end (which comes before start in time)
@@ -399,11 +437,19 @@ struct Buffer : Module {
 					transitionFadeRemaining = transitionFadeSamples;
 				}
 				readPos = activeLoopStart;
+				wrappedThisSample = true;
 			}
+		}
+
+		if (wrappedThisSample) {
+			wrapXfadeFrom[0] = delayBufferL[prevReadPos];
+			wrapXfadeFrom[1] = delayBufferR[prevReadPos];
+			wrapXfadeRemaining = wrapXfadeSamples;
 		}
 		
 		// Read from buffer with crossfade at loop point
-		float wet = delayBuffer[readPos];
+		auto computeWet = [&](std::vector<float>& delayBuffer, int channel) {
+			float wet = delayBuffer[readPos];
 
 		// Adaptive fade length based on boundary jump magnitude
 		int endPrev = (activeLoopStart + activeLoopLength - 1 + bufferSize) % bufferSize;
@@ -411,9 +457,9 @@ struct Buffer : Module {
 		int endNext = activeLoopStart;
 		int startNext = (endNext + 1) % bufferSize;
 		// Consider amplitude and slope discontinuity across boundary
-		float ampJump = fabsf(delayBuffer[endNext] - delayBuffer[endPrev]);
-		float slopeEnd = delayBuffer[endPrev] - delayBuffer[endPrev2];
-		float slopeStart = delayBuffer[startNext] - delayBuffer[endNext];
+			float ampJump = fabsf(delayBuffer[endNext] - delayBuffer[endPrev]);
+			float slopeEnd = delayBuffer[endPrev] - delayBuffer[endPrev2];
+			float slopeStart = delayBuffer[startNext] - delayBuffer[endNext];
 		float jumpMag = ampJump + 0.5f * fabsf(slopeEnd - slopeStart);
 		float baseMs = frozen ? 35.0f : 12.0f;
 		float addMs = std::min(45.0f, jumpMag * 12.0f); // up to +45ms if large discontinuity
@@ -428,7 +474,7 @@ struct Buffer : Module {
 		// Use longer equal-power crossfades when frozen to minimize clicks
 		// (fadeLength computed adaptively above)
 
-		if (playbackDirection == 1) {
+			if (playbackDirection == 1) {
 			// Forward playback
 			int distanceFromStart = (readPos - activeLoopStart + bufferSize) % bufferSize;
 			int distanceFromEnd = activeLoopLength - distanceFromStart;
@@ -443,8 +489,8 @@ struct Buffer : Module {
 				int currNext = (readPos + 1) % bufferSize;
 				int wrapPrev = (wrapReadPos - 1 + bufferSize) % bufferSize;
 				int wrapNext = (wrapReadPos + 1) % bufferSize;
-				float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
-				float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
+					float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
+					float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
 				// Equal-power crossfade window
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
@@ -472,8 +518,8 @@ struct Buffer : Module {
 				int currNext = (readPos + 1) % bufferSize;
 				int wrapPrev = (wrapReadPos - 1 + bufferSize) % bufferSize;
 				int wrapNext = (wrapReadPos + 1) % bufferSize;
-				float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
-				float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
+					float wetLP = 0.25f * delayBuffer[currPrev] + 0.5f * delayBuffer[readPos] + 0.25f * delayBuffer[currNext];
+					float wrapLP = 0.25f * delayBuffer[wrapPrev] + 0.5f * delayBuffer[wrapReadPos] + 0.25f * delayBuffer[wrapNext];
 				float a = cosf(t * (float)M_PI * 0.5f);
 				float b = sinf(t * (float)M_PI * 0.5f);
 				wet = wetLP * a + wrapLP * b;
@@ -486,8 +532,15 @@ struct Buffer : Module {
 			}
 		}
 
+		if (wrapXfadeRemaining > 0 && wrapXfadeSamples > 0) {
+			float prog = 1.0f - (float)wrapXfadeRemaining / (float)wrapXfadeSamples;
+			float outW = cosf(prog * (float)M_PI * 0.5f);
+			float inW = sinf(prog * (float)M_PI * 0.5f);
+			wet = wrapXfadeFrom[channel] * outW + wet * inW;
+		}
+
 		// Apply transition envelope when toggling freeze (attack-only to avoid pops)
-		if (transitionFadeRemaining > 0) {
+			if (transitionFadeRemaining > 0) {
 			float prog = (float)(transitionFadeSamples - transitionFadeRemaining) / (float)transitionFadeSamples;
 			transitionEnv = sinf(prog * (float)M_PI * 0.5f);
 			transitionFadeRemaining--;
@@ -495,32 +548,40 @@ struct Buffer : Module {
 		else {
 			transitionEnv = 1.0f;
 		}
-		wet *= transitionEnv;
+			wet *= transitionEnv;
 
 		// High-pass filter the wet signal to suppress DC step pops
-		float hp_x = wet;
-		wetHP_y = hp_a * (wetHP_y + hp_x - wetHP_prevX);
-		wetHP_prevX = hp_x;
-		wet = wetHP_y;
+			float hp_x = wet;
+			wetHP_y[channel] = hp_a * (wetHP_y[channel] + hp_x - wetHP_prevX[channel]);
+			wetHP_prevX[channel] = hp_x;
+			wet = wetHP_y[channel];
 
 		// De-click smoothing: if wet jumps by a large amount, ramp over ~5–10ms
 		float jumpThresh = 0.6f; // volts
 		int rampSamples = std::max(1, (int)(args.sampleRate * 0.008f));
-		float diffWet = fabsf(wet - prevWetOut);
-		if (declickRemainingSamples <= 0 && diffWet > jumpThresh) {
-			declickPrev = prevWetOut;
-			declickTotalSamples = rampSamples;
-			declickRemainingSamples = declickTotalSamples;
+			float diffWet = fabsf(wet - prevWetOut[channel]);
+			if (declickRemainingSamples[channel] <= 0 && diffWet > jumpThresh) {
+				declickPrev[channel] = prevWetOut[channel];
+				declickTotalSamples[channel] = rampSamples;
+				declickRemainingSamples[channel] = declickTotalSamples[channel];
 		}
 		float wetSmoothed = wet;
-		if (declickRemainingSamples > 0) {
-			float prog = (float)(declickTotalSamples - declickRemainingSamples) / (float)declickTotalSamples;
+			if (declickRemainingSamples[channel] > 0) {
+				float prog = (float)(declickTotalSamples[channel] - declickRemainingSamples[channel]) / (float)declickTotalSamples[channel];
 			// Smooth ramp from previous output to current wet
-			wetSmoothed = declickPrev + prog * (wet - declickPrev);
-			declickRemainingSamples--;
+				wetSmoothed = declickPrev[channel] + prog * (wet - declickPrev[channel]);
+				declickRemainingSamples[channel]--;
 		}
-		prevWetOut = wetSmoothed;
-		wet = wetSmoothed;
+			prevWetOut[channel] = wetSmoothed;
+			wet = wetSmoothed;
+			return wet;
+		};
+
+		float wetL = computeWet(delayBufferL, 0);
+		float wetR = computeWet(delayBufferR, 1);
+		if (wrapXfadeRemaining > 0) {
+			wrapXfadeRemaining--;
+		}
 		
 		// Apply Dry/Wet mix (0-1), with CV (0-10V adds 0..1), smoothed to avoid clicks
 		float targetDW = params[DRYWET_PARAM].getValue();
@@ -543,21 +604,27 @@ struct Buffer : Module {
 		float t = dryWetOut;
 		float a = cosf(t * (float)M_PI * 0.5f); // dry gain
 		float b = sinf(t * (float)M_PI * 0.5f); // wet gain
-		float mixed = input * a + wet * b;
+		float mixedL = inputL * a + wetL * b;
+		float mixedR = inputR * a + wetR * b;
 
 		// Now write to buffer (no feedback applied)
 		if (!frozen) {
-			float writeSample = input;
+			float writeSampleL = inputL;
+			float writeSampleR = inputR;
 			// Prevent runaway: soft limit to avoid clipping explosions
-			if (writeSample > 10.f) writeSample = 10.f;
-			else if (writeSample < -10.f) writeSample = -10.f;
-			delayBuffer[writePos] = writeSample;
+			if (writeSampleL > 10.f) writeSampleL = 10.f;
+			else if (writeSampleL < -10.f) writeSampleL = -10.f;
+			if (writeSampleR > 10.f) writeSampleR = 10.f;
+			else if (writeSampleR < -10.f) writeSampleR = -10.f;
+			delayBufferL[writePos] = writeSampleL;
+			delayBufferR[writePos] = writeSampleR;
 			writePos = (writePos + 1) % bufferSize;
 		}
 		else {
 			// Frozen: do not write to the buffer at all
 		}
-		outputs[AUDIO_OUTPUT].setVoltage(mixed);
+		outputs[AUDIO_L_OUTPUT].setVoltage(mixedL);
+		outputs[AUDIO_R_OUTPUT].setVoltage(mixedR);
 		// Update LED to reflect frozen state
 		lights[FREEZE_LIGHT].setBrightness(frozen ? 1.0f : 0.0f);
 	}
@@ -620,7 +687,7 @@ struct BufferSizeItem : MenuItem {
 
 BufferWidget::BufferWidget(Buffer *module) {
 	setModule(module);
-	box.size = Vec(RACK_GRID_WIDTH*3, RACK_GRID_HEIGHT);
+	box.size = Vec(RACK_GRID_WIDTH*4, RACK_GRID_HEIGHT);
 
 	setPanel(createPanel(
 		asset::plugin(pluginInstance, "res/Buffer.svg"), 
@@ -639,15 +706,18 @@ BufferWidget::BufferWidget(Buffer *module) {
 	addChild(createLight<SmallLight<BlueLight>>(Vec(18, 168), module, Buffer::FREEZE_LIGHT));
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 179), module, Buffer::FREEZE_INPUT));
 	addParam(createParam<TinyButton>(Vec(25, 179), module, Buffer::FREEZE_TOGGLE_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(14, 196), module, Buffer::FREEZE_CHANCE_PARAM));
 	// Switch to force full wet while frozen
-	addParam(createParam<JwHorizontalSwitch>(Vec(13, 220), module, Buffer::WET_ON_FREEZE_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(13, 226), module, Buffer::WET_ON_FREEZE_PARAM));
 	
 	
-	addParam(createParam<SmallWhiteKnob>(Vec(9, 255), module, Buffer::DRYWET_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(14, 282), module, Buffer::DRYWET_CV_INPUT));
+	addParam(createParam<SmallWhiteKnob>(Vec(9, 252), module, Buffer::DRYWET_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(14, 280), module, Buffer::DRYWET_CV_INPUT));
 
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 320), module, Buffer::AUDIO_INPUT));
-	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 320), module, Buffer::AUDIO_OUTPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 310), module, Buffer::AUDIO_L_INPUT));
+	addInput(createInput<TinyPJ301MPort>(Vec(5, 327), module, Buffer::AUDIO_R_INPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 310), module, Buffer::AUDIO_L_OUTPUT));
+	addOutput(createOutput<TinyPJ301MPort>(Vec(25, 327), module, Buffer::AUDIO_R_OUTPUT));
 
 }
 
