@@ -1001,14 +1001,6 @@ struct FM16SeqWidget : ModuleWidget {
 	// Static clipboard for step copy/paste
 	static FM16Seq::StepData stepClipboard;
 
-	struct QuantizePitchesMenuItem : MenuItem {
-		FM16Seq* module;
-		void onAction(const event::Action& e) override {
-			if (!module) return;
-			module->quantizeStoredPitches();
-		}
-	};
-
 	struct QuantizeEnabledMenuItem : MenuItem {
 		FM16Seq* module;
 		void onAction(const event::Action& e) override {
@@ -1143,11 +1135,6 @@ struct FM16SeqWidget : ModuleWidget {
 		   quantizeEnabledItem->text = "Enable pitch quantization";
 		   quantizeEnabledItem->module = m;
 		   menu->addChild(quantizeEnabledItem);
-
-		   QuantizePitchesMenuItem* quantizeItem = new QuantizePitchesMenuItem();
-		   quantizeItem->text = "Quantize stored pitches now";
-		   quantizeItem->module = m;
-		   menu->addChild(quantizeItem);
 
 		   RootNoteItem* rootItem = new RootNoteItem();
 		   rootItem->text = "Pitch quantize root note";
