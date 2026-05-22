@@ -2,6 +2,8 @@
 
 `	           d(-_-)b        Useful, Musical, and Fun     ¯\_(ツ)_/¯`
 
+# [Nightly Builds](https://github.com/jeremywen/JW-Modules/releases/tag/Nightly)
+
 Modules for [VCV Rack](https://vcvrack.com/) by [Jeremy Wentworth](https://linktr.ee/jeremyw)
 
 Also [available for the 4ms metamodule](https://metamodule.info/downloads)!
