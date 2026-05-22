@@ -89,7 +89,7 @@ struct QuantizeUtils {
 
 	// long printIter = 0;
 	float closestVoltageInScale(float voltsIn, int rootNote, int currScale, bool noneIsChromatic=false) {
-		if(!noneIsChromatic && currScale == NONE){
+		if(!noneIsChromatic && (currScale == NONE || currScale == NONE2)){
 			return voltsIn;
 		}
 
@@ -133,8 +133,11 @@ struct QuantizeUtils {
 		float closestDist = 10.0;
 		float scaleNoteInVolts = 0;
 		float distAway = 0;
-		int octaveInVolts = int(floorf(voltsIn));
-		float voltMinusOct = voltsIn - octaveInVolts;
+		// Quantize in root-relative space so repeated quantization is stable.
+		float rootVolts = rootNote / 12.0f;
+		float voltsRootRelative = voltsIn - rootVolts;
+		int octaveInVolts = int(floorf(voltsRootRelative));
+		float voltMinusOct = voltsRootRelative - octaveInVolts;
 		for (int i=0; i < notesInScale; i++) {
 			scaleNoteInVolts = curScaleArr[i] / 12.0;
 			distAway = fabs(voltMinusOct - scaleNoteInVolts);
@@ -150,7 +153,7 @@ struct QuantizeUtils {
 			// }
 		}
 		// printIter++;
-		float voltsOut = octaveInVolts + rootNote/12.0 + closestVal;
+		float voltsOut = octaveInVolts + rootVolts + closestVal;
 		// if(printIter%100000==0){
 		// 	printf("voltsIn:%f, voltsOut:%f, closestVal:%f\n", 
 		// 			voltsIn,    voltsOut,    closestVal);
