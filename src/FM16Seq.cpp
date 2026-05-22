@@ -52,7 +52,8 @@ struct FM16Seq : Module {
 		RANDOMIZE_AMOUNT_DIVISIONS_PARAM,
 		RANDOMIZE_AMOUNT_LEVELS_PARAM,
 		RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM,
-			RANDOMIZE_CURRENT_STEP_ONLY_PARAM,
+		RANDOMIZE_CURRENT_STEP_ONLY_PARAM,
+		RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
@@ -233,6 +234,10 @@ struct FM16Seq : Module {
 		return params[RANDOMIZE_CURRENT_STEP_ONLY_PARAM].value > 0.5f;
 	}
 
+	bool randomizeDivisionsExcludeZero() {
+		return params[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM].value > 0.5f;
+	}
+
 	template <typename Fn>
 	void forRandomizeTargets(Fn fn) {
 		if (randomizeCurrentStepOnly()) {
@@ -304,6 +309,8 @@ struct FM16Seq : Module {
 		configParam(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM, 0.f, 1.f, 1.f, "Randomize step lengths amount");
 		configParam(RANDOMIZE_CURRENT_STEP_ONLY_PARAM, 0.f, 1.f, 0.f, "Current step only");
 		paramQuantities[RANDOMIZE_CURRENT_STEP_ONLY_PARAM]->snapEnabled = true;
+		configParam(RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM, 0.f, 1.f, 0.f, "Exclude zero in random divisions");
+		paramQuantities[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM]->snapEnabled = true;
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -489,9 +496,20 @@ struct FM16Seq : Module {
 
 	void randomizeStepDivisionsOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_DIVISIONS_PARAM);
+		bool excludeZero = randomizeDivisionsExcludeZero();
 		forRandomizeTargets([&](int i) {
 			int maxDiv = std::max(1, (int)std::ceil(amount * 5.f));
-			stepData[i].division = rack::random::u32() % maxDiv;
+			if (excludeZero) {
+				if (maxDiv <= 1) {
+					stepData[i].division = 1;
+				}
+				else {
+					stepData[i].division = 1 + (rack::random::u32() % (maxDiv - 1));
+				}
+			}
+			else {
+				stepData[i].division = rack::random::u32() % maxDiv;
+			}
 			stepHits[i] = 0;
 		});
 		loadEditorFromSelectedStep();
@@ -1102,6 +1120,7 @@ struct FM16SeqWidget : ModuleWidget {
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(295, 204), module, FM16Seq::RANDOMIZE_CURRENT_STEP_ONLY_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 235), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
 	}
 };
 
