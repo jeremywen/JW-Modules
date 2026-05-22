@@ -52,6 +52,7 @@ struct FM16Seq : Module {
 		RANDOMIZE_AMOUNT_DIVISIONS_PARAM,
 		RANDOMIZE_AMOUNT_LEVELS_PARAM,
 		RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM,
+			RANDOMIZE_CURRENT_STEP_ONLY_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
@@ -228,6 +229,22 @@ struct FM16Seq : Module {
 		return best;
 	}
 
+	bool randomizeCurrentStepOnly() {
+		return params[RANDOMIZE_CURRENT_STEP_ONLY_PARAM].value > 0.5f;
+	}
+
+	template <typename Fn>
+	void forRandomizeTargets(Fn fn) {
+		if (randomizeCurrentStepOnly()) {
+			fn(selectedStep);
+		}
+		else {
+			for (int i = 0; i < STEPS; i++) {
+				fn(i);
+			}
+		}
+	}
+
 	FM16Seq() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
@@ -285,6 +302,8 @@ struct FM16Seq : Module {
 		configParam(RANDOMIZE_AMOUNT_DIVISIONS_PARAM, 0.f, 1.f, 1.f, "Randomize step divisions amount");
 		configParam(RANDOMIZE_AMOUNT_LEVELS_PARAM, 0.f, 1.f, 1.f, "Randomize levels amount");
 		configParam(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM, 0.f, 1.f, 1.f, "Randomize step lengths amount");
+		configParam(RANDOMIZE_CURRENT_STEP_ONLY_PARAM, 0.f, 1.f, 0.f, "Current step only");
+		paramQuantities[RANDOMIZE_CURRENT_STEP_ONLY_PARAM]->snapEnabled = true;
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -440,7 +459,7 @@ struct FM16Seq : Module {
 
 	void randomizeRatiosOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_RATIOS_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			if (integerRatiosMode) {
 				static const float allowed[] = {
 					0.125f, 0.25f, 0.5f,
@@ -456,39 +475,39 @@ struct FM16Seq : Module {
 				stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
 				stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
 			}
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeRatiosOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].carRatio = 1.f;
 			stepData[i].modRatio = 2.f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeStepDivisionsOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_DIVISIONS_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			int maxDiv = std::max(1, (int)std::ceil(amount * 5.f));
 			stepData[i].division = rack::random::u32() % maxDiv;
 			stepHits[i] = 0;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeStepDivisionsOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].division = 1;
 			stepHits[i] = 0;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeEnvelopesOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_ENVELOPES_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
 			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
 			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
@@ -497,12 +516,12 @@ struct FM16Seq : Module {
 			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
 			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
 			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeEnvelopesOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].carAttack = 0.04f;
 			stepData[i].carDecay = 0.16f;
 			stepData[i].carSustain = 0.05f;
@@ -511,82 +530,82 @@ struct FM16Seq : Module {
 			stepData[i].modDecay = 0.12f;
 			stepData[i].modSustain = 0.0f;
 			stepData[i].modRelease = 0.1f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizePitchesOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_PITCHES_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializePitchesOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].pitch = 0.f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeIndexesOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_INDEXES_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeIndexesOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].fmIndex = 1.5f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeLevelsOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_LEVELS_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeLevelsOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].level = 0.8f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeStepLengthsOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].gateLengthMs = randomizeMaxPercent(1.f, 5000.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeStepLengthsOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].gateLengthMs = 100.f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void randomizeFeedbackOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_FEEDBACK_PARAM);
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
 	void initializeFeedbackOnly() {
-		for (int i = 0; i < STEPS; i++) {
+		forRandomizeTargets([&](int i) {
 			stepData[i].modFeedback = 0.f;
-		}
+		});
 		loadEditorFromSelectedStep();
 	}
 
@@ -1082,6 +1101,7 @@ struct FM16SeqWidget : ModuleWidget {
 
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(295, 204), module, FM16Seq::RANDOMIZE_CURRENT_STEP_ONLY_PARAM));
 	}
 };
 
