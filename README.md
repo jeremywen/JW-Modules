@@ -1017,7 +1017,7 @@ _Drag the right side of the module to resize it!_
 
 ![Timer](./doc/timer-img1.png)
 
-## Change your Cable Colors in V1
+## My Cable Colors in order below: orange, yellow, purple, blue
 ```
   "cableColors": [
     "#ff9709",
