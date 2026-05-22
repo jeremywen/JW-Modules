@@ -84,6 +84,9 @@ struct Buffer : Module {
 	int pendingFrozenLoopLength = -1;
 	int freezeEngageDelaySamples = 0;
 	int freezeEngagePendingSamples = 0;
+	float prevMixedOut[2] = {0.0f, 0.0f};
+	int outputXfadeSamples = 0;
+	int outputXfadeRemaining = 0;
 	float wrapXfadeFrom[2] = {0.0f, 0.0f};
 	int wrapXfadeSamples = 0;
 	int wrapXfadeRemaining = 0;
@@ -151,8 +154,10 @@ struct Buffer : Module {
 		// Compute high-pass coefficient for ~10 Hz cutoff
 		float fc = 10.0f;
 		hp_a = expf(-2.0f * (float)M_PI * fc / sampleRate);
-		freezeEngageDelaySamples = std::max(1, (int)(sampleRate * 0.003f)); // ~3ms
+		freezeEngageDelaySamples = std::max(1, (int)(sampleRate * 0.008f)); // ~8ms write-through before freeze latches
 		freezeEngagePendingSamples = 0;
+		outputXfadeSamples = std::max(1, (int)(sampleRate * 0.002f)); // ~2ms
+		outputXfadeRemaining = 0;
 		wrapXfadeSamples = std::max(1, (int)(sampleRate * 0.003f));
 		wrapXfadeRemaining = 0;
 
@@ -181,6 +186,9 @@ struct Buffer : Module {
 		int delaySamples = (int)(sampleRate * delayTime);
 		readPos = (writePos - delaySamples + bufferSize) % bufferSize;
 		freezeEngagePendingSamples = 0;
+		prevMixedOut[0] = 0.0f;
+		prevMixedOut[1] = 0.0f;
+		outputXfadeRemaining = 0;
 		wrapXfadeRemaining = 0;
 	}
 
@@ -265,25 +273,10 @@ struct Buffer : Module {
 			frozenRaw = freezeLatched;
 		}
 
-		if (frozenRaw) {
-			if (wasFrozen) {
-				// Already frozen: stay frozen.
-				frozen = true;
-				freezeEngagePendingSamples = 0;
-			}
-			else {
-				// Delay only the engage edge so fresh samples are written before latching.
-				if (freezeEngagePendingSamples <= 0) {
-					freezeEngagePendingSamples = freezeEngageDelaySamples;
-				}
-				if (freezeEngagePendingSamples > 0) {
-					freezeEngagePendingSamples--;
-				}
-				frozen = (freezeEngagePendingSamples <= 0);
-			}
-		}
-		else {
-			frozen = false;
+		// Engage freeze immediately so short trigger pulses still latch/capture.
+		// A small capture lookback below pulls audio from the recent past.
+		frozen = frozenRaw;
+		if (!frozen) {
 			freezeEngagePendingSamples = 0;
 		}
 		
@@ -309,6 +302,7 @@ struct Buffer : Module {
 		
 		int endSamples = (int)(args.sampleRate * endTime);
 		int startSamples = (int)(args.sampleRate * startTime);
+		int minLoopSamples = std::max(8, (int)(args.sampleRate * 0.0005f)); // ~0.5ms minimum
 		
 		// Determine playback direction
 		if (startTime > endTime) {
@@ -324,6 +318,7 @@ struct Buffer : Module {
 		}
 
 		bool freezeStateChanged = false;
+		bool freezeJustEngaged = false;
 		
 		// Calculate loop positions and length
 		int loopStart, loopLength;//, loopEnd;
@@ -338,47 +333,54 @@ struct Buffer : Module {
 			// loopEnd = (writePos - endSamples + bufferSize * 2) % bufferSize;
 			loopLength = (startSamples - endSamples);
 		}
-		if (loopLength < 1) loopLength = 1;
+		if (loopLength < minLoopSamples) loopLength = minLoopSamples;
 
 		// On freeze engagement, align start to nearest zero crossing and cache
 		if (frozen && !wasFrozen) {
-			// Capture slightly in the past so freeze always latches already-recorded audio.
-			int freezeLookbackSamples = std::max(1, (int)(args.sampleRate * 0.002f)); // ~2ms
+			// Capture from the recent past so same-moment trigger+audio freezes usefully.
+			int freezeLookbackSamples = std::max(1, (int)(args.sampleRate * 0.003f)); // ~3ms lookback
 			if (freezeLookbackSamples >= bufferSize) {
 				freezeLookbackSamples = bufferSize - 1;
 			}
 			int captureLoopStart = (loopStart - freezeLookbackSamples + bufferSize) % bufferSize;
 			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f)); // up to ~12ms
 			if (searchRadius < 8) searchRadius = 8;
-			// Align loop start
-			frozenLoopStart = findNearestZeroCrossing(delayBufferL, captureLoopStart, searchRadius);
-			// Compute and align loop end
-			int rawEndIdx = (playbackDirection == 1)
-				? (captureLoopStart + loopLength) % bufferSize
-				: (captureLoopStart - loopLength + bufferSize) % bufferSize;
-			int frozenLoopEnd = findNearestZeroCrossing(delayBufferL, rawEndIdx, searchRadius);
-			// Recompute length according to direction
-			if (playbackDirection == 1) {
-				frozenLoopLength = (frozenLoopEnd - frozenLoopStart + bufferSize) % bufferSize;
-			}
-			else {
-				frozenLoopLength = (frozenLoopStart - frozenLoopEnd + bufferSize) % bufferSize;
-			}
-			if (frozenLoopLength < 1) frozenLoopLength = 1;
-			// Keep freeze true to the requested loop size, especially for short stutter loops.
-			int frozenLenError = std::abs(frozenLoopLength - loopLength);
-			if (frozenLenError > std::max(8, loopLength / 2)) {
+			int shortLoopThreshold = std::max(16, (int)(args.sampleRate * 0.02f)); // ~20ms
+			bool preserveExactShortLoop = loopLength <= shortLoopThreshold;
+			if (preserveExactShortLoop) {
 				frozenLoopStart = captureLoopStart;
 				frozenLoopLength = loopLength;
 			}
-			// Reset read head to start of frozen loop to avoid boundary jump click;
-			// fade-in at the start will smooth the transition.
-			readPos = frozenLoopStart;
+			else {
+				// Align loop start and end for long loops only.
+				frozenLoopStart = findNearestZeroCrossing(delayBufferL, captureLoopStart, searchRadius);
+				int rawEndIdx = (playbackDirection == 1)
+					? (captureLoopStart + loopLength) % bufferSize
+					: (captureLoopStart - loopLength + bufferSize) % bufferSize;
+				int frozenLoopEnd = findNearestZeroCrossing(delayBufferL, rawEndIdx, searchRadius);
+				if (playbackDirection == 1) {
+					frozenLoopLength = (frozenLoopEnd - frozenLoopStart + bufferSize) % bufferSize;
+				}
+				else {
+					frozenLoopLength = (frozenLoopStart - frozenLoopEnd + bufferSize) % bufferSize;
+				}
+				if (frozenLoopLength < minLoopSamples) frozenLoopLength = minLoopSamples;
+				// Reject alignments that significantly reshape the requested repeat length.
+				int frozenLenError = std::abs(frozenLoopLength - loopLength);
+				if (frozenLenError > std::max(16, loopLength / 8)) {
+					frozenLoopStart = captureLoopStart;
+					frozenLoopLength = loopLength;
+				}
+			}
+			if (frozenLoopLength < minLoopSamples) frozenLoopLength = minLoopSamples;
+			// Position one sample before loop start because readPos advances before read.
+			readPos = (frozenLoopStart - playbackDirection + bufferSize) % bufferSize;
 			// Start a short attack envelope to avoid pop without smearing stutter
 			transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.003f));
 			transitionFadeRemaining = transitionFadeSamples;
 			wasFrozen = true;
 			freezeStateChanged = true;
+			freezeJustEngaged = true;
 		}
 		else if (!frozen && wasFrozen) {
 			wasFrozen = false;
@@ -386,6 +388,9 @@ struct Buffer : Module {
 			transitionFadeSamples = std::max(1, (int)(args.sampleRate * 0.002f));
 			transitionFadeRemaining = transitionFadeSamples;
 			freezeStateChanged = true;
+		}
+		if (freezeStateChanged) {
+			outputXfadeRemaining = outputXfadeSamples;
 		}
 
 		int activeLoopStart = frozen ? frozenLoopStart : loopStart;
@@ -416,22 +421,55 @@ struct Buffer : Module {
 			int searchRadius = std::min(bufferSize / 64, (int)(args.sampleRate * 0.012f));
 			if (searchRadius < 8) searchRadius = 8;
 			int desiredLen = loopLength; // based on current knobs
-			if (desiredLen < 1) desiredLen = 1;
-			int desiredEndIdx = (playbackDirection == 1)
-				? (activeLoopStart + desiredLen) % bufferSize
-				: (activeLoopStart - desiredLen + bufferSize) % bufferSize;
-			int alignedEnd = findNearestZeroCrossing(delayBufferL, desiredEndIdx, searchRadius);
-			int newLen = (playbackDirection == 1)
-				? (alignedEnd - activeLoopStart + bufferSize) % bufferSize
-				: (activeLoopStart - alignedEnd + bufferSize) % bufferSize;
-			if (newLen < 1) newLen = 1;
-			int newLenError = std::abs(newLen - desiredLen);
-			if (newLenError > std::max(8, desiredLen / 2)) {
-				newLen = desiredLen;
+			if (desiredLen < minLoopSamples) desiredLen = minLoopSamples;
+			int proposedLen = frozenLoopLength;
+			int shortLoopThreshold = std::max(16, (int)(args.sampleRate * 0.02f)); // ~20ms
+			if (desiredLen <= shortLoopThreshold) {
+				proposedLen = desiredLen;
 			}
-			pendingFrozenLoopLength = newLen; // apply on wrap
+			else {
+				int desiredEndIdx = (playbackDirection == 1)
+					? (activeLoopStart + desiredLen) % bufferSize
+					: (activeLoopStart - desiredLen + bufferSize) % bufferSize;
+				int alignedEnd = findNearestZeroCrossing(delayBufferL, desiredEndIdx, searchRadius);
+				int newLen = (playbackDirection == 1)
+					? (alignedEnd - activeLoopStart + bufferSize) % bufferSize
+					: (activeLoopStart - alignedEnd + bufferSize) % bufferSize;
+				if (newLen < minLoopSamples) newLen = minLoopSamples;
+				int newLenError = std::abs(newLen - desiredLen);
+				if (newLenError > std::max(16, desiredLen / 8)) {
+					newLen = desiredLen;
+				}
+				proposedLen = newLen;
+			}
+			// Only queue a frozen length change when it actually differs.
+			pendingFrozenLoopLength = (proposedLen != frozenLoopLength) ? proposedLen : -1;
+		}
+
+		if (transitionFadeRemaining > 0) {
+			float prog = (float)(transitionFadeSamples - transitionFadeRemaining) / (float)transitionFadeSamples;
+			transitionEnv = sinf(prog * (float)M_PI * 0.5f);
+			transitionFadeRemaining--;
+		}
+		else {
+			transitionEnv = 1.0f;
 		}
 		
+		// Keep read head inside the active loop before stepping.
+		// This avoids pathological wrap retriggering if params/freeze changed loop bounds.
+		if (playbackDirection == 1) {
+			int distanceFromStart = (readPos - activeLoopStart + bufferSize) % bufferSize;
+			if (distanceFromStart >= activeLoopLength) {
+				readPos = activeLoopStart;
+			}
+		}
+		else {
+			int distanceFromStart = (activeLoopStart - readPos + bufferSize) % bufferSize;
+			if (distanceFromStart >= activeLoopLength) {
+				readPos = activeLoopStart;
+			}
+		}
+
 		// (moved) write happens after wet is computed
 		int prevReadPos = readPos;
 		bool wrappedThisSample = false;
@@ -588,14 +626,6 @@ struct Buffer : Module {
 		}
 
 		// Apply transition envelope when toggling freeze (attack-only to avoid pops)
-			if (transitionFadeRemaining > 0) {
-			float prog = (float)(transitionFadeSamples - transitionFadeRemaining) / (float)transitionFadeSamples;
-			transitionEnv = sinf(prog * (float)M_PI * 0.5f);
-			transitionFadeRemaining--;
-		}
-		else {
-			transitionEnv = 1.0f;
-		}
 			wet *= transitionEnv;
 
 		// High-pass filter the wet signal to suppress DC step pops
@@ -660,8 +690,16 @@ struct Buffer : Module {
 		float mixedL = inputL * a + wetL * b;
 		float mixedR = inputR * a + wetR * b;
 
+		if (outputXfadeRemaining > 0 && outputXfadeSamples > 0) {
+			float prog = 1.0f - (float)outputXfadeRemaining / (float)outputXfadeSamples;
+			float outW = cosf(prog * (float)M_PI * 0.5f);
+			float inW = sinf(prog * (float)M_PI * 0.5f);
+			mixedL = prevMixedOut[0] * outW + mixedL * inW;
+			mixedR = prevMixedOut[1] * outW + mixedR * inW;
+		}
+
 		// Now write to buffer (no feedback applied)
-		if (!frozen) {
+		if (!frozen || freezeJustEngaged) {
 			float writeSampleL = inputL;
 			float writeSampleR = inputR;
 			// Prevent runaway: soft limit to avoid clipping explosions
@@ -678,6 +716,11 @@ struct Buffer : Module {
 		}
 		outputs[AUDIO_L_OUTPUT].setVoltage(mixedL);
 		outputs[AUDIO_R_OUTPUT].setVoltage(mixedR);
+		prevMixedOut[0] = mixedL;
+		prevMixedOut[1] = mixedR;
+		if (outputXfadeRemaining > 0) {
+			outputXfadeRemaining--;
+		}
 		// Update LED to reflect frozen state
 		lights[FREEZE_LIGHT].setBrightness(frozen ? 1.0f : 0.0f);
 	}
