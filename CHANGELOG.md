@@ -3,6 +3,7 @@
 ## v2.0.36 ~ 5-14-26
 
   * New Module FM16SEQ
+  * added scales to all quantizers - this should not break existing patches
   * Play mode knob tooltip is better now for all modules
 
 ## v2.0.34 ~ 5-9-26

@@ -24,6 +24,16 @@ struct QuantizeUtils {
 	int SCALE_MIXOLYDIAN     [8] = {0, 2, 4, 5, 7, 9, 10, 12};
 	int SCALE_NATURAL_MINOR  [8] = {0, 2, 3, 5, 7, 8, 10, 12};
 	int SCALE_PENTATONIC     [6] = {0, 2, 4, 7, 9, 12};
+	int SCALE_PENTATONIC_MINOR [6] = {0, 3, 5, 7, 10, 12};
+	int SCALE_WHOLE_TONE     [7] = {0, 2, 4, 6, 8, 10, 12};
+	int SCALE_DIMINISHED     [9] = {0, 2, 3, 5, 6, 8, 9, 11, 12};
+	int SCALE_HARMONIC_MAJOR [8] = {0, 2, 4, 5, 7, 8, 11, 12};
+	int SCALE_DOUBLE_HARMONIC[8] = {0, 1, 4, 5, 7, 8, 11, 12};
+	int SCALE_MAJOR_BEBOP    [9] = {0, 2, 4, 5, 7, 8, 9, 11, 12};
+	int SCALE_MINOR_BEBOP    [9] = {0, 2, 3, 5, 7, 8, 9, 10, 12};
+	int SCALE_PHRYGIAN_DOMINANT [8] = {0, 1, 4, 5, 7, 8, 10, 12};
+	int SCALE_HUNGARIAN_MINOR [8] = {0, 2, 3, 6, 7, 8, 11, 12};
+	int SCALE_ALTERED        [8] = {0, 1, 3, 4, 6, 8, 10, 12};
 	int SCALE_PHRYGIAN       [8] = {0, 1, 3, 5, 7, 8, 10, 12};
 	int SCALE_TURKISH        [8] = {0, 1, 3, 5, 7, 10, 11, 12};
 
@@ -61,7 +71,19 @@ struct QuantizeUtils {
 		PENTATONIC,
 		PHRYGIAN,
 		TURKISH,
-		NONE,
+		NONE, //keep this here so that we don't break existing patches that expect none to be here
+		//below scales added 5-22-26
+		PENTATONIC_MINOR,
+		WHOLE_TONE,
+		DIMINISHED,
+		HARMONIC_MAJOR,
+		DOUBLE_HARMONIC,
+		MAJOR_BEBOP,
+		MINOR_BEBOP,
+		PHRYGIAN_DOMINANT,
+		HUNGARIAN_MINOR,
+		ALTERED,
+		NONE2,// adding to have none at end and not break existing patches
 		NUM_SCALES
 	};
 
@@ -92,6 +114,17 @@ struct QuantizeUtils {
 			case PHRYGIAN:       curScaleArr = SCALE_PHRYGIAN;      notesInScale=LENGTHOF(SCALE_PHRYGIAN); break;
 			case TURKISH:        curScaleArr = SCALE_TURKISH;       notesInScale=LENGTHOF(SCALE_TURKISH); break;
 			case NONE:           curScaleArr = SCALE_CHROMATIC;     notesInScale=LENGTHOF(SCALE_CHROMATIC); break;
+			case NONE2:           curScaleArr = SCALE_CHROMATIC;     notesInScale=LENGTHOF(SCALE_CHROMATIC); break;
+			case PENTATONIC_MINOR: curScaleArr = SCALE_PENTATONIC_MINOR; notesInScale=LENGTHOF(SCALE_PENTATONIC_MINOR); break;
+			case WHOLE_TONE:     curScaleArr = SCALE_WHOLE_TONE;    notesInScale=LENGTHOF(SCALE_WHOLE_TONE); break;
+			case DIMINISHED:     curScaleArr = SCALE_DIMINISHED;    notesInScale=LENGTHOF(SCALE_DIMINISHED); break;
+			case HARMONIC_MAJOR: curScaleArr = SCALE_HARMONIC_MAJOR;notesInScale=LENGTHOF(SCALE_HARMONIC_MAJOR); break;
+			case DOUBLE_HARMONIC:curScaleArr = SCALE_DOUBLE_HARMONIC;notesInScale=LENGTHOF(SCALE_DOUBLE_HARMONIC); break;
+			case MAJOR_BEBOP:    curScaleArr = SCALE_MAJOR_BEBOP;   notesInScale=LENGTHOF(SCALE_MAJOR_BEBOP); break;
+			case MINOR_BEBOP:    curScaleArr = SCALE_MINOR_BEBOP;   notesInScale=LENGTHOF(SCALE_MINOR_BEBOP); break;
+			case PHRYGIAN_DOMINANT: curScaleArr = SCALE_PHRYGIAN_DOMINANT; notesInScale=LENGTHOF(SCALE_PHRYGIAN_DOMINANT); break;
+			case HUNGARIAN_MINOR:curScaleArr = SCALE_HUNGARIAN_MINOR;notesInScale=LENGTHOF(SCALE_HUNGARIAN_MINOR); break;
+			case ALTERED:        curScaleArr = SCALE_ALTERED;       notesInScale=LENGTHOF(SCALE_ALTERED); break;
 		}
 
 		//C1 == -2.00, C2 == -1.00, C3 == 0.00, C4 == 1.00
@@ -163,7 +196,18 @@ struct QuantizeUtils {
 			case PENTATONIC:     return "Penta";
 			case PHRYGIAN:       return "Phrygian";
 			case TURKISH:        return "Turkish";
-			case NONE:           return "None";
+			case PENTATONIC_MINOR:return "Penta Min";
+			case WHOLE_TONE:     return "Whole Tone";
+			case DIMINISHED:     return "Diminished";
+			case HARMONIC_MAJOR: return "Harm Major";
+			case DOUBLE_HARMONIC:return "Double Harm";
+			case MAJOR_BEBOP:    return "Bebop Maj";
+			case MINOR_BEBOP:    return "Bebop Min";
+			case PHRYGIAN_DOMINANT:return "Phryg Dom";
+			case HUNGARIAN_MINOR:return "Hung Min";
+			case ALTERED:        return "Altered";
+			case NONE:           return "None";//old, keep this here so that we don't break existing patches that expect none to be here
+			case NONE2:          return "None";//new, added to have none at end and not break existing patches
 			default: return "";
 		}
 	}
