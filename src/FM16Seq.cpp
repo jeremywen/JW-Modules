@@ -54,6 +54,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM,
 		RANDOMIZE_CURRENT_STEP_ONLY_PARAM,
 		RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM,
+		RANDOMIZE_ALL_TRIGGER_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
@@ -68,6 +69,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		   CAR_RATIO_INPUT,
 		   MODE_CV_INPUT,
 		   MANUAL_STEP_GATE_INPUT,
+		   RANDOMIZE_ALL_TRIGGER_INPUT,
 		   NUM_INPUTS
 	   };
 	enum OutputIds {
@@ -165,6 +167,8 @@ struct FM16Seq : Module, QuantizeUtils {
 	dsp::SchmittTrigger actionTrigger[16];
 	dsp::SchmittTrigger manualStepTrigger;
 	dsp::SchmittTrigger manualStepGateTrigger;
+	dsp::SchmittTrigger randomizeAllButtonTrigger;
+	dsp::SchmittTrigger randomizeAllInputTrigger;
 
 	int stepIndex = 0;
 	bool pendingReset = true;
@@ -326,6 +330,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		paramQuantities[RANDOMIZE_CURRENT_STEP_ONLY_PARAM]->snapEnabled = true;
 		configParam(RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM, 0.f, 1.f, 0.f, "Exclude zero in random divisions");
 		paramQuantities[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM]->snapEnabled = true;
+		configParam(RANDOMIZE_ALL_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Randomize all by amounts");
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
@@ -338,6 +343,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		configInput(CAR_RATIO_INPUT, "Carrier ratio CV (16 poly channels)");
 		configInput(MODE_CV_INPUT, "Play mode CV (1V per mode)");
 		configInput(MANUAL_STEP_GATE_INPUT, "Manual trigger gate (selected step)");
+		configInput(RANDOMIZE_ALL_TRIGGER_INPUT, "Randomize all trigger");
 
 		configOutput(AUDIO_OUTPUT, "Audio");
 		for (int i = 0; i < STEPS; i++) {
@@ -645,6 +651,17 @@ struct FM16Seq : Module, QuantizeUtils {
 		loadEditorFromSelectedStep();
 	}
 
+	void randomizeAllByAmounts() {
+		randomizeRatiosOnly();
+		randomizeIndexesOnly();
+		randomizeFeedbackOnly();
+		randomizePitchesOnly();
+		randomizeEnvelopesOnly();
+		randomizeStepDivisionsOnly();
+		randomizeLevelsOnly();
+		randomizeStepLengthsOnly();
+	}
+
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "selectedStep", json_integer(selectedStep));
@@ -796,6 +813,12 @@ struct FM16Seq : Module, QuantizeUtils {
 		if (actionTrigger[13].process(params[INITIALIZE_LEVELS_PARAM].getValue())) initializeLevelsOnly();
 		if (actionTrigger[14].process(params[RANDOMIZE_STEP_LENGTHS_PARAM].getValue())) randomizeStepLengthsOnly();
 		if (actionTrigger[15].process(params[INITIALIZE_STEP_LENGTHS_PARAM].getValue())) initializeStepLengthsOnly();
+
+		bool randomizeAllPressed = randomizeAllButtonTrigger.process(params[RANDOMIZE_ALL_TRIGGER_PARAM].getValue());
+		bool randomizeAllGateTriggered = randomizeAllInputTrigger.process(inputs[RANDOMIZE_ALL_TRIGGER_INPUT].getVoltage());
+		if (randomizeAllPressed || randomizeAllGateTriggered) {
+			randomizeAllByAmounts();
+		}
 
 		// Clock and sequence logic
 		float clockValue = inputs[CLOCK_INPUT].getVoltage();
@@ -1248,6 +1271,8 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(295, 204), module, FM16Seq::RANDOMIZE_CURRENT_STEP_ONLY_PARAM));
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 235), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
+		addParam(createParamCentered<SmallButton>(Vec(295, 253), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(295, 283), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_INPUT));
 	}
 };
 
