@@ -1195,27 +1195,27 @@ struct FM16SeqWidget : ModuleWidget {
 			addChild(createLight<SmallLight<MyOrangeValueLight>>(Vec(x + 1.f, y - 16.f), module, FM16Seq::STEP_EDIT_LIGHT + i));
 		}
 
-		addParam(createParamCentered<JwSmallSnapKnob>(Vec(72.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 140.f), module, FM16Seq::EDIT_PITCH_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 140.f), module, FM16Seq::EDIT_FM_INDEX_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(258.f, 140.f), module, FM16Seq::EDIT_LEVEL_PARAM));
+		addParam(createParamCentered<JwSmallSnapKnob>(Vec(55.f, 140.f), module, FM16Seq::EDIT_ACTIVE_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(117.f, 140.f), module, FM16Seq::EDIT_PITCH_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(179.f, 140.f), module, FM16Seq::EDIT_FM_INDEX_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(241.f, 140.f), module, FM16Seq::EDIT_LEVEL_PARAM));
 
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(72.f, 194.f), module, FM16Seq::EDIT_CAR_RATIO_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(134.f, 194.f), module, FM16Seq::EDIT_MOD_RATIO_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(196.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(258.f, 194.f), module, FM16Seq::EDIT_GATE_LENGTH_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(55.f, 194.f), module, FM16Seq::EDIT_CAR_RATIO_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(117.f, 194.f), module, FM16Seq::EDIT_MOD_RATIO_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(179.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(241.f, 194.f), module, FM16Seq::EDIT_GATE_LENGTH_PARAM));
 
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(84.f, 248.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(124.f, 248.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(164.f, 248.f), module, FM16Seq::EDIT_CAR_SUSTAIN_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(204.f, 248.f), module, FM16Seq::EDIT_CAR_RELEASE_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 248.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 248.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 248.f), module, FM16Seq::EDIT_CAR_SUSTAIN_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 248.f), module, FM16Seq::EDIT_CAR_RELEASE_PARAM));
 
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(84.f, 288.f), module, FM16Seq::EDIT_MOD_ATTACK_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(124.f, 288.f), module, FM16Seq::EDIT_MOD_DECAY_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(164.f, 288.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(204.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
-		addParam(createParamCentered<SmallButton>(Vec(252.f, 253.f), module, FM16Seq::MANUAL_STEP_TRIGGER_PARAM));
-		addInput(createInputCentered<PJ301MPort>(Vec(252.f, 283.f), module, FM16Seq::MANUAL_STEP_GATE_INPUT));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 288.f), module, FM16Seq::EDIT_MOD_ATTACK_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 288.f), module, FM16Seq::EDIT_MOD_DECAY_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 288.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
+		addParam(createParamCentered<SmallButton>(Vec(243.f, 253.f), module, FM16Seq::MANUAL_STEP_TRIGGER_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(243.f, 283.f), module, FM16Seq::MANUAL_STEP_GATE_INPUT));
 
 		addParam(createParamCentered<JwPlayModeKnob>(Vec(342.f, 344.f), module, FM16Seq::PLAY_MODE_KNOB_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(372.f, 344.f), module, FM16Seq::MODE_CV_INPUT));
