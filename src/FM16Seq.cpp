@@ -183,7 +183,7 @@ struct FM16Seq : Module, QuantizeUtils {
 	float modPhase = 0.f;
 	StepData stepData[STEPS];
 	int stepHits[STEPS] = {};
-	bool pitchQuantizeEnabled = true;
+	bool pitchQuantizeEnabled = false;
 	int pitchQuantizeRoot = QuantizeUtils::NOTE_C;
 	int pitchQuantizeScale = QuantizeUtils::NONE;
 
@@ -328,7 +328,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		configParam(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM, 0.f, 1.f, 1.f, "Randomize step lengths amount");
 		configParam(RANDOMIZE_CURRENT_STEP_ONLY_PARAM, 0.f, 1.f, 0.f, "Current step only");
 		paramQuantities[RANDOMIZE_CURRENT_STEP_ONLY_PARAM]->snapEnabled = true;
-		configParam(RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM, 0.f, 1.f, 0.f, "Exclude zero in random divisions");
+		configParam(RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM, 0.f, 1.f, 1.f, "Exclude zero in random divisions");
 		paramQuantities[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM]->snapEnabled = true;
 		configParam(RANDOMIZE_ALL_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Randomize all by amounts");
 
@@ -429,7 +429,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		clockElapsed = 0.f;
 		clockInterval = 0.5f;
 		clockIntervalValid = false;
-		pitchQuantizeEnabled = true;
+		pitchQuantizeEnabled = false;
 		pitchQuantizeRoot = QuantizeUtils::NOTE_C;
 		pitchQuantizeScale = QuantizeUtils::NONE;
 		carrierEnv = ADSR();
