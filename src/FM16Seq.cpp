@@ -54,6 +54,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM,
 		RANDOMIZE_CURRENT_STEP_ONLY_PARAM,
 		RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM,
+		RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM,
 		RANDOMIZE_ALL_TRIGGER_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
@@ -245,6 +246,10 @@ struct FM16Seq : Module, QuantizeUtils {
 		return params[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM].value > 0.5f;
 	}
 
+	bool randomizeEnvelopesDecayOnly() {
+		return params[RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM].value > 0.5f;
+	}
+
 	float quantizePitchSemitones(float semitones) {
 		float quantizedVolts = closestVoltageInScale(semitones / 12.f, pitchQuantizeRoot, pitchQuantizeScale);
 		return quantizedVolts * 12.f;
@@ -330,6 +335,8 @@ struct FM16Seq : Module, QuantizeUtils {
 		paramQuantities[RANDOMIZE_CURRENT_STEP_ONLY_PARAM]->snapEnabled = true;
 		configParam(RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM, 0.f, 1.f, 1.f, "Exclude zero in random divisions");
 		paramQuantities[RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM]->snapEnabled = true;
+		configParam(RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM, 0.f, 1.f, 0.f, "Envelope decay only randomize");
+		paramQuantities[RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM]->snapEnabled = true;
 		configParam(RANDOMIZE_ALL_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Randomize all by amounts");
 
 		configInput(CLOCK_INPUT, "Clock");
@@ -467,6 +474,7 @@ struct FM16Seq : Module, QuantizeUtils {
 			getRandomizeAmount(RANDOMIZE_AMOUNT_LEVELS_PARAM) +
 			getRandomizeAmount(RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM)
 		) / 8.f;
+		bool decayOnly = randomizeEnvelopesDecayOnly();
 		for (int i = 0; i < STEPS; i++) {
 		stepData[i].division = (int)std::floor(randomizeMaxPercent(0.f, 5.f, amount));
 		stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
@@ -474,14 +482,26 @@ struct FM16Seq : Module, QuantizeUtils {
 		stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
 		stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
 		stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
-		stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
-		stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+		if (decayOnly) {
+			stepData[i].carAttack = 0.f;
+			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carSustain = 0.f;
+			stepData[i].carRelease = 0.f;
+			stepData[i].modAttack = 0.f;
+			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modSustain = 0.f;
+			stepData[i].modRelease = 0.f;
+		}
+		else {
+			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+		}
 		stepData[i].level = randomizeMaxPercent(0.2f, 1.f, amount);
 		stepData[i].gateLengthMs = randomizeMaxPercent(10.f, 5000.f, amount);
 		}
@@ -549,15 +569,28 @@ struct FM16Seq : Module, QuantizeUtils {
 
 	void randomizeEnvelopesOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_ENVELOPES_PARAM);
+		bool decayOnly = randomizeEnvelopesDecayOnly();
 		forRandomizeTargets([&](int i) {
-			stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
-			stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			if (decayOnly) {
+				stepData[i].carAttack = 0.f;
+				stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].carSustain = 0.f;
+				stepData[i].carRelease = 0.f;
+				stepData[i].modAttack = 0.f;
+				stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].modSustain = 0.f;
+				stepData[i].modRelease = 0.f;
+			}
+			else {
+				stepData[i].carAttack = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].carDecay = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].carSustain = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].carRelease = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].modAttack = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].modDecay = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].modSustain = randomizeMaxPercent(0.f, 1.f, amount);
+				stepData[i].modRelease = randomizeMaxPercent(0.f, 1.f, amount);
+			}
 		});
 		loadEditorFromSelectedStep();
 	}
@@ -1205,15 +1238,15 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(179.f, 194.f), module, FM16Seq::EDIT_MOD_FEEDBACK_PARAM));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(241.f, 194.f), module, FM16Seq::EDIT_GATE_LENGTH_PARAM));
 
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 248.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 248.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 248.f), module, FM16Seq::EDIT_CAR_SUSTAIN_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 248.f), module, FM16Seq::EDIT_CAR_RELEASE_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 288.f), module, FM16Seq::EDIT_CAR_ATTACK_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 288.f), module, FM16Seq::EDIT_CAR_DECAY_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 288.f), module, FM16Seq::EDIT_CAR_SUSTAIN_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 288.f), module, FM16Seq::EDIT_CAR_RELEASE_PARAM));
 
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 288.f), module, FM16Seq::EDIT_MOD_ATTACK_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 288.f), module, FM16Seq::EDIT_MOD_DECAY_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 288.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
-		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 288.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(67.f, 248.f), module, FM16Seq::EDIT_MOD_ATTACK_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(107.f, 248.f), module, FM16Seq::EDIT_MOD_DECAY_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(147.f, 248.f), module, FM16Seq::EDIT_MOD_SUSTAIN_PARAM));
+		addParam(createParamCentered<JwTinyGrayKnob>(Vec(187.f, 248.f), module, FM16Seq::EDIT_MOD_RELEASE_PARAM));
 		addParam(createParamCentered<SmallButton>(Vec(243.f, 253.f), module, FM16Seq::MANUAL_STEP_TRIGGER_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(243.f, 283.f), module, FM16Seq::MANUAL_STEP_GATE_INPUT));
 
@@ -1268,9 +1301,10 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 7.f), module, FM16Seq::INITIALIZE_STEP_LENGTHS_PARAM));
 
 		// Integer ratios mode switch next to randomize ratios button
-		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(295, 204), module, FM16Seq::RANDOMIZE_CURRENT_STEP_ONLY_PARAM));
-		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 235), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 210), module, FM16Seq::RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 255), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
 		addParam(createParamCentered<SmallButton>(Vec(295, 253), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(295, 283), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_INPUT));
 	}
