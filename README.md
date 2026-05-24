@@ -55,9 +55,16 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
 ----
+
+## Fract
+
+![fract](./doc/fract1.png)
+
+Delay by fraction of a clock tick.
+
 ## FM16SEQ
 
-![fm16seq](./doc/fm16seq3.png)
+![fm16seq](./doc/fm16seq4.png)
 
 A sequencer with a 2 operator FM Synth for each step.  Inspired by FMS https://lo-bit.club/fms
 
@@ -88,15 +95,19 @@ Step Params
 * **Mod:** modulator ratio for step
 * **Fdbk:** feedback for step
 * **G Len:** gate length for step
-* **Car Envelope:** carrier envelope for step
 * **Mod Envelope:** modulator envelope for step
+* **Car Envelope:** carrier envelope for step
 
 Randomize and Initialize
 
+* **RND STEP/ALL Switch:** when clicking randomize does it effect the current step or all steps
+* **RND Button:** randomize the current step or all steps
 * **INIT** initialize params for all steps
 * **RND** randomize param for all steps
 * **RND MAX** the maximum range of randomization (for example only random low ratios)
 * **Int:** only use musical ratios when randomizing (0.125, 0.25, 0.5, 1, 2...)
+* **Decay Only:** only randomize decays and leave other envelope params at zero
+* **Excl Zero:** exclude zero as an option when randomizing divisions
 
 
 ## SampleGrid
