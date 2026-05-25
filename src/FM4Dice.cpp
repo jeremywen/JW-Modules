@@ -166,7 +166,6 @@ struct FM4Dice : Module {
 	void randomizeOperators() {
 		algorithm = (int)std::floor(random::uniform() * (float)NUM_ALGORITHMS);
 		baseFrequency = rescale(random::uniform(), 0.f, 1.f, 35.f, 880.f);
-		params[LENGTH_PARAM].setValue(rescale(random::uniform(), 0.f, 1.f, 0.03f, 10.f));
 		for (int op = 0; op < OP_COUNT; op++) {
 			ops[op].ratio = 0.125f + random::uniform() * (12.f - 0.125f);
 			ops[op].level = random::uniform();
