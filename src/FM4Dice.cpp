@@ -1,7 +1,7 @@
 #include "JWModules.hpp"
 
 struct FM4Dice : Module {
-	static constexpr int MAX_STEPS = 8;
+	static constexpr int MAX_STEPS = 16;
 	static constexpr int OP_COUNT = 4;
 	enum ParamIds {
 		LENGTH_PARAM,
@@ -76,7 +76,7 @@ struct FM4Dice : Module {
 	FM4Dice() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(LENGTH_PARAM, 0.005f, 5.0f, 0.4f, "Decay", " s");
-		configParam(STEP_COUNT_PARAM, 1.0f, 8.0f, 8.0f, "Step count");
+		configParam(STEP_COUNT_PARAM, 1.0f, 16.0f, 16.0f, "Step count");
 		paramQuantities[STEP_COUNT_PARAM]->snapEnabled = true;
 		configButton(DICE_PARAM, "Randomize operators");
 		configInput(TRIGGER_INPUT, "Trigger");
