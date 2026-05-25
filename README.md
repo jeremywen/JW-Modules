@@ -56,6 +56,12 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ----
 
+## FM4DICE
+
+![fm4dice](./doc/fm4dice1.png)
+
+Generate a random sequence of 4op FM sounds.
+
 ## Fract
 
 ![fract](./doc/fract1.png)
