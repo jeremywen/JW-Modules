@@ -3,6 +3,8 @@
 struct FM4Dice : Module {
 	static constexpr int MAX_STEPS = 16;
 	static constexpr int OP_COUNT = 4;
+	static constexpr float MIN_DECAY_TIME = 0.005f;
+	static constexpr float MAX_DECAY_TIME = 5.0f;
 	enum ParamIds {
 		LENGTH_PARAM,
 		STEP_COUNT_PARAM,
@@ -10,6 +12,7 @@ struct FM4Dice : Module {
 		NUM_PARAMS
 	};
 	enum InputIds {
+		STEP_COUNT_CV_INPUT,
 		TRIGGER_INPUT,
 		RANDOMIZE_TRIGGER_INPUT,
 		NUM_INPUTS
@@ -35,6 +38,18 @@ struct FM4Dice : Module {
 		ALG_PARALLEL_PAIR,
 		ALG_CASCADE_PLUS_FM_BRANCH,
 		NUM_ALGORITHMS
+	};
+
+	struct DecayTimeQuantity : ParamQuantity {
+		float getDisplayValue() override {
+			float p = clampfjw(getValue(), 0.f, 1.f);
+			return MIN_DECAY_TIME + (MAX_DECAY_TIME - MIN_DECAY_TIME) * p * p;
+		}
+
+		void setDisplayValue(float displayValue) override {
+			float n = clampfjw((displayValue - MIN_DECAY_TIME) / (MAX_DECAY_TIME - MIN_DECAY_TIME), 0.f, 1.f);
+			setValue(std::sqrt(n));
+		}
 	};
 
 	struct OperatorState {
@@ -73,14 +88,34 @@ struct FM4Dice : Module {
 	float dcBlockX1 = 0.f;
 	float dcBlockY1 = 0.f;
 
+	float getDecayTimeSeconds() {
+		float p = clampfjw(params[LENGTH_PARAM].getValue(), 0.f, 1.f);
+		return MIN_DECAY_TIME + (MAX_DECAY_TIME - MIN_DECAY_TIME) * p * p;
+	}
+
+	float decayTimeSecondsToParam(float seconds) const {
+		float n = clampfjw((seconds - MIN_DECAY_TIME) / (MAX_DECAY_TIME - MIN_DECAY_TIME), 0.f, 1.f);
+		return std::sqrt(n);
+	}
+
+	int getStepCount() {
+		float stepCount = params[STEP_COUNT_PARAM].getValue();
+		if (inputs[STEP_COUNT_CV_INPUT].isConnected()) {
+			float cv = clampfjw(inputs[STEP_COUNT_CV_INPUT].getVoltage(), 0.f, 10.f);
+			stepCount += rescale(cv, 0.f, 10.f, 0.f, (float)(MAX_STEPS - 1));
+		}
+		return clampijw((int)std::round(stepCount), 1, MAX_STEPS);
+	}
+
 	FM4Dice() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(LENGTH_PARAM, 0.005f, 5.0f, 0.4f, "Decay", " s");
-		configParam(STEP_COUNT_PARAM, 1.0f, 16.0f, 16.0f, "Step count");
+		configParam<DecayTimeQuantity>(LENGTH_PARAM, 0.f, 1.f, decayTimeSecondsToParam(0.4f), "Decay time", " s");
+		configParam(STEP_COUNT_PARAM, 1.0f, 16.0f, 16.0f, "Sequence length");
 		paramQuantities[STEP_COUNT_PARAM]->snapEnabled = true;
-		configButton(DICE_PARAM, "Randomize operators");
-		configInput(TRIGGER_INPUT, "Trigger");
-		configInput(RANDOMIZE_TRIGGER_INPUT, "Randomize trigger");
+		configButton(DICE_PARAM, "Randomize internal FM parameters");
+		configInput(STEP_COUNT_CV_INPUT, "Sequence length CV");
+		configInput(TRIGGER_INPUT, "Trigger and advance step");
+		configInput(RANDOMIZE_TRIGGER_INPUT, "Randomize internal FM parameters");
 		configOutput(AUDIO_OUTPUT, "Audio");
 		randomizeAllSteps();
 		applyStepState(0);
@@ -117,7 +152,7 @@ struct FM4Dice : Module {
 		json_object_set_new(rootJ, "currentStep", json_integer(currentStep));
 		json_object_set_new(rootJ, "algorithm", json_integer(algorithm));
 		json_object_set_new(rootJ, "baseFrequency", json_real(baseFrequency));
-		json_object_set_new(rootJ, "noteLength", json_real(params[LENGTH_PARAM].getValue()));
+		json_object_set_new(rootJ, "noteLength", json_real(getDecayTimeSeconds()));
 		json_object_set_new(rootJ, "noteActive", json_boolean(noteActive));
 		json_object_set_new(rootJ, "noteElapsed", json_real(noteElapsed));
 
@@ -171,7 +206,8 @@ struct FM4Dice : Module {
 		}
 		json_t* noteLengthJ = json_object_get(rootJ, "noteLength");
 		if (noteLengthJ) {
-			params[LENGTH_PARAM].setValue(clampfjw((float)json_real_value(noteLengthJ), 0.005f, 5.f));
+			float decaySeconds = clampfjw((float)json_real_value(noteLengthJ), MIN_DECAY_TIME, MAX_DECAY_TIME);
+			params[LENGTH_PARAM].setValue(decayTimeSecondsToParam(decaySeconds));
 		}
 		json_t* noteActiveJ = json_object_get(rootJ, "noteActive");
 		if (noteActiveJ) {
@@ -222,7 +258,7 @@ struct FM4Dice : Module {
 		}
 
 		if (currentStep >= 0) {
-			int stepCount = clampijw((int)std::round(params[STEP_COUNT_PARAM].getValue()), 1, MAX_STEPS);
+			int stepCount = getStepCount();
 			currentStep = currentStep % stepCount;
 		}
 
@@ -240,11 +276,20 @@ struct FM4Dice : Module {
 		return std::pow(random::uniform(), exponent);
 	}
 
+	float highSkewRandom(float exponent = 2.0f) {
+		return 1.f - std::pow(random::uniform(), exponent);
+	}
+
 	void randomizeStepState(StepState& step) {
 		step.algorithm = (int)std::floor(random::uniform() * (float)NUM_ALGORITHMS);
 		step.baseFrequency = rescale(lowSkewRandom(2.4f), 0.f, 1.f, 35.f, 880.f);
 		for (int op = 0; op < OP_COUNT; op++) {
-			step.ops[op].ratio = rescale(lowSkewRandom(2.1f), 0.f, 1.f, 0.125f, 12.f);
+			if (op < 2) {
+				step.ops[op].ratio = rescale(lowSkewRandom(2.2f), 0.f, 1.f, 0.125f, 12.f);
+			}
+			else {
+				step.ops[op].ratio = rescale(highSkewRandom(2.2f), 0.f, 1.f, 0.125f, 12.f);
+			}
 			step.ops[op].level = random::uniform();
 			step.ops[op].wave = (int)std::floor(random::uniform() * 4.f);
 			step.ops[op].ampAttack = 0.001f + random::uniform() * (0.2f - 0.001f);
@@ -376,7 +421,7 @@ struct FM4Dice : Module {
 			randomizeAllSteps();
 		}
 		if (triggerInputTrig.process(inputs[TRIGGER_INPUT].getVoltage())) {
-			int stepCount = clampijw((int)std::round(params[STEP_COUNT_PARAM].getValue()), 1, MAX_STEPS);
+			int stepCount = getStepCount();
 			currentStep = (currentStep + 1) % stepCount;
 			applyStepState(currentStep);
 			triggerNote();
@@ -385,7 +430,7 @@ struct FM4Dice : Module {
 		float output = 0.f;
 		if (noteActive) {
 			noteElapsed += args.sampleTime;
-			float noteLength = std::max(params[LENGTH_PARAM].getValue(), 0.005f);
+			float noteLength = getDecayTimeSeconds();
 			float noteEnv = clampfjw(1.f - (noteElapsed / noteLength), 0.f, 1.f);
 			if (noteEnv <= 0.f) {
 				noteActive = false;
@@ -437,6 +482,7 @@ struct FM4DiceWidget : ModuleWidget {
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 365)));
 
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 96.f), module, FM4Dice::STEP_COUNT_PARAM));
+		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 121.f), module, FM4Dice::STEP_COUNT_CV_INPUT));
 		addParam(createParamCentered<SmallButton>(Vec(22.f, 160.f), module, FM4Dice::DICE_PARAM));
 		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 185.f), module, FM4Dice::RANDOMIZE_TRIGGER_INPUT));
 		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 231.f), module, FM4Dice::LENGTH_PARAM));
