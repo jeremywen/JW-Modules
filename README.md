@@ -27,6 +27,8 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 * [D1v1de](#d1v1de)
 * [DivSeq](#divseq)
 * [FM16SEQ](#fm16seq)
+* [FM4DICE](#fm4dice)
+* [Fract](#fract)
 * [FullScope](#fullscope)
 * [Grains](#grains)
 * [GridSeq](#gridseq)
