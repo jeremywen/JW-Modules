@@ -50,7 +50,8 @@ struct FM4Dice : Module {
 
 	dsp::SchmittTrigger triggerInputTrig;
 	dsp::SchmittTrigger diceButtonTrig;
-	dsp::SchmittTrigger randomizeInputTrig;
+	bool randomizeInputPrimed = false;
+	bool randomizeInputWasHigh = false;
 	float phase[OP_COUNT] = {};
 	float feedbackState[OP_COUNT] = {};
 	OperatorState ops[OP_COUNT];
@@ -79,6 +80,8 @@ struct FM4Dice : Module {
 		}
 		noteElapsed = 0.f;
 		noteActive = false;
+		randomizeInputPrimed = false;
+		randomizeInputWasHigh = false;
 		outputSmooth = 0.f;
 		dcBlockX1 = 0.f;
 		dcBlockY1 = 0.f;
@@ -260,8 +263,19 @@ struct FM4Dice : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		if (diceButtonTrig.process(params[DICE_PARAM].getValue())
-				|| randomizeInputTrig.process(inputs[RANDOMIZE_TRIGGER_INPUT].getVoltage())) {
+		bool randomizeInputRising = false;
+		float randomizeInputVoltage = inputs[RANDOMIZE_TRIGGER_INPUT].getVoltage();
+		bool randomizeInputHigh = randomizeInputVoltage >= 1.f;
+		if (!randomizeInputPrimed) {
+			randomizeInputWasHigh = randomizeInputHigh;
+			randomizeInputPrimed = true;
+		}
+		else {
+			randomizeInputRising = (!randomizeInputWasHigh && randomizeInputHigh);
+			randomizeInputWasHigh = randomizeInputHigh;
+		}
+
+		if (diceButtonTrig.process(params[DICE_PARAM].getValue()) || randomizeInputRising) {
 			randomizeOperators();
 		}
 		if (triggerInputTrig.process(inputs[TRIGGER_INPUT].getVoltage())) {
@@ -290,7 +304,7 @@ struct FM4Dice : Module {
 					float fbInput = std::tanh(opSignal[op] * 1.8f);
 					feedbackState[op] = feedbackState[op] * 0.9f + fbInput * 0.1f;
 				}
-				output = clampfjw(mixOutput(opSignal) * 9.6f, -10.f, 10.f);
+				output = clampfjw(mixOutput(opSignal) * 14.0f, -10.f, 10.f);
 			}
 		}
 
@@ -300,7 +314,7 @@ struct FM4Dice : Module {
 		float dcOut = outputSmooth - dcBlockX1 + 0.995f * dcBlockY1;
 		dcBlockX1 = outputSmooth;
 		dcBlockY1 = dcOut;
-		output = clampfjw(dcOut, -10.f, 10.f);
+		output = clampfjw(dcOut * 3.0f, -10.f, 10.f);
 
 		outputs[AUDIO_OUTPUT].setVoltage(output);
 		outputs[AUDIO_OUTPUT].setChannels(1);
