@@ -91,6 +91,8 @@ struct FM4Dice : Module {
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "algorithm", json_integer(algorithm));
+		json_object_set_new(rootJ, "baseFrequency", json_real(baseFrequency));
+		json_object_set_new(rootJ, "noteLength", json_real(params[LENGTH_PARAM].getValue()));
 
 		json_t* opsJ = json_array();
 		for (int op = 0; op < OP_COUNT; op++) {
@@ -118,6 +120,14 @@ struct FM4Dice : Module {
 		json_t* algorithmJ = json_object_get(rootJ, "algorithm");
 		if (algorithmJ) {
 			algorithm = clampijw((int)json_integer_value(algorithmJ), 0, NUM_ALGORITHMS - 1);
+		}
+		json_t* baseFrequencyJ = json_object_get(rootJ, "baseFrequency");
+		if (baseFrequencyJ) {
+			baseFrequency = clampfjw((float)json_real_value(baseFrequencyJ), 20.f, 2000.f);
+		}
+		json_t* noteLengthJ = json_object_get(rootJ, "noteLength");
+		if (noteLengthJ) {
+			params[LENGTH_PARAM].setValue(clampfjw((float)json_real_value(noteLengthJ), 0.005f, 10.f));
 		}
 
 		json_t* opsJ = json_object_get(rootJ, "operators");
@@ -152,6 +162,8 @@ struct FM4Dice : Module {
 
 	void randomizeOperators() {
 		algorithm = (int)std::floor(random::uniform() * (float)NUM_ALGORITHMS);
+		baseFrequency = rescale(random::uniform(), 0.f, 1.f, 35.f, 880.f);
+		params[LENGTH_PARAM].setValue(rescale(random::uniform(), 0.f, 1.f, 0.03f, 10.f));
 		for (int op = 0; op < OP_COUNT; op++) {
 			ops[op].ratio = 0.125f + random::uniform() * (12.f - 0.125f);
 			ops[op].level = random::uniform();
