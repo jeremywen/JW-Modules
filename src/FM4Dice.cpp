@@ -285,7 +285,9 @@ struct FM4Dice : Module {
 		float output = 0.f;
 		if (noteActive) {
 			noteElapsed += args.sampleTime;
-			if (noteElapsed > params[LENGTH_PARAM].getValue()) {
+			float noteLength = std::max(params[LENGTH_PARAM].getValue(), 0.005f);
+			float noteEnv = clampfjw(1.f - (noteElapsed / noteLength), 0.f, 1.f);
+			if (noteEnv <= 0.f) {
 				noteActive = false;
 			}
 			else {
@@ -304,7 +306,7 @@ struct FM4Dice : Module {
 					float fbInput = std::tanh(opSignal[op] * 1.8f);
 					feedbackState[op] = feedbackState[op] * 0.9f + fbInput * 0.1f;
 				}
-				output = clampfjw(mixOutput(opSignal) * 14.0f, -10.f, 10.f);
+				output = clampfjw(mixOutput(opSignal) * noteEnv * 14.0f, -10.f, 10.f);
 			}
 		}
 
