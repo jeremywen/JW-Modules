@@ -58,4 +58,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);
 	p->addModel(modelFM16Seq);
+	p->addModel(modelFM4Dice);
 }

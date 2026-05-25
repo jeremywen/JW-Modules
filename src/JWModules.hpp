@@ -567,4 +567,5 @@ extern Model *modelTrigs;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelFM16Seq;
+extern Model *modelFM4Dice;
 

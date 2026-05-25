@@ -1,9 +1,10 @@
 # Change Log
 
-## v2.0.37 ~ 5-24-26
+## v2.0.38 ~ 5-25-26
 
   * New Module FM16SEQ: fm synth for every step, randomization options
   * New Module FRACT: delay for fractions of a clock tick
+  * New Module FM4DICE: random 4 operator fm sounds
   * Buffer: added stereo in/out, added chance to freeze
   * added scales to all quantizers - this should not break existing patches
   * Play mode knob tooltip is better now for all modules

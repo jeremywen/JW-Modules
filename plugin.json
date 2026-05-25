@@ -10,7 +10,7 @@
 	"sourceUrl": "https://github.com/jeremywen/JW-Modules",
 	"donateUrl": "https://www.paypal.me/jeremywen",
 	"changelogUrl": "https://github.com/jeremywen/JW-Modules/blob/master/CHANGELOG.md",
-	"version": "2.0.37",
+	"version": "2.0.38",
 	"modules": [
 		{
 			"slug": "0Cat",
@@ -400,6 +400,16 @@
 			"tags": [
 				"Sequencer",
 				"Oscillator"
+			]
+		},
+		{
+			"slug": "FM4Dice",
+			"name": "FM4Dice",
+			"manualUrl": "https://github.com/jeremywen/JW-Modules",
+			"tags": [
+				"Oscillator",
+				"Synth Voice",
+				"Random"
 			]
 		}
 	]
