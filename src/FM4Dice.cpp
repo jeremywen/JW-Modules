@@ -236,18 +236,22 @@ struct FM4Dice : Module {
 		}
 	}
 
+	float lowSkewRandom(float exponent = 2.0f) {
+		return std::pow(random::uniform(), exponent);
+	}
+
 	void randomizeStepState(StepState& step) {
 		step.algorithm = (int)std::floor(random::uniform() * (float)NUM_ALGORITHMS);
-		step.baseFrequency = rescale(random::uniform(), 0.f, 1.f, 35.f, 880.f);
+		step.baseFrequency = rescale(lowSkewRandom(2.4f), 0.f, 1.f, 35.f, 880.f);
 		for (int op = 0; op < OP_COUNT; op++) {
-			step.ops[op].ratio = 0.125f + random::uniform() * (12.f - 0.125f);
+			step.ops[op].ratio = rescale(lowSkewRandom(2.1f), 0.f, 1.f, 0.125f, 12.f);
 			step.ops[op].level = random::uniform();
 			step.ops[op].wave = (int)std::floor(random::uniform() * 4.f);
 			step.ops[op].ampAttack = 0.001f + random::uniform() * (0.2f - 0.001f);
 			step.ops[op].ampDecay = 0.03f + random::uniform() * (2.5f - 0.03f);
 			step.ops[op].pitchAttack = 0.001f + random::uniform() * (0.15f - 0.001f);
 			step.ops[op].pitchDecay = 0.02f + random::uniform() * (2.0f - 0.02f);
-			step.ops[op].pitchAmountOct = rescale(random::uniform(), 0.f, 1.f, -3.f, 3.f);
+			step.ops[op].pitchAmountOct = rescale(lowSkewRandom(1.8f), 0.f, 1.f, -3.f, 2.5f);
 			if (op == 0) {
 				step.ops[op].index = 0.f;
 				step.ops[op].feedback = random::uniform() * 0.2f;
