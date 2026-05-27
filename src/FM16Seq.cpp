@@ -178,6 +178,7 @@ struct FM16Seq : Module, QuantizeUtils {
 	int selectedStep = 0;
 	int sequenceLength = 16;
 	bool integerRatiosMode = false;
+	bool snapCvRatioInputsToIntegers = false;
 	bool gateHeld = false;
 	float baseFreq = 261.6256f;
 	float carrierPhase = 0.f;
@@ -700,6 +701,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		json_object_set_new(rootJ, "selectedStep", json_integer(selectedStep));
 		json_object_set_new(rootJ, "sequenceLength", json_integer(sequenceLength));
 		json_object_set_new(rootJ, "integerRatiosMode", json_boolean(integerRatiosMode));
+		json_object_set_new(rootJ, "snapCvRatioInputsToIntegers", json_boolean(snapCvRatioInputsToIntegers));
 		json_object_set_new(rootJ, "pitchQuantizeEnabled", json_boolean(pitchQuantizeEnabled));
 		json_object_set_new(rootJ, "pitchQuantizeRoot", json_integer(pitchQuantizeRoot));
 		json_object_set_new(rootJ, "pitchQuantizeScale", json_integer(pitchQuantizeScale));
@@ -740,6 +742,10 @@ struct FM16Seq : Module, QuantizeUtils {
 		json_t* integerRatiosModeJ = json_object_get(rootJ, "integerRatiosMode");
 		if (integerRatiosModeJ) {
 			integerRatiosMode = json_is_true(integerRatiosModeJ);
+		}
+		json_t* snapCvRatioInputsToIntegersJ = json_object_get(rootJ, "snapCvRatioInputsToIntegers");
+		if (snapCvRatioInputsToIntegersJ) {
+			snapCvRatioInputsToIntegers = json_is_true(snapCvRatioInputsToIntegersJ);
 		}
 		json_t* pitchQuantizeEnabledJ = json_object_get(rootJ, "pitchQuantizeEnabled");
 		if (pitchQuantizeEnabledJ) {
@@ -993,6 +999,10 @@ struct FM16Seq : Module, QuantizeUtils {
 			float modRatio = s.modRatio + modRatioCV;
 			carRatio = clampfjw(carRatio, 0.125f, 10.f);
 			modRatio = clampfjw(modRatio, 0.125f, 10.f);
+			if (snapCvRatioInputsToIntegers) {
+				carRatio = quantizeIntegerRatioModeValue(carRatio);
+				modRatio = quantizeIntegerRatioModeValue(modRatio);
+			}
 			float modFeedback = clampfjw(s.modFeedback + feedbackCV * 0.1f, 0.f, 1.f);
 
 			float fmIndex = s.fmIndex + fmIndexCV;
@@ -1065,6 +1075,18 @@ struct FM16SeqWidget : ModuleWidget {
 		}
 		void step() override {
 			rightText = CHECKMARK(module && module->pitchQuantizeEnabled);
+			MenuItem::step();
+		}
+	};
+
+	struct SnapCvRatioInputsToIntegersMenuItem : MenuItem {
+		FM16Seq* module;
+		void onAction(const event::Action& e) override {
+			if (!module) return;
+			module->snapCvRatioInputsToIntegers = !module->snapCvRatioInputsToIntegers;
+		}
+		void step() override {
+			rightText = CHECKMARK(module && module->snapCvRatioInputsToIntegers);
 			MenuItem::step();
 		}
 	};
@@ -1184,6 +1206,13 @@ struct FM16SeqWidget : ModuleWidget {
 		   item->text = "Copy current step to all steps";
 		   item->module = m;
 		   menu->addChild(item);
+
+		   menu->addChild(new MenuSeparator());
+
+		   SnapCvRatioInputsToIntegersMenuItem* snapCvRatioItem = new SnapCvRatioInputsToIntegersMenuItem();
+		   snapCvRatioItem->text = "Snap ratios CV to musical ratios";
+		   snapCvRatioItem->module = m;
+		   menu->addChild(snapCvRatioItem);
 
 		   menu->addChild(new MenuSeparator());
 
