@@ -37,6 +37,19 @@ struct Fract : Module {
 		writeIndex = 0;
 	}
 
+	struct FractionParamQuantity : ParamQuantity {
+		std::string getDisplayValueString() override {
+			int n = (int)std::round(getDisplayValue());
+			Fract* fract = dynamic_cast<Fract*>(module);
+			if (fract != NULL) {
+				float delayFraction = clampfjw((float)n / 16.f, 0.f, 1.f);
+				float fractionMs = fract->beatIntervalSec * delayFraction * 1000.f;
+				return string::f("%d/16 (%.1f ms)", n, fractionMs);
+			}
+			return string::f("%d/16", n);
+		}
+	};
+
 	struct MsOffsetKnob : SmallWhiteKnob {
 		std::string formatCurrentValue() override {
 			if (getParamQuantity() != NULL) {
@@ -49,7 +62,7 @@ struct Fract : Module {
 
 	Fract() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(FRACTION_PARAM, 0.f, 16.f, 8.f, "Delay fraction", " /16 beat");
+		configParam<FractionParamQuantity>(FRACTION_PARAM, 0.f, 16.f, 8.f, "Delay fraction", "");
 		paramQuantities[FRACTION_PARAM]->snapEnabled = true;
 		configParam(OFFSET_PARAM, -1000.f, 1000.f, 0.f, "Offset", " ms");
 		configInput(DELAY_INPUT, "Signal to delay");
