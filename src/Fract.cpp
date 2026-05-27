@@ -1,16 +1,20 @@
 #include "JWModules.hpp"
 
 struct Fract : Module {
+	static constexpr float MAX_DELAY_SECONDS = 10.f;
+	static constexpr int MAX_POLY_CHANNELS = 16;
+
 	enum ParamIds {
 		FRACTION_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
+		DELAY_INPUT,
 		CLOCK_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		TRIG_OUTPUT,
+		DELAYED_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -18,46 +22,43 @@ struct Fract : Module {
 	};
 
 	dsp::SchmittTrigger clockTrigger;
-	dsp::PulseGenerator gatePulse;
 
 	float clockElapsedSec = 0.f;
 	float beatIntervalSec = 0.5f;
 	bool hasSeenClock = false;
+	float sampleRate = 44100.f;
+	std::vector<std::vector<float>> delayBuffers;
+	int writeIndex = 0;
 
-	bool pendingTrig = false;
-	float pendingDelaySec = 0.f;
-
-	// Trigger pulse length in seconds.
-	float gatePulseLenSec = 0.005f;
+	void resizeDelayBuffer() {
+		int bufferSize = std::max(1, (int)std::ceil(sampleRate * MAX_DELAY_SECONDS) + 1);
+		delayBuffers.assign(MAX_POLY_CHANNELS, std::vector<float>(bufferSize, 0.f));
+		writeIndex = 0;
+	}
 
 	Fract() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(FRACTION_PARAM, 0.f, 16.f, 8.f, "Delay fraction", " /16 beat");
 		paramQuantities[FRACTION_PARAM]->snapEnabled = true;
+		configInput(DELAY_INPUT, "Signal to delay");
 		configInput(CLOCK_INPUT, "Clock");
-		configOutput(TRIG_OUTPUT, "Delayed Trigger");
+		configOutput(DELAYED_OUTPUT, "Delayed");
+		resizeDelayBuffer();
 	}
 
-	json_t* dataToJson() override {
-		json_t* rootJ = json_object();
-		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
-		return rootJ;
-	}
-
-	void dataFromJson(json_t* rootJ) override {
-		json_t* gatePulseLenSecJ = json_object_get(rootJ, "gatePulseLenSec");
-		if (gatePulseLenSecJ) {
-			gatePulseLenSec = (float)json_number_value(gatePulseLenSecJ);
-			gatePulseLenSec = clampfjw(gatePulseLenSec, 0.001f, 10.0f);
-		}
+	void onSampleRateChange() override {
+		sampleRate = APP->engine->getSampleRate();
+		resizeDelayBuffer();
 	}
 
 	void onReset() override {
 		clockElapsedSec = 0.f;
 		beatIntervalSec = 0.5f;
 		hasSeenClock = false;
-		pendingTrig = false;
-		pendingDelaySec = 0.f;
+		for (std::vector<float>& buffer : delayBuffers) {
+			std::fill(buffer.begin(), buffer.end(), 0.f);
+		}
+		writeIndex = 0;
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -69,32 +70,30 @@ struct Fract : Module {
 			}
 			hasSeenClock = true;
 			clockElapsedSec = 0.f;
-
-			float fraction16ths = std::round(params[FRACTION_PARAM].getValue());
-			float delayFraction = clampfjw(fraction16ths / 16.f, 0.f, 1.f);
-			float delaySec = beatIntervalSec * delayFraction;
-			if (delaySec <= 0.f) {
-				gatePulse.trigger(gatePulseLenSec);
-				pendingTrig = false;
-				pendingDelaySec = 0.f;
-			}
-			else {
-				pendingTrig = true;
-				pendingDelaySec = delaySec;
-			}
 		}
 
-		if (pendingTrig) {
-			pendingDelaySec -= args.sampleTime;
-			if (pendingDelaySec <= 0.f) {
-				gatePulse.trigger(gatePulseLenSec);
-				pendingTrig = false;
-				pendingDelaySec = 0.f;
-			}
+		float fraction16ths = std::round(params[FRACTION_PARAM].getValue());
+		float delayFraction = clampfjw(fraction16ths / 16.f, 0.f, 1.f);
+		float delaySec = clampfjw(beatIntervalSec * delayFraction, 0.f, MAX_DELAY_SECONDS);
+		int delaySamples = clampijw((int)std::round(delaySec * sampleRate), 0, (int)delayBuffers[0].size() - 1);
+
+		int channels = std::max(inputs[DELAY_INPUT].getChannels(), 1);
+		int readIndex = writeIndex - delaySamples;
+		if (readIndex < 0) {
+			readIndex += (int)delayBuffers[0].size();
+		}
+		for (int channel = 0; channel < channels; channel++) {
+			float input = inputs[DELAY_INPUT].getVoltage(channel);
+			delayBuffers[channel][writeIndex] = input;
+			float output = delayBuffers[channel][readIndex];
+			outputs[DELAYED_OUTPUT].setVoltage(output, channel);
+		}
+		writeIndex++;
+		if (writeIndex >= (int)delayBuffers[0].size()) {
+			writeIndex = 0;
 		}
 
-		bool pulse = gatePulse.process(args.sampleTime);
-		outputs[TRIG_OUTPUT].setVoltage(pulse ? 10.f : 0.f);
+		outputs[DELAYED_OUTPUT].setChannels(channels);
 	}
 };
 
@@ -123,16 +122,17 @@ struct FractWidget : ModuleWidget {
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 2)));
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 365)));
 
-		FractFractionKnob* fractionKnob = dynamic_cast<FractFractionKnob*>(createParam<FractFractionKnob>(Vec(17, 118), module, Fract::FRACTION_PARAM));
+		FractFractionKnob* fractionKnob = dynamic_cast<FractFractionKnob*>(createParam<FractFractionKnob>(Vec(17, 140), module, Fract::FRACTION_PARAM));
 		CenteredLabel* const fractionLabel = new CenteredLabel;
-		fractionLabel->box.pos = Vec(15, 80);
+		fractionLabel->box.pos = Vec(15, 90);
 		fractionLabel->text = "";
 		fractionKnob->connectLabel(fractionLabel, module);
 		addChild(fractionLabel);
 		addParam(fractionKnob);
 
-		addInput(createInput<PJ301MPort>(Vec(18, 215), module, Fract::CLOCK_INPUT));
-		addOutput(createOutput<PJ301MPort>(Vec(18, 290), module, Fract::TRIG_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(18, 75), module, Fract::CLOCK_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(18, 223), module, Fract::DELAY_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(18, 290), module, Fract::DELAYED_OUTPUT));
 	}
 };
 
