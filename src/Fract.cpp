@@ -6,6 +6,7 @@ struct Fract : Module {
 
 	enum ParamIds {
 		FRACTION_PARAM,
+		OFFSET_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -36,10 +37,21 @@ struct Fract : Module {
 		writeIndex = 0;
 	}
 
+	struct MsOffsetKnob : SmallWhiteKnob {
+		std::string formatCurrentValue() override {
+			if (getParamQuantity() != NULL) {
+				int ms = (int)std::round(getParamQuantity()->getDisplayValue());
+				return string::f("%d ms", ms);
+			}
+			return "";
+		}
+	};
+
 	Fract() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(FRACTION_PARAM, 0.f, 16.f, 8.f, "Delay fraction", " /16 beat");
 		paramQuantities[FRACTION_PARAM]->snapEnabled = true;
+		configParam(OFFSET_PARAM, -1000.f, 1000.f, 0.f, "Offset", " ms");
 		configInput(DELAY_INPUT, "Signal to delay");
 		configInput(CLOCK_INPUT, "Clock");
 		configOutput(DELAYED_OUTPUT, "Delayed");
@@ -74,7 +86,9 @@ struct Fract : Module {
 
 		float fraction16ths = std::round(params[FRACTION_PARAM].getValue());
 		float delayFraction = clampfjw(fraction16ths / 16.f, 0.f, 1.f);
-		float delaySec = clampfjw(beatIntervalSec * delayFraction, 0.f, MAX_DELAY_SECONDS);
+		float fractionDelaySec = clampfjw(beatIntervalSec * delayFraction, 0.f, MAX_DELAY_SECONDS);
+		float offsetSec = params[OFFSET_PARAM].getValue() * 0.001f;
+		float delaySec = clampfjw(fractionDelaySec + offsetSec, 0.f, MAX_DELAY_SECONDS);
 		int delaySamples = clampijw((int)std::round(delaySec * sampleRate), 0, (int)delayBuffers[0].size() - 1);
 
 		int channels = std::max(inputs[DELAY_INPUT].getChannels(), 1);
@@ -122,16 +136,24 @@ struct FractWidget : ModuleWidget {
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 2)));
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 365)));
 
-		FractFractionKnob* fractionKnob = dynamic_cast<FractFractionKnob*>(createParam<FractFractionKnob>(Vec(17, 140), module, Fract::FRACTION_PARAM));
+		FractFractionKnob* fractionKnob = dynamic_cast<FractFractionKnob*>(createParam<FractFractionKnob>(Vec(17, 105), module, Fract::FRACTION_PARAM));
 		CenteredLabel* const fractionLabel = new CenteredLabel;
-		fractionLabel->box.pos = Vec(15, 90);
+		fractionLabel->box.pos = Vec(15, 72);
 		fractionLabel->text = "";
 		fractionKnob->connectLabel(fractionLabel, module);
 		addChild(fractionLabel);
 		addParam(fractionKnob);
 
-		addInput(createInput<PJ301MPort>(Vec(18, 75), module, Fract::CLOCK_INPUT));
-		addInput(createInput<PJ301MPort>(Vec(18, 223), module, Fract::DELAY_INPUT));
+		Fract::MsOffsetKnob* offsetKnob = dynamic_cast<Fract::MsOffsetKnob*>(createParam<Fract::MsOffsetKnob>(Vec(17, 173), module, Fract::OFFSET_PARAM));
+		CenteredLabel* const offsetLabel = new CenteredLabel;
+		offsetLabel->box.pos = Vec(15, 105);
+		offsetLabel->text = "";
+		offsetKnob->connectLabel(offsetLabel, module);
+		addChild(offsetLabel);
+		addParam(offsetKnob);
+
+		addInput(createInput<PJ301MPort>(Vec(18, 55), module, Fract::CLOCK_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(18, 245), module, Fract::DELAY_INPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(18, 290), module, Fract::DELAYED_OUTPUT));
 	}
 };
