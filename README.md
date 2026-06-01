@@ -6,7 +6,7 @@
 
 Modules for [VCV Rack](https://vcvrack.com/) by [Jeremy Wentworth](https://linktr.ee/jeremyw)
 
-Also [available for the 4ms metamodule](https://metamodule.info/downloads)!
+Also [available for the 4ms metamodule](https://metamodule.info/downloads)!  [4ms releases](https://github.com/jeremywen/JWModulesMeta/releases)
 
 Add JW-Modules through [the vcv library](https://library.vcvrack.com/?query=&brand=JW-Modules&tag=&license=).
 
