@@ -1,6 +1,7 @@
 #pragma once
 #include "rack.hpp"
 #include "QuantizeUtils.cpp"
+#include <cstdlib>
 #include <functional>
 #include <algorithm>
 #define RIGHT_ARROW "▸"
@@ -308,7 +309,11 @@ struct GatePulseMsQuantity : Quantity {
 		return std::to_string(ms);
 	}
 	void setDisplayValueString(std::string s) override {
-		try { int ms = std::stoi(s); setValue(clampfjw(ms / 1000.f, getMinValue(), getMaxValue())); } catch (...) {}
+		char *end = nullptr;
+		long ms = std::strtol(s.c_str(), &end, 10);
+		if (end != s.c_str() && *end == '\0') {
+			setValue(clampfjw((float) ms / 1000.f, getMinValue(), getMaxValue()));
+		}
 	}
 };
 

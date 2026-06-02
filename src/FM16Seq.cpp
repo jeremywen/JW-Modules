@@ -71,6 +71,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		   MODE_CV_INPUT,
 		   MANUAL_STEP_GATE_INPUT,
 		   RANDOMIZE_ALL_TRIGGER_INPUT,
+		   SEED_INPUT,
 		   NUM_INPUTS
 	   };
 	enum OutputIds {
@@ -347,6 +348,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		configInput(FM_INDEX_INPUT, "FM index CV (16 poly channels)");
 		configInput(FEEDBACK_INPUT, "Mod feedback CV (10V full scale, 16 poly channels)");
 		configInput(GATE_LENGTH_INPUT, "Gate length CV (1V = 1000 ms, 16 poly channels)");
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		configInput(MOD_RATIO_INPUT, "Mod ratio CV (16 poly channels)");
 		configInput(CAR_RATIO_INPUT, "Carrier ratio CV (16 poly channels)");
 		configInput(MODE_CV_INPUT, "Play mode CV (1V per mode)");
@@ -795,6 +797,14 @@ struct FM16Seq : Module, QuantizeUtils {
 	}
 
 	void process(const ProcessArgs& args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
+		
 		bool stepChanged = false;
 
 		// Check for step selection changes.
@@ -1336,6 +1346,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 255), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
 		addParam(createParamCentered<SmallButton>(Vec(295, 253), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(295, 283), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(295, 140), module, FM16Seq::SEED_INPUT));
 	}
 };
 

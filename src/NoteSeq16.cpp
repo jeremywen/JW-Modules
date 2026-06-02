@@ -45,6 +45,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		SHIFT_INPUT,
 		LENGTH_INPUT,
 		START_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -124,7 +125,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		configInput(START_INPUT, "Start");
 		configInput(FLIP_INPUT, "Flip");
 		configInput(SHIFT_INPUT, "Shift");
-
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		configOutput(POLY_VOCT_OUTPUT, "Poly V/Oct");
 		configOutput(POLY_GATE_OUTPUT, "Poly Gate");
 		configOutput(EOC_OUTPUT, "End of Cycle");
@@ -279,6 +280,14 @@ struct NoteSeq16 : Module,QuantizeUtils {
 	}
 
 	void process(const ProcessArgs &args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
+		
 		// Update follow flag from panel switch each frame
 		followPlayhead = params[FOLLOW_PLAYHEAD_PARAM].getValue() > 0.5f;
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { clearCells(); }
@@ -1071,12 +1080,13 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addParam(playModeKnob);
 
 	//row 3
-	addParam(createParam<TinyButton>(Vec(8, 273), module, NoteSeq16::CLEAR_BTN_PARAM));
-	addInput(createInput<TinyPJ301MPort>(Vec(5, 304), module, NoteSeq16::RND_TRIG_INPUT));
-	addParam(createParam<SmallButton>(Vec(25, 299), module, NoteSeq16::RND_TRIG_BTN_PARAM));
-	addParam(createParam<SmallWhiteKnob>(Vec(51, 299), module, NoteSeq16::RND_AMT_KNOB_PARAM));
+	addParam(createParam<TinyButton>(Vec(25, 273), module, NoteSeq16::CLEAR_BTN_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 291), module, NoteSeq16::RND_TRIG_INPUT));
+	addParam(createParam<TinyButton>(Vec(45, 291), module, NoteSeq16::RND_TRIG_BTN_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(65, 291), module, NoteSeq16::RND_AMT_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 310), module, NoteSeq16::SEED_INPUT));
 
-	float bottomInpY = 338;
+	float bottomInpY = 342;
 	addInput(createInput<TinyPJ301MPort>(Vec(37, bottomInpY), module, NoteSeq16::ROTATE_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(68, bottomInpY), module, NoteSeq16::FLIP_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(96, bottomInpY), module, NoteSeq16::SHIFT_INPUT));
@@ -1087,7 +1097,7 @@ NoteSeq16Widget::NoteSeq16Widget(NoteSeq16 *module) {
 	addOutput(createOutput<Blue_TinyPJ301MPort>(Vec(171, bottomInpY), module, NoteSeq16::POLY_GATE_OUTPUT));
 	addParam(createParam<JwHorizontalSwitch>(Vec(80, 361), module, NoteSeq16::INCLUDE_INACTIVE_PARAM));
 	// Follow Playhead switch
-	addParam(createParam<JwHorizontalSwitch>(Vec(63, 281), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
+	addParam(createParam<JwHorizontalSwitch>(Vec(63, 273), module, NoteSeq16::FOLLOW_PLAYHEAD_PARAM));
 	addOutput(createOutput<TinyPJ301MPort>(Vec(139, 361), module, NoteSeq16::EOC_OUTPUT));
 
 	///// NOTE AND SCALE CONTROLS /////

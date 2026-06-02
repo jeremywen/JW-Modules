@@ -1,5 +1,18 @@
 # Change Log
 
+## v2.0.39 ~ 6-2-26
+
+  * FM4Dice: added random seed input
+  * FM16Seq: added random seed input
+  * GridSeq: added random seed input
+  * NoteSeq: added random seed input
+  * NoteSeq16: added random seed input
+  * NoteSeqFu: added random seed input
+  * RandomSound: fixed Rnd&Trig input, added random seed input
+  * Trigs: added random seed input
+  * XYPad: added random seed input
+
+
 ## v2.0.38 ~ 5-25-26
 
   * New Module FM16SEQ: fm synth for every step, randomization options

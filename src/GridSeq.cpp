@@ -37,6 +37,7 @@ struct GridSeq : Module,QuantizeUtils {
 		SCALE_INPUT,
 		OCTAVE_INPUT,
 		RND_PROBS_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -136,7 +137,7 @@ struct GridSeq : Module,QuantizeUtils {
 		configInput(RND_GATES_INPUT, "Random Gates");
 		configInput(RND_PROBS_INPUT, "Random Probabilities");
 		configInput(RND_NOTES_INPUT, "Random Notes");
-		
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		configOutput(GATES_OUTPUT, "Gate");
 		configOutput(GATES_YX_OUTPUT, "Gate of YX");
 		configOutput(CELL_OUTPUT, "V/Oct");
@@ -339,6 +340,13 @@ struct GridSeq : Module,QuantizeUtils {
 // STEP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void GridSeq::process(const ProcessArgs &args) {
+	if(inputs[SEED_INPUT].isConnected()) {
+		float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+		if (f != 0.f) {
+			auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+			random::local().seed(seed,seed/7);
+		}
+	}
 	const float lightLambda = 0.10;
 	// Run
 	if (runningTrigger.process(params[RUN_PARAM].getValue())) {
@@ -515,6 +523,8 @@ GridSeqWidget::GridSeqWidget(GridSeq *module) {
 	addInput(createInput<PJ301MPort>(Vec(172, 52), module, GridSeq::UP_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(212, 52), module, GridSeq::RND_DIR_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(253, 52), module, GridSeq::REPEAT_INPUT));
+
+	addInput(createInput<TinyPJ301MPort>(Vec(218, 9), module, GridSeq::SEED_INPUT));
 
 	///// NOTE AND SCALE CONTROLS /////
 	float paramY = 313;

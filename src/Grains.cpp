@@ -736,6 +736,7 @@ void Grains::process(const ProcessArgs &args) {
 	lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
 };
 
+#if !defined(METAMODULE_BUILTIN)
 // Minimal WAV loader: supports PCM16 and Float32, mono/stereo (mixed to mono)
 static uint32_t readU32(std::ifstream &in) {
 	uint8_t b[4];
@@ -1181,6 +1182,45 @@ bool Grains::loadRandomSiblingSample() {
 	}
 	return loadSampleFromPath(wavs[idx]);
 }
+#else
+static uint32_t readU32(std::ifstream &) { return 0; }
+static uint16_t readU16(std::ifstream &) { return 0; }
+static void writeU32(std::ofstream &, uint32_t) {}
+static void writeU16(std::ofstream &, uint16_t) {}
+
+bool Grains::loadSampleFromPath(const std::string &) {
+	statusMsg = "Builtin build: file loading disabled";
+	return false;
+}
+
+bool Grains::removeSilence(float) {
+	statusMsg = "Builtin build: edit disabled";
+	return false;
+}
+
+bool Grains::normalizeSample() {
+	statusMsg = "Builtin build: edit disabled";
+	return false;
+}
+
+bool Grains::saveBufferToWav(const std::string &) {
+	statusMsg = "Builtin build: file saving disabled";
+	return false;
+}
+
+void Grains::onAdd(const AddEvent& e) {
+	Module::onAdd(e);
+}
+
+void Grains::onSave(const SaveEvent& e) {
+	Module::onSave(e);
+}
+
+bool Grains::loadRandomSiblingSample() {
+	statusMsg = "Builtin build: random load disabled";
+	return false;
+}
+#endif
 
 // Waveform display
 struct GrainsWaveformDisplay : TransparentWidget {
@@ -1560,7 +1600,13 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		std::string getLabel() override { return "Silence Threshold"; }
 		std::string getUnit() override { return ""; }
 		std::string getDisplayValueString() override { char buf[32]; snprintf(buf, sizeof(buf), "%.2f", getDisplayValue()); return std::string(buf); }
-		void setDisplayValueString(std::string s) override { try { float v = std::stof(s); setValue(v); } catch (...) {} }
+		void setDisplayValueString(std::string s) override {
+			char *end = nullptr;
+			float value = std::strtof(s.c_str(), &end);
+			if (end != s.c_str() && *end == '\0') {
+				setValue(value);
+			}
+		}
 	};
 	struct SilenceThresholdSlider : ui::Slider {
 		SilenceThresholdSlider() { quantity = new SilenceThresholdQuantity; }
@@ -1605,6 +1651,7 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	menu->addChild(norm);
 
 	// Removed: Suppress Silence (preserve length/pitch)
+#if !defined(METAMODULE_BUILTIN)
 	struct LoadWavItem : MenuItem {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
@@ -1646,6 +1693,7 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	save->text = "Save Buffer as WAV...";
 	save->grains = grains;
 	menu->addChild(save);
+	#endif
 }
 
 void GrainsWidget::step() {

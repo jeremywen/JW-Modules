@@ -20,6 +20,9 @@ struct XYPad : Module {
 	enum InputIds {
 		PLAY_GATE_INPUT,
 		PLAY_SPEED_INPUT,
+		SEED_INPUT,
+		RND_SHAPES_INPUT,
+		RND_VARIATION_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -80,6 +83,8 @@ struct XYPad : Module {
 	dsp::SchmittTrigger autoBtnTrigger;
 	dsp::SchmittTrigger rndShapesTrigger;
 	dsp::SchmittTrigger rndVariationTrigger;
+	dsp::SchmittTrigger rndShapesInputTrigger;
+	dsp::SchmittTrigger rndVariationInputTrigger;
 	std::vector<Vec> points;
 	long curPointIdx = 0;
 
@@ -96,6 +101,9 @@ struct XYPad : Module {
 		configParam(SPEED_MULT_PARAM, 1.0, 100.0, 1.0, "Speed Multiplier");
 		configInput(PLAY_GATE_INPUT, "Gate");
 		configInput(PLAY_SPEED_INPUT, "Speed");
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
+		configInput(RND_SHAPES_INPUT, "Random Shapes");
+		configInput(RND_VARIATION_INPUT, "Random Variation");
 		configOutput(X_OUTPUT, "X");
 		configOutput(Y_OUTPUT, "Y");
 		configOutput(X_INV_OUTPUT, "X Inverted");
@@ -416,12 +424,21 @@ struct XYPad : Module {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void XYPad::process(const ProcessArgs &args) {
+	if(inputs[SEED_INPUT].isConnected()) {
+		float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+		if (f != 0.f) {
+			auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+			random::local().seed(seed,seed/7);
+		}
+	}
 	// Process-time triggers for randomization buttons
-	if (rndShapesTrigger.process(params[RND_SHAPES_PARAM].getValue())) {
+	bool rndShapesInput = rndShapesInputTrigger.process(inputs[RND_SHAPES_INPUT].getVoltage());
+	bool rndVariationInput = rndVariationInputTrigger.process(inputs[RND_VARIATION_INPUT].getVoltage());
+	if (rndShapesTrigger.process(params[RND_SHAPES_PARAM].getValue()) || rndShapesInput) {
 		randomizeShape();
 		params[RND_SHAPES_PARAM].setValue(0.0f);
 	}
-	if (rndVariationTrigger.process(params[RND_VARIATION_PARAM].getValue())) {
+	if (rndVariationTrigger.process(params[RND_VARIATION_PARAM].getValue()) || rndVariationInput) {
 		makeShape(lastRandomShape);
 		params[RND_VARIATION_PARAM].setValue(0.0f);
 	}
@@ -799,10 +816,8 @@ struct XYPadWidget : ModuleWidget {
 	void appendContextMenu(Menu *menu) override;
 };
 
-// Random shape/variation buttons converted to process-time triggers; using plain TinyButton in widget.
-
 XYPadWidget::XYPadWidget(XYPad *module) {
-		setModule(module);
+	setModule(module);
 	box.size = Vec(RACK_GRID_WIDTH*24, RACK_GRID_HEIGHT);
 	
 	setPanel(createPanel(
@@ -825,12 +840,17 @@ XYPadWidget::XYPadWidget(XYPad *module) {
 
 	addChild(createWidget<Screw_J>(Vec(40, 20)));
 	addChild(createWidget<Screw_W>(Vec(55, 20)));
-	addParam(createParam<TinyButton>(Vec(90, 20), module, XYPad::RND_SHAPES_PARAM));
-	addParam(createParam<TinyButton>(Vec(105, 20), module, XYPad::RND_VARIATION_PARAM));
-	addParam(createParam<JwTinyKnob>(Vec(140, 20), module, XYPad::SCALE_X_PARAM));
-	addParam(createParam<JwTinyKnob>(Vec(200, 20), module, XYPad::SCALE_Y_PARAM));
-	addParam(createParam<JwTinyKnob>(Vec(260, 20), module, XYPad::OFFSET_X_VOLTS_PARAM));
-	addParam(createParam<JwTinyKnob>(Vec(320, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(80, 20), module, XYPad::RND_SHAPES_INPUT));
+	addParam(createParam<TinyButton>(Vec(100, 20), module, XYPad::RND_SHAPES_PARAM));
+	addParam(createParam<TinyButton>(Vec(120, 20), module, XYPad::RND_VARIATION_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(140, 20), module, XYPad::RND_VARIATION_INPUT));
+	
+	addInput(createInput<TinyPJ301MPort>(Vec(175, 20), module, XYPad::SEED_INPUT));
+
+	addParam(createParam<JwTinyKnob>(Vec(220, 20), module, XYPad::SCALE_X_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(255, 20), module, XYPad::SCALE_Y_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(290, 20), module, XYPad::OFFSET_X_VOLTS_PARAM));
+	addParam(createParam<JwTinyKnob>(Vec(325, 20), module, XYPad::OFFSET_Y_VOLTS_PARAM));
 
 	////////////////////////////////////////////////////////////
 

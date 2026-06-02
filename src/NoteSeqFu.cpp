@@ -81,6 +81,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		SHIFT_CHAOS_INPUT,
 		HIGHEST_NOTE_INPUT,
 		LOWEST_NOTE_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -192,7 +193,7 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		configInput(LENGTH_INPUT, "Length");
 		configInput(SHIFT_AMT_INPUT, "Shift Amount");
 		configInput(SHIFT_CHAOS_INPUT, "Shift Chaos");
-
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
 		for(int i=0;i<4;i++){
 			configOutput(POLY_VOCT_OUTPUT + i, "Poly V/Oct " + std::string(colors[i]));
@@ -285,6 +286,13 @@ struct NoteSeqFu : Module,QuantizeUtils {
 	}
 
 	void process(const ProcessArgs &args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue() + inputs[CLEAR_INPUT].getVoltage())) { clearCells(); }
 		if (rndTrig.process(params[RND_TRIG_BTN_PARAM].getValue() + inputs[RND_TRIG_INPUT].getVoltage())) { randomizeCells(); }
 
@@ -1075,6 +1083,7 @@ NoteSeqFuWidget::NoteSeqFuWidget(NoteSeqFu *module) {
 	addParam(rndModeKnob);
 
 	//row 3
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 168), module, NoteSeqFu::SEED_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(60, 150), module, NoteSeqFu::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeqFu::RND_TRIG_BTN_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeqFu::RND_AMT_INPUT));

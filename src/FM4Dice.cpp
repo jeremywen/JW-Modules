@@ -15,6 +15,7 @@ struct FM4Dice : Module {
 		STEP_COUNT_CV_INPUT,
 		TRIGGER_INPUT,
 		RANDOMIZE_TRIGGER_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -116,6 +117,7 @@ struct FM4Dice : Module {
 		configInput(STEP_COUNT_CV_INPUT, "Sequence length CV");
 		configInput(TRIGGER_INPUT, "Trigger and advance step");
 		configInput(RANDOMIZE_TRIGGER_INPUT, "Randomize internal FM parameters");
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		configOutput(AUDIO_OUTPUT, "Audio");
 		randomizeAllSteps();
 		applyStepState(0);
@@ -405,6 +407,13 @@ struct FM4Dice : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
 		bool randomizeInputRising = false;
 		float randomizeInputVoltage = inputs[RANDOMIZE_TRIGGER_INPUT].getVoltage();
 		bool randomizeInputHigh = randomizeInputVoltage >= 1.f;
@@ -481,11 +490,12 @@ struct FM4DiceWidget : ModuleWidget {
 		addChild(createWidget<Screw_J>(Vec(16, 2)));
 		addChild(createWidget<Screw_W>(Vec(box.size.x - 29, 365)));
 
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 96.f), module, FM4Dice::STEP_COUNT_PARAM));
-		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 121.f), module, FM4Dice::STEP_COUNT_CV_INPUT));
-		addParam(createParamCentered<SmallButton>(Vec(22.f, 160.f), module, FM4Dice::DICE_PARAM));
-		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 185.f), module, FM4Dice::RANDOMIZE_TRIGGER_INPUT));
-		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 231.f), module, FM4Dice::LENGTH_PARAM));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 86.f), module, FM4Dice::STEP_COUNT_PARAM));
+		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 111.f), module, FM4Dice::STEP_COUNT_CV_INPUT));
+		addParam(createParamCentered<SmallButton>(Vec(22.f, 150.f), module, FM4Dice::DICE_PARAM));
+		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 172.f), module, FM4Dice::RANDOMIZE_TRIGGER_INPUT));
+		addInput(createInputCentered<TinyPJ301MPort>(Vec(22.f, 205.f), module, FM4Dice::SEED_INPUT));
+		addParam(createParamCentered<SmallWhiteKnob>(Vec(22.f, 245.f), module, FM4Dice::LENGTH_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(22.f, 290.f), module, FM4Dice::TRIGGER_INPUT));
 		addOutput(createOutputCentered<PJ301MPort>(Vec(22.f, 335.f), module, FM4Dice::AUDIO_OUTPUT));
 	}

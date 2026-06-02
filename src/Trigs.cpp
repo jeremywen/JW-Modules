@@ -40,6 +40,7 @@ struct Trigs : Module {
 		LENGTH_INPUT,
 		START_INPUT,
 		PLAY_MODE_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -105,6 +106,7 @@ struct Trigs : Module {
 		configInput(LENGTH_INPUT, "Length");
 		configInput(START_INPUT, "Start");
 		configInput(PLAY_MODE_INPUT, "Play Mode");
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 
 		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
 		for(int i=0; i<4; i++){
@@ -189,6 +191,13 @@ struct Trigs : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
 		if (clearTrig.process(params[CLEAR_BTN_PARAM].getValue())) { 
 			for (int i = 0; i < 4; i++) {
 				clearCells(i);
@@ -638,6 +647,7 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 330), module, Trigs::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(25, 327), module, Trigs::RND_TRIG_BTN_PARAM));
 	addParam(createParam<SmallWhiteKnob>(Vec(51, 327), module, Trigs::RND_AMT_KNOB_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(65, 360), module, Trigs::SEED_INPUT));
 
 	addOutput(createOutput<Orange_TinyPJ301MPort>(Vec(95, 285), module, Trigs::GATE_OUTPUT));
 	addOutput(createOutput<Yellow_TinyPJ301MPort>(Vec(120, 285), module, Trigs::GATE_OUTPUT+1));

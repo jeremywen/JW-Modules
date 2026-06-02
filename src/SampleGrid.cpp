@@ -3,11 +3,11 @@
 #include <string>
 #include <fstream>
 #include <cstdint>
+#include <cstdlib>
 #include <algorithm>
 #include <unordered_map>
 #include <cmath>
 #include <cstring>
-#include <mutex>
 #include "osdialog.h"
 #include "system.hpp"
 #include <dirent.h>
@@ -15,6 +15,16 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+struct PendingRandomSamplesLock {
+	rack::SharedMutex &mutex;
+	explicit PendingRandomSamplesLock(rack::SharedMutex &m) : mutex(m) {
+		mutex.lock();
+	}
+	~PendingRandomSamplesLock() {
+		mutex.unlock();
+	}
+};
 
 struct SampleGrid : Module {
 	enum ParamIds {
@@ -154,7 +164,7 @@ struct SampleGrid : Module {
 	bool reqSplitSampleInteractive = false;
 	bool reqRandomSamplesInteractive = false;
 	bool reqRandomSamplesFromDir = false;
-	std::mutex pendingRandomSamplesMutex;
+	rack::SharedMutex pendingRandomSamplesMutex;
 	bool pendingRandomSamplesReady = false;
 	bool pendingRandomCellValid[16] = {false};
 	std::vector<float> pendingRandomCellSamples[16];
@@ -166,6 +176,79 @@ struct SampleGrid : Module {
 	bool reqLoadCellFromPath[16] = {false};
 	std::string pendingCellPath[16];
 
+	// Built-in MetaModule builds cannot use desktop file I/O or dialogs.
+#if defined(METAMODULE_BUILTIN)
+	static bool writeMonoWav(const std::string &, const std::vector<float> &, int) { return false; }
+
+	void onAdd(const AddEvent& e) override {
+		Module::onAdd(e);
+		loadedFromPatchStorage = false;
+	}
+
+	void onSave(const SaveEvent& e) override {
+		Module::onSave(e);
+	}
+
+	bool collectWavsInDir(const std::string &, std::vector<std::string> &) {
+		return false;
+	}
+
+	bool loadRandomSamplesFromDir(const std::string &) {
+		return false;
+	}
+
+	bool prepareRandomSamplesFromDir(const std::string &) {
+		return false;
+	}
+
+	void setSampleDirHandler(char *path) {
+		if (path) free(path);
+	}
+
+	void prepareRandomSamplesFromDirHandler(char *path) {
+		setSampleDirHandler(path);
+	}
+
+	void loadRandomSamplesInteractive(bool) {
+	}
+
+	void pickRandomWavPathHandler(int, char *path) {
+		if (path) free(path);
+	}
+
+	void pickRandomWavPath(int) {
+	}
+
+	static bool loadWavMonoToBuffer(const std::string &, std::vector<float> &monoOut, int &sRateOut) {
+		monoOut.clear();
+		sRateOut = 0;
+		return false;
+	}
+
+	bool loadSplitSampleAcrossCells(const std::string &) {
+		return false;
+	}
+
+	void loadSplitSampleInteractiveHandler(char *path) {
+		if (path) free(path);
+	}
+
+	void loadSplitSampleInteractive() {
+	}
+
+	void applyPendingRandomSamples() {
+	}
+
+	void shuffleSamples() {
+	}
+
+	void randomReverseSamples() {
+	}
+
+	bool loadCellSample(int, const std::string &) {
+		return false;
+	}
+#else
 	// Write a mono PCM16 WAV file
 	static bool writeMonoWav(const std::string &path, const std::vector<float> &mono, int sRate) {
 		if (mono.empty()) return false;
@@ -330,7 +413,7 @@ struct SampleGrid : Module {
 
 		if (!anyLoaded) return false;
 
-		std::lock_guard<std::mutex> lock(pendingRandomSamplesMutex);
+		PendingRandomSamplesLock lock(pendingRandomSamplesMutex);
 		for (int i = 0; i < 16; ++i) {
 			pendingRandomCellValid[i] = stagedValid[i];
 			if (stagedValid[i]) {
@@ -346,7 +429,7 @@ struct SampleGrid : Module {
 	// Audio-thread apply: only move preloaded buffers, no disk I/O.
 	void applyPendingRandomSamples() {
 		if (!pendingRandomSamplesReady) return;
-		std::lock_guard<std::mutex> lock(pendingRandomSamplesMutex);
+		PendingRandomSamplesLock lock(pendingRandomSamplesMutex);
 		if (!pendingRandomSamplesReady) return;
 
 		for (int i = 0; i < 16; ++i) {
@@ -730,6 +813,7 @@ struct SampleGrid : Module {
 		cellReversed[idx] = false;
 		return true;
 	}
+#endif
 
 	SampleGrid() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -1450,10 +1534,11 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						Vec m = e.pos;
 						// Dice click: random sample for this cell
 						if (m.x >= diceRx && m.x <= diceRx + d && m.y >= diceRy && m.y <= diceRy + d) {
-							// If a directory is set, request a random load on audio thread.
-							// Otherwise, open a file dialog on UI and queue the chosen path.
 							if (module->sampleDir.empty()) {
-#ifdef USING_CARDINAL_NOT_RACK
+#if defined(METAMODULE_BUILTIN)
+								e.consume(this);
+								return;
+#elif defined(USING_CARDINAL_NOT_RACK)
 								async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
 									randomLoadHandler(module, cell, path);
 								});
@@ -1477,7 +1562,10 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						}
 						// Folder click: replace this cell's sample via file dialog
 						if (m.x >= folderRx && m.x <= folderRx + d && m.y >= folderRy && m.y <= folderRy + d) {
-#ifdef USING_CARDINAL_NOT_RACK
+#if defined(METAMODULE_BUILTIN)
+							e.consume(this);
+							return;
+#elif defined(USING_CARDINAL_NOT_RACK)
 							async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
 								replaceSampleHandler(module, cell, path);
 							});
@@ -1501,7 +1589,10 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							lastX = x;
 						}
 						else {
-#ifdef USING_CARDINAL_NOT_RACK
+#if defined(METAMODULE_BUILTIN)
+							e.consume(this);
+							return;
+#elif defined(USING_CARDINAL_NOT_RACK)
 							async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
 								replaceSampleHandler(module, cell, path);
 							});
@@ -1521,7 +1612,10 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 					}
 					// Right-click anywhere on waveform opens file dialog to replace the cell sample
 					else if (e.button == GLFW_MOUSE_BUTTON_RIGHT && e.action == GLFW_PRESS) {
-#ifdef USING_CARDINAL_NOT_RACK
+#if defined(METAMODULE_BUILTIN)
+						e.consume(this);
+						return;
+#elif defined(USING_CARDINAL_NOT_RACK)
 						async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
 							replaceSampleHandler(module, cell, path);
 						});
@@ -1842,7 +1936,11 @@ struct FadeSecondsQuantity : Quantity {
 		return std::string(buf);
 	}
 	void setDisplayValueString(std::string s) override {
-		try { float v = std::stof(s); setDisplayValue(v); } catch (...) {}
+		char *end = nullptr;
+		float v = std::strtof(s.c_str(), &end);
+		if (end != s.c_str() && *end == '\0') {
+			setDisplayValue(v);
+		}
 	}
 };
 

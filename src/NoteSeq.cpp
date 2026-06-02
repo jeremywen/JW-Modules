@@ -72,6 +72,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		SHIFT_AMT_INPUT,
 		START_INPUT,
 		SHIFT_CHAOS_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -193,7 +194,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		configInput(SHIFT_AMT_INPUT, "Shift Amount");
 		configInput(START_INPUT, "Start");
 		configInput(SHIFT_CHAOS_INPUT, "Shift Chaos");
-
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 
 		for (int i = 0; i < POLY; i++) {
 			configOutput(VOCT_MAIN_OUTPUT + i, "V/Oct " + std::to_string(i+1));
@@ -292,6 +293,13 @@ struct NoteSeq : Module,QuantizeUtils {
 	}
 
 	void process(const ProcessArgs &args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
 		if(params[LIFE_ON_SWITCH_PARAM].getValue()){
 			if(lifeCounter % int(17.0 - params[LIFE_SPEED_KNOB_PARAM].getValue()) == 0){ 
 				stepLife();
@@ -1078,6 +1086,7 @@ NoteSeqWidget::NoteSeqWidget(NoteSeq *module) {
 	addParam(rndModeKnob);
 
 	//row 3
+	addInput(createInput<TinyPJ301MPort>(Vec(45, 168), module, NoteSeq::SEED_INPUT));
 	addInput(createInput<TinyPJ301MPort>(Vec(60, 150), module, NoteSeq::RND_TRIG_INPUT));
 	addParam(createParam<SmallButton>(Vec(80, 145), module, NoteSeq::RND_TRIG_BTN_PARAM));
 	addInput(createInput<TinyPJ301MPort>(Vec(118, 150), module, NoteSeq::RND_AMT_INPUT));

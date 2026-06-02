@@ -16,6 +16,7 @@ struct RandomSound : Module {
 		TRIGGER_RANDOMIZE,
 		TRIG_RANDOMIZE_INPUT,
 		DECAY_CV_INPUT,
+		SEED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -90,6 +91,7 @@ struct RandomSound : Module {
 		configInput(TRIGGER_RANDOMIZE, "Trigger Randomize");
 		configInput(TRIG_RANDOMIZE_INPUT, "Trigger + Randomize");
 		configInput(DECAY_CV_INPUT, "Decay CV");
+		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 		configOutput(VOLT_OUTPUT, "Random Sound (polyphonic)");
 		// Initialize voices' decay to current knob value so first randomization respects it
 		float initDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
@@ -265,6 +267,13 @@ struct RandomSound : Module {
 	}
 
 	void process(const ProcessArgs &args) override {
+		if(inputs[SEED_INPUT].isConnected()) {
+			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
+			if (f != 0.f) {
+				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
+				random::local().seed(seed,seed/7);
+			}
+		}
 		int ch = channels;
 		if (!edgesPrimed) {
 			for (int i = 0; i < ch && i < 16; i++) {
@@ -282,10 +291,10 @@ struct RandomSound : Module {
 			bool rndEdge = rndTrig[i].process(inputs[TRIGGER_RANDOMIZE].getVoltage(i));
 			bool trigEdge = inTrig[i].process(inputs[TRIGGER_INPUT].getVoltage(i));
 			bool trigRndEdge = trigRndInputTrig[i].process(inputs[TRIG_RANDOMIZE_INPUT].getVoltage(i));
-			if (rndEdge || trigRndEdge) {
+			if (rndEdge || trigRndEdge || trigRndBtn) {
 				randomizeVoice(i);
 			}
-			if (trigEdge || trigBtn || trigRndBtn) {
+			if (trigEdge || trigBtn || trigRndEdge || trigRndBtn) {
 				float baseDecay = clamp(params[AMP_DECAY_PARAM].getValue(), 0.001f, 1.0f);
 				if (inputs[DECAY_CV_INPUT].isConnected()) {
 					float cv = (i < inputs[DECAY_CV_INPUT].getChannels()) ? inputs[DECAY_CV_INPUT].getVoltage(i) : 0.f;
@@ -412,6 +421,7 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 	// Buttons next to jacks for convenience
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 145), module, RandomSound::TRIGGER_RANDOMIZE));
 	addParam(createParam<TinyButton>(Vec(25, 145), module, RandomSound::RANDOMIZE_BUTTON_PARAM));
+	addInput(createInput<TinyPJ301MPort>(Vec(25, 165), module, RandomSound::SEED_INPUT));
 
 	addInput(createInput<TinyPJ301MPort>(Vec(5, 192), module, RandomSound::TRIGGER_INPUT));
 	addParam(createParam<TinyButton>(Vec(25, 192), module, RandomSound::TRIGGER_BUTTON_PARAM));
