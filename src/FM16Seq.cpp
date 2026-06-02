@@ -797,13 +797,7 @@ struct FM16Seq : Module, QuantizeUtils {
 	}
 
 	void process(const ProcessArgs& args) override {
-		if(inputs[SEED_INPUT].isConnected()) {
-			float f = clamp(inputs[SEED_INPUT].getVoltage(),0.f,10.f);
-			if (f != 0.f) {
-				auto seed = static_cast<uint64_t>(f*static_cast<float>(std::numeric_limits<uint32_t>::max()));
-				random::local().seed(seed,seed/7);
-			}
-		}
+		ScopedLocalRngSeed scopedSeed(inputs[SEED_INPUT].isConnected(), inputs[SEED_INPUT].getVoltage());
 		
 		bool stepChanged = false;
 

@@ -19,6 +19,32 @@ inline float rescalefjw(float x, float xMin, float xMax, float yMin, float yMax)
 	return yMin + (x - xMin) / (xMax - xMin) * (yMax - yMin);
 }
 
+struct ScopedLocalRngSeed {
+	bool active = false;
+	random::Xoroshiro128Plus savedRng;
+
+	ScopedLocalRngSeed(bool connected, float voltage) {
+		if (!connected) {
+			return;
+		}
+		float f = clamp(voltage, 0.f, 10.f);
+		if (f == 0.f) {
+			return;
+		}
+		active = true;
+		auto &rng = random::local();
+		savedRng = rng;
+		auto seed = static_cast<uint64_t>(f * static_cast<float>(UINT32_MAX));
+		rng.seed(seed, seed / 7);
+	}
+
+	~ScopedLocalRngSeed() {
+		if (active) {
+			random::local() = savedRng;
+		}
+	}
+};
+
 static constexpr int blackKeys[20] = 
                { 1,  3,  6,  8, 10, 
 				13, 15, 18, 20, 22,
