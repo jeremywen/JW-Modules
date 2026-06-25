@@ -1,5 +1,15 @@
 # Change Log
 
+## v2.0.40 ~
+
+  * FM16Seq: randomize all trigger input is now polyphonic so you can randomize certain params
+  * FM16Seq: increased feedback max to 2
+  * FM16Seq: added v/oct output
+  * FM16Seq: added EOC output
+  * FM16Seq: added carrier output
+  * FM16Seq: added swapped output
+  * FM16Seq: FIXED BUG modulating length could be incorrect
+
 ## v2.0.39 ~ 6-2-26
 
   * FM4Dice: added random seed input

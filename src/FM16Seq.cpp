@@ -56,6 +56,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM,
 		RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM,
 		RANDOMIZE_ALL_TRIGGER_PARAM,
+		CLOCK_RUN_PARAM,
 		NUM_PARAMS // Ensure this is the last entry
 	};
 	   enum InputIds {
@@ -76,6 +77,10 @@ struct FM16Seq : Module, QuantizeUtils {
 	   };
 	enum OutputIds {
 		AUDIO_OUTPUT,
+		V_OCT_OUTPUT,
+		EOC_OUTPUT,
+		SWAPPED_OUTPUT,
+		CARRIER_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -170,12 +175,16 @@ struct FM16Seq : Module, QuantizeUtils {
 	dsp::SchmittTrigger manualStepTrigger;
 	dsp::SchmittTrigger manualStepGateTrigger;
 	dsp::SchmittTrigger randomizeAllButtonTrigger;
-	dsp::SchmittTrigger randomizeAllInputTrigger;
+	dsp::SchmittTrigger randomizeAllInputTrigger[16];
+	dsp::PulseGenerator eocPulse;
 
 	int stepIndex = 0;
 	bool pendingReset = true;
 	bool goingForward = true;
+	bool eocOn = false;
+	bool hitEnd = false;
 	int latchedStep = 0;
+	int gatedStep = 0;  // Track which step's gate is currently playing
 	int selectedStep = 0;
 	int sequenceLength = 16;
 	bool integerRatiosMode = false;
@@ -195,6 +204,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		float carrierPhase = 0.f;
 		float modPhase = 0.f;
 		float modFeedbackDelayedSample = 0.f;
+		float carrierFeedbackDelayedSample = 0.f;
 		float stepElapsed = 0.f;
 		ADSR carrierEnv;
 		ADSR modEnv;
@@ -287,7 +297,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		configParam(EDIT_PITCH_PARAM, -24.f, 24.f, 0.f, "Pitch", " semitones");
 		configParam(EDIT_CAR_RATIO_PARAM, 0.125f, 10.f, 1.f, "Carrier ratio");
 		configParam(EDIT_MOD_RATIO_PARAM, 0.125f, 10.f, 2.f, "Mod ratio");
-		configParam(EDIT_MOD_FEEDBACK_PARAM, 0.f, 1.f, 0.f, "Mod feedback");
+		configParam(EDIT_MOD_FEEDBACK_PARAM, 0.f, 2.f, 0.f, "Mod feedback");
 		configParam(EDIT_FM_INDEX_PARAM, 0.f, 7.f, 1.5f, "FM index");
 		configParam(EDIT_CAR_ATTACK_PARAM, 0.f, 1.f, 0.03f, "Carrier attack");
 		configParam(EDIT_CAR_DECAY_PARAM, 0.f, 1.f, 0.2f, "Carrier decay");
@@ -340,10 +350,12 @@ struct FM16Seq : Module, QuantizeUtils {
 		configParam(RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM, 0.f, 1.f, 0.f, "Envelope decay only randomize");
 		paramQuantities[RANDOMIZE_ENVELOPES_DECAY_ONLY_PARAM]->snapEnabled = true;
 		configParam(RANDOMIZE_ALL_TRIGGER_PARAM, 0.f, 1.f, 0.f, "Randomize all by amounts");
+		configParam(CLOCK_RUN_PARAM, 0.f, 1.f, 1.f, "Clock run");
+		paramQuantities[CLOCK_RUN_PARAM]->snapEnabled = true;
 
 		configInput(CLOCK_INPUT, "Clock");
 		configInput(RESET_INPUT, "Reset");
-		configInput(LENGTH_INPUT, "Sequence length CV");
+		configInput(LENGTH_INPUT, "Sequence length CV (10V full scale)");
 		configInput(PITCH_INPUT, "V/Oct pitch (16 poly channels)");
 		configInput(FM_INDEX_INPUT, "FM index CV (16 poly channels)");
 		configInput(FEEDBACK_INPUT, "Mod feedback CV (10V full scale, 16 poly channels)");
@@ -353,9 +365,13 @@ struct FM16Seq : Module, QuantizeUtils {
 		configInput(CAR_RATIO_INPUT, "Carrier ratio CV (16 poly channels)");
 		configInput(MODE_CV_INPUT, "Play mode CV (1V per mode)");
 		configInput(MANUAL_STEP_GATE_INPUT, "Manual trigger gate (selected step)");
-		configInput(RANDOMIZE_ALL_TRIGGER_INPUT, "Randomize all trigger");
+		configInput(RANDOMIZE_ALL_TRIGGER_INPUT, "Randomize triggers (Ch1=all, Ch2=ratios, Ch3=indexes, Ch4=feedback, Ch5=pitches, Ch6=envelopes, Ch7=divisions, Ch8=levels, Ch9=lengths)");
 
 		configOutput(AUDIO_OUTPUT, "Audio");
+		configOutput(V_OCT_OUTPUT, "V/Oct pitch");
+		configOutput(EOC_OUTPUT, "End of Cycle");
+		configOutput(SWAPPED_OUTPUT, "Swapped (modulator modulated by carrier)");
+		configOutput(CARRIER_OUTPUT, "Carrier with feedback");
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].division = 1;
 			stepData[i].carAttack = 0.04f;
@@ -433,6 +449,8 @@ struct FM16Seq : Module, QuantizeUtils {
 		latchedStep = 0;
 		selectedStep = 0;
 		pendingReset = true;
+		eocOn = false;
+		hitEnd = false;
 		gateHeld = false;
 		carrierPhase = 0.f;
 		modPhase = 0.f;
@@ -483,7 +501,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		stepData[i].pitch = randomizeMaxPercent(-24.f, 24.f, amount);
 		stepData[i].carRatio = randomizeMaxPercent(0.125f, 10.f, amount);
 		stepData[i].modRatio = randomizeMaxPercent(0.125f, 10.f, amount);
-		stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
+		stepData[i].modFeedback = randomizeMaxPercent(0.f, 2.f, amount);
 		stepData[i].fmIndex = randomizeMaxPercent(0.f, 7.f, amount);
 		if (decayOnly) {
 			stepData[i].carAttack = 0.f;
@@ -675,7 +693,7 @@ struct FM16Seq : Module, QuantizeUtils {
 	void randomizeFeedbackOnly() {
 		float amount = getRandomizeAmount(RANDOMIZE_AMOUNT_FEEDBACK_PARAM);
 		forRandomizeTargets([&](int i) {
-			stepData[i].modFeedback = randomizeMaxPercent(0.f, 1.f, amount);
+			stepData[i].modFeedback = randomizeMaxPercent(0.f, 2.f, amount);
 		});
 		loadEditorFromSelectedStep();
 	}
@@ -832,10 +850,28 @@ struct FM16Seq : Module, QuantizeUtils {
 			latchedStep = selectedStep;
 		}
 
-		// Update sequence length from knob + CV (1V per step)
-		float lengthControl = params[SEQUENCE_LENGTH_PARAM].getValue() + inputs[LENGTH_INPUT].getVoltage();
+		// Update sequence length from knob + CV.
+		// 10V CV spans the full length range (15 steps) so 10V at length 1 reaches step 16.
+		float lengthCvSteps = inputs[LENGTH_INPUT].getVoltage() * ((STEPS - 1) / 10.f);
+		float lengthControl = params[SEQUENCE_LENGTH_PARAM].getValue() + lengthCvSteps;
+		int prevSequenceLength = sequenceLength;
 		sequenceLength = (int) std::round(lengthControl);
 		sequenceLength = clampijw(sequenceLength, 1, STEPS);
+		if (sequenceLength != prevSequenceLength) {
+			// Keep loop bounds coherent while modulating length.
+			if (stepIndex < 0 || stepIndex >= sequenceLength) {
+				stepIndex = 0;
+			}
+			if (latchedStep < 0 || latchedStep >= sequenceLength) {
+				latchedStep = 0;
+			}
+			if (selectedStep < 0) {
+				selectedStep = 0;
+			}
+			for (int i = sequenceLength; i < STEPS; i++) {
+				stepHits[i] = 0;
+			}
+		}
 
 		// Update integer ratios mode from switch
 		integerRatiosMode = params[INTEGER_RATIOS_PARAM].getValue() > 0.5f;
@@ -858,22 +894,45 @@ struct FM16Seq : Module, QuantizeUtils {
 		if (actionTrigger[15].process(params[INITIALIZE_STEP_LENGTHS_PARAM].getValue())) initializeStepLengthsOnly();
 
 		bool randomizeAllPressed = randomizeAllButtonTrigger.process(params[RANDOMIZE_ALL_TRIGGER_PARAM].getValue());
-		bool randomizeAllGateTriggered = randomizeAllInputTrigger.process(inputs[RANDOMIZE_ALL_TRIGGER_INPUT].getVoltage());
-		if (randomizeAllPressed || randomizeAllGateTriggered) {
+		if (randomizeAllPressed) {
 			randomizeAllByAmounts();
+		}
+
+		// Process polyphonic randomize input
+		// Channel 0: Randomize all
+		// Channels 1-8: Individual parameters (ratios, indexes, feedback, pitches, envelopes, divisions, levels, step lengths)
+		int numRandomizeChannels = inputs[RANDOMIZE_ALL_TRIGGER_INPUT].getChannels();
+		for (int ch = 0; ch < numRandomizeChannels; ch++) {
+			float voltage = inputs[RANDOMIZE_ALL_TRIGGER_INPUT].getVoltage(ch);
+			if (randomizeAllInputTrigger[ch].process(voltage)) {
+				switch (ch) {
+					case 0: randomizeAllByAmounts(); break;
+					case 1: randomizeRatiosOnly(); break;
+					case 2: randomizeIndexesOnly(); break;
+					case 3: randomizeFeedbackOnly(); break;
+					case 4: randomizePitchesOnly(); break;
+					case 5: randomizeEnvelopesOnly(); break;
+					case 6: randomizeStepDivisionsOnly(); break;
+					case 7: randomizeLevelsOnly(); break;
+					case 8: randomizeStepLengthsOnly(); break;
+				}
+			}
 		}
 
 		// Clock and sequence logic
 		float clockValue = inputs[CLOCK_INPUT].getVoltage();
 		float resetValue = inputs[RESET_INPUT].getVoltage();
+		bool clockRunEnabled = params[CLOCK_RUN_PARAM].getValue() > 0.5f;
 
 		if (resetTrigger.process(resetValue)) {
 			pendingReset = true;
+			hitEnd = false;
 		}
 
 		bool stepTriggered = false;
 		clockElapsed += args.sampleTime;
-		if (clockTrigger.process(clockValue)) {
+		if (clockRunEnabled && clockTrigger.process(clockValue)) {
+			eocOn = false;
 			if (clockIntervalValid) {
 				clockInterval = std::max(clockElapsed, 0.001f);
 			} else {
@@ -895,10 +954,23 @@ struct FM16Seq : Module, QuantizeUtils {
 			// Advance step index according to play mode
 			{
 				int pm = getPlayMode();
+				bool wrapped = false;
 				if (pm == PM_FWD_LOOP) {
-					stepIndex = (stepIndex + 1) % sequenceLength;
+					if (stepIndex >= sequenceLength - 1) {
+						stepIndex = 0;
+						wrapped = true;
+					}
+					else {
+						stepIndex++;
+					}
 				} else if (pm == PM_BWD_LOOP) {
-					stepIndex = stepIndex > 0 ? stepIndex - 1 : sequenceLength - 1;
+					if (stepIndex <= 0) {
+						stepIndex = sequenceLength - 1;
+						wrapped = true;
+					}
+					else {
+						stepIndex--;
+					}
 				} else if (pm == PM_FWD_BWD_LOOP || pm == PM_BWD_FWD_LOOP) {
 					if (goingForward) {
 						if (stepIndex < sequenceLength - 1) {
@@ -906,6 +978,7 @@ struct FM16Seq : Module, QuantizeUtils {
 						} else {
 							goingForward = false;
 							stepIndex--;
+							wrapped = true;
 						}
 					} else {
 						if (stepIndex > 0) {
@@ -913,6 +986,7 @@ struct FM16Seq : Module, QuantizeUtils {
 						} else {
 							goingForward = true;
 							stepIndex++;
+							wrapped = true;
 						}
 					}
 					if (pm == PM_BWD_FWD_LOOP && !goingForward) {
@@ -920,6 +994,14 @@ struct FM16Seq : Module, QuantizeUtils {
 					}
 				} else if (pm == PM_RANDOM_POS) {
 					stepIndex = (int)(random::uniform() * sequenceLength) % sequenceLength;
+				}
+
+				if (wrapped) {
+					if (hitEnd) {
+						eocOn = true;
+						eocPulse.trigger(0.001f);
+					}
+					hitEnd = true;
 				}
 			}
 
@@ -965,6 +1047,7 @@ struct FM16Seq : Module, QuantizeUtils {
 			engine.modEnv.gateOn();
 			engine.gateHeld = true;
 			engine.stepElapsed = 0.f;
+			gatedStep = latchedStep;  // Remember which step we just gated
 		}
 
 		// Gate length logic: close gate after gateLengthMs for each channel
@@ -973,7 +1056,7 @@ struct FM16Seq : Module, QuantizeUtils {
 			if (engine.gateHeld) {
 				engine.stepElapsed += args.sampleTime * 1000.f; // ms
 				float gateLengthCV = getStepCvVoltage(GATE_LENGTH_INPUT);
-				float gateLen = clampfjw(stepData[latchedStep].gateLengthMs + gateLengthCV * 1000.f, 1.f, 5000.f);
+				float gateLen = clampfjw(stepData[gatedStep].gateLengthMs + gateLengthCV * 1000.f, 1.f, 5000.f);
 				if (engine.stepElapsed >= gateLen) {
 					engine.carrierEnv.gateOff();
 					engine.modEnv.gateOff();
@@ -984,6 +1067,8 @@ struct FM16Seq : Module, QuantizeUtils {
 
 		// Process single active voice using step-indexed CV channel.
 		float mixedOut = 0.f;
+		float invertedSignal = 0.f;
+		float carrierOnlySignal = 0.f;
 		{
 			FMEngine& engine = engines[0];
 			const StepData& s = stepData[latchedStep];
@@ -1007,7 +1092,7 @@ struct FM16Seq : Module, QuantizeUtils {
 				carRatio = quantizeIntegerRatioModeValue(carRatio);
 				modRatio = quantizeIntegerRatioModeValue(modRatio);
 			}
-			float modFeedback = clampfjw(s.modFeedback + feedbackCV * 0.1f, 0.f, 1.f);
+			float modFeedback = clampfjw(s.modFeedback + feedbackCV * 0.2f, 0.f, 2.f);
 
 			float fmIndex = s.fmIndex + fmIndexCV;
 			fmIndex = clampfjw(fmIndex, 0.f, 7.f);
@@ -1057,12 +1142,50 @@ struct FM16Seq : Module, QuantizeUtils {
 			float stepLevel = engine.smoothedLevel;
 			float out = carrierSignal * carEnvValue * stepLevel * 5.0f;
 			mixedOut = out;
+			
+			// Swapped: modulator modulated by carrier instead
+			float carrierSignalUnmodulated = std::sin(engine.carrierPhase);
+			float carrierFeedbackOffset = 0.f;
+			if (engine.smoothedModFeedback > 0.001f) {
+				float feedbackAmount = engine.smoothedModFeedback * engine.smoothedModFeedback;
+				float feedbackSample = std::tanh(engine.carrierFeedbackDelayedSample * 1.5f);
+				carrierFeedbackOffset = feedbackAmount * feedbackSample * 2.0f;
+			}
+			float carrierSignalWithFeedback = std::sin(engine.carrierPhase + carrierFeedbackOffset);
+			engine.carrierFeedbackDelayedSample += (carrierSignalWithFeedback - engine.carrierFeedbackDelayedSample) * 0.2f;
+			carrierOnlySignal = carrierSignalWithFeedback * carEnvValue * stepLevel * 5.0f;
+			float swappedSignal = std::sin(engine.modPhase + (carrierSignalUnmodulated * engine.smoothedFmIndex * TWO_PI)) * modEnvValue;
+			invertedSignal = swappedSignal * carEnvValue * stepLevel * 5.0f;
 		}
 
 		float masterOut = mixedOut * params[MASTER_LEVEL_PARAM].getValue();
 		float out = clampfjw(masterOut, -5.f, 5.f);
 		outputs[AUDIO_OUTPUT].setVoltage(out);
 		outputs[AUDIO_OUTPUT].setChannels(1);
+		
+		// Swapped output
+		float swappedMasterOut = invertedSignal * params[MASTER_LEVEL_PARAM].getValue();
+		float swappedOut = clampfjw(swappedMasterOut, -5.f, 5.f);
+		outputs[SWAPPED_OUTPUT].setVoltage(swappedOut);
+		outputs[SWAPPED_OUTPUT].setChannels(1);
+
+		// Carrier only output
+		float carrierMasterOut = carrierOnlySignal * params[MASTER_LEVEL_PARAM].getValue();
+		float carrierOut = clampfjw(carrierMasterOut, -5.f, 5.f);
+		outputs[CARRIER_OUTPUT].setVoltage(carrierOut);
+		outputs[CARRIER_OUTPUT].setChannels(1);
+
+		// V/Oct output
+		const StepData& s = stepData[latchedStep];
+		float quantizedStepPitch = pitchQuantizeEnabled ? quantizePitchSemitones(s.pitch) : s.pitch;
+		float pitchVolts = inputs[PITCH_INPUT].isConnected() ? inputs[PITCH_INPUT].getVoltage(cvChannel) : 0.f;
+		float voctOut = pitchVolts + (quantizedStepPitch / 12.f);
+		outputs[V_OCT_OUTPUT].setVoltage(voctOut);
+		outputs[V_OCT_OUTPUT].setChannels(1);
+
+		bool eocHigh = eocPulse.process(args.sampleTime);
+		outputs[EOC_OUTPUT].setVoltage((eocHigh && eocOn) ? 10.f : 0.f);
+		outputs[EOC_OUTPUT].setChannels(1);
 	}
 };
 
@@ -1288,8 +1411,9 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwSmallSnapKnob>(Vec(412.f, 344.f), module, FM16Seq::SEQUENCE_LENGTH_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(442.f, 344.f), module, FM16Seq::LENGTH_INPUT));
 
-		addInput(createInputCentered<PJ301MPort>(Vec(32.f, 344.f), module, FM16Seq::CLOCK_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(70.2857f, 344.f), module, FM16Seq::RESET_INPUT));
+		addParam(createParamCentered<JwVerticalSwitch>(Vec(50, 344), module, FM16Seq::CLOCK_RUN_PARAM));
+		addInput(createInputCentered<PJ301MPort>(Vec(27.f, 344.f), module, FM16Seq::CLOCK_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(75.f, 344.f), module, FM16Seq::RESET_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(108.5714f, 344.f), module, FM16Seq::PITCH_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(146.8571f, 344.f), module, FM16Seq::FM_INDEX_INPUT));
 		addInput(createInputCentered<PJ301MPort>(Vec(185.1429f, 344.f), module, FM16Seq::MOD_RATIO_INPUT));
@@ -1300,11 +1424,12 @@ struct FM16SeqWidget : ModuleWidget {
         addParam(createParamCentered<SmallWhiteKnob>(Vec(485.f, 344.f), module, FM16Seq::MASTER_LEVEL_PARAM));
 		addOutput(createOutputCentered<PJ301MPort>(Vec(520.f, 344.f), module, FM16Seq::AUDIO_OUTPUT));
 
+		
 		const float initX = 325.f;
 		const float rndX = 360.f;
 		const float y0 = 115.f;
 		const float yStep = 24.f;
-
+		
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_RATIOS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_INDEXES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 2.f), module, FM16Seq::RANDOMIZE_FEEDBACK_PARAM));
@@ -1313,7 +1438,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_DIVISIONS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(rndX, y0 + yStep * 7.f), module, FM16Seq::RANDOMIZE_STEP_LENGTHS_PARAM));
-
+		
 		const float amtX = 440.f;
 		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 0.f), module, FM16Seq::RANDOMIZE_AMOUNT_RATIOS_PARAM));
 		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 1.f), module, FM16Seq::RANDOMIZE_AMOUNT_INDEXES_PARAM));
@@ -1323,7 +1448,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 5.f), module, FM16Seq::RANDOMIZE_AMOUNT_DIVISIONS_PARAM));
 		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 6.f), module, FM16Seq::RANDOMIZE_AMOUNT_LEVELS_PARAM));
 		addParam(createParamCentered<JwHorizontalVCVSlider>(Vec(amtX, y0 + yStep * 7.f), module, FM16Seq::RANDOMIZE_AMOUNT_STEP_LENGTHS_PARAM));
-
+		
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 0.f), module, FM16Seq::INITIALIZE_RATIOS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 1.f), module, FM16Seq::INITIALIZE_INDEXES_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 2.f), module, FM16Seq::INITIALIZE_FEEDBACK_PARAM));
@@ -1332,7 +1457,7 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 5.f), module, FM16Seq::INITIALIZE_DIVISIONS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 6.f), module, FM16Seq::INITIALIZE_LEVELS_PARAM));
 		addParam(createParamCentered<TinyButton>(Vec(initX, y0 + yStep * 7.f), module, FM16Seq::INITIALIZE_STEP_LENGTHS_PARAM));
-
+		
 		// Integer ratios mode switch next to randomize ratios button
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(295, 204), module, FM16Seq::RANDOMIZE_CURRENT_STEP_ONLY_PARAM));
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 115), module, FM16Seq::INTEGER_RATIOS_PARAM));
@@ -1340,7 +1465,12 @@ struct FM16SeqWidget : ModuleWidget {
 		addParam(createParamCentered<JwVerticalSwitch>(Vec(510, 255), module, FM16Seq::RANDOMIZE_DIVISIONS_EXCLUDE_ZERO_PARAM));
 		addParam(createParamCentered<SmallButton>(Vec(295, 253), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_PARAM));
 		addInput(createInputCentered<PJ301MPort>(Vec(295, 283), module, FM16Seq::RANDOMIZE_ALL_TRIGGER_INPUT));
-		addInput(createInputCentered<PJ301MPort>(Vec(295, 140), module, FM16Seq::SEED_INPUT));
+		addInput(createInputCentered<PJ301MPort>(Vec(295, 155), module, FM16Seq::SEED_INPUT));
+
+		addOutput(createOutputCentered<PJ301MPort>(Vec(325, 26), module, FM16Seq::CARRIER_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(Vec(367.5, 26), module, FM16Seq::SWAPPED_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(Vec(410, 26), module, FM16Seq::V_OCT_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(Vec(451.5, 26), module, FM16Seq::EOC_OUTPUT));
 	}
 };
 
