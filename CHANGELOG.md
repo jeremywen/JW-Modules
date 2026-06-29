@@ -4,6 +4,7 @@
 
   * samplegrid: add drag and drop file
   * grains: add drag and drop file
+  * grains: fix drag position playhead
   * FM16Seq: randomize all trigger input is now polyphonic so you can randomize certain params
   * FM16Seq: increased feedback max to 2
   * FM16Seq: added v/oct output
