@@ -1227,7 +1227,7 @@ struct GrainsWaveformDisplay : TransparentWidget {
 	Grains *module = nullptr;
 	GrainsWaveformDisplay(Grains *m) { module = m; }
 	bool dragging = false;
-	float lastX = 0.f;
+	float dragWidgetLeftX = 0.f;  // Widget left edge in scene coords at drag start
 	// Fixed time window to display during recording to prevent shifting/compression
 	float recordWindowSecs = 8.0f; // unused when drawing full buffer; keep for future
 	// Stable DC baseline during a recording session to prevent vertical shifting
@@ -1253,23 +1253,59 @@ struct GrainsWaveformDisplay : TransparentWidget {
 		if (!module) return;
 		if (e.button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (e.action == GLFW_PRESS) {
-				lastX = e.pos.x;
-				setPosFromX(lastX);
+				// Store widget's left edge position in scene coordinates
+				dragWidgetLeftX = getAbsoluteOffset(math::Vec(0.f, 0.f)).x;
+				// Set position from click
+				setPosFromX(e.pos.x);
 				dragging = true;
 				module->uiDraggingPlayhead = true;
 				e.consume(this);
 			}
 			else if (e.action == GLFW_RELEASE) {
 				dragging = false;
+				// Update the knob to match the dragged position so it sticks
+				if (module && !module->sampleL.empty()) {
+					double Nfull = (double)module->sampleL.size();
+					double f = Nfull > 1.0 ? module->playPos / (Nfull - 1.0) : 0.0;
+					f = std::max(0.0, std::min(1.0, f));
+					module->params[Grains::POSITION_KNOB].setValue((float)f);
+				}
 				module->uiDraggingPlayhead = false;
 				e.consume(this);
 			}
 		}
 	}
 	void onDragMove(const event::DragMove &e) override {
-		if (!dragging) return;
-		lastX += e.mouseDelta.x;
-		setPosFromX(lastX);
+		if (!dragging || !module || module->sampleL.empty()) return;
+		
+		float w = box.size.x;
+		if (w <= 0.f) return;
+		
+		// Get zoom factor from scene
+		float zoom = APP->scene->rackScroll->getZoom();
+		
+		// Current mouse position in scene coordinates
+		float mouseSceneX = APP->scene->mousePos.x;
+		
+		// Convert to local widget coordinates, accounting for zoom
+		float currentLocalX = (mouseSceneX - dragWidgetLeftX) / zoom;
+		
+		// Map pixel to sample WITHOUT clamping pixels first
+		int fs = module->fileSampleRate > 0 ? module->fileSampleRate : 44100;
+		int guard = std::max(1, (int)std::round(0.01 * (double)fs));
+		double Nfull = (double)module->sampleL.size();
+		double Ndraw = Nfull;
+		if (module->isRecording && Nfull > (double)guard) Ndraw = Nfull - (double)guard;
+		double denom = std::max(1.0, Ndraw - 1.0);
+		
+		// Map pixel to sample
+		double newPlayPos = (double)currentLocalX / (double)w * denom;
+		
+		// Clamp SAMPLES, not pixels
+		if (newPlayPos < 0.0) newPlayPos = 0.0;
+		if (newPlayPos >= Nfull) newPlayPos = Nfull - 1.0;
+		
+		module->playPos = newPlayPos;
 		e.consume(this);
 	}
 	void onPathDrop(const event::PathDrop &e) override {
