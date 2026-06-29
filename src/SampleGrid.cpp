@@ -1776,6 +1776,24 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						}
 						nvgStroke(vg);
 					}
+					void onPathDrop(const event::PathDrop &e) override {
+						if (!module || e.paths.empty()) return;
+						
+						// Find the first WAV file in the dropped files
+						for (const auto &filePath : e.paths) {
+							std::string path = filePath;
+							// Check if file ends with .wav (case-insensitive)
+							if (path.length() >= 4) {
+								std::string ext = path.substr(path.length() - 4);
+								std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+								if (ext == ".wav") {
+									replaceSampleHandler(module, cell, strdup(path.c_str()));
+									e.consume(this);
+									return;
+								}
+							}
+						}
+					}
 				};
 				CellWaveform *wf = new CellWaveform(module, idx);
 				wf->box.pos = Vec(knobX-2, knobY);
