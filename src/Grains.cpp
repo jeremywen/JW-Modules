@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
+#include <cstdio>
 #include <cstdint>
 #include <algorithm>
 #include <atomic>
@@ -15,6 +15,9 @@
 #endif
 #include "osdialog.h"
 #include "system.hpp"
+#ifdef METAMODULE_BUILTIN
+#include "../../../metamodule-plugin-sdk/core-interface/filesystem/async_filebrowser.hh"
+#endif
 
 struct Grains : Module {
 	enum ParamIds {
@@ -736,43 +739,50 @@ void Grains::process(const ProcessArgs &args) {
 	lights[REC_LIGHT].setBrightness(isRecording ? 1.0f : 0.0f);
 };
 
-#if !defined(METAMODULE_BUILTIN)
 // Minimal WAV loader: supports PCM16 and Float32, mono/stereo (mixed to mono)
-static uint32_t readU32(std::ifstream &in) {
+static uint32_t readU32(FILE *in) {
 	uint8_t b[4];
-	in.read((char*)b, 4);
+	if (fread(b, 1, 4, in) != 4) return 0;
 	return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
 }
-static uint16_t readU16(std::ifstream &in) {
+static uint16_t readU16(FILE *in) {
 	uint8_t b[2];
-	in.read((char*)b, 2);
+	if (fread(b, 1, 2, in) != 2) return 0;
 	return (uint16_t)b[0] | ((uint16_t)b[1] << 8);
 }
 
-static void writeU32(std::ofstream &out, uint32_t v) {
+static void writeU32(FILE *out, uint32_t v) {
 	char b[4];
 	b[0] = (char)(v & 0xFF);
 	b[1] = (char)((v >> 8) & 0xFF);
 	b[2] = (char)((v >> 16) & 0xFF);
 	b[3] = (char)((v >> 24) & 0xFF);
-	out.write(b, 4);
+	fwrite(b, 1, 4, out);
 }
-static void writeU16(std::ofstream &out, uint16_t v) {
+static void writeU16(FILE *out, uint16_t v) {
 	char b[2];
 	b[0] = (char)(v & 0xFF);
 	b[1] = (char)((v >> 8) & 0xFF);
-	out.write(b, 2);
+	fwrite(b, 1, 2, out);
 }
 
 bool Grains::loadSampleFromPath(const std::string &path) {
-	std::ifstream in(path, std::ios::binary);
-	if (!in.good()) { statusMsg = "Could not open file"; return false; }
+	FILE *in = fopen(path.c_str(), "rb");
+	if (!in) { statusMsg = "Could not open file"; return false; }
 
-	char riff[4]; in.read(riff, 4);
-	if (in.gcount() != 4 || std::string(riff, 4) != "RIFF") { statusMsg = "Not a WAV/RIFF file"; return false; }
+	char riff[4];
+	if (fread(riff, 1, 4, in) != 4 || std::string(riff, 4) != "RIFF") {
+		statusMsg = "Not a WAV/RIFF file";
+		fclose(in);
+		return false;
+	}
 	(void)readU32(in); // file size
-	char wave[4]; in.read(wave, 4);
-	if (in.gcount() != 4 || std::string(wave, 4) != "WAVE") { statusMsg = "Missing WAVE header"; return false; }
+	char wave[4];
+	if (fread(wave, 1, 4, in) != 4 || std::string(wave, 4) != "WAVE") {
+		statusMsg = "Missing WAVE header";
+		fclose(in);
+		return false;
+	}
 
 	// Read chunks
 	uint16_t audioFormat = 1; // 1=PCM, 3=FLOAT
@@ -780,16 +790,28 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 	uint32_t sRate = 44100;
 	uint16_t bitsPerSample = 16;
 	uint32_t dataSize = 0;
-	std::streampos dataPos = 0;
+	long dataPos = 0;
+	long fileSize = 0;
+	fseek(in, 0, SEEK_END);
+	fileSize = ftell(in);
+	fseek(in, 12, SEEK_SET); // position after RIFF/size/WAVE
 
-	while (in.good() && !in.eof()) {
+	// Safely parse chunks - avoid infinite loops on malformed files
+	while (ftell(in) + 8 <= fileSize) {  // Need at least 8 bytes for id + size
 		char id[4];
-		in.read(id, 4);
-		if (in.gcount() != 4) break;
+		if (fread(id, 1, 4, in) != 4) break;
 		uint32_t chunkSize = readU32(in);
+		
+		// Safety check: chunk size shouldn't be more than remaining file
+		long currentPos = ftell(in);
+		if (currentPos + (long)chunkSize > fileSize) {
+			// Malformed chunk, stop parsing
+			break;
+		}
+		
 		std::string cid(id, 4);
 		if (cid == "fmt ") {
-			std::streampos start = in.tellg();
+			long start = ftell(in);
 			audioFormat = readU16(in);
 			numChannels = readU16(in);
 			sRate = readU32(in);
@@ -797,23 +819,26 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 			(void)readU16(in); // blockAlign
 			bitsPerSample = readU16(in);
 			// Skip any extra fmt bytes
-			in.seekg(start + (std::streamoff)chunkSize);
+			fseek(in, start + (long)chunkSize, SEEK_SET);
 		}
 		else if (cid == "data") {
-			dataPos = in.tellg();
+			dataPos = ftell(in);
 			dataSize = chunkSize;
-			in.seekg((std::streamoff)dataPos + (std::streamoff)dataSize);
+			fseek(in, dataPos + (long)dataSize, SEEK_SET);
 		}
 		else {
-			// Skip unknown chunk
-			in.seekg((std::streamoff)in.tellg() + (std::streamoff)chunkSize);
+			// Skip unknown chunk - seek to next chunk
+			fseek(in, currentPos + (long)chunkSize, SEEK_SET);
 		}
 	}
 
-	if (dataSize == 0 || dataPos == 0) { statusMsg = "No data chunk"; return false; }
+	if (dataSize == 0 || dataPos == 0) {
+		statusMsg = "No data chunk";
+		fclose(in);
+		return false;
+	}
 	// Load samples
-	in.clear();
-	in.seekg(dataPos);
+	fseek(in, dataPos, SEEK_SET);
 	std::vector<float> left;
 	std::vector<float> right;
 	left.reserve(dataSize / (bitsPerSample / 8));
@@ -846,7 +871,8 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 		const size_t frames = dataSize / (numChannels * 3);
 		for (size_t i = 0; i < frames; ++i) {
 			auto read24 = [&in]() {
-				uint8_t b[3]; in.read((char*)b, 3);
+				uint8_t b[3];
+				fread(b, 1, 3, in);
 				int32_t v = (int32_t)(b[0] | (b[1] << 8) | (b[2] << 16));
 				if (v & 0x800000) v |= 0xFF000000; // sign-extend
 				return (float)v / 8388608.f;
@@ -891,7 +917,9 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 		const size_t frames = dataSize / (numChannels * 4);
 		for (size_t i = 0; i < frames; ++i) {
 			auto readf = [&in]() {
-				float sf; in.read((char*)&sf, 4); return sf;
+				float sf;
+				fread(&sf, 1, 4, in);
+				return sf;
 			};
 			if (numChannels == 1) {
 				float v = readf();
@@ -911,6 +939,7 @@ bool Grains::loadSampleFromPath(const std::string &path) {
 		return false; // unsupported format
 	}
 
+	fclose(in);
 	if (left.empty()) { statusMsg = "No audio frames"; return false; }
 	// Normalize softly to avoid clipping
 	float maxAbs = 0.f;
@@ -1017,15 +1046,15 @@ bool Grains::saveBufferToWav(const std::string &path) {
 	uint32_t byteRate = sRate * blockAlign;
 	uint32_t dataSize = (uint32_t)(frames * blockAlign);
 
-	std::ofstream out(path, std::ios::binary);
-	if (!out.good()) { statusMsg = "Could not write file"; return false; }
+	FILE *out = fopen(path.c_str(), "wb");
+	if (!out) { statusMsg = "Could not write file"; return false; }
 
 	// RIFF header
-	out.write("RIFF", 4);
+	fwrite("RIFF", 1, 4, out);
 	writeU32(out, 36u + dataSize); // file size minus 8
-	out.write("WAVE", 4);
+	fwrite("WAVE", 1, 4, out);
 	// fmt chunk
-	out.write("fmt ", 4);
+	fwrite("fmt ", 1, 4, out);
 	writeU32(out, 16u); // PCM fmt chunk size
 	writeU16(out, 1u); // PCM
 	writeU16(out, numChannels);
@@ -1034,7 +1063,7 @@ bool Grains::saveBufferToWav(const std::string &path) {
 	writeU16(out, blockAlign);
 	writeU16(out, bitsPerSample);
 	// data chunk
-	out.write("data", 4);
+	fwrite("data", 1, 4, out);
 	writeU32(out, dataSize);
 	// samples
 	for (size_t i = 0; i < frames; ++i) {
@@ -1047,9 +1076,8 @@ bool Grains::saveBufferToWav(const std::string &path) {
 		writeU16(out, (uint16_t)(uint16_t)(sl & 0xFFFF));
 		writeU16(out, (uint16_t)(uint16_t)(sr & 0xFFFF));
 	}
-	out.flush();
-	bool ok = out.good();
-	out.close();
+	int ok = fflush(out) == 0 && ferror(out) == 0;
+	fclose(out);
 	if (ok) {
 		// Update status
 		std::string base = path;
@@ -1071,9 +1099,9 @@ void Grains::onAdd(const AddEvent& e) {
 	std::string dir = getPatchStorageDirectory();
 	if (!dir.empty()) {
 		std::string path = rack::system::join(dir, "recording.wav");
-		std::ifstream f(path, std::ios::binary);
-		if (f.good()) {
-			f.close();
+		FILE *f = fopen(path.c_str(), "rb");
+		if (f) {
+			fclose(f);
 			if (loadSampleFromPath(path)) {
 				// Avoid persisting the absolute path of patch-storage audio in JSON
 				samplePath.clear();
@@ -1182,45 +1210,6 @@ bool Grains::loadRandomSiblingSample() {
 	}
 	return loadSampleFromPath(wavs[idx]);
 }
-#else
-static uint32_t readU32(std::ifstream &) { return 0; }
-static uint16_t readU16(std::ifstream &) { return 0; }
-static void writeU32(std::ofstream &, uint32_t) {}
-static void writeU16(std::ofstream &, uint16_t) {}
-
-bool Grains::loadSampleFromPath(const std::string &) {
-	statusMsg = "Builtin build: file loading disabled";
-	return false;
-}
-
-bool Grains::removeSilence(float) {
-	statusMsg = "Builtin build: edit disabled";
-	return false;
-}
-
-bool Grains::normalizeSample() {
-	statusMsg = "Builtin build: edit disabled";
-	return false;
-}
-
-bool Grains::saveBufferToWav(const std::string &) {
-	statusMsg = "Builtin build: file saving disabled";
-	return false;
-}
-
-void Grains::onAdd(const AddEvent& e) {
-	Module::onAdd(e);
-}
-
-void Grains::onSave(const SaveEvent& e) {
-	Module::onSave(e);
-}
-
-bool Grains::loadRandomSiblingSample() {
-	statusMsg = "Builtin build: random load disabled";
-	return false;
-}
-#endif
 
 // Waveform display
 struct GrainsWaveformDisplay : TransparentWidget {
@@ -1704,12 +1693,10 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	norm->grains = grains;
 	menu->addChild(norm);
 
-	// Removed: Suppress Silence (preserve length/pitch)
-#if !defined(METAMODULE_BUILTIN)
 	struct LoadWavItem : MenuItem {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
-#if defined(METAMODULE)
+#if defined(METAMODULE_BUILTIN)
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 				loadWavPath(grains, path);
@@ -1735,7 +1722,7 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
 			if (!grains) return;
-#if defined(METAMODULE)
+#if defined(METAMODULE_BUILTIN)
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			async_osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters, [this, filters](char *path) {
 				saveWavPath(grains, path);
@@ -1755,7 +1742,6 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	save->text = "Save Buffer as WAV...";
 	save->grains = grains;
 	menu->addChild(save);
-	#endif
 }
 
 void GrainsWidget::step() {

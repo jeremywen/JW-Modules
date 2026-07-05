@@ -15,6 +15,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#ifdef METAMODULE_BUILTIN
+#include "../../../metamodule-plugin-sdk/core-interface/filesystem/async_filebrowser.hh"
+#endif
 
 struct PendingRandomSamplesLock {
 	rack::SharedMutex &mutex;
@@ -471,7 +474,7 @@ struct SampleGrid : Module {
 		std::string dir = sampleDir;
 		// always raise the dialog box if called from context menu.
 		if (calledFromContextMenu || dir.empty()) {
-#if defined(METAMODULE)
+#if defined(METAMODULE_BUILTIN)
 			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL, [this](char *path) {
 				prepareRandomSamplesFromDirHandler(path);
 			});
@@ -499,7 +502,7 @@ struct SampleGrid : Module {
 	void pickRandomWavPath(int idx) {
 		std::string dir = sampleDir;
 		if (dir.empty()) {
-#if defined(METAMODULE)
+#if defined(METAMODULE_BUILTIN)
 			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL, [this, idx](char *path) {
 				pickRandomWavPathHandler(idx, path);
 			});
@@ -637,17 +640,11 @@ struct SampleGrid : Module {
 	}
 	
 	void loadSplitSampleInteractive() {
-#if defined(METAMODULE)
+#if defined(METAMODULE_BUILTIN)
 		osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
-		async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this](char *path) {
+		async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 			loadSplitSampleInteractiveHandler(path);
-			osdialog_filters_free(filters);
-		});
-#else
-		osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
-		char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
-		osdialog_filters_free(filters);
-		if (path) {
+			o!defined(METAMODULE_BUILTIN)(path) {
 			loadSplitSampleInteractiveHandler(path);
 		}
 #endif
@@ -1544,9 +1541,6 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						if (m.x >= diceRx && m.x <= diceRx + d && m.y >= diceRy && m.y <= diceRy + d) {
 							if (module->sampleDir.empty()) {
 #if defined(METAMODULE_BUILTIN)
-								e.consume(this);
-								return;
-#elif defined(METAMODULE)
 								osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 								async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 									randomLoadHandler(module, cell, path);
@@ -1575,9 +1569,6 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 						// Folder click: replace this cell's sample via file dialog
 						if (m.x >= folderRx && m.x <= folderRx + d && m.y >= folderRy && m.y <= folderRy + d) {
 #if defined(METAMODULE_BUILTIN)
-							e.consume(this);
-							return;
-#elif defined(METAMODULE)
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 								replaceSampleHandler(module, cell, path);
@@ -1603,12 +1594,8 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 							// Begin dragging to adjust start continuously
 							draggingStart = true;
 							lastX = x;
-						}
-						else {
+						} else {
 #if defined(METAMODULE_BUILTIN)
-							e.consume(this);
-							return;
-#elif defined(METAMODULE)
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 								replaceSampleHandler(module, cell, path);
@@ -1633,9 +1620,6 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 					// Right-click anywhere on waveform opens file dialog to replace the cell sample
 					else if (e.button == GLFW_MOUSE_BUTTON_RIGHT && e.action == GLFW_PRESS) {
 #if defined(METAMODULE_BUILTIN)
-						e.consume(this);
-						return;
-#elif defined(METAMODULE)
 						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 						async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 							replaceSampleHandler(module, cell, path);
