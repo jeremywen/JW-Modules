@@ -1709,15 +1709,19 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 	struct LoadWavItem : MenuItem {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
-#ifdef USING_CARDINAL_NOT_RACK
-			async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
+#if defined(METAMODULE)
+			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 				loadWavPath(grains, path);
+				osdialog_filters_free(filters);
 			});
 #else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 			osdialog_filters_free(filters);
-			loadWavPath(grains, path);
+			if (path) {
+				loadWavPath(grains, path);
+			}
 #endif
 		}
 	};
@@ -1731,15 +1735,19 @@ void GrainsWidget::appendContextMenu(Menu *menu) {
 		Grains *grains;
 		void onAction(const event::Action &e) override {
 			if (!grains) return;
-#ifdef USING_CARDINAL_NOT_RACK
-			async_dialog_filebrowser(true, NULL, NULL, "Save sample", [this](char* path) {
+#if defined(METAMODULE)
+			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+			async_osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters, [this, filters](char *path) {
 				saveWavPath(grains, path);
+				osdialog_filters_free(filters);
 			});
 #else
 			osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 			char *path = osdialog_file(OSDIALOG_SAVE, NULL, NULL, filters);
 			osdialog_filters_free(filters);
-			saveWavPath(grains, path);
+			if (path) {
+				saveWavPath(grains, path);
+			}
 #endif
 		}
 	};

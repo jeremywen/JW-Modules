@@ -471,13 +471,15 @@ struct SampleGrid : Module {
 		std::string dir = sampleDir;
 		// always raise the dialog box if called from context menu.
 		if (calledFromContextMenu || dir.empty()) {
-#ifdef USING_CARDINAL_NOT_RACK
-			async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this](char* path) {
+#if defined(METAMODULE)
+			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL, [this](char *path) {
 				prepareRandomSamplesFromDirHandler(path);
 			});
 #else
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
-			prepareRandomSamplesFromDirHandler(path);
+			if (path) {
+				prepareRandomSamplesFromDirHandler(path);
+			}
 #endif
 		} else {
 			prepareRandomSamplesFromDir(dir); 
@@ -497,13 +499,15 @@ struct SampleGrid : Module {
 	void pickRandomWavPath(int idx) {
 		std::string dir = sampleDir;
 		if (dir.empty()) {
-#ifdef USING_CARDINAL_NOT_RACK
-			async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this, idx](char* path) {
+#if defined(METAMODULE)
+			async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL, [this, idx](char *path) {
 				pickRandomWavPathHandler(idx, path);
 			});
 #else
 			char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
-			pickRandomWavPathHandler(idx, path);
+			if (path) {
+				pickRandomWavPathHandler(idx, path);
+			}
 #endif	
 		} else {
 			std::vector<std::string> wavs; if (!collectWavsInDir(dir, wavs)) return;
@@ -633,15 +637,19 @@ struct SampleGrid : Module {
 	}
 	
 	void loadSplitSampleInteractive() {
-#ifdef USING_CARDINAL_NOT_RACK
-		async_dialog_filebrowser(false, NULL, NULL, "Choose sample path", [this](char* path) {
+#if defined(METAMODULE)
+		osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+		async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this](char *path) {
 			loadSplitSampleInteractiveHandler(path);
+			osdialog_filters_free(filters);
 		});
 #else
 		osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 		char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 		osdialog_filters_free(filters);
-		loadSplitSampleInteractiveHandler(path);
+		if (path) {
+			loadSplitSampleInteractiveHandler(path);
+		}
 #endif
 	}
 
@@ -1538,15 +1546,19 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 #if defined(METAMODULE_BUILTIN)
 								e.consume(this);
 								return;
-#elif defined(USING_CARDINAL_NOT_RACK)
-								async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+#elif defined(METAMODULE)
+								osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+								async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 									randomLoadHandler(module, cell, path);
+									osdialog_filters_free(filters);
 								});
 #else
 								osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 								char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 								osdialog_filters_free(filters);
-								randomLoadHandler(module, cell, path);
+								if (path) {
+									randomLoadHandler(module, cell, path);
+								}
 #endif
 							} else {
 								module->reqLoadRandomCell[cell] = true;
@@ -1565,15 +1577,19 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 #if defined(METAMODULE_BUILTIN)
 							e.consume(this);
 							return;
-#elif defined(USING_CARDINAL_NOT_RACK)
-							async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+#elif defined(METAMODULE)
+							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+							async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 								replaceSampleHandler(module, cell, path);
+								osdialog_filters_free(filters);
 							});
 #else
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							replaceSampleHandler(module, cell, path);
+							if (path) {
+								replaceSampleHandler(module, cell, path);
+							}
 #endif
 							e.consume(this);
 							return;
@@ -1592,15 +1608,19 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 #if defined(METAMODULE_BUILTIN)
 							e.consume(this);
 							return;
-#elif defined(USING_CARDINAL_NOT_RACK)
-							async_dialog_filebrowser(false, NULL, NULL, "Load sample", [this](char* path) {
+#elif defined(METAMODULE)
+							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+							async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 								replaceSampleHandler(module, cell, path);
+								osdialog_filters_free(filters);
 							});
 #else
 							osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 							char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 							osdialog_filters_free(filters);
-							replaceSampleHandler(module, cell, path);
+							if (path) {
+								replaceSampleHandler(module, cell, path);
+							}
 #endif
 						}
 						e.consume(this);
@@ -1615,15 +1635,19 @@ SampleGridWidget::SampleGridWidget(SampleGrid *module) {
 #if defined(METAMODULE_BUILTIN)
 						e.consume(this);
 						return;
-#elif defined(USING_CARDINAL_NOT_RACK)
-						async_dialog_filebrowser(false, NULL, NULL, "Replace sample", [this](char* path) {
+#elif defined(METAMODULE)
+						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
+						async_osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters, [this, filters](char *path) {
 							replaceSampleHandler(module, cell, path);
+							osdialog_filters_free(filters);
 						});
 #else
 						osdialog_filters *filters = osdialog_filters_parse("WAV:wav");
 						char *path = osdialog_file(OSDIALOG_OPEN, NULL, NULL, filters);
 						osdialog_filters_free(filters);
-						replaceSampleHandler(module, cell, path);
+						if (path) {
+							replaceSampleHandler(module, cell, path);
+						}
 #endif
 						e.consume(this);
 					}
