@@ -732,8 +732,7 @@ Arrange16Widget::Arrange16Widget(Arrange16 *module) {
 }
 
 void Arrange16Widget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	Arrange16 *arrange16 = dynamic_cast<Arrange16*>(module);
 

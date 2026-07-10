@@ -157,8 +157,7 @@ QuantizerWidget::QuantizerWidget(Quantizer *module) {
 }
 
 void QuantizerWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 	
 	Quantizer *quantizer = dynamic_cast<Quantizer*>(module);
 

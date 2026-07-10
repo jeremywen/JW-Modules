@@ -244,6 +244,12 @@ struct JwTinyKnob : SvgKnob {
 	}
 };
 
+struct JwTinySnapKnob : JwTinyKnob {
+	JwTinySnapKnob() {
+		snap = true;
+	}
+};
+
 struct JwTinyGrayKnob : SvgKnob {
 	JwTinyGrayKnob() {
 		minAngle = -0.83 * M_PI;
@@ -595,6 +601,7 @@ extern Model *modelThingThing;
 extern Model *modelTimer;
 extern Model *modelTree;
 extern Model *modelTrigs;
+extern Model *modelTrigs128;
 extern Model *modelWavHead;
 extern Model *modelXYPad;
 extern Model *modelFM16Seq;

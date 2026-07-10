@@ -1609,15 +1609,9 @@ static void saveWavPath(Grains *grains, char *path) {
 }
 
 void GrainsWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	Grains *grains = dynamic_cast<Grains*>(module);
-	// Auto-advance moved to a front-panel switch
-
-	// Auto-advance CV override removed; front-panel switch governs behavior
-
-	// Toggle normal playback (bypass grains)
 	struct NormalPlaybackItem : MenuItem {
 		Grains *grains;
 		void onAction(const event::Action &e) override { if (grains) grains->normalPlayback = !grains->normalPlayback; }

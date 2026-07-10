@@ -153,8 +153,7 @@ struct SnowModeMenuItem : MenuItem {
 void WavHeadWidget::appendContextMenu(Menu *menu) {
 	WavHead *wavHead = dynamic_cast<WavHead*>(module);
 
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	InvertMenuItem *invertMenuItem = new InvertMenuItem();
 	invertMenuItem->text = "Invert";

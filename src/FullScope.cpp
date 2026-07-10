@@ -364,8 +364,7 @@ struct FullScopeLissajousModeMenuItem : MenuItem {
 };
 
 void FullScopeWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	FullScope *fullScope = dynamic_cast<FullScope*>(module);
 	assert(fullScope);

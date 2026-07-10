@@ -1010,8 +1010,7 @@ BufferWidget::BufferWidget(Buffer *module) {
 
 void BufferWidget::appendContextMenu(Menu *menu) {
 	Buffer *buffer = dynamic_cast<Buffer*>(module);
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	BufferSizeItem *sizeItem = new BufferSizeItem;
 	sizeItem->text = "Buffer Size";

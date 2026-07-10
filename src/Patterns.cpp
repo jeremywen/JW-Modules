@@ -457,8 +457,7 @@ PatternsWidget::PatternsWidget(Patterns *module) {
 
 void PatternsWidget::appendContextMenu(Menu *menu) {
 	Patterns *patterns = dynamic_cast<Patterns*>(module);
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	PattChannelItem *channelItem = new PattChannelItem;
 	channelItem->text = "Polyphony channels";

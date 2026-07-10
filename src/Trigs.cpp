@@ -399,6 +399,18 @@ struct Trigs : Module {
 		}
 	}
 
+	void repeatFirstRowDownPerChannel() {
+		for (int seqIndex = 0; seqIndex < 4; seqIndex++) {
+			int srcY = seqIndex * 4;
+			for (int x = 0; x < COLS; x++) {
+				bool on = cells[iFromXY(x, srcY)];
+				for (int rowOffset = 1; rowOffset < 4; rowOffset++) {
+					cells[iFromXY(x, srcY + rowOffset)] = on;
+				}
+			}
+		}
+	}
+
 	void randomizeCells(int seqIndex) {
 		clearCells(seqIndex);
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue();
@@ -656,11 +668,20 @@ TrigsWidget::TrigsWidget(Trigs *module) {
 
 void TrigsWidget::appendContextMenu(Menu *menu) {
 	Trigs *trigs = dynamic_cast<Trigs*>(module);
+	menu->addChild(new MenuSeparator());
 
-	// Gate pulse length slider
+	struct TrigsRepeatFirstRowDownItem : MenuItem {
+		Trigs *module;
+		void onAction(const event::Action &e) override {
+			module->repeatFirstRowDownPerChannel();
+		}
+	};
+	TrigsRepeatFirstRowDownItem *repeatRowsItem = new TrigsRepeatFirstRowDownItem;
+	repeatRowsItem->module = trigs;
+	repeatRowsItem->text = "Repeat First Row Down";
+	menu->addChild(repeatRowsItem);
+
 	{
-		MenuLabel *spacerLabelGate = new MenuLabel();
-		menu->addChild(spacerLabelGate);
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Length";
 		menu->addChild(gatePulseLabel);

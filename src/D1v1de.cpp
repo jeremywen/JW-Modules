@@ -256,13 +256,8 @@ struct ColorMenuItem : MenuItem {
 	}
 };
 
-// Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
-
 void D1v1deWidget::appendContextMenu(Menu *menu) {
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
+	menu->addChild(new MenuSeparator());
 
 	D1v1de *d1v = dynamic_cast<D1v1de*>(module);
 	{
@@ -294,9 +289,7 @@ void D1v1deWidget::appendContextMenu(Menu *menu) {
 		menu->addChild(item);
 	}
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
+	menu->addChild(new MenuSeparator());
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);

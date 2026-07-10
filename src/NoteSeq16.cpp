@@ -483,6 +483,16 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		gridChanged();
 	}
 
+	void repeatFirst16StepsAcross() {
+		for (int x = 16; x < COLS; x++) {
+			int srcX = x % 16;
+			for (int y = 0; y < ROWS; y++) {
+				cells[iFromXY(x, y)] = cells[iFromXY(srcX, y)];
+			}
+		}
+		gridChanged();
+	}
+
 	// rotate removed: behavior assumes square grid; not supported for rectangular grid
 
 	// Rotate each 16x16 square across the entire grid (ignore length/start).
@@ -1129,14 +1139,9 @@ struct NoteSeq16GateModeItem : MenuItem {
 	}
 };
 
-// Follow Playhead controlled by panel switch; no context menu item
-
-// Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
-
 void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	NoteSeq16 *noteSeq16 = dynamic_cast<NoteSeq16*>(module);
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	NS16ChannelItem *channelItem = new NS16ChannelItem;
 	channelItem->text = "Polyphony channels";
@@ -1144,9 +1149,6 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	channelItem->module = noteSeq16;
 	menu->addChild(channelItem);
 	
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
-
 	// Max length submenu
 	struct NS16MaxLenValueItem : MenuItem {
 		NoteSeq16 *module;
@@ -1192,6 +1194,17 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	maxLenItem->rightText = string::f("%d %s", noteSeq16->maxLength, RIGHT_ARROW);
 	menu->addChild(maxLenItem);
 
+	struct NS16Repeat16StepsItem : MenuItem {
+		NoteSeq16 *module;
+		void onAction(const event::Action &e) override {
+			module->repeatFirst16StepsAcross();
+		}
+	};
+	NS16Repeat16StepsItem *repeat16Item = new NS16Repeat16StepsItem;
+	repeat16Item->module = noteSeq16;
+	repeat16Item->text = "Repeat 16 Steps";
+	menu->addChild(repeat16Item);
+
 	// Follow Playhead is controlled from the panel
 
 	MenuLabel *modeLabel = new MenuLabel();
@@ -1216,9 +1229,6 @@ void NoteSeq16Widget::appendContextMenu(Menu *menu) {
 	continuousItem->gateMode = NoteSeq16::CONTINUOUS;
 	menu->addChild(continuousItem);
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);

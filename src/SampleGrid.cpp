@@ -1971,8 +1971,7 @@ struct FadeSecondsQuantity : Quantity {
 };
 
 void SampleGridWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	SampleGrid *sampleGrid = dynamic_cast<SampleGrid*>(module);
 	if (!sampleGrid) {
@@ -2009,10 +2008,7 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->sampleGrid = sampleGrid;
 	menu->addChild(pitchMenuItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
-
-	// Auto-wrap options removed in favor of snake pattern modes
+	menu->addChild(new MenuSeparator());
 
 	MenuLabel *patternLabel = new MenuLabel();
 	patternLabel->text = "Pattern Mode";
@@ -2022,9 +2018,8 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 	patternSub->sampleGrid = sampleGrid;
 	menu->addChild(patternSub);
 
-	// Fades toggle
-	MenuLabel *spacerLabelFade = new MenuLabel();
-	menu->addChild(spacerLabelFade);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *fadeLabel = new MenuLabel();
 	fadeLabel->text = "Audio Fades";
 	menu->addChild(fadeLabel);
@@ -2082,9 +2077,8 @@ void SampleGridWidget::appendContextMenu(Menu *menu) {
 	unmuteAllItem->sampleGrid = sampleGrid;
 	menu->addChild(unmuteAllItem);
 
-	// Random samples directory section
-	MenuLabel *spacerLabelDir = new MenuLabel();
-	menu->addChild(spacerLabelDir);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *dirLabelTitle = new MenuLabel();
 	dirLabelTitle->text = "Random Samples Directory";
 	menu->addChild(dirLabelTitle);

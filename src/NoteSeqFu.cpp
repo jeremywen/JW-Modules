@@ -631,6 +631,16 @@ struct NoteSeqFu : Module,QuantizeUtils {
 		gridChanged();
 	}
 
+	void repeatFirst16StepsAcross() {
+		for (int x = 16; x < COLS; x++) {
+			int srcX = x % 16;
+			for (int y = 0; y < ROWS; y++) {
+				cells[iFromXY(x, y)] = cells[iFromXY(srcX, y)];
+			}
+		}
+		gridChanged();
+	}
+
 	void randomizeCells() {
 		clearCells();
 		float rndAmt = params[RND_AMT_KNOB_PARAM].getValue() + inputs[RND_AMT_INPUT].getVoltage()*0.1;
@@ -1157,8 +1167,7 @@ struct NoteSeqFuGateModeItem : MenuItem {
 
 void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	NoteSeqFu *noteSeqFu = dynamic_cast<NoteSeqFu*>(module);
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	NSFChannelItem *channelItem = new NSFChannelItem;
 	channelItem->text = "Polyphony channels";
@@ -1166,8 +1175,16 @@ void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	channelItem->module = noteSeqFu;
 	menu->addChild(channelItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
+	struct NSFRepeat16StepsItem : MenuItem {
+		NoteSeqFu *module;
+		void onAction(const event::Action &e) override {
+			module->repeatFirst16StepsAcross();
+		}
+	};
+	NSFRepeat16StepsItem *repeat16Item = new NSFRepeat16StepsItem;
+	repeat16Item->module = noteSeqFu;
+	repeat16Item->text = "Repeat 16 Steps";
+	menu->addChild(repeat16Item);
 
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Gate Mode";
@@ -1191,9 +1208,8 @@ void NoteSeqFuWidget::appendContextMenu(Menu *menu) {
 	continuousItem->gateMode = NoteSeqFu::CONTINUOUS;
 	menu->addChild(continuousItem);
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);

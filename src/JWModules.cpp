@@ -55,6 +55,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelTimer);
 	p->addModel(modelTree);
 	p->addModel(modelTrigs);
+	p->addModel(modelTrigs128);
 	p->addModel(modelWavHead);
 	p->addModel(modelXYPad);
 	p->addModel(modelFM16Seq);

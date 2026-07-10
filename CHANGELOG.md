@@ -1,6 +1,16 @@
 # Change Log
 
-## v2.0.41 ~
+## v2.0.42 ~ 
+
+  * Trigs: added 'Repeat First Row Down' menu item
+  * NoteSeq16: added 'Repeat 16 Steps'
+  * NoteSeq: added 'Repeat 16 Steps'
+  * NoteSeqFu: added 'Repeat 16 Steps'
+  * Arrange: added presets
+
+  improved all context menus
+
+## v2.0.41 ~ 7-4-26
 
   * samplegrid: add drag and drop file
   * grains: add drag and drop file

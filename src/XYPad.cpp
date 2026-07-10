@@ -883,10 +883,7 @@ struct ShapeMenuItem : MenuItem {
 };
 
 void XYPadWidget::appendContextMenu(Menu *menu) {
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
+	menu->addChild(new MenuSeparator());
 	XYPad *xyPad = dynamic_cast<XYPad*>(module);
 	assert(xyPad);
 

@@ -1,6 +1,6 @@
 OSC_ON=1
 
-DISTRIBUTABLES += $(wildcard LICENSE*) res
+DISTRIBUTABLES += $(wildcard LICENSE*) res presets
 RACK_DIR ?= ../..
 
 SHELL:=/bin/bash -O extglob

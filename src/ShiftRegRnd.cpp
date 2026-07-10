@@ -179,8 +179,7 @@ ShiftRegRndWidget::ShiftRegRndWidget(ShiftRegRnd *module) {
 
 void ShiftRegRndWidget::appendContextMenu(Menu *menu) {
 	ShiftRegRnd *shiftRegRnd = dynamic_cast<ShiftRegRnd*>(module);
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	SRRChannelItem *channelItem = new SRRChannelItem;
 	channelItem->text = "Polyphony channels";

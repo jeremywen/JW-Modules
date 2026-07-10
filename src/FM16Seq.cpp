@@ -1341,8 +1341,6 @@ struct FM16SeqWidget : ModuleWidget {
 		   snapCvRatioItem->module = m;
 		   menu->addChild(snapCvRatioItem);
 
-		   menu->addChild(new MenuSeparator());
-
 		   QuantizeEnabledMenuItem* quantizeEnabledItem = new QuantizeEnabledMenuItem();
 		   quantizeEnabledItem->text = "Enable pitch quantization";
 		   quantizeEnabledItem->module = m;

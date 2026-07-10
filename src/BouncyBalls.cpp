@@ -591,9 +591,9 @@ void BouncyBallsWidget::appendContextMenu(Menu *menu) {
 	BouncyBalls *bbs = dynamic_cast<BouncyBalls*>(module);
 	if (!bbs) return;
 
+	menu->addChild(new MenuSeparator());
+	
 	MenuLabel *gatePulseLabel = new MenuLabel();
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);
 

@@ -211,10 +211,7 @@ struct ClockMultMenuItem : MenuItem {
 };
 
 void SimpleClockWidget::appendContextMenu(Menu *menu) {
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
+	menu->addChild(new MenuSeparator());
 	SimpleClock *sClock = dynamic_cast<SimpleClock*>(module);
 	{
 		ClockMultMenuItem *item = new ClockMultMenuItem();
@@ -251,11 +248,8 @@ void SimpleClockWidget::appendContextMenu(Menu *menu) {
 		item->val = 16;
 		menu->addChild(item);
 	}
-
-	// Gate pulse length slider
+	menu->addChild(new MenuSeparator());
 	{
-		MenuLabel *spacerLabelGate = new MenuLabel();
-		menu->addChild(spacerLabelGate);
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Length";
 		menu->addChild(gatePulseLabel);
@@ -274,10 +268,8 @@ void SimpleClockWidget::appendContextMenu(Menu *menu) {
 		menu->addChild(gateSlider);
 	}
 
-	// Reset pulse length slider
+	menu->addChild(new MenuSeparator());
 	{
-		MenuLabel *spacerLabelReset = new MenuLabel();
-		menu->addChild(spacerLabelReset);
 		MenuLabel *resetPulseLabel = new MenuLabel();
 		resetPulseLabel->text = "Reset Pulse Length";
 		menu->addChild(resetPulseLabel);

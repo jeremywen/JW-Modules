@@ -65,8 +65,8 @@
 // };
 
 // void NewModuleWidget::appendContextMenu(Menu *menu) {
-// 	MenuLabel *spacerLabel = new MenuLabel();
-// 	menu->addChild(spacerLabel);
+//	menu->addChild(new MenuSeparator());
+
 
 // 	NewModule *newModule = dynamic_cast<NewModule*>(module);
 // }

@@ -682,8 +682,7 @@ struct GridSeqPatternSubMenuItem : MenuItem {
 };
 
 void GridSeqWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	GridSeq *gridSeq = dynamic_cast<GridSeq*>(module);
 	assert(gridSeq);
@@ -715,10 +714,7 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
-
-	// Auto-wrap options removed in favor of snake pattern modes
+	menu->addChild(new MenuSeparator());
 
 	MenuLabel *patternLabel = new MenuLabel();
 	patternLabel->text = "Pattern Mode";
@@ -729,9 +725,8 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	patternSub->gridSeq = gridSeq;
 	menu->addChild(patternSub);
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);

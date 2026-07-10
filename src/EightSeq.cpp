@@ -497,8 +497,7 @@ struct EightSeqPatternModeItem : MenuItem {
 
 
 void EightSeqWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	EightSeq *eightSeq = dynamic_cast<EightSeq*>(module);
 	assert(eightSeq);
@@ -530,8 +529,7 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->eightSeq = eightSeq;
 	menu->addChild(pitchMenuItem);
 
-	MenuLabel *spacerLabel2 = new MenuLabel();
-	menu->addChild(spacerLabel2);
+	menu->addChild(new MenuSeparator());
 
 	// Traversal pattern menu
 	MenuLabel *patternLabel = new MenuLabel();
@@ -562,9 +560,8 @@ void EightSeqWidget::appendContextMenu(Menu *menu) {
 	snakeColsItem->patternMode = EightSeq::SNAKE_COLS;
 	menu->addChild(snakeColsItem);
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);

@@ -443,8 +443,7 @@ RandomSoundWidget::RandomSoundWidget(RandomSound *module) {
 			menu->addChild(info);
 			return;
 		}
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
+		menu->addChild(new MenuSeparator());
 		struct RSChannelItem : MenuItem {
 			RandomSound *module;
 			Menu *createChildMenu() override {

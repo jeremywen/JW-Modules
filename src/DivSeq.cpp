@@ -469,8 +469,7 @@ struct DivSeqGateModeItem : MenuItem {
 
 
 void DivSeqWidget::appendContextMenu(Menu *menu) {
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->addChild(spacerLabel);
+	menu->addChild(new MenuSeparator());
 
 	DivSeq *divSeq = dynamic_cast<DivSeq*>(module);
 	assert(divSeq);
@@ -502,9 +501,8 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->divSeq = divSeq;
 	menu->addChild(pitchMenuItem);
 
-	// Gate pulse length slider
-	MenuLabel *spacerLabelGate = new MenuLabel();
-	menu->addChild(spacerLabelGate);
+	menu->addChild(new MenuSeparator());
+
 	MenuLabel *gatePulseLabel = new MenuLabel();
 	gatePulseLabel->text = "Gate Length";
 	menu->addChild(gatePulseLabel);
@@ -520,9 +518,7 @@ void DivSeqWidget::appendContextMenu(Menu *menu) {
 	gateSlider->box.size.x = 175.0f;
 	menu->addChild(gateSlider);
 
-	// Max random division / param limit
-	MenuLabel *spacerLabel3 = new MenuLabel();
-	menu->addChild(spacerLabel3);
+	menu->addChild(new MenuSeparator());
 
 	struct DivSeqMaxDivValueItem : MenuItem {
 		DivSeq *module;

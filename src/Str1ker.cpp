@@ -423,10 +423,7 @@ struct OscPortMenuItem : MenuItem {
 #endif
 
 void Str1kerWidget::appendContextMenu(Menu *menu) {
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
+	menu->addChild(new MenuSeparator());
 	Str1ker *str1 = dynamic_cast<Str1ker*>(module);
 	{
 		MultMenuItem *item = new MultMenuItem();
@@ -464,10 +461,8 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 		menu->addChild(item);
 	}
 
-	// Gate pulse length slider
 	{
-		MenuLabel *spacerLabelGate = new MenuLabel();
-		menu->addChild(spacerLabelGate);
+		menu->addChild(new MenuSeparator());
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Length";
 		menu->addChild(gatePulseLabel);
@@ -484,10 +479,8 @@ void Str1kerWidget::appendContextMenu(Menu *menu) {
 		menu->addChild(gateSlider);
 	}
 	#ifdef OSC_ON
-	{	
-		MenuLabel *spacerLabel = new MenuLabel();
-		menu->addChild(spacerLabel);
-	}
+	menu->addChild(new MenuSeparator());
+
 	{
 		OscOnMenuItem *item = new OscOnMenuItem();
 		item->text = "OSC On";
