@@ -134,6 +134,15 @@ struct Trigs128 : Module, QuantizeUtils {
 		LIFE_RATE_X16,
 		NUM_LIFE_RATE_MODES
 	};
+	enum GridShadeMode {
+		GS_PROBABILITY,
+		GS_PITCH,
+		GS_CV,
+		GS_CV2,
+		GS_RATCHETS,
+		GS_DIVISION,
+		NUM_GRID_SHADE_MODES
+	};
 
 	std::array<CellProps, GRID_CELLS> cells;
 	int selectedX = 0;
@@ -174,6 +183,7 @@ struct Trigs128 : Module, QuantizeUtils {
 	bool polyphonicFirstRowOutputs = false;
 	int cvRangeMode = CV_RANGE_BIPOLAR_10V;
 	int cv2RangeMode = CV_RANGE_BIPOLAR_10V;
+	int gridShadeMode = GS_PROBABILITY;
 	int lifeRateMode = LIFE_RATE_X1;
 	int lifeClockCounter = 0;
 	bool lifeStationaryLatched = false;
@@ -313,6 +323,43 @@ struct Trigs128 : Module, QuantizeUtils {
 		}
 		refreshCvParamRanges();
 		selectedDirty = true;
+	}
+
+	static const char *getGridShadeLabel(int mode) {
+		switch (clampijw(mode, 0, NUM_GRID_SHADE_MODES - 1)) {
+			case GS_PROBABILITY: return "Probability";
+			case GS_PITCH: return "Pitch";
+			case GS_CV: return "CV";
+			case GS_CV2: return "CV2";
+			case GS_RATCHETS: return "Ratchets";
+			case GS_DIVISION: return "Division";
+			default: return "Probability";
+		}
+	}
+
+	float getGridShadeNorm(const CellProps &c) const {
+		switch (clampijw(gridShadeMode, 0, NUM_GRID_SHADE_MODES - 1)) {
+			case GS_PROBABILITY:
+				return clampfjw(c.probability, 0.f, 1.f);
+			case GS_PITCH:
+				return clampfjw(c.pitch / 10.f, 0.f, 1.f);
+			case GS_CV: {
+				CvRangeSpec spec = getCvRangeSpec(cvRangeMode);
+				float denom = std::max(0.0001f, spec.max - spec.min);
+				return clampfjw((c.cv - spec.min) / denom, 0.f, 1.f);
+			}
+			case GS_CV2: {
+				CvRangeSpec spec = getCvRangeSpec(cv2RangeMode);
+				float denom = std::max(0.0001f, spec.max - spec.min);
+				return clampfjw((c.cv2 - spec.min) / denom, 0.f, 1.f);
+			}
+			case GS_RATCHETS:
+				return clampfjw((float)(c.ratchets - 1) / 7.f, 0.f, 1.f);
+			case GS_DIVISION:
+				return clampfjw((float)(c.division - 1) / 15.f, 0.f, 1.f);
+			default:
+				return clampfjw(c.probability, 0.f, 1.f);
+		}
 	}
 
 	void invalidateLifeStationaryState() {
@@ -484,6 +531,7 @@ struct Trigs128 : Module, QuantizeUtils {
 		json_object_set_new(rootJ, "polyphonicFirstRowOutputs", json_boolean(polyphonicFirstRowOutputs));
 		json_object_set_new(rootJ, "cvRangeMode", json_integer(cvRangeMode));
 		json_object_set_new(rootJ, "cv2RangeMode", json_integer(cv2RangeMode));
+		json_object_set_new(rootJ, "gridShadeMode", json_integer(gridShadeMode));
 		json_object_set_new(rootJ, "lifeEnabled", json_boolean(params[LIFE_ON_SWITCH_PARAM].getValue() > 0.5f));
 		json_object_set_new(rootJ, "lifeRateMode", json_integer(lifeRateMode));
 		return rootJ;
@@ -525,6 +573,8 @@ struct Trigs128 : Module, QuantizeUtils {
 		if (cvRangeJ) cvRangeMode = clampijw((int)json_integer_value(cvRangeJ), 0, NUM_CV_RANGE_MODES - 1);
 		json_t *cv2RangeJ = json_object_get(rootJ, "cv2RangeMode");
 		if (cv2RangeJ) cv2RangeMode = clampijw((int)json_integer_value(cv2RangeJ), 0, NUM_CV_RANGE_MODES - 1);
+		json_t *gridShadeJ = json_object_get(rootJ, "gridShadeMode");
+		if (gridShadeJ) gridShadeMode = clampijw((int)json_integer_value(gridShadeJ), 0, NUM_GRID_SHADE_MODES - 1);
 		json_t *lifeEnabledJ = json_object_get(rootJ, "lifeEnabled");
 		if (lifeEnabledJ) params[LIFE_ON_SWITCH_PARAM].setValue(json_boolean_value(lifeEnabledJ) ? 1.f : 0.f);
 		json_t *lifeRateModeJ = json_object_get(rootJ, "lifeRateMode");
@@ -1302,7 +1352,8 @@ struct Trigs128Display : LightWidget {
 					if (c.active) {
 						int track = clampijw(y / 4, 0, 3);
 						NVGcolor color = trackColors[track];
-						color.a = clampfjw(0.35f + (c.probability * 0.65f), 0.f, 1.f);
+						float shade = module->getGridShadeNorm(c);
+						color.a = clampfjw(0.35f + (shade * 0.65f), 0.f, 1.f);
 						nvgFillColor(args.vg, color);
 						nvgBeginPath(args.vg);
 						nvgRect(args.vg, x * cw, y * ch, cw, ch);
@@ -1814,6 +1865,38 @@ struct Trigs128Widget : ModuleWidget {
 			}
 		};
 
+		struct GridShadeChoiceItem : MenuItem {
+			Trigs128 *module = nullptr;
+			int mode = 0;
+			void onAction(const event::Action &e) override {
+				if (!module) return;
+				module->gridShadeMode = clampijw(mode, 0, Trigs128::NUM_GRID_SHADE_MODES - 1);
+			}
+			void step() override {
+				rightText = (module && module->gridShadeMode == mode) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
+
+		struct GridShadeMenuItem : MenuItem {
+			Trigs128 *module = nullptr;
+			Menu *createChildMenu() override {
+				Menu *child = new Menu;
+				for (int mode = 0; mode < Trigs128::NUM_GRID_SHADE_MODES; mode++) {
+					GridShadeChoiceItem *item = new GridShadeChoiceItem;
+					item->module = module;
+					item->mode = mode;
+					item->text = Trigs128::getGridShadeLabel(mode);
+					child->addChild(item);
+				}
+				return child;
+			}
+			void step() override {
+				rightText = "▶";
+				MenuItem::step();
+			}
+		};
+
 		struct LifeRateQuantity : Quantity {
 			Trigs128 *module = nullptr;
 			void setValue(float value) override {
@@ -1928,6 +2011,11 @@ struct Trigs128Widget : ModuleWidget {
 		cv2RangeItem->secondOutput = true;
 		cv2RangeItem->text = "CV2 Range";
 		menu->addChild(cv2RangeItem);
+
+		GridShadeMenuItem *gridShadeItem = new GridShadeMenuItem;
+		gridShadeItem->module = module;
+		gridShadeItem->text = "Grid Shading";
+		menu->addChild(gridShadeItem);
 
 		menu->addChild(new MenuSeparator());
 		ui::Slider *lifeRateSlider = new ui::Slider;
