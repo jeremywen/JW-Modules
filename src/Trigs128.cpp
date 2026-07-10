@@ -152,21 +152,25 @@ struct Trigs128 : Module, QuantizeUtils {
 	float lastCv2[4] = {0.f, 0.f, 0.f, 0.f};
 	bool resetMode[4] = {true, true, true, true};
 
-	dsp::SchmittTrigger clockTrig, resetTrig;
+	dsp::SchmittTrigger clockTrig[4];
+	dsp::SchmittTrigger resetTrig;
+	dsp::SchmittTrigger resetInputTrig[4];
 	dsp::SchmittTrigger clearInputTrig[4];
 	dsp::SchmittTrigger clearBtnTrig[4];
 	dsp::SchmittTrigger rndTrig[4];
 	dsp::SchmittTrigger cellRndTrig[7];
 	dsp::SchmittTrigger cellActiveRndTrig;
+	dsp::SchmittTrigger cellActiveRndInputTrig[4];
 	dsp::SchmittTrigger cellInitTrig[7];
 	dsp::PulseGenerator gatePulse[4];
 	dsp::PulseGenerator eocPulse[4];
 	dsp::PulseGenerator lifeStoppedPulse;
 
 	float gatePulseLenSec = 0.005f;
-	int samplesSinceClock = 0;
-	int lastStepSamples = 4410;
+	int samplesSinceClock[4] = {0, 0, 0, 0};
+	int lastStepSamples[4] = {4410, 4410, 4410, 4410};
 	int uniformTrackLength = GRID_COLS * 4;
+	float minProbability = 0.f;
 	bool polyphonicFirstRowOutputs = false;
 	int cvRangeMode = CV_RANGE_BIPOLAR_10V;
 	int cv2RangeMode = CV_RANGE_BIPOLAR_10V;
@@ -234,14 +238,14 @@ struct Trigs128 : Module, QuantizeUtils {
 		configParam(CLEAR4_BTN_PARAM, 0.f, 1.f, 0.f, "Clear Blue Track");
 		configParam(LIFE_ON_SWITCH_PARAM, 0.f, 1.f, 0.f, "Game of Life Enable");
 
-		configInput(CLOCK_INPUT, "Clock");
-		configInput(RESET_INPUT, "Reset");
-		configInput(START_INPUT, "Start");
-		configInput(RND_TRIG_INPUT, "Random Trigger");
-		configInput(CELL_ACTIVE_RND_INPUT, "Random Gate Status Trigger");
-		configInput(CLEAR_INPUT, "Clear");
-		configInput(LENGTH_INPUT, "Length");
-		configInput(PLAY_MODE_INPUT, "Play Mode");
+		configInput(CLOCK_INPUT, "Clock (polyphonic for tracks 1-4)");
+		configInput(RESET_INPUT, "Reset (polyphonic for tracks 1-4)");
+		configInput(START_INPUT, "Start (polyphonic for tracks 1-4)");
+		configInput(RND_TRIG_INPUT, "Random Trigger (polyphonic for tracks 1-4)");
+		configInput(CELL_ACTIVE_RND_INPUT, "Random Gate Status Trigger (polyphonic for tracks 1-4)");
+		configInput(CLEAR_INPUT, "Clear (polyphonic for tracks 1-4)");
+		configInput(LENGTH_INPUT, "Length (polyphonic for tracks 1-4)");
+		configInput(PLAY_MODE_INPUT, "Play Mode (polyphonic for tracks 1-4)");
 		configInput(SEED_INPUT, "Seed input for repeatable randomization");
 
 		const char *colors[4] = { "Orange", "Yellow", "Purple", "Blue" };
@@ -384,7 +388,10 @@ struct Trigs128 : Module, QuantizeUtils {
 			gatePulse[ch].reset();
 			eocPulse[ch].reset();
 		}
-		samplesSinceClock = 0;
+		for (int ch = 0; ch < 4; ch++) {
+			samplesSinceClock[ch] = 0;
+			lastStepSamples[ch] = 4410;
+		}
 		lifeClockCounter = 0;
 		lifeStationaryLatched = false;
 		lifePrevActiveValid = false;
@@ -473,6 +480,7 @@ struct Trigs128 : Module, QuantizeUtils {
 		json_object_set_new(rootJ, "selectedY", json_integer(selectedY));
 		json_object_set_new(rootJ, "gatePulseLenSec", json_real(gatePulseLenSec));
 		json_object_set_new(rootJ, "uniformTrackLength", json_integer(uniformTrackLength));
+		json_object_set_new(rootJ, "minProbability", json_real(minProbability));
 		json_object_set_new(rootJ, "polyphonicFirstRowOutputs", json_boolean(polyphonicFirstRowOutputs));
 		json_object_set_new(rootJ, "cvRangeMode", json_integer(cvRangeMode));
 		json_object_set_new(rootJ, "cv2RangeMode", json_integer(cv2RangeMode));
@@ -509,6 +517,8 @@ struct Trigs128 : Module, QuantizeUtils {
 		if (gJ) gatePulseLenSec = clampfjw((float)json_number_value(gJ), 0.001f, 10.0f);
 		json_t *uJ = json_object_get(rootJ, "uniformTrackLength");
 		if (uJ) uniformTrackLength = clampijw((int)json_integer_value(uJ), 1, GRID_COLS * 4);
+		json_t *minProbJ = json_object_get(rootJ, "minProbability");
+		if (minProbJ) minProbability = clampfjw((float)json_number_value(minProbJ), 0.f, 1.f);
 		json_t *polyJ = json_object_get(rootJ, "polyphonicFirstRowOutputs");
 		if (polyJ) polyphonicFirstRowOutputs = json_boolean_value(polyJ);
 		json_t *cvRangeJ = json_object_get(rootJ, "cvRangeMode");
@@ -678,6 +688,20 @@ struct Trigs128 : Module, QuantizeUtils {
 		float rndAmt = clampfjw(params[CELL_ACTIVE_RND_AMT_PARAM].getValue(), 0.f, 1.f);
 		for (int i = 0; i < GRID_CELLS; i++) {
 			cells[i].active = (random::uniform() < rndAmt);
+		}
+		selectedDirty = true;
+	}
+
+	void randomizeCellActiveTrack(int track) {
+		invalidateLifeStationaryState();
+		int t = clampijw(track, 0, 3);
+		int y0 = t * 4;
+		int y1 = y0 + 4;
+		float rndAmt = clampfjw(params[CELL_ACTIVE_RND_AMT_PARAM].getValue(), 0.f, 1.f);
+		for (int y = y0; y < y1; y++) {
+			for (int x = 0; x < GRID_COLS; x++) {
+				cells[iFromXY(x, y)].active = (random::uniform() < rndAmt);
+			}
 		}
 		selectedDirty = true;
 	}
@@ -994,7 +1018,27 @@ struct Trigs128 : Module, QuantizeUtils {
 		if (cellRndTrig[4].process(params[CELL_PROB_RND_BTN_PARAM].getValue())) { randomizeCellProbAll(); refreshSelectedParamsNow = true; }
 		if (cellRndTrig[5].process(params[CELL_DIV_RND_BTN_PARAM].getValue())) { randomizeCellDivAll(); refreshSelectedParamsNow = true; }
 		if (cellRndTrig[6].process(params[CELL_RATCHET_RND_BTN_PARAM].getValue())) { randomizeCellRatchetAll(); refreshSelectedParamsNow = true; }
-		if (cellActiveRndTrig.process(params[CELL_ACTIVE_RND_BTN_PARAM].getValue() + inputs[CELL_ACTIVE_RND_INPUT].getVoltage())) { randomizeCellActiveAll(); refreshSelectedParamsNow = true; }
+		if (cellActiveRndTrig.process(params[CELL_ACTIVE_RND_BTN_PARAM].getValue())) {
+			randomizeCellActiveAll();
+			refreshSelectedParamsNow = true;
+		}
+		if (inputs[CELL_ACTIVE_RND_INPUT].isConnected()) {
+			int rndChannels = inputs[CELL_ACTIVE_RND_INPUT].getChannels();
+			if (rndChannels <= 1) {
+				if (cellActiveRndTrig.process(inputs[CELL_ACTIVE_RND_INPUT].getVoltage())) {
+					randomizeCellActiveAll();
+					refreshSelectedParamsNow = true;
+				}
+			}
+			else {
+				for (int i = 0; i < 4; i++) {
+					if (cellActiveRndInputTrig[i].process(getTrackInputVoltage(CELL_ACTIVE_RND_INPUT, i))) {
+						randomizeCellActiveTrack(i);
+						refreshSelectedParamsNow = true;
+					}
+				}
+			}
+		}
 
 		if (cellInitTrig[0].process(params[CELL_PITCH_INIT_BTN_PARAM].getValue())) { initCellPitchAll(); refreshSelectedParamsNow = true; }
 		if (cellInitTrig[1].process(params[CELL_OCTAVE_INIT_BTN_PARAM].getValue())) { initCellOctaveAll(); refreshSelectedParamsNow = true; }
@@ -1025,31 +1069,75 @@ struct Trigs128 : Module, QuantizeUtils {
 			selectedDirty = false;
 		}
 
-		if (resetTrig.process(inputs[RESET_INPUT].getVoltage() + manualResetGate)) {
+		bool resetTrack[4] = {false, false, false, false};
+		bool globalReset = false;
+		if (resetTrig.process(manualResetGate)) {
+			globalReset = true;
 			for (int i = 0; i < 4; i++) {
-				seqPos[i] = -1;
-				stepCounter[i] = 0;
-				for (int c = 0; c < GRID_CELLS; c++) {
-					cellVisitCounter[i][c] = 0;
-				}
-				resetMode[i] = false;
-				goingForward[i] = true;
-				ratchetsRemaining[i] = 0;
-				eocPulse[i].trigger(gatePulseLenSec);
+				resetTrack[i] = true;
 			}
+		}
+		if (inputs[RESET_INPUT].isConnected()) {
+			int resetChannels = inputs[RESET_INPUT].getChannels();
+			if (resetChannels <= 1) {
+				if (resetInputTrig[0].process(inputs[RESET_INPUT].getVoltage())) {
+					globalReset = true;
+					for (int i = 0; i < 4; i++) {
+						resetTrack[i] = true;
+					}
+				}
+			}
+			else {
+				for (int i = 0; i < 4; i++) {
+					if (resetInputTrig[i].process(getTrackInputVoltage(RESET_INPUT, i))) {
+						resetTrack[i] = true;
+					}
+				}
+			}
+		}
+		for (int i = 0; i < 4; i++) {
+			if (!resetTrack[i]) {
+				continue;
+			}
+			seqPos[i] = -1;
+			stepCounter[i] = 0;
+			for (int c = 0; c < GRID_CELLS; c++) {
+				cellVisitCounter[i][c] = 0;
+			}
+			resetMode[i] = false;
+			goingForward[i] = true;
+			ratchetsRemaining[i] = 0;
+			eocPulse[i].trigger(gatePulseLenSec);
+		}
+		if (globalReset) {
 			lifeClockCounter = 0;
 			lifeStationaryLatched = false;
 			lifeStoppedPulse.reset();
 		}
 
-		samplesSinceClock++;
-		if (clockTrig.process(inputs[CLOCK_INPUT].getVoltage() + manualClockGate)) {
-			if (samplesSinceClock > 1)
-				lastStepSamples = samplesSinceClock;
-			samplesSinceClock = 0;
-			advanceLifeClock();
+		bool clockEdge[4] = {false, false, false, false};
+		bool masterClockEdge = false;
+		for (int ch = 0; ch < 4; ch++) {
+			samplesSinceClock[ch]++;
+			float trackClockIn = getTrackInputVoltage(CLOCK_INPUT, ch) + manualClockGate;
+			if (clockTrig[ch].process(trackClockIn)) {
+				clockEdge[ch] = true;
+				if (samplesSinceClock[ch] > 1) {
+					lastStepSamples[ch] = samplesSinceClock[ch];
+				}
+				samplesSinceClock[ch] = 0;
+				if (ch == 0) {
+					masterClockEdge = true;
+				}
+			}
+		}
 
-			for (int ch = 0; ch < 4; ch++) {
+		if (masterClockEdge) {
+			advanceLifeClock();
+		}
+
+		for (int ch = 0; ch < 4; ch++) {
+			if (clockEdge[ch]) {
 				advanceSeqPos(ch);
 				int col = seqPos[ch] % GRID_COLS;
 				int row = ch * 4 + (seqPos[ch] / GRID_COLS);
@@ -1060,12 +1148,13 @@ struct Trigs128 : Module, QuantizeUtils {
 				if (c.active) {
 					cellVisitCounter[ch][cellIndex]++;
 				}
-				if (c.active && (((cellVisitCounter[ch][cellIndex] - 1) % c.division) == 0) && random::uniform() <= c.probability) {
+				float effectiveProb = std::max(c.probability, minProbability);
+				if (c.active && (((cellVisitCounter[ch][cellIndex] - 1) % c.division) == 0) && random::uniform() <= effectiveProb) {
 					int ratchets = std::max(1, c.ratchets);
 					// Fire the first pulse immediately on this clock edge.
 					gatePulse[ch].trigger(gatePulseLenSec);
 					ratchetsRemaining[ch] = ratchets - 1;
-					ratchetInterval[ch] = std::max(1, lastStepSamples / ratchets);
+					ratchetInterval[ch] = std::max(1, lastStepSamples[ch] / ratchets);
 					nextRatchetSample[ch] = ratchetInterval[ch];
 					lastVoct[ch] = cellVoltage(c);
 					lastCv[ch] = clampCvRangeValue(c.cv, cvRangeMode);
@@ -1077,7 +1166,7 @@ struct Trigs128 : Module, QuantizeUtils {
 		float gateOut[4] = {};
 		float eocOut[4] = {};
 		for (int ch = 0; ch < 4; ch++) {
-			while (ratchetsRemaining[ch] > 0 && samplesSinceClock >= nextRatchetSample[ch]) {
+			while (ratchetsRemaining[ch] > 0 && samplesSinceClock[ch] >= nextRatchetSample[ch]) {
 				gatePulse[ch].trigger(gatePulseLenSec);
 				ratchetsRemaining[ch]--;
 				nextRatchetSample[ch] += ratchetInterval[ch];
@@ -1459,19 +1548,26 @@ struct Trigs128Widget : ModuleWidget {
 
 		addInput(createInput<TinyPJ301MPort>(Vec(330, 35), module, Trigs128::SEED_INPUT));
 
+		addParam(createParam<JwHorizontalSwitch>(Vec(8, 326), module, Trigs128::LIFE_ON_SWITCH_PARAM));
+		addOutput(createOutput<TinyPJ301MPort>(Vec(10, 350), module, Trigs128::LIFE_STOPPED_OUTPUT));
+		
+		addInput(createInput<TinyPJ301MPort>(Vec(45, 350), module, Trigs128::CELL_ACTIVE_RND_INPUT));
+		addParam(createParam<TinyRandomButton>(Vec(60, 350), module, Trigs128::CELL_ACTIVE_RND_BTN_PARAM));
+		addParam(createParam<JwTinyGrayKnob>(Vec(75, 350), module, Trigs128::CELL_ACTIVE_RND_AMT_PARAM));
+
 		float quantParamYVal = 340.f;
-		float noteKnobX = 91.f;
+		float noteKnobX = 100.f;
 		float scaleKnobX = 188.f;
 
 		NoteKnob *noteKnob = dynamic_cast<NoteKnob*>(createParam<NoteKnob>(Vec(noteKnobX, quantParamYVal), module, Trigs128::NOTE_KNOB_PARAM));
 		CenteredLabel* const noteLabel = new CenteredLabel;
-		noteLabel->box.pos = Vec(52, 188);
+		noteLabel->box.pos = Vec(57, 188);
 		noteLabel->text = "";
 		noteKnob->connectLabel(noteLabel, module);
 		addChild(noteLabel);
 		addParam(noteKnob);
 
-		addParam(createParam<JwSmallSnapKnob>(Vec(138, quantParamYVal), module, Trigs128::GLOBAL_OCTAVE_KNOB_PARAM));
+		addParam(createParam<JwSmallSnapKnob>(Vec(143, quantParamYVal), module, Trigs128::GLOBAL_OCTAVE_KNOB_PARAM));
 
 		ScaleKnob *scaleKnob = dynamic_cast<ScaleKnob*>(createParam<ScaleKnob>(Vec(scaleKnobX, quantParamYVal), module, Trigs128::SCALE_KNOB_PARAM));
 		CenteredLabel* const scaleLabel = new CenteredLabel;
@@ -1502,12 +1598,6 @@ struct Trigs128Widget : ModuleWidget {
 		addParam(createParam<TinyRandomButton>(Vec(x0 + dx * 4 + initBtnOffsetX, rndBtnY + 7), module, Trigs128::CELL_RATCHET_RND_BTN_PARAM));
 		addParam(createParam<TinyRandomButton>(Vec(x0 + dx * 5 + initBtnOffsetX, rndBtnY + 7), module, Trigs128::CELL_CV_RND_BTN_PARAM));
 		addParam(createParam<TinyRandomButton>(Vec(x0 + dx * 6 + initBtnOffsetX, rndBtnY + 7), module, Trigs128::CELL_CV2_RND_BTN_PARAM));
-		addOutput(createOutput<TinyPJ301MPort>(Vec(12, 327), module, Trigs128::LIFE_STOPPED_OUTPUT));
-		addParam(createParam<JwHorizontalSwitch>(Vec(35, 326), module, Trigs128::LIFE_ON_SWITCH_PARAM));
-		addInput(createInput<TinyPJ301MPort>(Vec(12, 350), module, Trigs128::CELL_ACTIVE_RND_INPUT));
-		addParam(createParam<TinyRandomButton>(Vec(40, 350), module, Trigs128::CELL_ACTIVE_RND_BTN_PARAM));
-		addParam(createParam<JwTinyGrayKnob>(Vec(55, 350), module, Trigs128::CELL_ACTIVE_RND_AMT_PARAM));
-
 		addParam(createParam<JwTinyKnob>(Vec(x0 + dx * 0, knobsY), module, Trigs128::CELL_PITCH_PARAM));
 		addParam(createParam<JwTinySnapKnob>(Vec(x0 + dx * 1, knobsY), module, Trigs128::CELL_OCTAVE_PARAM));
 		addParam(createParam<JwTinyKnob>(Vec(x0 + dx * 2, knobsY), module, Trigs128::CELL_PROB_PARAM));
@@ -1747,6 +1837,29 @@ struct Trigs128Widget : ModuleWidget {
 			}
 		};
 
+		struct MinProbabilityQuantity : Quantity {
+			Trigs128 *module = nullptr;
+			void setValue(float value) override {
+				if (!module) return;
+				module->minProbability = clampfjw(value, 0.f, 1.f);
+			}
+			float getValue() override {
+				if (!module) return 0.f;
+				return module->minProbability;
+			}
+			float getMinValue() override { return 0.f; }
+			float getMaxValue() override { return 1.f; }
+			float getDefaultValue() override { return 0.f; }
+			float getDisplayValue() override { return getValue() * 100.f; }
+			void setDisplayValue(float displayValue) override { setValue(displayValue / 100.f); }
+			int getDisplayPrecision() override { return 0; }
+			std::string getLabel() override { return "Minimum Probability"; }
+			std::string getUnit() override { return "%"; }
+			std::string getDisplayValueString() override {
+				return string::f("%d", (int)std::round(getDisplayValue()));
+			}
+		};
+
 		menu->addChild(new MenuSeparator());
 		MenuLabel *gatePulseLabel = new MenuLabel();
 		gatePulseLabel->text = "Gate Length";
@@ -1778,6 +1891,17 @@ struct Trigs128Widget : ModuleWidget {
 		applyUniformLengthItem->module = module;
 		applyUniformLengthItem->text = "Set All Track Lengths To Selected";
 		menu->addChild(applyUniformLengthItem);
+
+		MenuLabel *minProbabilityLabel = new MenuLabel();
+		minProbabilityLabel->text = "Minimum Probability";
+		menu->addChild(minProbabilityLabel);
+
+		ui::Slider *minProbabilitySlider = new ui::Slider;
+		MinProbabilityQuantity *minProbabilityQuantity = new MinProbabilityQuantity;
+		minProbabilityQuantity->module = module;
+		minProbabilitySlider->quantity = minProbabilityQuantity;
+		minProbabilitySlider->box.size.x = 175.f;
+		menu->addChild(minProbabilitySlider);
 
 		CopyCellItem *copyCellItem = new CopyCellItem;
 		copyCellItem->module = module;
