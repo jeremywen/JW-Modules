@@ -181,8 +181,8 @@ struct Trigs128 : Module, QuantizeUtils {
 	int uniformTrackLength = GRID_COLS * 4;
 	float minProbability = 0.f;
 	bool polyphonicFirstRowOutputs = false;
-	int cvRangeMode = CV_RANGE_BIPOLAR_10V;
-	int cv2RangeMode = CV_RANGE_BIPOLAR_10V;
+	int cvRangeMode = CV_RANGE_UNIPOLAR_10V;
+	int cv2RangeMode = CV_RANGE_UNIPOLAR_10V;
 	int gridShadeMode = GS_PROBABILITY;
 	int lifeRateMode = LIFE_RATE_X1;
 	int lifeClockCounter = 0;
