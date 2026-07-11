@@ -17,13 +17,50 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 ## Table of Contents:
 
-[1Pattern](#1pattern) | [8Seq](#8seq) | [AbcdSeq](#abcdseq) | [Add5](#add5) | [Arrange](#arrange) | [Bouncy Balls](#bouncy-balls) | [Buffer](#buffer) | [D1v1de](#d1v1de) | [DivSeq](#divseq) | [FM16SEQ](#fm16seq) | [FM4DICE](#fm4dice) | [Fract](#fract) | [FullScope](#fullscope) | [Grains](#grains) | [GridSeq](#gridseq) | [MinMax](#minmax) | [NoteSeq](#noteSeq) | [NoteSeq16](#noteSeq16) | [NoteSeqFu](#noteSeqFu) | [Patterns](#patterns) | [Pres1t](#pres1t) | [Quantizer](#quantizer) | [RandomSound](#randomsound) | [SampleGrid](#samplegrid) | [ShiftRegRnd](#shiftregrnd) | [SimpleClock](#simpleclock) | [StereoSwitch](#stereoswitch) | [StereoSwitchInv](#stereoswitchinv) | [Str1ker](#str1ker) | [Subtract5](#subtract5) | [Thing Thing](#thing-thing) | [Timer](#timer) | [Tree](#tree) | [Trigs](#trigs) | [WavHead](#wavhead) | [XY-Pad](#xy-pad)
+[1Pattern](#1pattern) | [8Seq](#8seq) | [AbcdSeq](#abcdseq) | [Add5](#add5) | [Arrange](#arrange) | [Bouncy Balls](#bouncy-balls) | [Buffer](#buffer) | [Crawl](#crawl) | [D1v1de](#d1v1de) | [DivSeq](#divseq) | [FM16SEQ](#fm16seq) | [FM4DICE](#fm4dice) | [Fract](#fract) | [FullScope](#fullscope) | [Grains](#grains) | [GridSeq](#gridseq) | [MinMax](#minmax) | [NoteSeq](#noteSeq) | [NoteSeq16](#noteSeq16) | [NoteSeqFu](#noteSeqFu) | [Patterns](#patterns) | [Pres1t](#pres1t) | [Quantizer](#quantizer) | [RandomSound](#randomsound) | [SampleGrid](#samplegrid) | [ShiftRegRnd](#shiftregrnd) | [SimpleClock](#simpleclock) | [StereoSwitch](#stereoswitch) | [StereoSwitchInv](#stereoswitchinv) | [Str1ker](#str1ker) | [Subtract5](#subtract5) | [Thing Thing](#thing-thing) | [Timer](#timer) | [Tree](#tree) | [Trigs](#trigs) | [Trigs128](#trigs128) | [WavHead](#wavhead) | [XY-Pad](#xy-pad)
 
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
 **Seed inputs allow you to send in a cv value, hit random, and always get the same output for that value**
 
 ----
+
+## Crawl
+
+![crawl](./doc/crawl1.png)
+
+Trigger gates and notes based on points crawling through stationary points.
+
+Knobs
+
+* **Speed:** how fast the crawlers move
+* **Connection Distance:** how close crawler have to be to connect to points
+* **Number of Points:** number of stationary points
+* **Pitch Range:** range of pitch
+* **Wander Radius:** how far crawlers can wander off
+* **Movement Coherence:** zero is drunk walking, 1 is linear movement
+
+Button
+
+* **Regen Points:** Regenerates a new set of points
+
+Inputs
+
+* **Clock:** triggers crawling
+* **Reset:** regenerates points
+* **Speed:** speed of movement
+* **Distance:** how close crawler have to be to connect to points
+* **Wander Radius:** how far crawlers can wander off
+* **Movement Coherence:** zero is drunk walking, 1 is linear movement
+
+Outputs
+
+* **Gate:** poly out, gates on connection from crawler to stationary point
+* **V/Oct:** poly out, based on pitch range and y axis
+* **X Pos:** poly out, x positions of crawlers
+* **Y Pos:** poly out, y positions of crawlers
+* **Nearest Point Distance:** poly out, nearest distance of crawlers
+
 ## Trigs128
 
 ![trigs128](./doc/trigs128a.png)
