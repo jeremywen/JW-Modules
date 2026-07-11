@@ -110,13 +110,13 @@ OUTPUTS (See right click menu for polyphonic output on first row)
 
 ## FM4DICE
 
-![fm4dice](./doc/fm4dice1.png)
+![fm4dice](./doc/fm4dice2.png)
 
 Generate a random sequence of 4op FM sounds.
 
 ## Fract
 
-![fract](./doc/fract1.png)
+![fract](./doc/fract2.png)
 
 Delay by fraction of a clock tick.
 
