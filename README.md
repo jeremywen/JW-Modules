@@ -27,7 +27,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 ## Crawl
 
-![crawl](./doc/crawl1.png)
+![crawl](./doc/crawl2.png)
 
 Trigger gates and notes based on points crawling through stationary points.
 
@@ -63,7 +63,7 @@ Outputs
 
 ## Trigs128
 
-![trigs128](./doc/trigs128a.png)
+![trigs128](./doc/trigs128b.png)
 
 Trigger gates and notes with other cv with ratchets and probability.
 
