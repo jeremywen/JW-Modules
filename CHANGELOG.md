@@ -1,7 +1,8 @@
 # Change Log
 
-## v2.0.42 ~ 
+## v2.0.43 ~ 
 
+  * Crawl: NEW MODULE!
   * Trigs128: NEW MODULE!
   * Trigs: added 'Repeat First Row Down' menu item
   * NoteSeq16: added 'Repeat 16 Steps'

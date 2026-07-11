@@ -60,6 +60,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelXYPad);
 	p->addModel(modelFM16Seq);
 	p->addModel(modelFM4Dice);
+	p->addModel(modelCrawl);
 }
 
 #if defined(METAMODULE_BUILTIN)
