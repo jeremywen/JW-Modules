@@ -31,6 +31,8 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 
 Trigger gates and notes based on points crawling through stationary points.
 
+Based on a javascript thing I made https://codepen.io/jeremywen/full/MemMEX
+
 Knobs
 
 * **Speed:** how fast the crawlers move
