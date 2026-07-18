@@ -33,6 +33,8 @@ Trigger gates and notes based on points crawling through stationary points.
 
 Based on a javascript thing I made https://codepen.io/jeremywen/full/MemMEX
 
+Double-click to add/remove points.
+
 Knobs
 
 * **Speed:** how fast the crawlers move
