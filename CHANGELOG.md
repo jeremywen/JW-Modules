@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.44 ~ 
+
+  * FM16Seq: now pitch quantized after pitch cv input added 
+  * FM16Seq: when you click the button in the sequence row at the top it triggers now
+
 ## v2.0.43 ~ 
 
   * Crawl: NEW MODULE!

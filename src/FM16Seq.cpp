@@ -267,6 +267,11 @@ struct FM16Seq : Module, QuantizeUtils {
 		return quantizedVolts * 12.f;
 	}
 
+	// Quantizes total volts (step pitch + CV), not just the stored step pitch.
+	float quantizePitchVolts(float volts) {
+		return closestVoltageInScale(volts, pitchQuantizeRoot, pitchQuantizeScale);
+	}
+
 	void quantizeStoredPitches() {
 		for (int i = 0; i < STEPS; i++) {
 			stepData[i].pitch = quantizePitchSemitones(stepData[i].pitch);
@@ -818,6 +823,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		ScopedLocalRngSeed scopedSeed(inputs[SEED_INPUT].isConnected(), inputs[SEED_INPUT].getVoltage());
 		
 		bool stepChanged = false;
+		bool stepButtonPressed = false;
 
 		// Check for step selection changes.
 		// Editing should always allow selecting any of the 16 stored steps,
@@ -830,6 +836,7 @@ struct FM16Seq : Module, QuantizeUtils {
 					loadEditorFromSelectedStep();
 					stepChanged = true;
 				}
+				stepButtonPressed = true; // Clicking a step button also triggers that step
 			}
 		}
 		if (!stepChanged) {
@@ -838,7 +845,7 @@ struct FM16Seq : Module, QuantizeUtils {
 
 		bool manualTriggerPressed = manualStepTrigger.process(params[MANUAL_STEP_TRIGGER_PARAM].getValue());
 		bool manualGateTriggered = manualStepGateTrigger.process(inputs[MANUAL_STEP_GATE_INPUT].getVoltage());
-		bool manualTriggerEvent = manualTriggerPressed || manualGateTriggered;
+		bool manualTriggerEvent = manualTriggerPressed || manualGateTriggered || stepButtonPressed;
 		if (manualTriggerEvent) {
 			for (int i = 0; i < sequenceLength; i++) {
 				if (engines[i].gateHeld) {
@@ -1079,9 +1086,11 @@ struct FM16Seq : Module, QuantizeUtils {
 			float modRatioCV = getStepCvVoltage(MOD_RATIO_INPUT);
 			float carRatioCV = getStepCvVoltage(CAR_RATIO_INPUT);
 
-			// Combine CV with stored step parameters
-			float quantizedStepPitch = pitchQuantizeEnabled ? quantizePitchSemitones(s.pitch) : s.pitch;
-			float baseFreqCV = pitchVolts + (quantizedStepPitch / 12.f);
+			// Combine CV with stored step parameters, then quantize the combined pitch
+			float baseFreqCV = pitchVolts + (s.pitch / 12.f);
+			if (pitchQuantizeEnabled) {
+				baseFreqCV = quantizePitchVolts(baseFreqCV);
+			}
 			engine.baseFreq = 261.6256f * std::pow(2.f, baseFreqCV);
 
 			float carRatio = s.carRatio + carRatioCV;
@@ -1175,11 +1184,13 @@ struct FM16Seq : Module, QuantizeUtils {
 		outputs[CARRIER_OUTPUT].setVoltage(carrierOut);
 		outputs[CARRIER_OUTPUT].setChannels(1);
 
-		// V/Oct output
+		// V/Oct output: quantize the combined pitch (step + CV), not just the step pitch
 		const StepData& s = stepData[latchedStep];
-		float quantizedStepPitch = pitchQuantizeEnabled ? quantizePitchSemitones(s.pitch) : s.pitch;
 		float pitchVolts = inputs[PITCH_INPUT].isConnected() ? inputs[PITCH_INPUT].getVoltage(cvChannel) : 0.f;
-		float voctOut = pitchVolts + (quantizedStepPitch / 12.f);
+		float voctOut = pitchVolts + (s.pitch / 12.f);
+		if (pitchQuantizeEnabled) {
+			voctOut = quantizePitchVolts(voctOut);
+		}
 		outputs[V_OCT_OUTPUT].setVoltage(voctOut);
 		outputs[V_OCT_OUTPUT].setChannels(1);
 
