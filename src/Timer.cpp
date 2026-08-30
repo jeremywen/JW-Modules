@@ -93,7 +93,7 @@ struct TimerWidget : ModuleWidget {
 };
 
 struct TimeDisplay : LightWidget {
-	Timer *module;
+	Timer *module = nullptr;
 
 	TimeDisplay() {}
 

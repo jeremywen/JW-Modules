@@ -437,7 +437,7 @@ struct Arrange16 : Module {
 };
 
 struct Arrange16Display : LightWidget {
-	Arrange16 *module;
+	Arrange16 *module = nullptr;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
 	Arrange16Display(){

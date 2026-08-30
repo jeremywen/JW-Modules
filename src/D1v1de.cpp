@@ -23,8 +23,8 @@ struct D1v1de : Module {
 	};
 
 	int ticks = 0;
-	float smpRate = APP->engine->getSampleRate();	
-	float oneOverRate = 1.0 / smpRate;	
+	float smpRate = static_cast<float>(APP->engine->getSampleRate());
+	float oneOverRate = 1.0f / smpRate;
 	bool resetMode = false;
 	dsp::SchmittTrigger resetTrig;
 	dsp::SchmittTrigger clockTrig;
@@ -46,8 +46,8 @@ struct D1v1de : Module {
 	}
 
 	void onSampleRateChange() override {
-		smpRate = APP->engine->getSampleRate();	
-		oneOverRate = 1.0 / smpRate;
+		smpRate = static_cast<float>(APP->engine->getSampleRate());
+		oneOverRate = 1.0f / smpRate;
 	}
 
 	json_t *dataToJson() override {
@@ -128,7 +128,7 @@ struct D1v1de : Module {
 };
 
 struct D1v1deDisplay : LightWidget {
-	D1v1de *module;
+	D1v1de *module = nullptr;
 	D1v1deDisplay(){}
 
 	void drawLayer(const DrawArgs &args, int layer) override {
@@ -148,8 +148,8 @@ struct D1v1deDisplay : LightWidget {
 			for(int i=1;i<divInt;i++){
 				nvgStrokeWidth(args.vg, 1);
 				nvgBeginPath(args.vg);
-				nvgMoveTo(args.vg, 0, i * rowHeight);
-				nvgLineTo(args.vg, box.size.x, i * rowHeight);
+				nvgMoveTo(args.vg, 0.0f, static_cast<float>(i) * rowHeight);
+				nvgLineTo(args.vg, box.size.x, static_cast<float>(i) * rowHeight);
 				nvgStroke(args.vg);
 			}
 
@@ -157,9 +157,9 @@ struct D1v1deDisplay : LightWidget {
 
 			//offset
 			if(module->params[D1v1de::OFFSET_PARAM].getValue() > 0){
-				float offsetTopY = module->getOffsetInt() * rowHeight;
+				float offsetTopY = static_cast<float>(module->getOffsetInt()) * rowHeight;
 				nvgFillColor(args.vg, nvgRGB(60, 70, 73));//line color
-				if(offsetTopY+rowHeight < box.size.y+2){
+				if(offsetTopY+rowHeight < static_cast<float>(box.size.y)+2.0f){
 					nvgBeginPath(args.vg);
 					nvgRect(args.vg, 0, offsetTopY, box.size.x, rowHeight);
 					nvgFill(args.vg);
@@ -174,10 +174,10 @@ struct D1v1deDisplay : LightWidget {
 				case 3: nvgFillColor(args.vg, nvgRGB(144, 26, 252)); break;//purple
 			}
 
-			float topY = module->ticks * rowHeight;
-			if(topY+rowHeight < box.size.y+2){
+			float topY = static_cast<float>(module->ticks) * rowHeight;
+			if(topY+rowHeight < static_cast<float>(box.size.y)+2.0f){
 				nvgBeginPath(args.vg);
-				nvgRect(args.vg, 0, topY, box.size.x, rowHeight);
+				nvgRect(args.vg, 0.0f, topY, box.size.x, rowHeight);
 				nvgFill(args.vg);
 			}
 		}

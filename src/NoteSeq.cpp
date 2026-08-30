@@ -10,10 +10,10 @@
 
 struct ColNotes {
 	int *vals = new int[32];
-	bool includeInactive;
-	bool valid;
-	int finalHigh;
-	int finalLow;
+	bool includeInactive = false;
+	bool valid = false;
+	int finalHigh = 0;
+	int finalLow = 0;
 
 	~ColNotes() {
 		delete [] vals;
@@ -865,7 +865,7 @@ struct NoteSeq : Module,QuantizeUtils {
 };
 
 struct NoteSeqDisplay : LightWidget {
-	NoteSeq *module;
+	NoteSeq *module = nullptr;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
 	NoteSeqDisplay(){}

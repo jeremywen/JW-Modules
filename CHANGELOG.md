@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.45
+
+  * code cleanup
+
 ## v2.0.44 ~ 
 
   * FM16Seq: now pitch quantized after pitch cv input added 

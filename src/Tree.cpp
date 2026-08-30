@@ -94,7 +94,7 @@ struct Tree : Module {
 };
 
 struct TreeDisplay : LightWidget {
-	Tree *module;
+	Tree *module = nullptr;
 	float theta;
 	TreeDisplay(){}
 

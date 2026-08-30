@@ -105,11 +105,11 @@ void MinMax::process(const ProcessArgs &args) {
 
 
 struct MinMaxDisplay : LightWidget {
-	MinMax *module;
+	MinMax *module = nullptr;
 	int frame = 0;
 
 	struct Stats {
-		float vrms, vpp, vmin = 0, vmax = 0;
+		float vrms = 0.0f, vpp = 0.0f, vmin = 0.0f, vmax = 0.0f;
 		void calculate(float *values) {
 			vrms = 0.0;
 			vmax = -INFINITY;

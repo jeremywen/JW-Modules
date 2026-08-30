@@ -1,6 +1,6 @@
 #pragma once
 #include "rack.hpp"
-#include "QuantizeUtils.cpp"
+#include "QuantizeUtils.hpp"
 #include <cstdlib>
 #include <functional>
 #include <algorithm>
@@ -56,7 +56,7 @@ inline bool isBlackKey(int indexFromBottom){
 }
 
 struct InputsOverrideItem : MenuItem {
-	QuantizeUtils *quantizeUtils;
+	QuantizeUtils *quantizeUtils = nullptr;
 	void onAction(const event::Action &e) override {
 		quantizeUtils->inputsOverride = !quantizeUtils->inputsOverride;
 	}
@@ -123,7 +123,7 @@ struct CenteredLabel : Widget {
 		updateText();
 		nvgTextAlign(args.vg, NVG_ALIGN_CENTER);
 		nvgFillColor(args.vg, nvgRGB(255, 255, 255));
-		nvgFontSize(args.vg, fontSize);
+		nvgFontSize(args.vg, static_cast<float>(fontSize));
 		nvgText(args.vg, box.pos.x, box.pos.y, text.c_str(), NULL);
 	}
 };
@@ -159,7 +159,7 @@ struct SmallWhiteKnob : SvgKnob {
 };
 
 struct NoteKnob : SmallWhiteKnob {
-	QuantizeUtils *quantizeUtils;
+	QuantizeUtils *quantizeUtils = nullptr;
 	NoteKnob(){
 		snap = true;
 	}
@@ -172,7 +172,7 @@ struct NoteKnob : SmallWhiteKnob {
 };
 
 struct ScaleKnob : SmallWhiteKnob {
-	QuantizeUtils *quantizeUtils;
+	QuantizeUtils *quantizeUtils = nullptr;
 	ScaleKnob(){
 		snap = true;
 	}
@@ -190,7 +190,7 @@ struct JwSmallSnapKnob : SmallWhiteKnob {
 	}
 };
 
-enum PlayMode {
+enum PlayMode : std::uint8_t {
 	PM_FWD_LOOP,
 	PM_BWD_LOOP,
 	PM_FWD_BWD_LOOP,

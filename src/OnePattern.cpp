@@ -167,7 +167,7 @@ struct OnePattern : Module {
 };
 
 struct OnePatternDisplay : LightWidget {
-	OnePattern *module;
+	OnePattern *module = nullptr;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
 	OnePatternDisplay(){}

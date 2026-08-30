@@ -160,7 +160,7 @@ struct Pres1t : Module {
 };
 
 struct Pres1tDisplay : LightWidget {
-	Pres1t *module;
+	Pres1t *module = nullptr;
 	Pres1tDisplay(){}
 
 	void onButton(const event::Button &e) override {

@@ -300,7 +300,7 @@ struct Patterns : Module {
 };
 
 struct PatternsDisplay : LightWidget {
-	Patterns *module;
+	Patterns *module = nullptr;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
 	PatternsDisplay(){}

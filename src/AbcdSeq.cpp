@@ -848,7 +848,7 @@ struct AbcdSeqPitchMenuItem : MenuItem {
 };
 
 struct AbcdSeqGateModeItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	AbcdSeq::GateMode gateMode;
 	void onAction(const event::Action &e) override {
 		abcdSeq->gateMode = gateMode;
@@ -862,7 +862,7 @@ struct AbcdSeqGateModeItem : MenuItem {
 // Local quantity/slider removed; using shared GatePulseMsQuantity/GatePulseMsSlider from JWModules.hpp
 
 struct AbcdSeqPresetItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	void onAction(const event::Action &e) override {
 		abcdSeq->text = text;
 		abcdSeq->dirty = true;
@@ -870,7 +870,7 @@ struct AbcdSeqPresetItem : MenuItem {
 };
 
 struct AbcdSeqRowOrderPresetItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	int presetIndex;
 	void onAction(const event::Action &e) override {
 		abcdSeq->resetMode = true;
@@ -886,7 +886,7 @@ struct AbcdSeqRowOrderPresetItem : MenuItem {
 };
 
 struct PresetChildMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	PresetChildMenuItem() {
 		rightText = "▸";
 		text = "Row Order Text Presets";
@@ -927,7 +927,7 @@ struct PresetChildMenuItem : MenuItem {
 };
 
 struct PossibleCharsMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	PossibleCharsMenuItem() {
 		rightText = "▸";
 		text = "Possible Characters";
@@ -962,7 +962,7 @@ struct PossibleCharsMenuItem : MenuItem {
 };
 
 struct RandomizeRowMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	int row;
 	RandomizeRowMenuItem(int rowIdx) {
 		this->row = rowIdx;
@@ -975,7 +975,7 @@ struct RandomizeRowMenuItem : MenuItem {
 };
 
 struct RandomizeMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	RandomizeMenuItem() {
 		rightText = "▸";
 		text = "Randomize Notes";
@@ -1006,7 +1006,7 @@ struct RandomizeMenuItem : MenuItem {
 };
 
 struct CopyRowMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	int row;
 	CopyRowMenuItem(int rowIdx) {
 		this->row = rowIdx;
@@ -1019,7 +1019,7 @@ struct CopyRowMenuItem : MenuItem {
 };
 
 struct CopyMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	CopyMenuItem() {
 		rightText = "▸";
 		text = "Copy Row";
@@ -1037,7 +1037,7 @@ struct CopyMenuItem : MenuItem {
 };
 
 struct PasteRowMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	int row;
 	PasteRowMenuItem(int rowIdx) {
 		this->row = rowIdx;
@@ -1050,7 +1050,7 @@ struct PasteRowMenuItem : MenuItem {
 };
 
 struct PasteMenuItem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	PasteMenuItem() {
 		rightText = "▸";
 		text = "Paste Row";
@@ -1068,7 +1068,7 @@ struct PasteMenuItem : MenuItem {
 };
 
 struct VelocityAsProbabilitytem : MenuItem {
-	AbcdSeq *abcdSeq;
+	AbcdSeq *abcdSeq = nullptr;
 	void onAction(const event::Action &e) override {
 		abcdSeq->velocityAsProbability = !abcdSeq->velocityAsProbability;
 	}

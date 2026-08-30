@@ -10,10 +10,10 @@
 
 struct ColNotes {
 	int *vals = new int[16];
-	bool includeInactive;
-	bool valid;
-	int finalHigh;
-	int finalLow;
+	bool includeInactive = false;
+	bool valid = false;
+	int finalHigh = 0;
+	int finalLow = 0;
 
 	~ColNotes() {
 		delete [] vals;
@@ -455,7 +455,7 @@ struct Trigs : Module {
 };
 
 struct TrigsDisplay : LightWidget {
-	Trigs *module;
+	Trigs *module = nullptr;
 	bool currentlyTurningOn = false;
 	Vec dragPos;
 	NVGcolor *colors = new NVGcolor[4];

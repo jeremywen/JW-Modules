@@ -66,7 +66,7 @@ struct ThingThing : Module {
 };
 
 struct ThingThingDisplay : LightWidget {
-	ThingThing *module;
+	ThingThing *module = nullptr;
 	ThingThingDisplay(){}
 
 	void drawLayer(const DrawArgs &args, int layer) override {

@@ -354,7 +354,7 @@ void BouncyBalls::process(const ProcessArgs &args) {
 }
 
 struct BouncyBallDisplay : LightWidget {
-	BouncyBalls *module;
+	BouncyBalls *module = nullptr;
 	BouncyBallDisplay(){}
 
 	void onHover(const event::Hover &e) override {

@@ -144,13 +144,13 @@ void FullScope::process(const ProcessArgs &args) {
 }
 
 struct FullScopeDisplay : LightWidget {
-	FullScope *module;
+	FullScope *module = nullptr;
 	int frame = 0;
 	float rot = 0;
 	std::shared_ptr<Font> font;
 
 	struct Stats {
-		float vrms, vpp, vmin, vmax;
+		float vrms = 0.0f, vpp = 0.0f, vmin = 0.0f, vmax = 0.0f;
 		void calculate(float *values) {
 			vrms = 0.0;
 			vmax = -INFINITY;
