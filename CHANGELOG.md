@@ -1,5 +1,11 @@
 # Change Log
 
+## v2.0.46
+
+  * abcdseq: fixed bug selecting text preset
+  * note sequencers: fixed root note bug
+  * knob sequencers: added option to snap to semitones
+
 ## v2.0.45
 
   * code cleanup
