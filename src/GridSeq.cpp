@@ -79,6 +79,7 @@ struct GridSeq : Module,QuantizeUtils {
 	bool gateState[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
+	bool snapToNotes = false;
 	bool resetMode = false;
 	float rndFloat0to1AtClockStep = random::uniform();
 
@@ -118,7 +119,10 @@ struct GridSeq : Module,QuantizeUtils {
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 4; x++) {
 				int idx = (x+(y*4));
-				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage");
+				NoteSnapParamQuantity *notePq = configParam<NoteSnapParamQuantity>(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "Voltage", " semitones");
+				notePq->snapToNotes = &snapToNotes;
+				notePq->toOutputVolts = [this](float v) { return closestVoltageInScaleWrapper(v); };
+				notePq->semitonesPerUnit = [this]() { return clampfjw(params[VOLT_MAX_PARAM].getValue()+inputs[VOLT_MAX_INPUT].getVoltage(), 0.0, 10.0) * 12.f / noteParamMax; };
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
 				configParam(CELL_PROB_PARAM + idx, 0.0, 1.0, 1.0, "Probability");
 			}
@@ -151,6 +155,7 @@ struct GridSeq : Module,QuantizeUtils {
 
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		json_object_set_new(rootJ, "ignoreGateOnPitchOut", json_boolean(ignoreGateOnPitchOut));
+		json_object_set_new(rootJ, "snapToNotes", json_boolean(snapToNotes));
 
 		// gates
 		json_t *gatesJ = json_array();
@@ -183,6 +188,10 @@ struct GridSeq : Module,QuantizeUtils {
 		json_t *ignoreGateOnPitchOutJ = json_object_get(rootJ, "ignoreGateOnPitchOut");
 		if (ignoreGateOnPitchOutJ)
 			ignoreGateOnPitchOut = json_is_true(ignoreGateOnPitchOutJ);
+
+		json_t *snapToNotesJ = json_object_get(rootJ, "snapToNotes");
+		if (snapToNotesJ)
+			snapToNotes = json_is_true(snapToNotesJ);
 
 		// gates
 		json_t *gatesJ = json_object_get(rootJ, "gates");
@@ -257,7 +266,7 @@ struct GridSeq : Module,QuantizeUtils {
 
 		float totalMax = clampfjw(params[VOLT_MAX_PARAM].getValue()+inputs[VOLT_MAX_INPUT].getVoltage(), 0.0, 10.0);
 		float voltsScaled = rescalefjw(voltsIn, 0, noteParamMax, 0, totalMax);
-		return closestVoltageInScale(octave + voltsScaled, rootNote, scale);
+		return closestVoltageInScaleFromRoot(octave + voltsScaled, rootNote, scale);
 	}
 
 	void handleMoveRight(){
@@ -713,6 +722,7 @@ void GridSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->gridSeq = gridSeq;
 	menu->addChild(pitchMenuItem);
+	menu->addChild(createBoolPtrMenuItem("Snap Note Knobs to Semitones", "", &gridSeq->snapToNotes));
 
 	menu->addChild(new MenuSeparator());
 

@@ -489,7 +489,7 @@ struct NoteSeq : Module,QuantizeUtils {
 		int scaleInputOffset = inputs[SCALE_INPUT].isConnected() ? rescalefjw(inputs[SCALE_INPUT].getVoltage(), 0, 10, 0, QuantizeUtils::NUM_SCALES-1) : 0;
 		int scale = clampijw(params[SCALE_KNOB_PARAM].getValue() + scaleInputOffset, 0, QuantizeUtils::NUM_SCALES-1);
 
-		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
+		return closestVoltageInScaleFromRoot(octave + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
 	void clockStep(){

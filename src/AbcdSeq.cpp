@@ -88,6 +88,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool gateState[32] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 	bool running = true;
 	bool ignoreGateOnPitchOut = false;
+	bool snapToNotes = false;
 	bool resetMode = false;
     bool initialRowSet = false;
 	bool eocOn = false;
@@ -135,7 +136,10 @@ struct AbcdSeq : Module,QuantizeUtils {
         int idx = 0;
 		for (int y = 0; y < 4; y++) {
 			for (int x = 0; x < 8; x++) {
-				configParam(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "CV");
+				NoteSnapParamQuantity *notePq = configParam<NoteSnapParamQuantity>(CELL_NOTE_PARAM + idx, 0.0, noteParamMax, 3.0, "CV", " semitones");
+				notePq->snapToNotes = &snapToNotes;
+				notePq->toOutputVolts = [this](float v) { return closestVoltageInScaleWrapper(v); };
+				notePq->semitonesPerUnit = [this]() { return clampfjw(params[VOLT_MAX_PARAM].getValue()+inputs[VOLT_MAX_INPUT].getVoltage(), 0.0, 10.0) * 12.f / noteParamMax; };
 				configParam(CELL_GATE_PARAM + idx, 0.0, 1.0, 0.0, "Gate");
 				configParam(CELL_VEL_PARAM + idx, 0.0, 10.0, 5.0, "Velocity");
 				idx++;
@@ -183,6 +187,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
 		json_object_set_new(rootJ, "running", json_boolean(running));
 		json_object_set_new(rootJ, "ignoreGateOnPitchOut", json_boolean(ignoreGateOnPitchOut));
+		json_object_set_new(rootJ, "snapToNotes", json_boolean(snapToNotes));
 		json_object_set_new(rootJ, "velocityAsProbability", json_boolean(velocityAsProbability));
 
 		// gates
@@ -213,6 +218,10 @@ struct AbcdSeq : Module,QuantizeUtils {
 		json_t *ignoreGateOnPitchOutJ = json_object_get(rootJ, "ignoreGateOnPitchOut");
 		if (ignoreGateOnPitchOutJ)
 			ignoreGateOnPitchOut = json_is_true(ignoreGateOnPitchOutJ);
+
+		json_t *snapToNotesJ = json_object_get(rootJ, "snapToNotes");
+		if (snapToNotesJ)
+			snapToNotes = json_is_true(snapToNotesJ);
 
 		json_t *velocityAsProbabilityJ = json_object_get(rootJ, "velocityAsProbability");
 		if (velocityAsProbabilityJ)
@@ -303,7 +312,7 @@ struct AbcdSeq : Module,QuantizeUtils {
 
 		float totalMax = clampfjw(params[VOLT_MAX_PARAM].getValue()+inputs[VOLT_MAX_INPUT].getVoltage(), 0.0, 10.0);
 		float voltsScaled = rescalefjw(voltsIn, 0, noteParamMax, 0, totalMax);
-		return closestVoltageInScale(octave + voltsScaled, rootNote, scale);
+		return closestVoltageInScaleFromRoot(octave + voltsScaled, rootNote, scale);
 	}
 
     int getCurrentRowLength(){
@@ -910,11 +919,13 @@ struct PresetChildMenuItem : MenuItem {
 		
 		AbcdSeqPresetItem *presetMenuItem4 = new AbcdSeqPresetItem();
 		presetMenuItem4->text = "AaBbCcDd";
+		presetMenuItem4->abcdSeq = abcdSeq;
 		MenuLabel *helpLabel6 = new MenuLabel();
 		helpLabel6->text = "Upper case forwards and lower case backwards.";
 
 		MenuLabel *helpLabel7 = new MenuLabel();
 		helpLabel7->text = "Digits 1–8 jump to that column (within current row).";
+		menu->addChild(helpLabel6);
 		menu->addChild(helpLabel7);
 		menu->addChild(presetMenuItem4);
 		
@@ -1109,6 +1120,7 @@ void AbcdSeqWidget::appendContextMenu(Menu *menu) {
 	pitchMenuItem->text = "Ignore Gate for V/OCT Out";
 	pitchMenuItem->abcdSeq = abcdSeq;
 	menu->addChild(pitchMenuItem);
+	menu->addChild(createBoolPtrMenuItem("Snap Note Knobs to Semitones", "", &abcdSeq->snapToNotes));
 
 	menu->addChild(new MenuSeparator());
 

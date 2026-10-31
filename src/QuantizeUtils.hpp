@@ -150,6 +150,14 @@ struct QuantizeUtils {
 		return voltsOut;
 	}
 
+	// For sequencers whose cell values are offsets above the root note (0V in == root out).
+	float closestVoltageInScaleFromRoot(float voltsIn, int rootNote, int currScale) {
+		if(currScale == NONE || currScale == NONE2){
+			return voltsIn;
+		}
+		return closestVoltageInScale(voltsIn + static_cast<float>(rootNote) / 12.0f, rootNote, currScale);
+	}
+
 	std::string noteName(int note) {
 		switch(note){
 			case NOTE_C:       return "C";

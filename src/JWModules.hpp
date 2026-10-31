@@ -227,6 +227,72 @@ struct JwPlayModeQuantity : ParamQuantity {
 	}
 };
 
+// Snaps to multiples of snapStep while *snapToNotes is true.
+struct NoteSnapParamQuantity : ParamQuantity {
+	bool *snapToNotes = nullptr;
+	float snapStep = 1.f / 12.f;
+	float unsnapped = 0.f;
+	// When set, display is in semitones and snapping is to whole semitones (depends on module state like Range).
+	std::function<float()> semitonesPerUnit;
+
+	float getSnapStep() {
+		if (semitonesPerUnit) {
+			float k = semitonesPerUnit();
+			if (k > 0.f) {
+				return 1.f / k;
+			}
+		}
+		return snapStep;
+	}
+
+	void setValue(float value) override {
+		if (!snapToNotes || !*snapToNotes) {
+			ParamQuantity::setValue(value);
+			return;
+		}
+		float step = getSnapStep();
+		float current = ParamQuantity::getValue();
+		// Knob drags send small deltas from the current value, so accumulate them before rounding.
+		if (std::fabs(unsnapped - current) > step) {
+			unsnapped = current;
+		}
+		unsnapped = clampfjw(unsnapped + value - current, getMinValue(), getMaxValue());
+		ParamQuantity::setValue(std::round(unsnapped / step) * step);
+	}
+
+	float getDisplayValue() override {
+		if (!semitonesPerUnit) {
+			return ParamQuantity::getDisplayValue();
+		}
+		return getValue() * semitonesPerUnit();
+	}
+
+	void setDisplayValue(float displayValue) override {
+		if (!semitonesPerUnit) {
+			ParamQuantity::setDisplayValue(displayValue);
+			return;
+		}
+		float k = semitonesPerUnit();
+		if (k > 0.f) {
+			setValue(displayValue / k);
+		}
+	}
+
+	// When set, the tooltip also shows the note name of the module's output voltage for this value.
+	std::function<float(float)> toOutputVolts;
+	std::string getString() override {
+		if (!toOutputVolts) {
+			return ParamQuantity::getString();
+		}
+		std::string s = getDisplayValueString() + getUnit();
+		static const char *names[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+		int semis = static_cast<int>(std::round(toOutputVolts(getValue()) * 12.f));
+		int note = ((semis % 12) + 12) % 12;
+		int octave = static_cast<int>(std::floor(semis / 12.f)) + 4;
+		return s + " (" + names[note] + std::to_string(octave) + ")";
+	}
+};
+
 struct JwPlayModeKnob : JwSmallSnapKnob {
 	std::string formatCurrentValue() override {
 		if (getParamQuantity() != NULL) {

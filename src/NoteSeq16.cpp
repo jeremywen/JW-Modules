@@ -381,7 +381,7 @@ struct NoteSeq16 : Module,QuantizeUtils {
 		int octave = params[OCTAVE_KNOB_PARAM].getValue();
 		int rootNote = params[NOTE_KNOB_PARAM].getValue();
 		int scale = params[SCALE_KNOB_PARAM].getValue();
-		return closestVoltageInScale(octave + (cellYFromBottom * 0.0833), rootNote, scale);
+		return closestVoltageInScaleFromRoot(octave + (cellYFromBottom * 0.0833), rootNote, scale);
 	}
 
 	void clockStep(){

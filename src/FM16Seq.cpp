@@ -189,6 +189,7 @@ struct FM16Seq : Module, QuantizeUtils {
 	int sequenceLength = 16;
 	bool integerRatiosMode = false;
 	bool snapCvRatioInputsToIntegers = false;
+	bool snapToNotes = false;
 	bool gateHeld = false;
 	float baseFreq = 261.6256f;
 	float carrierPhase = 0.f;
@@ -299,7 +300,9 @@ struct FM16Seq : Module, QuantizeUtils {
 		paramQuantities[SEQUENCE_LENGTH_PARAM]->snapEnabled = true;
 		configParam(EDIT_ACTIVE_PARAM, 0.f, 4.f, 1.f, "Step division");
 		paramQuantities[EDIT_ACTIVE_PARAM]->snapEnabled = true;
-		configParam(EDIT_PITCH_PARAM, -24.f, 24.f, 0.f, "Pitch", " semitones");
+		NoteSnapParamQuantity *pitchPq = configParam<NoteSnapParamQuantity>(EDIT_PITCH_PARAM, -24.f, 24.f, 0.f, "Pitch", " semitones");
+		pitchPq->snapToNotes = &snapToNotes;
+		pitchPq->snapStep = 1.f;
 		configParam(EDIT_CAR_RATIO_PARAM, 0.125f, 10.f, 1.f, "Carrier ratio");
 		configParam(EDIT_MOD_RATIO_PARAM, 0.125f, 10.f, 2.f, "Mod ratio");
 		configParam(EDIT_MOD_FEEDBACK_PARAM, 0.f, 2.f, 0.f, "Mod feedback");
@@ -727,6 +730,7 @@ struct FM16Seq : Module, QuantizeUtils {
 		json_object_set_new(rootJ, "sequenceLength", json_integer(sequenceLength));
 		json_object_set_new(rootJ, "integerRatiosMode", json_boolean(integerRatiosMode));
 		json_object_set_new(rootJ, "snapCvRatioInputsToIntegers", json_boolean(snapCvRatioInputsToIntegers));
+		json_object_set_new(rootJ, "snapToNotes", json_boolean(snapToNotes));
 		json_object_set_new(rootJ, "pitchQuantizeEnabled", json_boolean(pitchQuantizeEnabled));
 		json_object_set_new(rootJ, "pitchQuantizeRoot", json_integer(pitchQuantizeRoot));
 		json_object_set_new(rootJ, "pitchQuantizeScale", json_integer(pitchQuantizeScale));
@@ -771,6 +775,10 @@ struct FM16Seq : Module, QuantizeUtils {
 		json_t* snapCvRatioInputsToIntegersJ = json_object_get(rootJ, "snapCvRatioInputsToIntegers");
 		if (snapCvRatioInputsToIntegersJ) {
 			snapCvRatioInputsToIntegers = json_is_true(snapCvRatioInputsToIntegersJ);
+		}
+		json_t* snapToNotesJ = json_object_get(rootJ, "snapToNotes");
+		if (snapToNotesJ) {
+			snapToNotes = json_is_true(snapToNotesJ);
 		}
 		json_t* pitchQuantizeEnabledJ = json_object_get(rootJ, "pitchQuantizeEnabled");
 		if (pitchQuantizeEnabledJ) {
@@ -1351,6 +1359,8 @@ struct FM16SeqWidget : ModuleWidget {
 		   snapCvRatioItem->text = "Snap ratios CV to musical ratios";
 		   snapCvRatioItem->module = m;
 		   menu->addChild(snapCvRatioItem);
+
+		   menu->addChild(createBoolPtrMenuItem("Snap pitch knob to semitones", "", &m->snapToNotes));
 
 		   QuantizeEnabledMenuItem* quantizeEnabledItem = new QuantizeEnabledMenuItem();
 		   quantizeEnabledItem->text = "Enable pitch quantization";
