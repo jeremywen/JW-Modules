@@ -5,6 +5,8 @@
   * abcdseq: fixed bug selecting text preset
   * note sequencers: fixed root note bug
   * knob sequencers: added option to snap to semitones
+  * ABCDSeq: when you copy and paste a row, it now copies length and gate state
+
 
 ## v2.0.45
 

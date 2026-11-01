@@ -95,6 +95,8 @@ struct AbcdSeq : Module,QuantizeUtils {
 	bool eocRow[4] = {false, false, false, false};
 	bool velocityAsProbability = false;
 	float clipboard[8] = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
+	bool clipboardGates[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+	float clipboardLength = 4.0;
 	float rndNumOnClockTick = 0.0f;
 	bool triggeredThisTick = false;
 	// Track last played index and suppression to avoid double-trigger on transitions
@@ -472,7 +474,9 @@ struct AbcdSeq : Module,QuantizeUtils {
 		for (int i = 0; i < 8; i++) {
 			int idx = rowIdx * 8 + i;
 			clipboard[i] = params[CELL_NOTE_PARAM + idx].getValue();
+			clipboardGates[i] = gateState[idx];
 		}
+		clipboardLength = params[LENGTH_KNOB_PARAM + rowIdx].getValue();
 	}
 	
 	void pasteRowNotes(int rowIdx) {
@@ -482,7 +486,9 @@ struct AbcdSeq : Module,QuantizeUtils {
 		for (int i = 0; i < 8; i++) {
 			int idx = rowIdx * 8 + i;
 			params[CELL_NOTE_PARAM + idx].setValue(clipboard[i]);
+			gateState[idx] = clipboardGates[i];
 		}
+		params[LENGTH_KNOB_PARAM + rowIdx].setValue(clipboardLength);
 	}
 
     int getNewRandomRow(){
