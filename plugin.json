@@ -151,6 +151,16 @@
             ]
         },
         {
+            "slug": "Crawl",
+            "name": "Crawl",
+            "manualUrl": "https://github.com/jeremywen/JW-Modules",
+            "tags": [
+                "Sequencer",
+                "Visual",
+                "Random"
+            ]
+        },
+        {
             "slug": "D1v1de",
             "name": "D1v1de",
             "description": "Clock Divider",
@@ -169,11 +179,22 @@
             ]
         },
         {
-            "slug": "FullScope",
-            "name": "Full Scope",
-            "manualUrl": "https://github.com/jeremywen/JW-Modules#fullscope",
+            "slug": "FM16Seq",
+            "name": "FM16Seq",
+            "manualUrl": "https://github.com/jeremywen/JW-Modules#fm16seq",
             "tags": [
-                "Visual"
+                "Sequencer",
+                "Oscillator"
+            ]
+        },
+        {
+            "slug": "FM4Dice",
+            "name": "FM4Dice",
+            "manualUrl": "https://github.com/jeremywen/JW-Modules#fm4dice",
+            "tags": [
+                "Oscillator",
+                "Synth Voice",
+                "Random"
             ]
         },
         {
@@ -183,6 +204,14 @@
             "tags": [
                 "Clock Modulator",
                 "Delay"
+            ]
+        },
+        {
+            "slug": "FullScope",
+            "name": "Full Scope",
+            "manualUrl": "https://github.com/jeremywen/JW-Modules#fullscope",
+            "tags": [
+                "Visual"
             ]
         },
         {
@@ -398,35 +427,6 @@
             "manualUrl": "https://github.com/jeremywen/JW-Modules#xy-pad",
             "tags": [
                 "LFO",
-                "Random"
-            ]
-        },
-        {
-            "slug": "FM16Seq",
-            "name": "FM16Seq",
-            "manualUrl": "https://github.com/jeremywen/JW-Modules#fm16seq",
-            "tags": [
-                "Sequencer",
-                "Oscillator"
-            ]
-        },
-        {
-            "slug": "FM4Dice",
-            "name": "FM4Dice",
-            "manualUrl": "https://github.com/jeremywen/JW-Modules#fm4dice",
-            "tags": [
-                "Oscillator",
-                "Synth Voice",
-                "Random"
-            ]
-        },
-        {
-            "slug": "Crawl",
-            "name": "Crawl",
-            "manualUrl": "https://github.com/jeremywen/JW-Modules",
-            "tags": [
-                "Sequencer",
-                "Visual",
                 "Random"
             ]
         }
