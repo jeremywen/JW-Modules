@@ -26,9 +26,9 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 [Buffer](./manual/Buffer.md) | 
 [Crawl](./manual/Crawl.md) | 
 [D1v1de](./manual/D1v1de.md) | 
-[DivSeq](./manual/Divseq.md) | 
-[FM16SEQ](./manual/Fm16seq.md) | 
-[FM4DICE](./manual/Fm4dice.md) | 
+[DivSeq](./manual/DivSeq.md) | 
+[FM16SEQ](./manual/FM16Seq.md) | 
+[FM4DICE](./manual/FM4Dice.md) | 
 [Fract](./manual/Fract.md) | 
 [FullScope](./manual/Fullscope.md) | 
 [Grains](./manual/Grains.md) | 
@@ -42,10 +42,10 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 [Quantizer](./manual/Quantizer.md) | 
 [RandomSound](./manual/RandomSound.md) | 
 [SampleGrid](./manual/SampleGrid.md) | 
-[ShiftRegRnd](./manual/Shiftregrnd.md) | 
-[SimpleClock](./manual/Simpleclock.md) | 
-[StereoSwitch](./manual/Stereoswitch.md) | 
-[StereoSwitchInv](./manual/Stereoswitchinv.md) | 
+[ShiftRegRnd](./manual/ShiftRegRnd.md) | 
+[SimpleClock](./manual/SimpleClock.md) | 
+[StereoSwitch](./manual/StereoSwitch.md) | 
+[StereoSwitchInv](./manual/StereoSwitchInv.md) | 
 [Str1ker](./manual/Str1ker.md) | 
 [Subtract5](./manual/Subtract5.md) | 
 [Thing Thing](./manual/ThingThing.md) | 
