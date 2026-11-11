@@ -30,10 +30,10 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 [FM16SEQ](./manual/FM16Seq.md) | 
 [FM4DICE](./manual/FM4Dice.md) | 
 [Fract](./manual/Fract.md) | 
-[FullScope](./manual/Fullscope.md) | 
+[FullScope](./manual/FullScope.md) | 
 [Grains](./manual/Grains.md) | 
-[GridSeq](./manual/Gridseq.md) | 
-[MinMax](./manual/Minmax.md) | 
+[GridSeq](./manual/GridSeq.md) | 
+[MinMax](./manual/MinMax.md) | 
 [NoteSeq](./manual/NoteSeq.md) | 
 [NoteSeq16](./manual/NoteSeq16.md) | 
 [NoteSeqFu](./manual/NoteSeqFu.md) | 
@@ -53,7 +53,7 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 [Tree](./manual/Tree.md) | 
 [Trigs](./manual/Trigs.md) | 
 [Trigs128](./manual/Trigs128.md) | 
-[WavHead](./manual/WavhHead.md) | 
+[WavHead](./manual/WavHead.md) | 
 [XY-Pad](./manual/XYPad.md)
 
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
