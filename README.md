@@ -53,8 +53,8 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 [Tree](./manual/Tree.md) | 
 [Trigs](./manual/Trigs.md) | 
 [Trigs128](./manual/Trigs128.md) | 
-[WavHead](./manual/Wavhead.md) | 
-[XY-Pad](./manual/XYpad)
+[WavHead](./manual/WavhHead.md) | 
+[XY-Pad](./manual/XYPad.md)
 
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
