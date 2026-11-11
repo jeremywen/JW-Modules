@@ -17,44 +17,44 @@ Support me on [Patreon](https://www.patreon.com/jeremywen) or make a one time do
 ----
 ## Table of Contents:
 
-[1Pattern](/manual/1pattern.md) | 
-[8Seq](/manual/8seq.md) | 
-[AbcdSeq](/manual/abcdseq.md) | 
-[Add5](/manual/add5.md) | 
-[Arrange](/manual/arrange.md) | 
-[Bouncy Balls](/manual/bouncyballs.md) | 
-[Buffer](/manual/buffer.md) | 
-[Crawl](/manual/crawl.md) | 
-[D1v1de](/manual/d1v1de.md) | 
-[DivSeq](/manual/divseq.md) | 
-[FM16SEQ](/manual/fm16seq.md) | 
-[FM4DICE](/manual/fm4dice.md) | 
-[Fract](/manual/fract.md) | 
-[FullScope](/manual/fullscope.md) | 
-[Grains](/manual/grains.md) | 
-[GridSeq](/manual/gridseq.md) | 
-[MinMax](/manual/minmax.md) | 
-[NoteSeq](/manual/noteSeq.md) | 
-[NoteSeq16](/manual/noteSeq16.md) | 
-[NoteSeqFu](/manual/noteSeqFu.md) | 
-[Patterns](/manual/patterns.md) | 
-[Pres1t](/manual/pres1t.md) | 
-[Quantizer](/manual/quantizer.md) | 
-[RandomSound](/manual/randomsound.md) | 
-[SampleGrid](/manual/samplegrid.md) | 
-[ShiftRegRnd](/manual/shiftregrnd.md) | 
-[SimpleClock](/manual/simpleclock.md) | 
-[StereoSwitch](/manual/stereoswitch.md) | 
-[StereoSwitchInv](/manual/stereoswitchinv.md) | 
-[Str1ker](/manual/str1ker.md) | 
-[Subtract5](/manual/subtract5.md) | 
-[Thing Thing](/manual/thingthing.md) | 
-[Timer](/manual/timer.md) | 
-[Tree](/manual/tree.md) | 
-[Trigs](/manual/trigs.md) | 
-[Trigs128](/manual/trigs128.md) | 
-[WavHead](/manual/wavhead.md) | 
-[XY-Pad](/manual/xypad)
+[1Pattern](./manual/1Pattern.md) | 
+[8Seq](./manual/8Seq.md) | 
+[AbcdSeq](./manual/AbcdSeq.md) | 
+[Add5](./manual/Add5.md) | 
+[Arrange](./manual/Arrange.md) | 
+[Bouncy Balls](./manual/BouncyBalls.md) | 
+[Buffer](./manual/Buffer.md) | 
+[Crawl](./manual/Crawl.md) | 
+[D1v1de](./manual/D1v1de.md) | 
+[DivSeq](./manual/Divseq.md) | 
+[FM16SEQ](./manual/Fm16seq.md) | 
+[FM4DICE](./manual/Fm4dice.md) | 
+[Fract](./manual/Fract.md) | 
+[FullScope](./manual/Fullscope.md) | 
+[Grains](./manual/Grains.md) | 
+[GridSeq](./manual/Gridseq.md) | 
+[MinMax](./manual/Minmax.md) | 
+[NoteSeq](./manual/NoteSeq.md) | 
+[NoteSeq16](./manual/NoteSeq16.md) | 
+[NoteSeqFu](./manual/NoteSeqFu.md) | 
+[Patterns](./manual/Patterns.md) | 
+[Pres1t](./manual/Pres1t.md) | 
+[Quantizer](./manual/Quantizer.md) | 
+[RandomSound](./manual/RandomSound.md) | 
+[SampleGrid](./manual/SampleGrid.md) | 
+[ShiftRegRnd](./manual/Shiftregrnd.md) | 
+[SimpleClock](./manual/Simpleclock.md) | 
+[StereoSwitch](./manual/Stereoswitch.md) | 
+[StereoSwitchInv](./manual/Stereoswitchinv.md) | 
+[Str1ker](./manual/Str1ker.md) | 
+[Subtract5](./manual/Subtract5.md) | 
+[Thing Thing](./manual/ThingThing.md) | 
+[Timer](./manual/Timer.md) | 
+[Tree](./manual/Tree.md) | 
+[Trigs](./manual/Trigs.md) | 
+[Trigs128](./manual/Trigs128.md) | 
+[WavHead](./manual/Wavhead.md) | 
+[XY-Pad](./manual/XYpad)
 
 **Make sure to always see if there are options or functions inside the right click menus of all modules**
 
